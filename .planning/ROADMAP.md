@@ -85,7 +85,12 @@ Plans:
   2. After completing the game, user can tap "share results" to copy an emoji score summary to clipboard
   3. All site animations respect prefers-reduced-motion — toned down or skipped entirely
   4. Games show a branded/fun loading indicator while assets initialize
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [x] 04-01-PLAN.md — Scene transitions (horizontal pan), letter fly-to-notepad animation, notepad theming
+- [x] 04-02-PLAN.md — Share results (emoji clipboard copy, encoded URL), comprehensive reduced motion
+
 **UI hint**: yes
 
 ### Phase 5: Progressive Enhancement & Performance
