@@ -1,2 +1,4 @@
-super-word
+/super-word
 .planning/
+dist/
+node_modules/
