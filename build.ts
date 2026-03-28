@@ -9,7 +9,7 @@ cpSync('public', 'dist', { recursive: true })
 
 // Bundle TypeScript entry points
 await esbuild.build({
-  entryPoints: ['src/shared/shell.ts', 'src/pages/home.ts'],
+  entryPoints: ['src/shared/shell.ts', 'src/pages/home.ts', 'src/super-word/main.ts'],
   bundle: true,
   outdir: 'dist',
   format: 'esm',
