@@ -71,7 +71,7 @@ Plans:
 
 Plans:
 - [x] 03-01-PLAN.md — Visual design system: dark mode CSS, card hover, link transitions, OG meta tags
-- [ ] 03-02-PLAN.md — Interactivity: theme toggle, dynamic cards from registry, playful 404 page
+- [x] 03-02-PLAN.md — Interactivity: theme toggle, dynamic cards from registry, playful 404 page
 
 **UI hint**: yes
 
