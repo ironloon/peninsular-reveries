@@ -42,6 +42,7 @@ import {
   animateSolvedLetters,
   setWowMode,
   animateFlyToNotepad,
+  isReducedMotion,
 } from './animations.js'
 
 // ── URL Parameter Parsing ─────────────────────────────────
@@ -49,6 +50,15 @@ const params = new URLSearchParams(window.location.search)
 const startPuzzleParam = parseInt(params.get('puzzle') ?? '0', 10)
 const puzzleFilterParam = params.get('puzzles')?.split(',').map(s => s.trim().toUpperCase())
 const wowModeParam = params.get('wow') === 'true'
+const shareParam = params.get('s')
+if (shareParam) {
+  try {
+    const decoded = atob(shareParam)
+    console.log('Shared result:', decoded)
+  } catch {
+    // Invalid share param — ignore silently
+  }
+}
 
 // ── Puzzle Filtering ──────────────────────────────────────
 let activePuzzles: readonly Puzzle[] = PUZZLES
@@ -61,6 +71,7 @@ const clampedStart = Math.max(0, Math.min(startPuzzleParam, activePuzzles.length
 
 // ── State Management ──────────────────────────────────────
 let gameState: GameState = createInitialState(activePuzzles.length, wowModeParam)
+const hintUsedPerPuzzle: boolean[] = []
 
 function getState(): GameState { return gameState }
 function setState(newState: GameState): void { gameState = newState }
@@ -107,7 +118,11 @@ function onLetterCollected(item: SceneItem): void {
   const tiles = slotsEl.querySelectorAll('.letter-tile')
   const newTile = tiles.length > 0 ? tiles[tiles.length - 1] as HTMLElement : null
 
-  if (sceneItem && newTile) {
+  if (isReducedMotion()) {
+    // Instant collection — no flight animation
+    if (sceneItem) sceneItem.style.display = 'none'
+    if (newTile) animateTileAppear(newTile)
+  } else if (sceneItem && newTile) {
     animateFlyToNotepad(sceneItem, newTile).then(() => {
       if (newTile) animateTileAppear(newTile)
     })
@@ -138,12 +153,15 @@ function onLetterCollected(item: SceneItem): void {
 }
 
 function onDistractorClicked(item: SceneItem): void {
-  const sceneItem = sceneEl.querySelector(`[data-item-id="${item.id}"]`) as HTMLElement | null
-  const card = sceneItem?.querySelector('.item-card') as HTMLElement | null
-  if (card) animateItemShake(card)
-
+  if (isReducedMotion()) {
+    showToast(`Not a letter — ${item.label} is a distractor`, 1500)
+  } else {
+    const sceneItem = sceneEl.querySelector(`[data-item-id="${item.id}"]`) as HTMLElement | null
+    const card = sceneItem?.querySelector('.item-card') as HTMLElement | null
+    if (card) animateItemShake(card)
+    showToast('Not a letter! Try another! 🤔', 1500)
+  }
   announceDistractorClicked(item.label)
-  showToast('Not a letter! Try another! 🤔', 1500)
 }
 
 function onTileSelected(index: number): void {
@@ -183,21 +201,27 @@ function onLettersSwapped(indexA: number, indexB: number): void {
 
 function onCheckAnswer(): void {
   const { correct, newState } = checkAnswer(getState(), currentPuzzle())
+  const hintWasUsed = getState().hintUsed
   setState(newState)
 
   if (!correct) {
-    const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
-    animateTileWrongShake(tiles)
+    if (isReducedMotion()) {
+      showToast('Not quite! Rearrange the letters', 1500)
+    } else {
+      const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
+      animateTileWrongShake(tiles)
+      showToast('Not quite — try rearranging! 🔄', 1500)
+    }
     announceWrongAnswer()
-    showToast('Not quite — try rearranging! 🔄', 1500)
     return
   }
 
+  hintUsedPerPuzzle.push(hintWasUsed)
   announceCorrectAnswer(currentPuzzle().answer)
 
   const isLastPuzzle = getState().currentPuzzleIndex >= activePuzzles.length - 1
   if (isLastPuzzle) {
-    renderWinScreen(getState())
+    renderWinScreen(getState(), hintUsedPerPuzzle)
     showScreen('win-screen')
     announceGameWin(getState().score)
     moveFocusAfterTransition('replay-btn', 300)
@@ -228,6 +252,7 @@ function onNextPuzzle(): void {
 }
 
 function onPlayAgain(): void {
+  hintUsedPerPuzzle.length = 0
   setState(resetGame(getState()))
   showScreen('start-screen')
   moveFocusAfterTransition('start-btn', 300)
@@ -235,6 +260,9 @@ function onPlayAgain(): void {
 
 // ── Initialization ────────────────────────────────────────
 setWowMode(gameContainer, wowModeParam)
+if (isReducedMotion()) {
+  setWowMode(gameContainer, false)
+}
 
 const callbacks: InputCallbacks = {
   onStartGame,

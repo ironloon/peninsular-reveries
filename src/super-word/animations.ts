@@ -1,3 +1,7 @@
+export function isReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+}
+
 export function animateCollectPop(element: HTMLElement): Promise<void> {
   return new Promise<void>((resolve) => {
     element.classList.add('collecting')

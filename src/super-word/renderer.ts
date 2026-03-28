@@ -1,4 +1,5 @@
 import type { GameState, Puzzle, SceneItem } from './types.js'
+import { isReducedMotion } from './animations.js'
 
 // ── Lazy element cache ───────────────────────────────────────
 let puzzleCounterEl: HTMLElement | null = null
@@ -137,6 +138,13 @@ export function showScreen(screenId: string): void {
     return
   }
 
+  if (isReducedMotion()) {
+    // Instant cut — no pan animation
+    current.classList.remove('active')
+    target.classList.add('active')
+    return
+  }
+
   // Position incoming screen to the right (disable transition for initial placement)
   target.style.transition = 'none'
   target.classList.add('active')
@@ -184,8 +192,70 @@ export function renderCompleteScreen(puzzle: Puzzle, state: GameState): void {
   }
 }
 
-export function renderWinScreen(state: GameState): void {
+export function renderWinScreen(state: GameState, hintUsedPerPuzzle: boolean[]): void {
   getFinalScore().textContent = `⭐ ${state.score}`
+
+  // Generate share text
+  const maxScore = state.completed.length * 10
+  const stars = hintUsedPerPuzzle.map(used => used ? '💡' : '⭐').join('')
+  const shareText = `Super Word 🔤 ${state.score}/${maxScore} ${stars}`
+
+  // Encode results for share URL
+  const hintBits = hintUsedPerPuzzle.map(h => h ? '1' : '0').join('')
+  const shareData = `${state.score},${hintBits}`
+  const encoded = btoa(shareData)
+  const baseUrl = window.location.origin + window.location.pathname
+  const shareUrl = `${baseUrl}?s=${encoded}`
+  const fullShareText = `${shareText}\n${shareUrl}`
+
+  // Render share button
+  let shareBtn = document.getElementById('share-btn') as HTMLButtonElement | null
+  if (!shareBtn) {
+    shareBtn = document.createElement('button')
+    shareBtn.id = 'share-btn'
+    shareBtn.className = 'btn btn-primary btn-share'
+    const replayBtn = document.getElementById('replay-btn')
+    if (replayBtn?.parentElement) {
+      replayBtn.parentElement.insertBefore(shareBtn, replayBtn)
+    }
+  }
+  shareBtn.textContent = 'Share Results 📋'
+  shareBtn.onclick = () => handleShareClick(shareBtn!, fullShareText)
+}
+
+function handleShareClick(btn: HTMLButtonElement, text: string): void {
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied! ✓'
+      btn.style.backgroundColor = 'var(--game-green)'
+      btn.style.color = 'var(--game-white)'
+      btn.style.boxShadow = '0 4px 0 var(--game-green-dark)'
+      setTimeout(() => {
+        btn.textContent = 'Share Results 📋'
+        btn.style.backgroundColor = ''
+        btn.style.color = ''
+        btn.style.boxShadow = ''
+      }, 1500)
+    }).catch(() => {
+      showFallbackCopy(btn, text)
+    })
+  } else {
+    showFallbackCopy(btn, text)
+  }
+}
+
+function showFallbackCopy(btn: HTMLButtonElement, text: string): void {
+  btn.textContent = 'Tap to select, then copy'
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.setAttribute('readonly', '')
+  textarea.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:90%;max-width:400px;padding:12px;font-size:14px;z-index:200;border-radius:12px;border:2px solid var(--game-yellow);'
+  document.body.appendChild(textarea)
+  textarea.select()
+  setTimeout(() => {
+    textarea.remove()
+    btn.textContent = 'Share Results 📋'
+  }, 3000)
 }
 
 export function setCheckButtonEnabled(enabled: boolean): void {

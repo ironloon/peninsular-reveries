@@ -407,6 +407,11 @@
   flex-wrap: wrap;
 }
 
+.btn-share {
+  font-size: 1.05rem;
+  transition: background-color 200ms ease, color 200ms ease, box-shadow 200ms ease;
+}
+
 /* ── Complete Screen ──────────────────────────────────────── */
 
 #complete-screen {
@@ -682,5 +687,70 @@
 
   #scene-wrapper {
     min-height: 180px;
+  }
+}
+
+/* ── Reduced Motion ───────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Scene transitions — instant cut, no pan */
+  .screen {
+    transition: none !important;
+  }
+
+  .scene-transitioning .screen {
+    transition: none !important;
+  }
+
+  /* All animation trigger classes — disable entirely */
+  .collecting,
+  .shaking,
+  .appearing,
+  .wrong-shake,
+  .solved-pop {
+    animation: none !important;
+  }
+
+  /* Title bounce — static */
+  .title-bounce {
+    animation: none !important;
+  }
+
+  /* Tile pulse (selected state) — static */
+  .letter-tile.selected {
+    animation: none !important;
+  }
+
+  /* Flying letter — instant, no flight */
+  .flying-letter {
+    animation: none !important;
+  }
+
+  /* Wow mode confetti — disabled */
+  .wow-mode #complete-screen::before,
+  .wow-mode #complete-screen::after {
+    animation: none !important;
+  }
+
+  /* Scene parallax — no transition */
+  #scene-wrapper::before {
+    transition: none !important;
+  }
+
+  /* Interactive element transitions — instant */
+  .btn,
+  .item-card,
+  .letter-tile {
+    transition: none !important;
+  }
+
+  /* Share button feedback — instant */
+  .btn-share {
+    transition: none !important;
+  }
+
+  /* Toast — opacity only, no transform */
+  .toast {
+    transition: opacity 220ms ease !important;
   }
 }
