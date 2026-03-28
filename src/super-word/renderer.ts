@@ -127,12 +127,39 @@ export function renderGameHeader(
 }
 
 export function showScreen(screenId: string): void {
-  const screens = document.querySelectorAll('.screen')
-  for (const screen of screens) {
-    screen.classList.remove('active')
-  }
+  const track = document.querySelector('.scene-track') as HTMLElement | null
+  const current = document.querySelector('.screen.active') as HTMLElement | null
   const target = document.getElementById(screenId)
-  if (target) target.classList.add('active')
+  if (!target || current === target) return
+
+  if (!current || !track) {
+    target.classList.add('active')
+    return
+  }
+
+  // Position incoming screen to the right (disable transition for initial placement)
+  target.style.transition = 'none'
+  target.classList.add('active')
+  // Force reflow so the browser registers the initial position
+  target.offsetHeight
+
+  // Begin pan
+  target.style.transition = ''
+  current.classList.add('leaving')
+  track.classList.add('scene-transitioning')
+
+  let cleaned = false
+  const cleanup = () => {
+    if (cleaned) return
+    cleaned = true
+    current.classList.remove('active', 'leaving')
+    current.style.transform = ''
+    track.classList.remove('scene-transitioning')
+  }
+
+  target.addEventListener('transitionend', cleanup, { once: true })
+  // Fallback timeout (600ms > 500ms transition)
+  setTimeout(cleanup, 600)
 }
 
 export function showToast(message: string, duration: number): void {

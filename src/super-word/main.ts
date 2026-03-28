@@ -41,6 +41,7 @@ import {
   animateTileWrongShake,
   animateSolvedLetters,
   setWowMode,
+  animateFlyToNotepad,
 } from './animations.js'
 
 // ── URL Parameter Parsing ─────────────────────────────────
@@ -100,13 +101,19 @@ function onLetterCollected(item: SceneItem): void {
   setState(collectLetter(getState(), item.char!, item.id))
 
   const sceneItem = sceneEl.querySelector(`[data-item-id="${item.id}"]`) as HTMLElement | null
-  if (sceneItem) animateCollectPop(sceneItem)
 
   renderLetterSlots(getState(), currentPuzzle(), slotsEl)
 
   const tiles = slotsEl.querySelectorAll('.letter-tile')
-  if (tiles.length > 0) {
-    animateTileAppear(tiles[tiles.length - 1] as HTMLElement)
+  const newTile = tiles.length > 0 ? tiles[tiles.length - 1] as HTMLElement : null
+
+  if (sceneItem && newTile) {
+    animateFlyToNotepad(sceneItem, newTile).then(() => {
+      if (newTile) animateTileAppear(newTile)
+    })
+  } else if (sceneItem) {
+    animateCollectPop(sceneItem)
+    if (newTile) animateTileAppear(newTile)
   }
 
   announceLetterCollected(
