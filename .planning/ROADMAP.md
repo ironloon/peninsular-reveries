@@ -53,7 +53,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Game foundation: types, puzzle data, state management, HTML page, game CSS, build integration
-- [ ] 02-02-PLAN.md — Game rendering & input: DOM renderer, Pointer Events + keyboard navigation
+- [x] 02-02-PLAN.md — Game rendering & input: DOM renderer, Pointer Events + keyboard navigation
 - [ ] 02-03-PLAN.md — Accessibility, animations & wiring: aria-live announcements, CSS animations, main entry point
 
 **UI hint**: yes
