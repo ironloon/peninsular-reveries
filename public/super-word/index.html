@@ -24,6 +24,7 @@
 <body data-base="..">
   <header id="site-header" class="site-header"></header>
   <main class="super-word-game">
+    <div class="scene-track">
 
     <!-- Start Screen -->
     <div id="start-screen" class="screen active">
@@ -54,8 +55,8 @@
       <div id="scene-wrapper">
         <div id="scene" role="group" aria-label="Find letters in the scene"></div>
       </div>
-      <div class="collection-area">
-        <span class="collection-label">Drag letters to spell the word:</span>
+      <div class="collection-area notepad">
+        <span class="collection-label notepad-label">Super Letters</span>
         <div id="letter-slots" role="listbox" aria-label="Collected letters — arrange to spell the word"></div>
         <div class="button-row">
           <button id="check-btn" class="btn btn-check" disabled>✓ Check Word!</button>
@@ -81,6 +82,8 @@
       <div class="win-stars" aria-hidden="true">⭐⭐⭐⭐⭐</div>
       <button id="replay-btn" class="btn btn-primary">Play Again! 🔄</button>
     </div>
+
+    </div><!-- /.scene-track -->
 
     <!-- Accessibility: aria-live regions -->
     <div id="game-status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
