@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>
+    .land { fill: #C75B39; }
+    .highlight { fill: #E8A87C; }
+    .hills { fill: #8B7D6B; }
+    .water { fill: #FFF8F0; }
+    @media (prefers-color-scheme: dark) {
+      .land { fill: #E8A87C; }
+      .highlight { fill: #C75B39; }
+      .hills { fill: #A89888; }
+      .water { fill: #2D2420; }
+    }
+  </style>
+  <rect class="water" width="32" height="32" rx="6"/>
+  <path class="hills" d="M0 20 Q8 12 16 18 Q24 10 32 16 L32 32 L0 32Z"/>
+  <path class="land" d="M8 14 Q12 6 18 10 Q20 18 22 22 L6 22 Q6 18 8 14Z"/>
+  <path class="highlight" d="M10 12 Q13 7 16 11 Q14 14 12 16Z"/>
+</svg>
