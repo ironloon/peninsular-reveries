@@ -8,21 +8,88 @@
   <link rel="icon" type="image/svg+xml" href="../favicon.svg">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
   <link rel="stylesheet" href="../styles/main.css">
+  <link rel="stylesheet" href="game.css">
 </head>
 <body data-base="..">
   <header id="site-header" class="site-header"></header>
-  <main>
-    <h1>Super Word</h1>
-    <p>This game is being rebuilt — check back soon!</p>
-    <noscript>
-      <div class="noscript-message">
-        <p>Super Word needs JavaScript to run — it's a game after all! Enable JavaScript in your browser settings and refresh to play.</p>
+  <main class="super-word-game">
+
+    <!-- Start Screen -->
+    <div id="start-screen" class="screen active">
+      <div class="title" aria-hidden="true">
+        <span class="title-bounce">S</span><span class="title-bounce">U</span><span class="title-bounce">P</span><span class="title-bounce">E</span><span class="title-bounce">R</span>
+        <br>
+        <span class="title-bounce">W</span><span class="title-bounce">O</span><span class="title-bounce">R</span><span class="title-bounce">D</span><span class="title-bounce">!</span>
       </div>
-    </noscript>
+      <p class="subtitle">Find hidden letters and solve the word puzzle!</p>
+      <button id="start-btn" class="btn btn-primary">Let's Go! 🚀</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" class="screen">
+      <div class="game-header">
+        <div class="game-header-left">
+          <span id="puzzle-counter" class="puzzle-counter" aria-label="Puzzle progress">1 / 5</span>
+          <span id="score" class="score" aria-label="Score: 0">⭐ 0</span>
+        </div>
+        <div class="game-header-right">
+          <span id="letters-count" class="letters-count">0 / 3</span>
+          <button id="hint-btn" class="btn btn-hint">💡 Hint</button>
+        </div>
+      </div>
+      <div class="prompt-bubble">
+        <span id="prompt-text" role="status">Find the letters!</span>
+      </div>
+      <div id="scene-wrapper">
+        <div id="scene" role="group" aria-label="Find letters in the scene"></div>
+      </div>
+      <div class="collection-area">
+        <span class="collection-label">Drag letters to spell the word:</span>
+        <div id="letter-slots" role="listbox" aria-label="Collected letters — arrange to spell the word"></div>
+        <div class="button-row">
+          <button id="check-btn" class="btn btn-check" disabled>✓ Check Word!</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Level Complete Screen -->
+    <div id="complete-screen" class="screen">
+      <div class="complete-stars" aria-hidden="true">⭐⭐⭐</div>
+      <h2 class="complete-heading">Amazing!</h2>
+      <p class="complete-body">You spelled it correctly! 🎉</p>
+      <div id="solved-word"></div>
+      <button id="next-btn" class="btn btn-primary">Next Puzzle! →</button>
+    </div>
+
+    <!-- Win Screen -->
+    <div id="win-screen" class="screen">
+      <div class="win-trophy" aria-hidden="true">🏆</div>
+      <h2 class="win-heading">Super Reader!</h2>
+      <p class="win-body">You solved all the puzzles! 🎊</p>
+      <div id="final-score"></div>
+      <div class="win-stars" aria-hidden="true">⭐⭐⭐⭐⭐</div>
+      <button id="replay-btn" class="btn btn-primary">Play Again! 🔄</button>
+    </div>
+
+    <!-- Accessibility: aria-live regions -->
+    <div id="game-status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+    <div id="game-feedback" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
+
+    <!-- Toast -->
+    <div id="feedback-toast" class="toast" aria-hidden="true"></div>
   </main>
+
+  <noscript>
+    <div class="noscript-message">
+      <p>Super Word needs JavaScript to run — it's a game after all! Enable JavaScript in your browser settings and refresh to play.</p>
+    </div>
+  </noscript>
+
   <footer class="site-footer">
     <p>A quiet corner of the internet.</p>
   </footer>
+
   <script type="module" src="../shared/shell.js"></script>
+  <script type="module" src="../super-word/main.js"></script>
 </body>
 </html>
