@@ -94,14 +94,20 @@ Plans:
 **UI hint**: yes
 
 ### Phase 5: Progressive Enhancement & Performance
-**Goal**: The site is measurably fast, has smooth transitions, and usage is observable
+**Goal**: The site is measurably fast, has smooth transitions, and performance is enforced via build-step and CI checks
 **Depends on**: Phase 3, Phase 4
 **Requirements**: LOOK-01, LOOK-08, INFRA-03
 **Success Criteria** (what must be TRUE):
   1. Page navigation uses View Transitions API for smooth animation in supporting browsers; degrades gracefully in others
   2. Site includes privacy-respecting, cookie-free analytics tracking page views
   3. Every page loads under 200KB total weight with LCP under 1.5s on simulated 3G
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [x] 05-01-PLAN.md — View Transitions CSS, build-step size assertion, Lighthouse CI pipeline
+
+**UI hint**: no
+**Note**: LOOK-08 (analytics) descoped from v1 per discuss-phase decision D-05
 
 ## Progress
 
