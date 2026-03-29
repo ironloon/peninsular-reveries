@@ -259,6 +259,29 @@ main {
   margin-top: var(--space-lg);
 }
 
+/* View Transitions — cross-document MPA (Chrome 126+, Edge 126+, Safari 18.2+) */
+@view-transition {
+  navigation: auto;
+}
+
+.site-header {
+  view-transition-name: site-header;
+}
+
+main {
+  view-transition-name: main-content;
+}
+
+/* Fallback fade — all browsers get a subtle page-load transition */
+@keyframes page-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+body {
+  animation: page-fade-in 0.2s ease-out;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .four-oh-four-digit {
@@ -266,5 +289,14 @@ main {
   }
   .game-card {
     transition: none;
+  }
+  /* Disable View Transitions and fallback fade */
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0s !important;
+  }
+  body {
+    animation: none;
   }
 }
