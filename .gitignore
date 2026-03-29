@@ -2,3 +2,6 @@
 .planning/
 dist/
 node_modules/
+playwright-report/
+test-results/
+copilot-check.jsonl
