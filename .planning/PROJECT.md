@@ -18,13 +18,15 @@ A frictionless home for creative projects — dead simple to add new games and e
 - [x] View Transitions API for smooth page navigation with graceful degradation (Validated in Phase 05: progressive-enhancement-performance)
 - [x] Performance budget enforcement — 200KB per-page hard gate at build time (Validated in Phase 05: progressive-enhancement-performance)
 - [x] Lighthouse CI audit in deployment pipeline (Validated in Phase 05: progressive-enhancement-performance)
+- [x] Automated Playwright test suite covering all Phase 1 requirements (Validated in Phase 06: test-harness-phase1-verification)
+- [x] CI test gate — tests must pass before deployment (Validated in Phase 06: test-harness-phase1-verification)
 
 ### Active
 
-- [ ] Static site with homepage and per-project pages
-- [ ] Easy to add new games/experiments (just create files, minimal boilerplate)
-- [ ] GitHub Pages deployment
-- [ ] Accessible and responsive
+- [x] Static site with homepage and per-project pages
+- [x] Easy to add new games/experiments (just create files, minimal boilerplate)
+- [x] GitHub Pages deployment
+- [x] Accessible and responsive
 
 ### Out of Scope
 
@@ -80,4 +82,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-29 after Phase 05 (progressive-enhancement-performance) completion*
+*Last updated: 2026-03-29 after Phase 06 (test-harness-phase1-verification) completion — final phase of v1.0*
