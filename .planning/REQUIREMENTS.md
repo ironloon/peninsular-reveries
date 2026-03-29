@@ -9,12 +9,12 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Site Foundation
 
-- [ ] **SITE-01**: Site has responsive layout that works on phone, tablet, and desktop *(Phase 1 — pending automated verification in Phase 6)*
-- [ ] **SITE-02**: User can navigate between homepage and individual game pages via simple links; back button works; all pages are URL-addressable *(Phase 1 — pending automated verification in Phase 6)*
-- [ ] **SITE-03**: Every page has semantic HTML structure (title, meta description, heading hierarchy, main, nav) *(Phase 1 — pending automated verification in Phase 6)*
+- [x] **SITE-01**: Site has responsive layout that works on phone, tablet, and desktop *(Verified in Phase 6 — automated Playwright tests)*
+- [x] **SITE-02**: User can navigate between homepage and individual game pages via simple links; back button works; all pages are URL-addressable *(Verified in Phase 6 — automated Playwright tests)*
+- [x] **SITE-03**: Every page has semantic HTML structure (title, meta description, heading hierarchy, main, nav) *(Verified in Phase 6 — automated Playwright tests)*
 - [x] **SITE-04**: Every page has Open Graph meta tags (og:title, og:description, og:image, og:url) for social sharing previews
-- [ ] **SITE-05**: Site has SVG favicon and apple-touch-icon *(Phase 1 — pending automated verification in Phase 6)*
-- [ ] **SITE-06**: Pages show graceful fallback when JS is unavailable (noscript message) and catch unhandled errors *(Phase 1 — pending automated verification in Phase 6)*
+- [x] **SITE-05**: Site has SVG favicon and apple-touch-icon *(Verified in Phase 6 — automated Playwright tests)*
+- [x] **SITE-06**: Pages show graceful fallback when JS is unavailable (noscript message) and catch unhandled errors *(Verified in Phase 6 — automated Playwright tests)*
 - [x] **SITE-07**: Homepage displays projects as visual cards with name, one-line description, and preview image/icon
 
 ### Super Word Game
@@ -38,8 +38,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Build & Deploy
 
-- [ ] **INFRA-01**: TypeScript source compiles to static files via minimal build step (esbuild) *(Phase 1 — pending automated verification in Phase 6)*
-- [ ] **INFRA-02**: Site deploys to GitHub Pages via GitHub Actions on push to main *(Phase 1 — pending automated verification in Phase 6)*
+- [x] **INFRA-01**: TypeScript source compiles to static files via minimal build step (esbuild) *(Verified in Phase 6 — automated Playwright tests)*
+- [x] **INFRA-02**: Site deploys to GitHub Pages via GitHub Actions on push to main *(Verified in Phase 6 — automated Playwright tests)*
 - [x] **INFRA-03**: Total page weight under 200KB per page, LCP under 1.5s on 3G
 
 ## v2 Requirements
@@ -77,12 +77,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SITE-01 | Phase 1, Phase 6 | Pending |
-| SITE-02 | Phase 1, Phase 6 | Pending |
-| SITE-03 | Phase 1, Phase 6 | Pending |
+| SITE-01 | Phase 1, Phase 6 | Complete |
+| SITE-02 | Phase 1, Phase 6 | Complete |
+| SITE-03 | Phase 1, Phase 6 | Complete |
 | SITE-04 | Phase 3 | Complete |
-| SITE-05 | Phase 1, Phase 6 | Pending |
-| SITE-06 | Phase 1, Phase 6 | Pending |
+| SITE-05 | Phase 1, Phase 6 | Complete |
+| SITE-06 | Phase 1, Phase 6 | Complete |
 | SITE-07 | Phase 3 | Complete |
 | GAME-01 | Phase 2 | Complete |
 | GAME-02 | Phase 2 | Complete |
@@ -97,8 +97,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LOOK-06 | Phase 3 | Complete |
 | LOOK-07 | Phase 4 | Descoped |
 | LOOK-08 | Phase 5 | Descoped |
-| INFRA-01 | Phase 1, Phase 6 | Pending |
-| INFRA-02 | Phase 1, Phase 6 | Pending |
+| INFRA-01 | Phase 1, Phase 6 | Complete |
+| INFRA-02 | Phase 1, Phase 6 | Complete |
 | INFRA-03 | Phase 5 | Complete |
 
 **Coverage:**
@@ -108,4 +108,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-27*
-*Last updated: 2026-03-29 after v1.0 milestone audit gap closure planning*
+*Last updated: 2026-03-29 after Phase 6 verification — all checkboxes verified*
