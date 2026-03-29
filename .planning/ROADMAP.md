@@ -109,10 +109,28 @@ Plans:
 **UI hint**: no
 **Note**: LOOK-08 (analytics) descoped from v1 per discuss-phase decision D-05
 
+### Phase 6: Automated Test Harness & Phase 1 Verification
+**Goal**: Add Playwright test infrastructure with a local dev server, write automated tests that verify all Phase 1 requirements, fix stale REQUIREMENTS.md checkboxes, and prevent this class of verification gap from recurring
+**Depends on**: Phase 5
+**Requirements**: SITE-01, SITE-02, SITE-03, SITE-05, SITE-06, INFRA-01, INFRA-02
+**Gap Closure**: Closes 7 partial requirements from v1.0 milestone audit (all Phase 1 verification gaps) + 11 stale REQUIREMENTS.md checkboxes
+**Success Criteria** (what must be TRUE):
+  1. `npm test` runs Playwright tests against a local server serving `dist/` and exits 0
+  2. Automated tests verify responsive layout renders without errors at phone/tablet/desktop viewports (SITE-01)
+  3. Automated tests verify navigation between pages, back button, and URL-addressability (SITE-02)
+  4. Automated tests verify semantic HTML structure — main, nav, heading hierarchy, meta description (SITE-03)
+  5. Automated tests verify SVG favicon link element exists and resolves (SITE-05)
+  6. Automated tests verify noscript fallback content renders with JS disabled (SITE-06)
+  7. Automated tests verify `npx tsx build.ts` exits 0 and produces expected output files (INFRA-01)
+  8. All REQUIREMENTS.md checkboxes match actual verification status
+**Plans:** 0 plans (not yet planned)
+
+**UI hint**: no
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 (Phases 3 and 4 could run in parallel — both depend on Phase 2, not each other)
 
 | Phase | Plans Complete | Status | Completed |
@@ -122,3 +140,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 3. Homepage & Visual Design | 0/2 | Planned | - |
 | 4. Game Polish & Persistence | 0/? | Not started | - |
 | 5. Progressive Enhancement & Performance | 0/? | Not started | - |
+| 6. Test Harness & Phase 1 Verification | 0/? | Not started | - |
