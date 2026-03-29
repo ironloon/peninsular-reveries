@@ -127,7 +127,7 @@ Plans:
 
 Plans:
 - [x] 06-01-PLAN.md — Playwright infrastructure + SITE-01, SITE-02, SITE-03 tests
-- [ ] 06-02-PLAN.md — SITE-05, SITE-06, INFRA-01, INFRA-02 tests + CI gate + REQUIREMENTS.md fix
+- [x] 06-02-PLAN.md — SITE-05, SITE-06, INFRA-01, INFRA-02 tests + CI gate + REQUIREMENTS.md fix
 
 **UI hint**: no
 
