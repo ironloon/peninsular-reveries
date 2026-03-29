@@ -15,6 +15,9 @@ A frictionless home for creative projects — dead simple to add new games and e
 - [x] Super Word game: full rewrite of the AI prototype — same letter-finding concept, polished visuals and UX (Validated in Phase 02: super-word-game)
 - [x] TypeScript throughout, web standards first (Validated in Phase 02: super-word-game)
 - [x] Clean, minimal design with subtle quirky personality touches (Validated in Phase 03: homepage-visual-design)
+- [x] View Transitions API for smooth page navigation with graceful degradation (Validated in Phase 05: progressive-enhancement-performance)
+- [x] Performance budget enforcement — 200KB per-page hard gate at build time (Validated in Phase 05: progressive-enhancement-performance)
+- [x] Lighthouse CI audit in deployment pipeline (Validated in Phase 05: progressive-enhancement-performance)
 
 ### Active
 
@@ -55,6 +58,9 @@ A frictionless home for creative projects — dead simple to add new games and e
 | Full rewrite of Super Word (not cleanup) | AI prototype has useful concept but needs proper architecture | ✓ Good — 8 TS modules, proper state/render/input separation |
 | No React / no virtual DOM | Web standards alignment, Remix 3 philosophy, simpler mental model | — Pending |
 | Raw PNG generation via zlib | Generates apple-touch-icon and og-image at build time with zero image deps | ✓ Good |
+| CSS-only View Transitions | @view-transition MPA approach — no JS needed, progressive enhancement | ✓ Good |
+| Analytics descoped from v1 | LOOK-08 removed — privacy-respecting analytics deferred to v2 | ✓ Good — reduced scope without losing core value |
+| Build-time budget over runtime monitoring | statSync assertion is simpler and catches issues at CI, not in production | ✓ Good |
 
 ## Evolution
 
@@ -74,4 +80,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: after Phase 03 (homepage-visual-design) completion*
+*Last updated: 2026-03-29 after Phase 05 (progressive-enhancement-performance) completion*
