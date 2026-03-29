@@ -123,7 +123,11 @@ Plans:
   6. Automated tests verify noscript fallback content renders with JS disabled (SITE-06)
   7. Automated tests verify `npx tsx build.ts` exits 0 and produces expected output files (INFRA-01)
   8. All REQUIREMENTS.md checkboxes match actual verification status
-**Plans:** 0 plans (not yet planned)
+**Plans:** 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Playwright infrastructure + SITE-01, SITE-02, SITE-03 tests
+- [ ] 06-02-PLAN.md — SITE-05, SITE-06, INFRA-01, INFRA-02 tests + CI gate + REQUIREMENTS.md fix
 
 **UI hint**: no
 
