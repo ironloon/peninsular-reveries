@@ -119,6 +119,17 @@
   opacity: 0.9;
 }
 
+.inspiration {
+  margin-top: var(--game-space-md);
+  font-size: 0.8rem;
+  opacity: 0.65;
+}
+
+.inspiration a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 /* ── Game Screen ──────────────────────────────────────────── */
 
 #game-screen {
