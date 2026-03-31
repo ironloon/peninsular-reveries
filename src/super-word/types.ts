@@ -8,8 +8,11 @@ export interface SceneItem {
   readonly y: number
 }
 
+export type Difficulty = 'easy' | 'medium' | 'hard'
+
 export interface Puzzle {
   readonly answer: string
+  readonly difficulty: Difficulty
   readonly prompt: string
   readonly hint: string
   readonly hintEmoji: string

@@ -1,4 +1,4 @@
-import { PUZZLES } from './puzzles.js'
+import { PUZZLES, selectPuzzles } from './puzzles.js'
 import type { GameState, Puzzle, SceneItem } from './types.js'
 import {
   createInitialState,
@@ -49,6 +49,8 @@ import {
 const params = new URLSearchParams(window.location.search)
 const startPuzzleParam = parseInt(params.get('puzzle') ?? '0', 10)
 const puzzleFilterParam = params.get('puzzles')?.split(',').map(s => s.trim().toUpperCase())
+const difficultyParam = params.get('difficulty')?.toLowerCase() as 'easy' | 'medium' | 'hard' | undefined
+const countParam = params.get('count') ? parseInt(params.get('count')!, 10) : undefined
 const wowModeParam = params.get('wow') === 'true'
 const shareParam = params.get('s')
 if (shareParam) {
@@ -60,12 +62,16 @@ if (shareParam) {
   }
 }
 
-// ── Puzzle Filtering ──────────────────────────────────────
-let activePuzzles: readonly Puzzle[] = PUZZLES
-if (puzzleFilterParam && puzzleFilterParam.length > 0) {
-  const filtered = PUZZLES.filter(p => puzzleFilterParam.includes(p.answer))
-  if (filtered.length > 0) activePuzzles = filtered
-}
+// ── Puzzle Selection ──────────────────────────────────────
+// If specific puzzles requested via URL, use those; otherwise random selection
+const validDifficulty = difficultyParam && ['easy', 'medium', 'hard'].includes(difficultyParam)
+  ? difficultyParam : undefined
+
+const activePuzzles: readonly Puzzle[] = selectPuzzles({
+  answers: puzzleFilterParam,
+  difficulty: validDifficulty,
+  count: countParam,
+})
 
 const clampedStart = Math.max(0, Math.min(startPuzzleParam, activePuzzles.length - 1))
 
