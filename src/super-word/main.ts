@@ -18,7 +18,7 @@ import {
   slideSceneTransition,
   renderWinScreen,
   setCheckButtonEnabled,
-  renderPuzzleCreator,
+  setupSettingsModal,
 } from './renderer.js'
 import { setupInput } from './input.js'
 import type { InputCallbacks } from './input.js'
@@ -50,6 +50,7 @@ import {
   sfxWin,
   sfxButton,
   sfxSwap,
+  ensureAudioUnlocked,
 } from './sounds.js'
 
 // ── URL Parameter Parsing ─────────────────────────────────
@@ -107,6 +108,7 @@ function refreshGameScreen(): void {
 // ── Game Flow — InputCallbacks ────────────────────────────
 
 function onStartGame(): void {
+  ensureAudioUnlocked()
   sfxButton()
   // Read puzzle creator settings
   const wordsInput = document.getElementById('puzzle-words') as HTMLInputElement | null
@@ -143,6 +145,7 @@ function onStartGame(): void {
 }
 
 function onLetterCollected(item: SceneItem): void {
+  ensureAudioUnlocked()
   sfxCollect()
   setState(collectLetter(getState(), item.char!, item.id))
 
@@ -156,7 +159,6 @@ function onLetterCollected(item: SceneItem): void {
 
   if (isReducedMotion()) {
     // Instant collection — no flight animation
-    if (sceneItem) sceneItem.style.display = 'none'
     if (newTile) animateTileAppear(newTile)
   } else if (sceneItem && newTile) {
     animateFlyToNotepad(sceneItem, newTile).then(() => {
@@ -177,13 +179,16 @@ function onLetterCollected(item: SceneItem): void {
   setCheckButtonEnabled(getState().collectedLetters.length === currentPuzzle().answer.length)
   renderGameHeader(getState(), currentPuzzle(), getState().currentPuzzleIndex, activePuzzles.length)
 
-  // Move focus to nearest remaining uncollected item
-  const nextItem = sceneEl.querySelector('.scene-item:not(.collected)') as HTMLElement | null
-  if (nextItem) {
-    const allItems = sceneEl.querySelectorAll('.scene-item')
-    for (const el of allItems) (el as HTMLElement).tabIndex = -1
-    nextItem.tabIndex = 0
-    nextItem.focus()
+  // Keep focus on current position — don't auto-advance
+  // The collected item becomes pointer-events:none, so update tabindex on remaining items
+  if (sceneItem) {
+    sceneItem.tabIndex = -1
+    // Focus nearest uncollected item without auto-advancing
+    const uncollected = Array.from(sceneEl.querySelectorAll('.scene-item:not(.collected)')) as HTMLElement[]
+    if (uncollected.length > 0) {
+      for (const el of uncollected) el.tabIndex = -1
+      uncollected[0].tabIndex = 0
+    }
   }
 }
 
@@ -319,6 +324,6 @@ const callbacks: InputCallbacks = {
 }
 
 setupInput(getState, setState, currentPuzzle, callbacks)
-renderPuzzleCreator(onStartGame)
+setupSettingsModal(onStartGame)
 
 showScreen('start-screen')

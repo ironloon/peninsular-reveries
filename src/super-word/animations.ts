@@ -10,7 +10,7 @@ export function animateCollectPop(element: HTMLElement): Promise<void> {
     const onEnd = () => {
       if (resolved) return
       resolved = true
-      element.style.display = 'none'
+      element.classList.remove('collecting')
       element.removeEventListener('animationend', onEnd)
       resolve()
     }

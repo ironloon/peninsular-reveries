@@ -129,21 +129,7 @@ export function setupInput(
       }
     }
 
-    // If no item in exact direction, wrap around to nearest
-    if (!best) {
-      for (const candidate of candidates) {
-        if (candidate === current) continue
-        const rect = candidate.getBoundingClientRect()
-        const px = rect.left + rect.width / 2
-        const py = rect.top + rect.height / 2
-        const dist = Math.sqrt((px - cx) ** 2 + (py - cy) ** 2)
-        if (dist < bestDist) {
-          bestDist = dist
-          best = candidate
-        }
-      }
-    }
-
+    // No wrap-around — if nothing in that direction, stay put
     return best
   }
 
@@ -313,8 +299,14 @@ export function setupInput(
 
     if (inScene) {
       if (direction === 'ArrowLeft' || direction === 'ArrowRight') {
-        // Stay within scene items
-        const nearest = findNearestInDirection(focused, sceneItems, direction)
+        // Stay within scene items (skip collected)
+        // If current item is collected, use it as reference but search among uncollected
+        const candidates = focused.classList.contains('collected')
+          ? sceneItems
+          : sceneItems.filter(el => el !== focused)
+        const nearest = candidates.length > 0
+          ? (findNearestInDirection(focused, sceneItems, direction) ?? sceneItems[0])
+          : null
         if (nearest) gamepadFocus(nearest)
       } else if (direction === 'ArrowDown') {
         // Move to tiles zone, or check button if no tiles
