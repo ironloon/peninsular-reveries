@@ -320,7 +320,19 @@ export function setupInput(
     }
   }
 
+  function isCelebrationVisible(): boolean {
+    const popup = document.getElementById('celebration-popup')
+    return popup !== null && !popup.hidden
+  }
+
+  function dismissCelebration(): boolean {
+    if (!isCelebrationVisible()) return false
+    document.getElementById('celebration-continue-btn')?.click()
+    return true
+  }
+
   function handleContextStart(): void {
+    if (dismissCelebration()) return
     const screen = getActiveScreen()
     if (screen === 'start-screen') startBtn.click()
     else if (screen === 'win-screen') replayBtn.click()
@@ -390,6 +402,7 @@ export function setupInput(
         const screen = getActiveScreen()
         switch (i) {
           case 0: // A — activate/select
+            if (dismissCelebration()) break
             if (screen === 'game-screen') activateFocusedItem()
             break
           case 1: // B — check answer

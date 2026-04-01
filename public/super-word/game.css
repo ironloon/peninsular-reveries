@@ -706,7 +706,7 @@ body.gamepad-active .letter-tile:focus {
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.35);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .celebration-popup[hidden] {
@@ -750,6 +750,11 @@ body.gamepad-active .letter-tile:focus {
   font-weight: 800;
   display: inline-block;
   animation: solvedPop 450ms ease backwards;
+}
+
+.celebration-continue {
+  margin-top: var(--game-space-md);
+  font-size: clamp(1rem, 4vw, 1.4rem);
 }
 
 /* ── Scene Slide Transitions ──────────────────────────────── */

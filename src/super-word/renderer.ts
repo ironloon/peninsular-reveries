@@ -184,10 +184,10 @@ export function showToast(message: string, duration: number): void {
 export function showCelebrationPopup(
   word: string,
   onComplete: () => void,
-  duration = 1500,
 ): void {
   const popup = document.getElementById('celebration-popup')!
   const wordContainer = document.getElementById('celebration-word')!
+  const continueBtn = document.getElementById('celebration-continue-btn')!
 
   wordContainer.innerHTML = ''
   for (let i = 0; i < word.length; i++) {
@@ -202,18 +202,20 @@ export function showCelebrationPopup(
   popup.classList.add('show')
   popup.classList.remove('hiding')
 
-  const reducedMotion = isReducedMotion()
-  const showDuration = reducedMotion ? 800 : duration
-  const fadeOutDuration = reducedMotion ? 0 : 200
+  continueBtn.focus()
 
-  setTimeout(() => {
+  const dismiss = () => {
+    continueBtn.removeEventListener('click', dismiss)
+    const fadeOutDuration = isReducedMotion() ? 0 : 200
     popup.classList.add('hiding')
     setTimeout(() => {
       popup.hidden = true
       popup.classList.remove('show', 'hiding')
       onComplete()
     }, fadeOutDuration)
-  }, showDuration)
+  }
+
+  continueBtn.addEventListener('click', dismiss)
 }
 
 export function slideSceneTransition(
