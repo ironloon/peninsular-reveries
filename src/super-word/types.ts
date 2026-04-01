@@ -14,8 +14,6 @@ export interface Puzzle {
   readonly answer: string
   readonly difficulty: Difficulty
   readonly prompt: string
-  readonly hint: string
-  readonly hintEmoji: string
   readonly items: readonly SceneItem[]
 }
 
@@ -36,7 +34,6 @@ export interface GameState {
   readonly currentPuzzleIndex: number
   readonly collectedLetters: readonly CollectedLetter[]
   readonly score: number
-  readonly hintUsed: boolean
   readonly selectedTileIndex: number | null
   readonly dragState: DragState | null
   readonly completed: readonly boolean[]

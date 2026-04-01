@@ -232,19 +232,18 @@ export function slideSceneTransition(
   }, 400)
 }
 
-export function renderWinScreen(state: GameState, hintUsedPerPuzzle: boolean[]): void {
+export function renderWinScreen(state: GameState): void {
   getFinalScore().textContent = `⭐ ${state.score}`
 
   // Generate share text
   const maxScore = state.completed.length * 10
-  const stars = hintUsedPerPuzzle.map(used => used ? '💡' : '⭐').join('')
+  const stars = '⭐'.repeat(state.completed.length)
   const shareText = `Super Word 🔤 ${state.score}/${maxScore} ${stars}`
 
-  // Encode results for share URL
-  const hintBits = hintUsedPerPuzzle.map(h => h ? '1' : '0').join('')
-  const shareData = `${state.score},${hintBits}`
-  const encoded = btoa(shareData)
+  // Share URL
   const baseUrl = window.location.origin + window.location.pathname
+  const shareData = `${state.score}`
+  const encoded = btoa(shareData)
   const shareUrl = `${baseUrl}?s=${encoded}`
   const fullShareText = `${shareText}\n${shareUrl}`
 

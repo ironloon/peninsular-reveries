@@ -48,13 +48,12 @@
         </div>
         <div class="game-header-right">
           <span id="letters-count" class="letters-count">0 / 3</span>
-          <button id="settings-open" class="btn btn-settings" aria-label="Settings">⚙️</button>
+
         </div>
       </div>
       <div class="prompt-bubble">
         <span id="prompt-text" role="status">Find the letters!</span>
       </div>
-      <div id="hint-text" class="hint-text"></div>
       <div id="scene-wrapper">
         <div id="scene" role="group" aria-label="Find letters in the scene"></div>
       </div>
@@ -98,20 +97,6 @@
         <div class="puzzle-creator-actions">
           <button id="puzzle-play-btn" class="btn btn-primary puzzle-play-btn">▶️ Play!</button>
           <button id="puzzle-creator-close" class="btn puzzle-creator-close-btn">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Settings Modal -->
-    <div id="settings-modal" class="settings-modal" hidden>
-      <div class="settings-content">
-        <h2 class="settings-heading">⚙️ Settings</h2>
-        <label class="settings-toggle">
-          <input type="checkbox" id="settings-hints" checked>
-          <span>Show hints</span>
-        </label>
-        <div class="settings-actions">
-          <button id="settings-close" class="btn btn-primary settings-close-btn">Done</button>
         </div>
       </div>
     </div>

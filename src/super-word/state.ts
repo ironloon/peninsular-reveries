@@ -5,7 +5,6 @@ export function createInitialState(puzzleCount: number, wowMode: boolean): GameS
     currentPuzzleIndex: 0,
     collectedLetters: [],
     score: 0,
-    hintUsed: false,
     selectedTileIndex: null,
     dragState: null,
     completed: Array(puzzleCount).fill(false) as readonly boolean[],
@@ -49,7 +48,7 @@ export function checkAnswer(state: GameState, puzzle: Puzzle): { correct: boolea
   if (!correct) {
     return { correct, newState: state }
   }
-  const points = state.hintUsed ? 5 : 10
+  const points = 10
   const completed = state.completed.map((v, i) => (i === state.currentPuzzleIndex ? true : v))
   return {
     correct,
@@ -61,16 +60,11 @@ export function checkAnswer(state: GameState, puzzle: Puzzle): { correct: boolea
   }
 }
 
-export function useHint(state: GameState): GameState {
-  return { ...state, hintUsed: true }
-}
-
 export function advancePuzzle(state: GameState): GameState {
   return {
     ...state,
     currentPuzzleIndex: state.currentPuzzleIndex + 1,
     collectedLetters: [],
-    hintUsed: false,
     selectedTileIndex: null,
   }
 }

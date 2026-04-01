@@ -31,10 +31,6 @@ export function announceCorrectAnswer(word: string): void {
   announce(`Correct! You spelled ${word}!`, 'assertive')
 }
 
-export function announceHint(hint: string): void {
-  announce(`Hint: ${hint}`, 'polite')
-}
-
 export function announceNextPuzzle(puzzleNum: number, total: number, prompt: string): void {
   announce(`Puzzle ${puzzleNum} of ${total}. ${prompt}`, 'polite')
 }

@@ -6,7 +6,6 @@ export interface InputCallbacks {
   onTileSelected: (index: number) => void
   onLettersSwapped: (indexA: number, indexB: number) => void
   onCheckAnswer: () => void
-  onHintRequested: () => void
   onNextPuzzle: () => void
   onStartGame: () => void
   onPlayAgain: () => void
@@ -406,8 +405,7 @@ export function setupInput(
           case 1: // B — check answer
             if (screen === 'game-screen' && !checkBtn.hasAttribute('disabled')) callbacks.onCheckAnswer()
             break
-          case 2: // X — hint
-            if (screen === 'game-screen') callbacks.onHintRequested()
+          case 2: // X — unused
             break
           case 4: // Left bumper — tile left
             if (screen === 'game-screen') navigateTiles(-1)
