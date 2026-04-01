@@ -367,7 +367,7 @@ export function renderPuzzleCreator(onPlay: () => void): void {
       const chip = document.createElement('button')
       chip.type = 'button'
       chip.className = 'puzzle-suggestion-chip'
-      chip.textContent = `${puzzle.answer} (${puzzle.difficulty}) — ${puzzle.hintEmoji} ${puzzle.hint}`
+      chip.textContent = `${puzzle.answer} (${puzzle.difficulty})`
       chip.addEventListener('click', () => {
         const words = wordsInput!.value.split(',').map(w => w.trim()).filter(Boolean)
         words[words.length - 1] = puzzle.answer

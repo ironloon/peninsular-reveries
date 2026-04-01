@@ -42,6 +42,15 @@ import {
   animateFlyToNotepad,
   isReducedMotion,
 } from './animations.js'
+import {
+  sfxCollect,
+  sfxDistractor,
+  sfxCorrect,
+  sfxWrong,
+  sfxWin,
+  sfxButton,
+  sfxSwap,
+} from './sounds.js'
 
 // ── URL Parameter Parsing ─────────────────────────────────
 const params = new URLSearchParams(window.location.search)
@@ -98,6 +107,7 @@ function refreshGameScreen(): void {
 // ── Game Flow — InputCallbacks ────────────────────────────
 
 function onStartGame(): void {
+  sfxButton()
   // Read puzzle creator settings
   const wordsInput = document.getElementById('puzzle-words') as HTMLInputElement | null
   const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
@@ -133,6 +143,7 @@ function onStartGame(): void {
 }
 
 function onLetterCollected(item: SceneItem): void {
+  sfxCollect()
   setState(collectLetter(getState(), item.char!, item.id))
 
   const sceneItem = sceneEl.querySelector(`[data-item-id="${item.id}"]`) as HTMLElement | null
@@ -177,6 +188,7 @@ function onLetterCollected(item: SceneItem): void {
 }
 
 function onDistractorClicked(item: SceneItem): void {
+  sfxDistractor()
   if (isReducedMotion()) {
     // No animation fallback — accessibility announcement handles feedback
   } else {
@@ -209,6 +221,7 @@ function onTileSelected(index: number): void {
 }
 
 function onLettersSwapped(indexA: number, indexB: number): void {
+  sfxSwap()
   setState(swapLetters(getState(), indexA, indexB))
   renderLetterSlots(getState(), currentPuzzle(), slotsEl)
 
@@ -227,6 +240,7 @@ function onCheckAnswer(): void {
   setState(newState)
 
   if (!correct) {
+    sfxWrong()
     if (isReducedMotion()) {
       // No animation fallback — accessibility announcement handles feedback
     } else {
@@ -237,10 +251,12 @@ function onCheckAnswer(): void {
     return
   }
 
+  sfxCorrect()
   announceCorrectAnswer(currentPuzzle().answer)
 
   const isLastPuzzle = getState().currentPuzzleIndex >= activePuzzles.length - 1
   if (isLastPuzzle) {
+    sfxWin()
     renderWinScreen(getState())
     showScreen('win-screen')
     announceGameWin(getState().score)
@@ -279,6 +295,7 @@ function onNextPuzzle(): void {
 }
 
 function onPlayAgain(): void {
+  sfxButton()
   setState(resetGame(getState()))
   showScreen('start-screen')
   moveFocusAfterTransition('start-btn', 300)

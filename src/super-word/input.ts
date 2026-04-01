@@ -278,8 +278,38 @@ export function setupInput(
   let stickCooldown = 0
 
   // Remove gamepad-active on mouse/keyboard
-  document.addEventListener('mousemove', () => document.body.classList.remove('gamepad-active'), { once: false })
-  document.addEventListener('keydown', () => document.body.classList.remove('gamepad-active'), { once: false })
+  const gpPrompts = document.getElementById('gamepad-prompts')
+  document.addEventListener('mousemove', () => {
+    document.body.classList.remove('gamepad-active')
+    if (gpPrompts) gpPrompts.hidden = true
+  }, { once: false })
+  document.addEventListener('keydown', () => {
+    document.body.classList.remove('gamepad-active')
+    if (gpPrompts) gpPrompts.hidden = true
+  }, { once: false })
+
+  let lastPromptScreen = ''
+
+  function updateGamepadPrompts(screen: string | null): void {
+    if (!gpPrompts) return
+    const key = screen ?? ''
+    if (key === lastPromptScreen) return
+    lastPromptScreen = key
+
+    if (screen === 'game-screen') {
+      gpPrompts.innerHTML =
+        '<span class="gp-prompt"><span class="gp-btn gp-btn-dpad">D</span> Move</span>' +
+        '<span class="gp-prompt"><span class="gp-btn gp-btn-a">A</span> Pick</span>' +
+        '<span class="gp-prompt"><span class="gp-btn gp-btn-b">B</span> Check</span>' +
+        '<span class="gp-prompt"><span class="gp-btn gp-btn-lb">LB</span><span class="gp-btn gp-btn-rb">RB</span> Tiles</span>' +
+        '<span class="gp-prompt"><span class="gp-btn gp-btn-lt">LT</span><span class="gp-btn gp-btn-rt">RT</span> Swap</span>'
+    } else if (screen === 'start-screen' || screen === 'win-screen') {
+      gpPrompts.innerHTML =
+        '<span class="gp-prompt"><span class="gp-btn gp-btn-start">Start</span> Play</span>'
+    } else {
+      gpPrompts.innerHTML = ''
+    }
+  }
 
   function getActiveScreen(): string | null {
     const active = document.querySelector('.screen.active') as HTMLElement | null
@@ -389,6 +419,19 @@ export function setupInput(
     }
 
     document.body.classList.add('gamepad-active')
+    if (gpPrompts) {
+      gpPrompts.hidden = false
+      if (isCelebrationVisible()) {
+        if (lastPromptScreen !== 'celebration') {
+          lastPromptScreen = 'celebration'
+          gpPrompts.innerHTML =
+            '<span class="gp-prompt"><span class="gp-btn gp-btn-a">A</span> Continue</span>' +
+            '<span class="gp-prompt"><span class="gp-btn gp-btn-start">Start</span> Continue</span>'
+        }
+      } else {
+        updateGamepadPrompts(getActiveScreen())
+      }
+    }
 
     // Button press detection (edge-triggered)
     for (let i = 0; i < gp.buttons.length; i++) {
@@ -397,6 +440,7 @@ export function setupInput(
 
       if (pressed && !wasPressed) {
         const screen = getActiveScreen()
+
         switch (i) {
           case 0: // A — activate/select
             if (dismissCelebration()) break

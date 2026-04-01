@@ -408,6 +408,60 @@ body.gamepad-active .letter-tile:focus {
   outline-offset: 2px;
 }
 
+/* ── Gamepad Button Prompts ───────────────────────────────── */
+
+.gamepad-prompts {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: var(--game-space-md);
+  padding: var(--game-space-xs) var(--game-space-md);
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--game-white);
+  font-family: var(--game-font);
+  font-size: 0.75rem;
+  font-weight: 700;
+  z-index: 100;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+.gamepad-prompts[hidden] {
+  display: none;
+}
+
+.gp-prompt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.9;
+}
+
+.gp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.gp-btn-a { background: #4CAF50; color: white; }
+.gp-btn-b { background: #f44336; color: white; }
+.gp-btn-x { background: #2196F3; color: white; }
+.gp-btn-y { background: #FFC107; color: #333; }
+.gp-btn-start { background: rgba(255,255,255,0.25); color: white; font-size: 0.55rem; border-radius: 4px; width: auto; padding: 0 6px; }
+.gp-btn-lb, .gp-btn-rb { background: rgba(255,255,255,0.25); color: white; font-size: 0.6rem; border-radius: 4px; width: auto; padding: 0 5px; }
+.gp-btn-lt, .gp-btn-rt { background: rgba(255,255,255,0.25); color: white; font-size: 0.6rem; border-radius: 4px; width: auto; padding: 0 5px; }
+.gp-btn-dpad { background: rgba(255,255,255,0.25); color: white; font-size: 0.6rem; border-radius: 4px; width: auto; padding: 0 5px; }
+
 .item-emoji {
   font-size: clamp(1.6rem, 5vw, 2.1rem);
   line-height: 1;
@@ -613,8 +667,10 @@ body.gamepad-active .letter-tile:focus {
   background: linear-gradient(140deg, #BF360C 0%, #E65100 55%, #FFD54F 100%);
   color: var(--game-white);
   text-align: center;
-  gap: var(--game-space-lg);
-  padding: var(--game-space-xl);
+  gap: var(--game-space-md);
+  padding: var(--game-space-lg);
+  justify-content: safe center;
+  overflow-y: auto;
 }
 
 .win-trophy {
