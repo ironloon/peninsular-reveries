@@ -78,7 +78,8 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260331-qhk | Add large puzzle pool with difficulty ratings and random selection | 2026-03-31 | 82390cd | [260331-qhk-add-large-puzzle-pool-with-difficulty-ra](./quick/260331-qhk-add-large-puzzle-pool-with-difficulty-ra/) |
 | 260331-rey | Puzzle creator, letter fix, hint UX, gamepad support | 2026-03-31 | 1c954c6 | [260331-rey-super-word-hash-generator-tool-letter-di](./quick/260331-rey-super-word-hash-generator-tool-letter-di/) |
+| 260331-rrj | Celebration popup + scene-sliding transitions | 2026-03-31 | de8ba0d | [260331-rrj-gamepad-snap-navigation-and-scene-slidin](./quick/260331-rrj-gamepad-snap-navigation-and-scene-slidin/) |
 
 ## Session Continuity
 
-Last activity: 2026-03-31 - Completed quick task 260331-rey: Puzzle creator, letter fix, hint UX, gamepad support
+Last activity: 2026-03-31 - Completed quick task 260331-rrj: Celebration popup + scene-sliding transitions
