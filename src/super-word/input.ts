@@ -278,38 +278,12 @@ export function setupInput(
   let stickCooldown = 0
 
   // Remove gamepad-active on mouse/keyboard
-  const gpPrompts = document.getElementById('gamepad-prompts')
   document.addEventListener('mousemove', () => {
     document.body.classList.remove('gamepad-active')
-    if (gpPrompts) gpPrompts.hidden = true
   }, { once: false })
   document.addEventListener('keydown', () => {
     document.body.classList.remove('gamepad-active')
-    if (gpPrompts) gpPrompts.hidden = true
   }, { once: false })
-
-  let lastPromptScreen = ''
-
-  function updateGamepadPrompts(screen: string | null): void {
-    if (!gpPrompts) return
-    const key = screen ?? ''
-    if (key === lastPromptScreen) return
-    lastPromptScreen = key
-
-    if (screen === 'game-screen') {
-      gpPrompts.innerHTML =
-        '<span class="gp-prompt"><span class="gp-btn gp-btn-dpad">D</span> Move</span>' +
-        '<span class="gp-prompt"><span class="gp-btn gp-btn-a">A</span> Pick</span>' +
-        '<span class="gp-prompt"><span class="gp-btn gp-btn-b">B</span> Check</span>' +
-        '<span class="gp-prompt"><span class="gp-btn gp-btn-lb">LB</span><span class="gp-btn gp-btn-rb">RB</span> Tiles</span>' +
-        '<span class="gp-prompt"><span class="gp-btn gp-btn-lt">LT</span><span class="gp-btn gp-btn-rt">RT</span> Swap</span>'
-    } else if (screen === 'start-screen' || screen === 'win-screen') {
-      gpPrompts.innerHTML =
-        '<span class="gp-prompt"><span class="gp-btn gp-btn-start">Start</span> Play</span>'
-    } else {
-      gpPrompts.innerHTML = ''
-    }
-  }
 
   function getActiveScreen(): string | null {
     const active = document.querySelector('.screen.active') as HTMLElement | null
@@ -363,36 +337,10 @@ export function setupInput(
     const screen = getActiveScreen()
     if (screen === 'start-screen') startBtn.click()
     else if (screen === 'win-screen') replayBtn.click()
-  }
-
-  function navigateTiles(direction: number): void {
-    const state = getState()
-    if (state.collectedLetters.length === 0) return
-
-    const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
-    const focused = document.activeElement as HTMLElement
-    const currentIdx = tiles.indexOf(focused)
-
-    if (currentIdx < 0) {
-      tiles[0]?.focus()
-      return
-    }
-
-    const nextIdx = currentIdx + direction
-    if (nextIdx >= 0 && nextIdx < tiles.length) {
-      tiles[nextIdx].focus()
-    }
-  }
-
-  function swapFocusedTile(direction: number): void {
-    const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
-    const focused = document.activeElement as HTMLElement
-    const currentIdx = tiles.indexOf(focused)
-    if (currentIdx < 0) return
-
-    const targetIdx = currentIdx + direction
-    if (targetIdx >= 0 && targetIdx < tiles.length) {
-      callbacks.onLettersSwapped(currentIdx, targetIdx)
+    else if (screen === 'game-screen') {
+      // Toggle settings modal during gameplay
+      const toggle = (window as any).__settingsToggle
+      if (typeof toggle === 'function') toggle()
     }
   }
 
@@ -419,19 +367,6 @@ export function setupInput(
     }
 
     document.body.classList.add('gamepad-active')
-    if (gpPrompts) {
-      gpPrompts.hidden = false
-      if (isCelebrationVisible()) {
-        if (lastPromptScreen !== 'celebration') {
-          lastPromptScreen = 'celebration'
-          gpPrompts.innerHTML =
-            '<span class="gp-prompt"><span class="gp-btn gp-btn-a">A</span> Continue</span>' +
-            '<span class="gp-prompt"><span class="gp-btn gp-btn-start">Start</span> Continue</span>'
-        }
-      } else {
-        updateGamepadPrompts(getActiveScreen())
-      }
-    }
 
     // Button press detection (edge-triggered)
     for (let i = 0; i < gp.buttons.length; i++) {
@@ -445,23 +380,6 @@ export function setupInput(
           case 0: // A — activate/select
             if (dismissCelebration()) break
             if (screen === 'game-screen') activateFocusedItem()
-            break
-          case 1: // B — check answer
-            if (screen === 'game-screen' && !checkBtn.hasAttribute('disabled')) callbacks.onCheckAnswer()
-            break
-          case 2: // X — unused
-            break
-          case 4: // Left bumper — tile left
-            if (screen === 'game-screen') navigateTiles(-1)
-            break
-          case 5: // Right bumper — tile right
-            if (screen === 'game-screen') navigateTiles(1)
-            break
-          case 6: // Left trigger — swap tile left
-            if (screen === 'game-screen') swapFocusedTile(-1)
-            break
-          case 7: // Right trigger — swap tile right
-            if (screen === 'game-screen') swapFocusedTile(1)
             break
           case 9: // Start — context-sensitive
             handleContextStart()

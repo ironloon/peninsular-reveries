@@ -35,7 +35,7 @@
       </div>
       <p class="subtitle">Find hidden letters and solve the word puzzle!</p>
       <button id="start-btn" class="btn btn-primary">Let's Go! 🚀</button>
-      <button id="puzzle-creator-open" class="puzzle-creator-toggle-btn">🛠️ Puzzle Creator</button>
+      <button id="settings-open" class="settings-toggle-btn" aria-label="Settings">⚙️ Settings</button>
       <p class="inspiration">Inspired by <a href="https://pbskids.org/superwhy" target="_blank" rel="noopener">Super Why!</a> from PBS Kids</p>
     </div>
 
@@ -76,27 +76,56 @@
       </div>
     </div>
 
-    <!-- Puzzle Creator Modal -->
-    <div id="puzzle-creator-modal" class="puzzle-creator-modal" hidden>
-      <div class="puzzle-creator-content">
-        <h2 class="puzzle-creator-heading">🛠️ Puzzle Creator</h2>
-        <label for="puzzle-words">Words (comma-separated):</label>
-        <input type="text" id="puzzle-words" class="puzzle-input" placeholder="CAT, DOG, SUN" autocomplete="off">
-        <div id="puzzle-suggestions" class="puzzle-suggestions"></div>
-        <div class="puzzle-options-row">
-          <label for="puzzle-difficulty-select">Difficulty:</label>
-          <select id="puzzle-difficulty-select" class="puzzle-select">
-            <option value="">Any</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-          <label for="puzzle-count-input">Count:</label>
-          <input type="number" id="puzzle-count-input" class="puzzle-input puzzle-input-small" min="1" max="50" placeholder="5">
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="settings-modal" hidden>
+      <div class="settings-content">
+        <h2 class="settings-heading">⚙️ Settings</h2>
+
+        <!-- Controls Reference -->
+        <div class="settings-section">
+          <h3 class="settings-section-title">🎮 Controls</h3>
+          <div class="controls-grid">
+            <div class="controls-column">
+              <h4>Keyboard / Touch</h4>
+              <ul class="controls-list">
+                <li>Click or tap items to collect</li>
+                <li>Arrow keys to navigate</li>
+                <li>Drag tiles to reorder</li>
+              </ul>
+            </div>
+            <div class="controls-column">
+              <h4>Gamepad</h4>
+              <ul class="controls-list">
+                <li><kbd>D-pad</kbd> Move between items</li>
+                <li><kbd>A</kbd> Pick up / Select</li>
+                <li><kbd>Start</kbd> Play / Settings</li>
+              </ul>
+            </div>
+          </div>
         </div>
-        <div class="puzzle-creator-actions">
-          <button id="puzzle-play-btn" class="btn btn-primary puzzle-play-btn">▶️ Play!</button>
-          <button id="puzzle-creator-close" class="btn puzzle-creator-close-btn">Cancel</button>
+
+        <!-- Puzzle Creator -->
+        <div class="settings-section">
+          <h3 class="settings-section-title">🛠️ Puzzle Creator</h3>
+          <label for="puzzle-words">Words (comma-separated):</label>
+          <input type="text" id="puzzle-words" class="puzzle-input" placeholder="CAT, DOG, SUN" autocomplete="off">
+          <div id="puzzle-suggestions" class="puzzle-suggestions"></div>
+          <div class="puzzle-options-row">
+            <label for="puzzle-difficulty-select">Difficulty:</label>
+            <select id="puzzle-difficulty-select" class="puzzle-select">
+              <option value="">Any</option>
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+            <label for="puzzle-count-input">Count:</label>
+            <input type="number" id="puzzle-count-input" class="puzzle-input puzzle-input-small" min="1" max="50" placeholder="5">
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button id="settings-play-btn" class="btn btn-primary settings-play-btn">▶️ Play!</button>
+          <button id="settings-close" class="btn settings-close-btn">Close</button>
         </div>
       </div>
     </div>
@@ -121,10 +150,6 @@
     </div>
 
     </div><!-- /.scene-track -->
-
-    <!-- Gamepad Button Prompts -->
-    <div id="gamepad-prompts" class="gamepad-prompts" hidden>
-    </div>
 
     <!-- Accessibility: aria-live regions -->
     <div id="game-status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
