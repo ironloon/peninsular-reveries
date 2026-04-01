@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: v1.0 milestone complete
 stopped_at: Phase 6 context gathered
-last_updated: "2026-03-29T13:38:46.376Z"
+last_updated: "2026-04-01T00:22:27.237Z"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -78,6 +78,7 @@ None yet.
 |---|-------------|------|--------|-----------|
 | 260331-qhk | Add large puzzle pool with difficulty ratings and random selection | 2026-03-31 | 82390cd | [260331-qhk-add-large-puzzle-pool-with-difficulty-ra](./quick/260331-qhk-add-large-puzzle-pool-with-difficulty-ra/) |
 | 260331-rey | Puzzle creator, letter fix, hint UX, gamepad support | 2026-03-31 | 1c954c6 | [260331-rey-super-word-hash-generator-tool-letter-di](./quick/260331-rey-super-word-hash-generator-tool-letter-di/) |
+| 260331-sap | Remove toast system and unused functions/params from Super Word | 2026-04-01 | 8e52eab | [260331-sap-remove-toast-system-and-unused-functions](./quick/260331-sap-remove-toast-system-and-unused-functions/) |
 | 260331-rrj | Celebration popup + scene-sliding transitions | 2026-03-31 | de8ba0d | [260331-rrj-gamepad-snap-navigation-and-scene-slidin](./quick/260331-rrj-gamepad-snap-navigation-and-scene-slidin/) |
 
 ## Session Continuity
