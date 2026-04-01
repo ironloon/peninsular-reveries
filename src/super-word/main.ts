@@ -30,7 +30,6 @@ import {
   announceLettersSwapped,
   announceWrongAnswer,
   announceCorrectAnswer,
-  announceHint,
   announceNextPuzzle,
   announceGameWin,
   moveFocusAfterTransition,
@@ -79,6 +78,9 @@ const hasUrlParams = !!(puzzleFilterParam || validDifficulty || countParam)
 let gameState: GameState = createInitialState(activePuzzles.length, wowModeParam)
 const hintUsedPerPuzzle: boolean[] = []
 
+// ── Settings ──────────────────────────────────────────────
+let hintsEnabled = localStorage.getItem('super-word-hints') !== 'off'
+
 function getState(): GameState { return gameState }
 function setState(newState: GameState): void { gameState = newState }
 function currentPuzzle(): Puzzle { return activePuzzles[gameState.currentPuzzleIndex] }
@@ -97,15 +99,22 @@ function refreshGameScreen(): void {
   renderGameHeader(state, puzzle, state.currentPuzzleIndex, activePuzzles.length)
   setCheckButtonEnabled(state.collectedLetters.length === puzzle.answer.length)
 
-  // Reset hint display for new puzzle
+  // Show hint automatically if hints are enabled
   const hintEl = document.getElementById('hint-text')
-  const hintBtnEl = document.getElementById('hint-btn')
   if (hintEl) {
-    hintEl.hidden = true
-    hintEl.textContent = ''
-    hintEl.classList.remove('hint-visible')
+    if (hintsEnabled) {
+      const puzzle = currentPuzzle()
+      hintEl.textContent = puzzle.hintEmoji + ' ' + puzzle.hint
+      hintEl.hidden = false
+      hintEl.classList.add('hint-visible')
+      // Mark hint as used for scoring since it's auto-shown
+      setState(useHint(getState()))
+    } else {
+      hintEl.hidden = true
+      hintEl.textContent = ''
+      hintEl.classList.remove('hint-visible')
+    }
   }
-  if (hintBtnEl) hintBtnEl.textContent = '💡 Hint'
 }
 
 // ── Game Flow — InputCallbacks ────────────────────────────
@@ -283,25 +292,8 @@ function onCheckAnswer(): void {
 }
 
 function onHintRequested(): void {
+  // Hints are now shown automatically — this just marks hint as "used" for scoring
   setState(useHint(getState()))
-  const puzzle = currentPuzzle()
-  announceHint(puzzle.hint)
-
-  const hintEl = document.getElementById('hint-text')
-  const hintBtnEl = document.getElementById('hint-btn')
-  if (hintEl) {
-    const isVisible = !hintEl.hidden
-    if (isVisible) {
-      hintEl.hidden = true
-      hintEl.classList.remove('hint-visible')
-      if (hintBtnEl) hintBtnEl.textContent = '💡 Hint'
-    } else {
-      hintEl.textContent = puzzle.hintEmoji + ' ' + puzzle.hint
-      hintEl.hidden = false
-      hintEl.classList.add('hint-visible')
-      if (hintBtnEl) hintBtnEl.textContent = '💡 Hide Hint'
-    }
-  }
 }
 
 function onNextPuzzle(): void {
@@ -343,4 +335,58 @@ const callbacks: InputCallbacks = {
 
 setupInput(getState, setState, currentPuzzle, callbacks)
 renderPuzzleCreator(onStartGame)
+
+// ── Settings Modal ────────────────────────────────────────
+{
+  const settingsModal = document.getElementById('settings-modal')!
+  const settingsOpen = document.getElementById('settings-open')!
+  const settingsClose = document.getElementById('settings-close')!
+  const hintsCheckbox = document.getElementById('settings-hints') as HTMLInputElement
+
+  hintsCheckbox.checked = hintsEnabled
+
+  settingsOpen.addEventListener('click', () => {
+    settingsModal.hidden = false
+    hintsCheckbox.focus()
+  })
+
+  function closeSettings(): void {
+    settingsModal.hidden = true
+    settingsOpen.focus()
+  }
+
+  settingsClose.addEventListener('click', closeSettings)
+
+  settingsModal.addEventListener('click', (e) => {
+    if (e.target === settingsModal) closeSettings()
+  })
+
+  settingsModal.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      closeSettings()
+    }
+  })
+
+  hintsCheckbox.addEventListener('change', () => {
+    hintsEnabled = hintsCheckbox.checked
+    localStorage.setItem('super-word-hints', hintsEnabled ? 'on' : 'off')
+    // Update current hint display immediately
+    const hintEl = document.getElementById('hint-text')
+    if (hintEl) {
+      if (hintsEnabled) {
+        const puzzle = currentPuzzle()
+        hintEl.textContent = puzzle.hintEmoji + ' ' + puzzle.hint
+        hintEl.hidden = false
+        hintEl.classList.add('hint-visible')
+        setState(useHint(getState()))
+      } else {
+        hintEl.hidden = true
+        hintEl.textContent = ''
+        hintEl.classList.remove('hint-visible')
+      }
+    }
+  })
+}
+
 showScreen('start-screen')
