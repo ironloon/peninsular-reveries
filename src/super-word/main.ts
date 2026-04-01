@@ -16,7 +16,8 @@ import {
   renderGameHeader,
   showScreen,
   showToast,
-  renderCompleteScreen,
+  showCelebrationPopup,
+  slideSceneTransition,
   renderWinScreen,
   setCheckButtonEnabled,
   renderPuzzleCreator,
@@ -40,7 +41,6 @@ import {
   animateItemShake,
   animateTileAppear,
   animateTileWrongShake,
-  animateSolvedLetters,
   setWowMode,
   animateFlyToNotepad,
   isReducedMotion,
@@ -244,10 +244,23 @@ function onCheckAnswer(): void {
     announceGameWin(getState().score)
     moveFocusAfterTransition('replay-btn', 300)
   } else {
-    renderCompleteScreen(currentPuzzle(), getState())
-    showScreen('complete-screen')
-    animateSolvedLetters(document.getElementById('solved-word')!)
-    moveFocusAfterTransition('next-btn', 300)
+    const solvedWord = currentPuzzle().answer
+    showCelebrationPopup(solvedWord, () => {
+      slideSceneTransition(
+        () => {
+          setState(advancePuzzle(getState()))
+          refreshGameScreen()
+        },
+        () => {
+          announceNextPuzzle(
+            getState().currentPuzzleIndex + 1,
+            activePuzzles.length,
+            currentPuzzle().prompt,
+          )
+          moveFocusAfterTransition('scene', 300)
+        },
+      )
+    })
   }
 }
 

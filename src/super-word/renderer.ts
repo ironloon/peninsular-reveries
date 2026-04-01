@@ -181,6 +181,70 @@ export function showToast(message: string, duration: number): void {
   }, duration)
 }
 
+export function showCelebrationPopup(
+  word: string,
+  onComplete: () => void,
+  duration = 1500,
+): void {
+  const popup = document.getElementById('celebration-popup')!
+  const wordContainer = document.getElementById('celebration-word')!
+
+  wordContainer.innerHTML = ''
+  for (let i = 0; i < word.length; i++) {
+    const span = document.createElement('span')
+    span.className = 'solved-letter'
+    span.textContent = word[i]
+    span.style.animationDelay = `${i * 0.1}s`
+    wordContainer.appendChild(span)
+  }
+
+  popup.hidden = false
+  popup.classList.add('show')
+  popup.classList.remove('hiding')
+
+  const reducedMotion = isReducedMotion()
+  const showDuration = reducedMotion ? 800 : duration
+  const fadeOutDuration = reducedMotion ? 0 : 200
+
+  setTimeout(() => {
+    popup.classList.add('hiding')
+    setTimeout(() => {
+      popup.hidden = true
+      popup.classList.remove('show', 'hiding')
+      onComplete()
+    }, fadeOutDuration)
+  }, showDuration)
+}
+
+export function slideSceneTransition(
+  refreshCallback: () => void,
+  onComplete: () => void,
+): void {
+  const gameScreen = document.getElementById('game-screen')!
+
+  if (isReducedMotion()) {
+    refreshCallback()
+    onComplete()
+    return
+  }
+
+  // Slide current scene out to the left
+  gameScreen.classList.add('scene-slide-out')
+
+  setTimeout(() => {
+    // Swap content while off-screen
+    gameScreen.classList.remove('scene-slide-out')
+    refreshCallback()
+
+    // Slide new scene in from the right
+    gameScreen.classList.add('scene-slide-in')
+    setTimeout(() => {
+      gameScreen.classList.remove('scene-slide-in')
+      onComplete()
+    }, 400)
+  }, 400)
+}
+
 export function renderCompleteScreen(puzzle: Puzzle, state: GameState): void {
   const container = getSolvedWord()
   container.innerHTML = ''

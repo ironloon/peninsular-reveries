@@ -275,7 +275,7 @@ export function setupInput(
   replayBtn.addEventListener('click', () => callbacks.onPlayAgain())
 
   // ── Gamepad support (Xbox Bluetooth controller) ─────────
-  const DEADZONE = 0.5
+  const STICK_THRESHOLD = 0.5
   const prevButtons: boolean[] = []
   let prevStickDir = ''
   let stickCooldown = 0
@@ -323,7 +323,6 @@ export function setupInput(
   function handleContextStart(): void {
     const screen = getActiveScreen()
     if (screen === 'start-screen') startBtn.click()
-    else if (screen === 'complete-screen') nextBtn.click()
     else if (screen === 'win-screen') replayBtn.click()
   }
 
@@ -440,7 +439,7 @@ export function setupInput(
       const ly = gp.axes[1]
       let dir = ''
 
-      if (Math.abs(lx) > DEADZONE || Math.abs(ly) > DEADZONE) {
+      if (Math.abs(lx) > STICK_THRESHOLD || Math.abs(ly) > STICK_THRESHOLD) {
         if (Math.abs(lx) > Math.abs(ly)) {
           dir = lx > 0 ? 'ArrowRight' : 'ArrowLeft'
         } else {
