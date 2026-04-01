@@ -1,4 +1,4 @@
-import type { GameState, Puzzle, SceneItem } from './types.js'
+import type { GameState, Puzzle } from './types.js'
 import { PUZZLES } from './puzzles.js'
 import { isReducedMotion } from './animations.js'
 
@@ -7,18 +7,13 @@ let puzzleCounterEl: HTMLElement | null = null
 let promptTextEl: HTMLElement | null = null
 let scoreEl: HTMLElement | null = null
 let lettersCountEl: HTMLElement | null = null
-let feedbackToastEl: HTMLElement | null = null
-let solvedWordEl: HTMLElement | null = null
 let finalScoreEl: HTMLElement | null = null
 let checkBtnEl: HTMLButtonElement | null = null
-let toastTimer: ReturnType<typeof setTimeout> | null = null
 
 function getPuzzleCounter(): HTMLElement { return puzzleCounterEl ??= document.getElementById('puzzle-counter')! }
 function getPromptText(): HTMLElement { return promptTextEl ??= document.getElementById('prompt-text')! }
 function getScore(): HTMLElement { return scoreEl ??= document.getElementById('score')! }
 function getLettersCount(): HTMLElement { return lettersCountEl ??= document.getElementById('letters-count')! }
-function getFeedbackToast(): HTMLElement { return feedbackToastEl ??= document.getElementById('feedback-toast')! }
-function getSolvedWord(): HTMLElement { return solvedWordEl ??= document.getElementById('solved-word')! }
 function getFinalScore(): HTMLElement { return finalScoreEl ??= document.getElementById('final-score')! }
 function getCheckBtn(): HTMLButtonElement { return checkBtnEl ??= document.getElementById('check-btn') as HTMLButtonElement }
 
@@ -171,16 +166,6 @@ export function showScreen(screenId: string): void {
   setTimeout(cleanup, 600)
 }
 
-export function showToast(message: string, duration: number): void {
-  const toast = getFeedbackToast()
-  toast.textContent = message
-  toast.classList.add('show')
-  if (toastTimer) clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => {
-    toast.classList.remove('show')
-  }, duration)
-}
-
 export function showCelebrationPopup(
   word: string,
   onComplete: () => void,
@@ -245,18 +230,6 @@ export function slideSceneTransition(
       onComplete()
     }, 400)
   }, 400)
-}
-
-export function renderCompleteScreen(puzzle: Puzzle, state: GameState): void {
-  const container = getSolvedWord()
-  container.innerHTML = ''
-  for (let i = 0; i < puzzle.answer.length; i++) {
-    const span = document.createElement('span')
-    span.className = 'solved-letter'
-    span.textContent = puzzle.answer[i]
-    span.style.animationDelay = `${i * 0.1}s`
-    container.appendChild(span)
-  }
 }
 
 export function renderWinScreen(state: GameState, hintUsedPerPuzzle: boolean[]): void {

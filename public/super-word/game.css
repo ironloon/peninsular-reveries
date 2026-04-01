@@ -21,7 +21,6 @@
   --game-grass-dark: #3D8B3D;
   --game-disabled-bg: #7B7B9B;
   --game-disabled-shadow: #4E4E6B;
-  --game-toast-bg: rgba(30, 15, 70, 0.92);
   --game-white: #FFFFFF;
   --game-badge-0: #C2185B;
   --game-badge-1: #1565C0;
@@ -660,28 +659,6 @@ body.gamepad-active .letter-tile:focus {
   font-size: clamp(2rem, 8vw, 3.5rem);
 }
 
-/* ── Toast ────────────────────────────────────────────────── */
-
-.toast {
-  position: fixed;
-  bottom: var(--game-space-xl);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--game-toast-bg);
-  color: var(--game-white);
-  padding: var(--game-space-sm) var(--game-space-lg);
-  border-radius: 50px;
-  font-weight: 700;
-  opacity: 0;
-  transition: opacity 220ms ease, transform 220ms ease;
-  pointer-events: none;
-  z-index: 100;
-}
-
-.toast.show {
-  opacity: 1;
-}
-
 /* ── Accessibility ────────────────────────────────────────── */
 
 .sr-only {
@@ -1020,11 +997,6 @@ body.gamepad-active .letter-tile:focus {
   /* Share button feedback — instant */
   .btn-share {
     transition: none !important;
-  }
-
-  /* Toast — opacity only, no transform */
-  .toast {
-    transition: opacity 220ms ease !important;
   }
 
   /* Celebration popup — no scale animation */

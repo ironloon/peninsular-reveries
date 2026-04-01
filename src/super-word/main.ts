@@ -15,7 +15,6 @@ import {
   renderLetterSlots,
   renderGameHeader,
   showScreen,
-  showToast,
   showCelebrationPopup,
   slideSceneTransition,
   renderWinScreen,
@@ -155,7 +154,6 @@ function onLetterCollected(item: SceneItem): void {
     getState().collectedLetters.length,
     currentPuzzle().answer.length,
   )
-  showToast('Got it! ✨', 1200)
 
   setCheckButtonEnabled(getState().collectedLetters.length === currentPuzzle().answer.length)
   renderGameHeader(getState(), currentPuzzle(), getState().currentPuzzleIndex, activePuzzles.length)
@@ -172,12 +170,11 @@ function onLetterCollected(item: SceneItem): void {
 
 function onDistractorClicked(item: SceneItem): void {
   if (isReducedMotion()) {
-    showToast(`Not a letter — ${item.label} is a distractor`, 1500)
+    // No animation fallback — accessibility announcement handles feedback
   } else {
     const sceneItem = sceneEl.querySelector(`[data-item-id="${item.id}"]`) as HTMLElement | null
     const card = sceneItem?.querySelector('.item-card') as HTMLElement | null
     if (card) animateItemShake(card)
-    showToast('Not a letter! Try another! 🤔', 1500)
   }
   announceDistractorClicked(item.label)
 }
@@ -224,11 +221,10 @@ function onCheckAnswer(): void {
 
   if (!correct) {
     if (isReducedMotion()) {
-      showToast('Not quite! Rearrange the letters', 1500)
+      // No animation fallback — accessibility announcement handles feedback
     } else {
       const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
       animateTileWrongShake(tiles)
-      showToast('Not quite — try rearranging! 🔄', 1500)
     }
     announceWrongAnswer()
     return
