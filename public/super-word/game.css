@@ -138,7 +138,7 @@ body:has(.super-word-game) .site-footer {
 
 /* ── Puzzle Creator Modal ──────────────────────────────────── */
 
-.puzzle-creator-toggle-btn {
+.settings-toggle-btn {
   background: none;
   border: none;
   color: var(--game-white);
@@ -151,11 +151,11 @@ body:has(.super-word-game) .site-footer {
   transition: opacity 150ms ease;
 }
 
-.puzzle-creator-toggle-btn:hover {
+.settings-toggle-btn:hover {
   opacity: 1;
 }
 
-.puzzle-creator-modal {
+.settings-modal {
   position: fixed;
   inset: 0;
   z-index: 150;
@@ -164,13 +164,15 @@ body:has(.super-word-game) .site-footer {
   justify-content: center;
   background: rgba(0, 0, 0, 0.5);
   pointer-events: auto;
+  overflow-y: auto;
+  padding: var(--game-space-md);
 }
 
-.puzzle-creator-modal[hidden] {
+.settings-modal[hidden] {
   display: none;
 }
 
-.puzzle-creator-content {
+.settings-content {
   background: linear-gradient(145deg, #3A1F8A 0%, #6C3FC5 55%, #A06FE8 100%);
   border-radius: 24px;
   padding: var(--game-space-xl) var(--game-space-2xl);
@@ -180,34 +182,75 @@ body:has(.super-word-game) .site-footer {
   flex-direction: column;
   gap: var(--game-space-sm);
   width: 90%;
-  max-width: 380px;
+  max-width: 420px;
   animation: celebrationIn 250ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-.puzzle-creator-heading {
+.settings-heading {
   font-size: clamp(1.2rem, 4vw, 1.6rem);
   font-weight: 800;
   margin: 0 0 var(--game-space-xs);
   text-align: center;
 }
 
-.puzzle-creator-content label {
+.settings-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: var(--game-space-sm);
+}
+
+.settings-section-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 var(--game-space-xs);
+}
+
+.settings-content label {
   font-size: 0.8rem;
   opacity: 0.8;
 }
 
-.puzzle-creator-actions {
+.controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--game-space-sm);
+}
+
+.controls-column h4 {
+  font-size: 0.8rem;
+  margin: 0 0 4px;
+  opacity: 0.9;
+}
+
+.controls-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.75rem;
+  opacity: 0.85;
+  line-height: 1.6;
+}
+
+.controls-list kbd {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-family: var(--game-font);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.settings-actions {
   display: flex;
   flex-direction: column;
   gap: var(--game-space-xs);
   margin-top: var(--game-space-sm);
 }
 
-.puzzle-play-btn {
+.settings-play-btn {
   width: 100%;
 }
 
-.puzzle-creator-close-btn {
+.settings-close-btn {
   background: rgba(255, 255, 255, 0.15);
   color: var(--game-white);
   font-size: 0.9rem;
@@ -393,7 +436,11 @@ body:has(.super-word-game) .site-footer {
 }
 
 .scene-item.collected {
-  display: none;
+  opacity: 0.25;
+  pointer-events: none;
+  filter: grayscale(1);
+  transform: scale(0.9);
+  transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
 }
 
 /* ── Gamepad Focus ────────────────────────────────────────── */
@@ -407,60 +454,6 @@ body.gamepad-active .letter-tile:focus {
   outline: 3px solid var(--game-yellow);
   outline-offset: 2px;
 }
-
-/* ── Gamepad Button Prompts ───────────────────────────────── */
-
-.gamepad-prompts {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  gap: var(--game-space-md);
-  padding: var(--game-space-xs) var(--game-space-md);
-  background: rgba(0, 0, 0, 0.6);
-  color: var(--game-white);
-  font-family: var(--game-font);
-  font-size: 0.75rem;
-  font-weight: 700;
-  z-index: 100;
-  pointer-events: none;
-  backdrop-filter: blur(4px);
-}
-
-.gamepad-prompts[hidden] {
-  display: none;
-}
-
-.gp-prompt {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  opacity: 0.9;
-}
-
-.gp-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  font-size: 0.7rem;
-  font-weight: 900;
-  line-height: 1;
-  flex-shrink: 0;
-}
-
-.gp-btn-a { background: #4CAF50; color: white; }
-.gp-btn-b { background: #f44336; color: white; }
-.gp-btn-x { background: #2196F3; color: white; }
-.gp-btn-y { background: #FFC107; color: #333; }
-.gp-btn-start { background: rgba(255,255,255,0.25); color: white; font-size: 0.55rem; border-radius: 4px; width: auto; padding: 0 6px; }
-.gp-btn-lb, .gp-btn-rb { background: rgba(255,255,255,0.25); color: white; font-size: 0.6rem; border-radius: 4px; width: auto; padding: 0 5px; }
-.gp-btn-lt, .gp-btn-rt { background: rgba(255,255,255,0.25); color: white; font-size: 0.6rem; border-radius: 4px; width: auto; padding: 0 5px; }
-.gp-btn-dpad { background: rgba(255,255,255,0.25); color: white; font-size: 0.6rem; border-radius: 4px; width: auto; padding: 0 5px; }
 
 .item-emoji {
   font-size: clamp(1.6rem, 5vw, 2.1rem);
@@ -585,9 +578,16 @@ body.gamepad-active .letter-tile:focus {
   transform: scale(0.94);
 }
 
-.btn:focus-visible {
+.btn:focus-visible,
+.btn.gamepad-focus {
   outline: 3px solid var(--game-white);
   outline-offset: 4px;
+}
+
+.gamepad-focus {
+  outline: 3px solid var(--game-yellow);
+  outline-offset: 3px;
+  border-radius: 8px;
 }
 
 .btn-primary {

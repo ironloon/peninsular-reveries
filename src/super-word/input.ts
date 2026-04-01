@@ -278,38 +278,78 @@ export function setupInput(
   let stickCooldown = 0
 
   // Remove gamepad-active on mouse/keyboard
-  document.addEventListener('mousemove', () => {
+  function clearGamepadMode(): void {
     document.body.classList.remove('gamepad-active')
-  }, { once: false })
-  document.addEventListener('keydown', () => {
-    document.body.classList.remove('gamepad-active')
-  }, { once: false })
+    document.querySelector('.gamepad-focus')?.classList.remove('gamepad-focus')
+  }
+  document.addEventListener('mousemove', clearGamepadMode, { once: false })
+  document.addEventListener('keydown', clearGamepadMode, { once: false })
 
   function getActiveScreen(): string | null {
     const active = document.querySelector('.screen.active') as HTMLElement | null
     return active?.id ?? null
   }
 
-  function getAllGameElements(): HTMLElement[] {
-    const sceneItems = Array.from(sceneEl.querySelectorAll('.scene-item:not(.collected)')) as HTMLElement[]
-    const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
-    const check = checkBtn.hasAttribute('disabled') ? [] : [checkBtn]
-    return [...sceneItems, ...tiles, ...check]
+  function gamepadFocus(el: HTMLElement): void {
+    // Remove previous gamepad focus ring
+    document.querySelector('.gamepad-focus')?.classList.remove('gamepad-focus')
+    // Reset tabindex on scene items
+    for (const si of sceneEl.querySelectorAll('.scene-item') as NodeListOf<HTMLElement>) si.tabIndex = -1
+    if (el.classList.contains('scene-item')) el.tabIndex = 0
+    el.classList.add('gamepad-focus')
+    el.focus()
   }
 
   function focusNearestItem(direction: string): void {
-    const allElements = getAllGameElements()
-    if (allElements.length === 0) return
-
     const focused = document.activeElement as HTMLElement
-    const current = allElements.find(el => el === focused) ?? allElements[0]
+    const sceneItems = Array.from(sceneEl.querySelectorAll('.scene-item:not(.collected)')) as HTMLElement[]
+    const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
+    const checkEnabled = !checkBtn.hasAttribute('disabled')
 
-    const nearest = findNearestInDirection(current, allElements, direction)
-    if (nearest) {
-      // Reset tabindex on scene items only
-      for (const el of sceneEl.querySelectorAll('.scene-item') as NodeListOf<HTMLElement>) el.tabIndex = -1
-      if (nearest.classList.contains('scene-item')) nearest.tabIndex = 0
-      nearest.focus()
+    // Determine which zone we're in
+    const inScene = focused?.classList.contains('scene-item')
+    const inTiles = focused?.classList.contains('letter-tile')
+    const inCheck = focused === checkBtn
+
+    if (inScene) {
+      if (direction === 'ArrowLeft' || direction === 'ArrowRight') {
+        // Stay within scene items
+        const nearest = findNearestInDirection(focused, sceneItems, direction)
+        if (nearest) gamepadFocus(nearest)
+      } else if (direction === 'ArrowDown') {
+        // Move to tiles zone, or check button if no tiles
+        if (tiles.length > 0) gamepadFocus(tiles[0])
+        else if (checkEnabled) gamepadFocus(checkBtn)
+      }
+      // ArrowUp from scene: no-op (top zone)
+    } else if (inTiles) {
+      if (direction === 'ArrowLeft' || direction === 'ArrowRight') {
+        // Stay within tiles
+        const idx = tiles.indexOf(focused)
+        const next = direction === 'ArrowLeft' ? tiles[idx - 1] : tiles[idx + 1]
+        if (next) gamepadFocus(next)
+      } else if (direction === 'ArrowUp') {
+        // Move up to nearest scene item
+        if (sceneItems.length > 0) {
+          const nearest = findNearestInDirection(focused, sceneItems, 'ArrowUp') ?? sceneItems[0]
+          gamepadFocus(nearest)
+        }
+      } else if (direction === 'ArrowDown') {
+        // Move down to check button
+        if (checkEnabled) gamepadFocus(checkBtn)
+      }
+    } else if (inCheck) {
+      if (direction === 'ArrowUp') {
+        // Move up to tiles, or scene if no tiles
+        if (tiles.length > 0) gamepadFocus(tiles[0])
+        else if (sceneItems.length > 0) gamepadFocus(sceneItems[0])
+      }
+      // Left/right/down from check: no-op
+    } else {
+      // Not focused on anything — start at first scene item
+      if (sceneItems.length > 0) gamepadFocus(sceneItems[0])
+      else if (tiles.length > 0) gamepadFocus(tiles[0])
+      else if (checkEnabled) gamepadFocus(checkBtn)
     }
   }
 
