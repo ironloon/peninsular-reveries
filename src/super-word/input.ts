@@ -290,25 +290,54 @@ export function setupInput(
     return active?.id ?? null
   }
 
+  function getAllGameElements(): HTMLElement[] {
+    const sceneItems = Array.from(sceneEl.querySelectorAll('.scene-item:not(.collected)')) as HTMLElement[]
+    const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
+    const check = checkBtn.hasAttribute('disabled') ? [] : [checkBtn]
+    return [...sceneItems, ...tiles, ...check]
+  }
+
   function focusNearestItem(direction: string): void {
-    const items = Array.from(sceneEl.querySelectorAll('.scene-item:not(.collected)')) as HTMLElement[]
-    if (items.length === 0) return
+    const allElements = getAllGameElements()
+    if (allElements.length === 0) return
 
     const focused = document.activeElement as HTMLElement
-    const current = items.find(el => el === focused) ?? items[0]
+    const current = allElements.find(el => el === focused) ?? allElements[0]
 
-    const nearest = findNearestInDirection(current, items, direction)
+    const nearest = findNearestInDirection(current, allElements, direction)
     if (nearest) {
-      for (const el of items) el.tabIndex = -1
-      nearest.tabIndex = 0
+      // Reset tabindex on scene items only
+      for (const el of sceneEl.querySelectorAll('.scene-item') as NodeListOf<HTMLElement>) el.tabIndex = -1
+      if (nearest.classList.contains('scene-item')) nearest.tabIndex = 0
       nearest.focus()
     }
   }
 
   function activateFocusedItem(): void {
     const focused = document.activeElement as HTMLElement
-    if (!focused?.classList.contains('scene-item') || focused.classList.contains('collected')) return
+    if (!focused) return
 
+    // Check button
+    if (focused === checkBtn && !checkBtn.hasAttribute('disabled')) {
+      callbacks.onCheckAnswer()
+      return
+    }
+
+    // Letter tile — select/swap
+    if (focused.classList.contains('letter-tile')) {
+      const index = parseInt(focused.dataset.index ?? '-1', 10)
+      if (index < 0) return
+      const state = getState()
+      if (state.selectedTileIndex !== null && state.selectedTileIndex !== index) {
+        callbacks.onLettersSwapped(state.selectedTileIndex, index)
+      } else {
+        callbacks.onTileSelected(index)
+      }
+      return
+    }
+
+    // Scene item
+    if (!focused.classList.contains('scene-item') || focused.classList.contains('collected')) return
     const itemId = focused.dataset.itemId
     const puzzle = getPuzzle()
     const item = puzzle.items.find(it => it.id === itemId)
