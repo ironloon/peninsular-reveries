@@ -23,7 +23,6 @@ export function setupInput(
   const slotsEl = document.getElementById('letter-slots')!
   const startBtn = document.getElementById('start-btn')!
   const checkBtn = document.getElementById('check-btn')!
-  const hintBtn = document.getElementById('hint-btn')!
   const nextBtn = document.getElementById('next-btn')!
   const replayBtn = document.getElementById('replay-btn')!
 
@@ -270,7 +269,6 @@ export function setupInput(
       callbacks.onCheckAnswer()
     }
   })
-  hintBtn.addEventListener('click', () => callbacks.onHintRequested())
   nextBtn.addEventListener('click', () => callbacks.onNextPuzzle())
   replayBtn.addEventListener('click', () => callbacks.onPlayAgain())
 
