@@ -311,40 +311,14 @@ export function setCheckButtonEnabled(enabled: boolean): void {
 
 // ── Puzzle Creator ───────────────────────────────────────────
 
-export function renderPuzzleCreator(): void {
+export function renderPuzzleCreator(onPlay: () => void): void {
   const wordsInput = document.getElementById('puzzle-words') as HTMLInputElement | null
   const suggestionsEl = document.getElementById('puzzle-suggestions')
-  const urlOutput = document.getElementById('puzzle-url-output')
-  const urlText = document.getElementById('puzzle-url-text')
-  const copyBtn = document.getElementById('puzzle-copy-btn')
-  const openLink = document.getElementById('puzzle-open-link') as HTMLAnchorElement | null
+  const playBtn = document.getElementById('puzzle-play-btn') as HTMLButtonElement | null
   const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
   const countInput = document.getElementById('puzzle-count-input') as HTMLInputElement | null
 
-  if (!wordsInput || !suggestionsEl || !urlOutput || !urlText || !copyBtn || !openLink || !difficultySelect || !countInput) return
-
-  function generateUrl(): void {
-    const words = wordsInput!.value.split(',').map(w => w.trim().toUpperCase()).filter(Boolean)
-    const difficulty = difficultySelect!.value
-    const count = countInput!.value
-
-    const baseUrl = window.location.origin + window.location.pathname
-    const params = new URLSearchParams()
-    if (words.length > 0) params.set('puzzles', words.join(','))
-    if (difficulty) params.set('difficulty', difficulty)
-    if (count) params.set('count', count)
-
-    const paramStr = params.toString()
-    if (!paramStr) {
-      urlOutput!.hidden = true
-      return
-    }
-
-    const url = baseUrl + '?' + paramStr
-    urlText!.textContent = url
-    openLink!.href = url
-    urlOutput!.hidden = false
-  }
+  if (!wordsInput || !suggestionsEl || !difficultySelect || !countInput) return
 
   function showSuggestions(): void {
     const parts = wordsInput!.value.split(',')
@@ -368,7 +342,6 @@ export function renderPuzzleCreator(): void {
         words[words.length - 1] = puzzle.answer
         wordsInput!.value = words.join(', ') + ', '
         suggestionsEl!.innerHTML = ''
-        generateUrl()
         wordsInput!.focus()
       })
       suggestionsEl!.appendChild(chip)
@@ -377,22 +350,13 @@ export function renderPuzzleCreator(): void {
 
   wordsInput.addEventListener('input', () => {
     showSuggestions()
-    generateUrl()
   })
 
-  difficultySelect.addEventListener('change', generateUrl)
-  countInput.addEventListener('input', generateUrl)
-
-  copyBtn.addEventListener('click', () => {
-    const url = urlText!.textContent ?? ''
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(url).then(() => {
-        copyBtn!.textContent = '\u2705 Copied!'
-        setTimeout(() => { copyBtn!.textContent = '\ud83d\udccb Copy URL' }, 1500)
-      }).catch(() => {
-        copyBtn!.textContent = '\u274c Failed'
-        setTimeout(() => { copyBtn!.textContent = '\ud83d\udccb Copy URL' }, 1500)
-      })
-    }
-  })
+  if (playBtn) {
+    playBtn.addEventListener('click', () => {
+      const details = document.getElementById('puzzle-creator') as HTMLDetailsElement | null
+      if (details) details.open = false
+      onPlay()
+    })
+  }
 }

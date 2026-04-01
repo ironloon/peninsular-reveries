@@ -67,13 +67,13 @@ if (shareParam) {
 const validDifficulty = difficultyParam && ['easy', 'medium', 'hard'].includes(difficultyParam)
   ? difficultyParam : undefined
 
-const activePuzzles: readonly Puzzle[] = selectPuzzles({
+let activePuzzles: readonly Puzzle[] = selectPuzzles({
   answers: puzzleFilterParam,
   difficulty: validDifficulty,
   count: countParam,
 })
 
-const clampedStart = Math.max(0, Math.min(startPuzzleParam, activePuzzles.length - 1))
+const hasUrlParams = !!(puzzleFilterParam || validDifficulty || countParam)
 
 // ── State Management ──────────────────────────────────────
 let gameState: GameState = createInitialState(activePuzzles.length, wowModeParam)
@@ -111,9 +111,31 @@ function refreshGameScreen(): void {
 // ── Game Flow — InputCallbacks ────────────────────────────
 
 function onStartGame(): void {
-  if (clampedStart > 0) {
-    setState({ ...getState(), currentPuzzleIndex: clampedStart })
+  // Read puzzle creator settings
+  const wordsInput = document.getElementById('puzzle-words') as HTMLInputElement | null
+  const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
+  const countInput = document.getElementById('puzzle-count-input') as HTMLInputElement | null
+
+  const creatorWords = wordsInput?.value.split(',').map(w => w.trim().toUpperCase()).filter(Boolean) ?? []
+  const creatorDifficultyRaw = difficultySelect?.value ?? ''
+  const creatorDifficulty = (['easy', 'medium', 'hard'] as const).find(d => d === creatorDifficultyRaw)
+  const creatorCount = countInput?.value ? parseInt(countInput.value, 10) : undefined
+
+  const hasCreatorSettings = creatorWords.length > 0 || creatorDifficulty !== undefined || creatorCount !== undefined
+
+  if (hasCreatorSettings || !hasUrlParams) {
+    // Re-select puzzles based on creator settings (or re-roll random)
+    activePuzzles = selectPuzzles({
+      answers: creatorWords.length > 0 ? creatorWords : undefined,
+      difficulty: creatorDifficulty,
+      count: creatorCount,
+    })
   }
+
+  // Reset game state for new puzzle set
+  gameState = createInitialState(activePuzzles.length, wowModeParam)
+  hintUsedPerPuzzle.length = 0
+
   refreshGameScreen()
   showScreen('game-screen')
   announceNextPuzzle(
@@ -320,5 +342,5 @@ const callbacks: InputCallbacks = {
 }
 
 setupInput(getState, setState, currentPuzzle, callbacks)
-renderPuzzleCreator()
+renderPuzzleCreator(onStartGame)
 showScreen('start-screen')
