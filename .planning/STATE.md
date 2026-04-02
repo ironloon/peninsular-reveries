@@ -84,7 +84,8 @@ None yet.
 | 260401-12s | Fix dev server MIME type errors and convert puzzle creator to modal overlay | 2026-04-01 | d81c49e | [260401-12s-fix-dev-server-mime-type-errors-and-conv](./quick/260401-12s-fix-dev-server-mime-type-errors-and-conv/) |
 | 260401-18c | Show hints by default, add settings modal, full viewport layout | 2026-04-01 | 23da57f | [260401-18c-show-hints-by-default-remove-hint-button](./quick/260401-18c-show-hints-by-default-remove-hint-button/) |
 | 260401-1hj | Fix win screen cutoff, add sound effects, show gamepad button prompts | 2026-04-01 | 8920723 | [260401-1hj-fix-play-again-cutoff-add-sound-effects-](./quick/260401-1hj-fix-play-again-cutoff-add-sound-effects-/) |
+| 260401-brt | Replace dev+serve with esbuild dev server with watch and live reload | 2026-04-01 | a41dc74 | [260401-brt-replace-dev-serve-with-esbuild-dev-serve](./quick/260401-brt-replace-dev-serve-with-esbuild-dev-serve/) |
 
 ## Session Continuity
 
-Last activity: 2026-04-01 - Completed quick task 260401-1hj: Fix win screen cutoff, add sound effects, show gamepad button prompts
+Last activity: 2026-04-01 - Completed quick task 260401-brt: Replace dev+serve with esbuild dev server with watch and live reload
