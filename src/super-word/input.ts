@@ -298,36 +298,30 @@ export function setupInput(
     const inCheck = focused === checkBtn
 
     if (inScene) {
-      if (direction === 'ArrowLeft' || direction === 'ArrowRight') {
-        // Stay within scene items (skip collected)
-        // If current item is collected, use it as reference but search among uncollected
-        const candidates = focused.classList.contains('collected')
-          ? sceneItems
-          : sceneItems.filter(el => el !== focused)
-        const nearest = candidates.length > 0
-          ? (findNearestInDirection(focused, sceneItems, direction) ?? sceneItems[0])
-          : null
-        if (nearest) gamepadFocus(nearest)
+      // All 4 directions: try spatial navigation within scene first
+      const nearest = findNearestInDirection(focused, sceneItems, direction)
+      if (nearest) {
+        gamepadFocus(nearest)
       } else if (direction === 'ArrowDown') {
-        // Move to tiles zone, or check button if no tiles
+        // No scene item below — fall through to tiles zone
         if (tiles.length > 0) gamepadFocus(tiles[0])
         else if (checkEnabled) gamepadFocus(checkBtn)
       }
-      // ArrowUp from scene: no-op (top zone)
+      // ArrowUp/Left/Right with nothing found: stay put
     } else if (inTiles) {
       if (direction === 'ArrowLeft' || direction === 'ArrowRight') {
-        // Stay within tiles
+        // STRICTLY stay within tiles — never escape
         const idx = tiles.indexOf(focused)
+        if (idx === -1) { if (tiles.length > 0) gamepadFocus(tiles[0]); return }
         const next = direction === 'ArrowLeft' ? tiles[idx - 1] : tiles[idx + 1]
         if (next) gamepadFocus(next)
+        // At boundary: do nothing (stay on current tile)
       } else if (direction === 'ArrowUp') {
-        // Move up to nearest scene item
         if (sceneItems.length > 0) {
           const nearest = findNearestInDirection(focused, sceneItems, 'ArrowUp') ?? sceneItems[0]
           gamepadFocus(nearest)
         }
       } else if (direction === 'ArrowDown') {
-        // Move down to check button
         if (checkEnabled) gamepadFocus(checkBtn)
       }
     } else if (inCheck) {
@@ -440,6 +434,7 @@ export function setupInput(
         switch (i) {
           case 0: // A — activate/select
             if (dismissCelebration()) break
+            if (screen === 'start-screen') { startBtn.click(); break }
             if (screen === 'game-screen') activateFocusedItem()
             break
           case 9: // Start — context-sensitive
