@@ -267,6 +267,8 @@ export function setupInput(
   function clearGamepadMode(): void {
     document.body.classList.remove('gamepad-active')
     document.querySelector('.gamepad-focus')?.classList.remove('gamepad-focus')
+    const hint = document.getElementById('gamepad-start-hint')
+    if (hint) hint.hidden = true
   }
   document.addEventListener('mousemove', clearGamepadMode, { once: false })
   document.addEventListener('keydown', clearGamepadMode, { once: false })
@@ -422,6 +424,8 @@ export function setupInput(
     }
 
     document.body.classList.add('gamepad-active')
+    const hint = document.getElementById('gamepad-start-hint')
+    if (hint) hint.hidden = false
 
     // Button press detection (edge-triggered)
     for (let i = 0; i < gp.buttons.length; i++) {
