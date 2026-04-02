@@ -6,7 +6,7 @@
   "scripts": {
     "build": "tsx build.ts",
     "typecheck": "tsc --noEmit",
-    "dev": "tsx watch build.ts",
+    "dev": "tsx dev-server.ts",
     "serve": "serve dist",
     "test": "npx playwright test"
   },
