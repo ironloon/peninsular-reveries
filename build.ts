@@ -1,30 +1,53 @@
 import * as esbuild from 'esbuild'
-import { cpSync, rmSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { cpSync, rmSync, mkdirSync, writeFileSync, statSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { createAppRouter } from './app/router.js'
 
-// Clean output
+// ── Clean output ──────────────────────────────────────────
 rmSync('dist', { recursive: true, force: true })
 
-// Copy static assets verbatim
+// ── Copy static assets ───────────────────────────────────
 cpSync('public', 'dist', { recursive: true })
 
-// Bundle TypeScript entry points
+// ── Bundle client code ───────────────────────────────────
 await esbuild.build({
-  entryPoints: ['src/shared/shell.ts', 'src/pages/home.ts', 'src/super-word/main.ts', 'src/pages/404.ts'],
+  entryPoints: [
+    'client/shell.ts',
+    'client/404.ts',
+    'client/super-word/main.ts',
+  ],
   bundle: true,
-  outdir: 'dist',
+  outdir: 'dist/client',
   format: 'esm',
   target: 'es2022',
-  minify: process.env.NODE_ENV === 'production',
+  minify: true,
   sourcemap: true,
 })
 
-// Performance budget: 200KB per page (HTML + CSS + JS, excluding sourcemaps)
+// ── Pre-render HTML from router ──────────────────────────
+const router = createAppRouter()
+
+const staticRoutes: Array<{ url: string; outPath: string }> = [
+  { url: 'http://localhost/', outPath: 'index.html' },
+  { url: 'http://localhost/super-word/', outPath: 'super-word/index.html' },
+  { url: 'http://localhost/404.html', outPath: '404.html' },
+]
+
+for (const { url, outPath } of staticRoutes) {
+  const response = await router.fetch(new Request(url))
+  const html = await response.text()
+  const fullPath = join('dist', outPath)
+  mkdirSync(dirname(fullPath), { recursive: true })
+  writeFileSync(fullPath, html)
+  console.log(`  rendered ${outPath}`)
+}
+
+// ── Performance budget ───────────────────────────────────
 const BUDGET_BYTES = 200 * 1024
 const pages: Record<string, string[]> = {
-  homepage: ['index.html', 'styles/main.css', 'shared/shell.js', 'pages/home.js'],
-  'super-word': ['super-word/index.html', 'styles/main.css', 'super-word/game.css', 'shared/shell.js', 'super-word/main.js'],
-  '404': ['404.html', 'styles/main.css', 'shared/shell.js', 'pages/404.js'],
+  homepage: ['index.html', 'styles/main.css', 'client/shell.js'],
+  'super-word': ['super-word/index.html', 'styles/main.css', 'styles/game.css', 'client/shell.js', 'client/super-word/main.js'],
+  '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 
 let budgetFailed = false
@@ -42,3 +65,5 @@ for (const [page, files] of Object.entries(pages)) {
 if (budgetFailed) {
   process.exit(1)
 }
+
+console.log('\nBuild complete!')

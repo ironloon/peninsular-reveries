@@ -3,137 +3,137 @@
 
 **Peninsular Reveries**
 
-A lo-fi personal website for hosting self-contained web games, puzzles, and code experiments. Built with web standards — TypeScript, vanilla CSS, esbuild, no framework. Clean, minimal aesthetic with subtle personality — the kind of site that makes you pause and think "oh, this is nice." Deployed as a static site on GitHub Pages.
+A lo-fi personal website for hosting self-contained web games, puzzles, and code experiments. Built with web standards and cherry-picked Remix 3 packages. Clean, minimal aesthetic with subtle personality. Deployed as a static site on GitHub Pages.
 
 **Core Value:** A frictionless home for creative projects — dead simple to add new games and experiments, beautiful to look at, zero maintenance overhead.
 
 ### Constraints
 
-- **Stack**: TypeScript + esbuild + vanilla CSS + GitHub Pages. No React. No heavy frameworks.
-- **Hosting**: GitHub Pages (static files). Cloudflare Pages as backup if perf is an issue.
-- **Build**: Minimal esbuild build step — TypeScript → browser JS. Single ~50-line build script.
+- **Stack**: TypeScript + Remix 3 packages (html-template, fetch-router, node-fetch-server, response) + esbuild + vanilla CSS + GitHub Pages
+- **Hosting**: GitHub Pages (static files in dist/)
+- **Build**: `tsx build.ts` — pre-renders HTML via fetch-router, bundles client JS with esbuild
+- **Dev**: `tsx server.ts` — single dev server with live reload, no stale files
 - **Design**: Must look good with minimal design effort. Clean typography, good spacing, a few intentional personality touches.
 <!-- GSD:project-end -->
 
 <!-- GSD:stack-start source:research/STACK.md -->
 ## Technology Stack
 
-## Recommended Stack
-### Core Runtime & Language
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| TypeScript | ^5.9 | All source code | Type safety for game logic, catches bugs early, Remix 3 monorepo uses 5.9.3 | HIGH |
-| Node.js | ≥22.6 | Build-time execution | Required runtime for build script, native TS type stripping available | HIGH |
-| tsx | ^4.21.0 | TypeScript execution | Runs build scripts directly without pre-compilation. 33M weekly downloads, mature tooling. Preferred over Node's `--experimental-strip-types` because it handles JSX, decorators, and edge cases that Node's native strip-types doesn't yet. | HIGH |
-### Remix 3 Packages (à la carte)
-| Package | Import Path | Version (in monorepo) | Purpose | Why | Confidence |
-|---------|-------------|----------------------|---------|-----|------------|
-| remix | `remix@next` | 3.0.0-alpha.4 | Umbrella package | Single install, all sub-packages available via `remix/*` imports | HIGH |
-| html-template | `remix/html-template` | 0.3.0 | Safe HTML generation | Tagged template literal with auto-XSS-escaping. Zero dependencies. Works at build time AND client-side. Composable fragments, array interpolation, conditional rendering. | HIGH |
-| response | `remix/response/html` | — | HTML response helper | `createHtmlResponse()` for build-time page generation. Pairs with html-template. | MEDIUM |
-#### Packages to NOT use
-| Package | Why Not |
-|---------|---------|
-| `remix/fetch-router` | **Server-side router** — maps `Request` → `Response` via Fetch API. Designed for live servers (Node, Bun, Deno, Cloudflare Workers). For a static site with ~5-10 pages pre-rendered to HTML files, a typed route map object is simpler and doesn't pull in routing middleware overhead. If the site grows to 20+ pages, revisit. |
-| `remix/component` | **JSX component system** with SSR + hydration. PROJECT.md explicitly says "No React / no virtual DOM" and this is a Preact-fork-based component model with its own JSX runtime, `handle.update()`, mixins, etc. It's a framework in itself. For self-contained games written in TypeScript with direct DOM manipulation, this adds unnecessary abstraction. **Revisit if/when** game UI complexity justifies a component model. |
-| `remix/auth*`, `remix/session*`, `remix/data-table*` | Server-only packages. No backend, no auth, no database in this project. |
-#### Key Insight: fetch-router vs. Simple Build Script
-- fetch-router is a **runtime HTTP router** (`createRouter()` → `router.get(route, handler)` → `router.fetch(request)`)
-- For a static site deployed to GitHub Pages, there is no server to route requests
-- Using it at build-time to "pre-render routes" means writing Request objects, calling `router.fetch()`, extracting Response bodies — when you could just call `html\`...\`` directly
-- The type-safe route map (`route({ home: '/', games: '/games/:slug' })`) IS useful, but you get that same benefit from a plain TypeScript object
-### Build Tooling
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| esbuild | ^0.25 | Bundle game TS → browser JS | Sub-second builds. Handles TypeScript + modern JS output. No config file needed — single CLI command per entry point. Remix 3 itself uses esbuild for its own bundling. | HIGH |
-| tsc | (via TypeScript) | Type checking only | `tsc --noEmit` for CI/pre-commit validation. Don't use tsc for emit — esbuild is faster for that. | HIGH |
-#### Why esbuild over alternatives
-| Alternative | Why Not |
-|-------------|---------|
-| Vite | Overkill for static HTML + game bundles. Brings dev server, HMR, plugin system — complexity that conflicts with "minimal build" philosophy. |
-| Webpack | Legacy. Slow. Complex config. No. |
-| Rollup | Good but slower than esbuild. No meaningful advantage for this project's needs. |
-| tsc emit only | Works but produces unbundled ES modules. Browser would need import maps or many network requests. esbuild produces a single file per entry. |
-| No build at all | Browsers cannot execute TypeScript. The "religiously runtime" Remix 3 principle uses `--import` loaders for **server-side** TS execution. For **client-side** code sent to browsers, a compile step is unavoidable. |
-#### Build Architecture
-### CSS
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Modern CSS (vanilla) | — | All styling | CSS nesting, custom properties, `:has()`, container queries are widely supported in 2026. No preprocessor or framework needed. Aligns with web standards philosophy. | HIGH |
-#### CSS Approach
-- **Single `style.css`** for site-level design tokens and layout
-- **Per-game CSS files** co-located with game code (e.g., `super-word/style.css`)
-- CSS custom properties for theming (colors, spacing, fonts)
-- CSS nesting (native, not Sass) for component-scoped styles
-- No utility frameworks (Tailwind, UnoCSS) — the site is small enough that hand-written CSS is maintainable and produces exactly what's needed
-#### Why not Tailwind / utility CSS
-- Requires build tooling (PostCSS, CLI)
-- Adds dependency management overhead
-- For ~10 pages and a few games, custom CSS is faster to write AND produces less code
-- The design goal is "minimal effort to maintain" — hand-written CSS with custom properties achieves this better than class-name soup
-### Games: DOM vs. Canvas
-| Approach | Recommendation | Why | Confidence |
-|----------|----------------|-----|------------|
-| **DOM-based rendering** | **USE THIS** | The existing Super Word game is DOM-based (emoji elements, CSS positioning, click/drag). This game type (UI-heavy, text/emoji, needs accessibility) is a perfect DOM use case. DOM gives you: free accessibility, CSS animations, responsive layout, text rendering, event handling, easy debugging in DevTools. | HIGH |
-| HTML5 Canvas | Don't use (for now) | Canvas is for pixel-level rendering: physics simulations, particle effects, custom sprite rendering. Super Word has none of these. Canvas breaks accessibility (no screen reader support for game elements), requires manual hit testing, and means reimplementing layout. | HIGH |
-### Hosting & Deployment
-| Technology | Purpose | Why | Confidence |
-|------------|---------|-----|------------|
-| GitHub Pages | Static hosting | Free, deploys from git (Actions workflow or branch), familiar. No server needed. | HIGH |
-| GitHub Actions | CI/CD | Run build, deploy to Pages. Single workflow file. | HIGH |
-#### Deployment Flow
-#### Cloudflare Pages (backup)
-### Testing
-| Technology | Version | Purpose | Why | Confidence |
-|------------|---------|---------|-----|------------|
-| Node.js test runner | built-in | Unit tests | `node --test` is built into Node 22+. Zero dependencies. Remix 3 uses it for html-template. | MEDIUM |
-| Vitest | ^3.2 | If tests outgrow node:test | Only escalate if test complexity requires mocking, coverage, or watch mode beyond what node:test provides. | LOW (contingency) |
-### Dev Experience
-| Technology | Purpose | Why |
-|------------|---------|-----|
-| `tsx watch build.ts` | Auto-rebuild on changes | tsx has built-in watch mode. No separate dev server needed initially. |
-| Local HTTP server | Preview static output | `npx serve dist/` or Python's `http.server`. Don't build a dev server framework. |
-## Alternatives Considered
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| TS Execution | tsx | Node.js `--experimental-strip-types` | Still experimental in Node 22, doesn't handle JSX, limited enum support. tsx is battle-tested with wider TS coverage. |
-| TS Execution | tsx | ts-node | Heavier setup, slower startup, less reliable with ESM. tsx surpassed it. |
-| Build | esbuild | Vite | Overkill. Vite is a dev server + build tool. We need a build tool only. |
-| Build | esbuild | swc | Good but esbuild has wider ecosystem adoption and Remix 3 uses it. |
-| CSS | Vanilla CSS | Tailwind CSS | Unnecessary build step, class-name noise, dependency management for a small site. |
-| CSS | Vanilla CSS | Sass/SCSS | CSS nesting is native now. Custom properties replace most variable use cases. Sass adds a preprocessor dependency for diminishing returns. |
-| CSS | Vanilla CSS | CSS Modules | Requires bundler integration. For a few CSS files, BEM-lite naming or CSS nesting scoping is sufficient. |
-| Components | None (vanilla TS + DOM) | Remix component | Too much abstraction for self-contained games. Over-engineers the problem. |
-| Components | None (vanilla TS + DOM) | Lit / Web Components | Interesting but adds learning curve and import overhead. Games are self-contained — they don't need a reusable component registry. |
-| Routing | Plain TS route object | remix/fetch-router | Server-side router with no server to route on. Overhead without payoff. |
-| Hosting | GitHub Pages | Cloudflare Pages | Backup option. GH Pages is simpler for a git-centric workflow. |
-| Hosting | GitHub Pages | Netlify | More features than needed. Free tier has limits not relevant here. |
-## Installation
-# Core — the Remix 3 umbrella package (alpha)
-# Build tooling (dev only)
-# That's it. Three dev dependencies + one runtime dependency.
-### package.json Scripts
-### tsconfig.json (Key Settings)
-## Sources
-- Remix 3 monorepo README: https://github.com/remix-run/remix (verified 2026-03-27, active development, last commit 2 days ago)
-- fetch-router README: https://github.com/remix-run/remix/tree/main/packages/fetch-router (v0.18.0, documented for server-side routing)
-- html-template README: https://github.com/remix-run/remix/tree/main/packages/html-template (v0.3.0, zero-dependency tagged template)
-- component README: https://github.com/remix-run/remix/tree/main/packages/component (v0.6.0, JSX component system with SSR + hydration)
-- remix package.json: version 3.0.0-alpha.4 (umbrella)
-- tsx: https://github.com/privatenumber/tsx (v4.21.0, 11.9k stars, 33M weekly npm downloads)
-- esbuild: used by Remix 3 monorepo itself for bundling (see component/package.json devDependencies)
+### Remix 3 Packages (cherry-picked from `remix@next`)
+| Package | Import Path | Purpose |
+|---------|-------------|---------|
+| html-template | `remix/html-template` | Safe HTML generation via tagged template literals with auto-XSS-escaping |
+| fetch-router | `remix/fetch-router` | Type-safe route map + Request→Response routing |
+| fetch-router/routes | `remix/fetch-router/routes` | Route definition helpers (`route()`) |
+| node-fetch-server | `remix/node-fetch-server` | Dev server — Node.js HTTP → Fetch API bridge |
+| response/html | `remix/response/html` | `createHtmlResponse()` helper |
+
+### Core Runtime
+| Technology | Purpose |
+|------------|---------|
+| TypeScript ^5.9 | All source code, strict mode |
+| esbuild ^0.25 | Bundle client TS → browser JS (ESM, ES2022, minified) |
+| tsx ^4.21 | Run build.ts and server.ts directly |
+| Node.js ≥22.6 | Build-time execution |
+
+### Architecture
+```
+app/                     ← Server/build-time code (Remix packages)
+  routes.ts              ← Route map (fetch-router)
+  router.ts              ← Router setup
+  controllers/
+    home.ts              ← GET / — game gallery (server-rendered)
+    not-found.ts         ← 404 page
+    super-word.ts        ← Game page HTML shell
+  ui/
+    document.ts          ← HTML document wrapper (html template tag)
+    nav.ts               ← Nav generated from game registry
+  data/
+    game-registry.ts     ← Game catalogue (single source of truth)
+
+client/                  ← Browser code (bundled by esbuild → dist/client/)
+  shell.ts               ← Theme toggle
+  404.ts                 ← Random 404 tagline
+  super-word/            ← Game code (vanilla TypeScript + DOM)
+    main.ts, state.ts, renderer.ts, input.ts,
+    puzzles.ts, sounds.ts, animations.ts,
+    accessibility.ts, types.ts
+
+public/                  ← Static assets (copied as-is to dist/)
+  styles/main.css, styles/game.css
+  favicon.svg, apple-touch-icon.png, og-image.png
+
+build.ts                 ← Static site generator
+server.ts                ← Dev server with live reload
+```
+
+### Adding a New Game
+
+1. Create `client/[game-slug]/main.ts` (entry point)
+2. Add entry to `app/data/game-registry.ts`
+3. Create `app/controllers/[game-slug].ts` (page HTML via html template)
+4. Add route to `app/routes.ts` and wire in `app/router.ts`
+5. Add esbuild entry in `build.ts` and `server.ts`
+6. Add CSS to `public/styles/[game-slug].css` if needed
+7. Add static route to `build.ts` `staticRoutes` array
+
+### Game Module Contract
+
+Every game in `client/` follows this file pattern:
+- `main.ts` — Entry point, game loop, coordinates all subsystems
+- `types.ts` — TypeScript interfaces for game state
+- `state.ts` — Pure functions for immutable state transitions
+- `renderer.ts` — DOM rendering (creates/updates elements)
+- `input.ts` — Unified pointer/keyboard/gamepad handling via InputCallbacks interface
+- `accessibility.ts` — ARIA announcements, focus management
+- `animations.ts` — CSS-first animation promises, respects prefers-reduced-motion
+- `sounds.ts` — Web Audio API synth (no external audio files)
+
+### Games: DOM-Based Architecture
+
+Games use vanilla TypeScript with direct DOM manipulation. This is intentional — DOM rendering provides:
+- Free accessibility (screen readers, keyboard nav, ARIA)
+- CSS animations with prefers-reduced-motion
+- Responsive layout via CSS
+- No canvas accessibility barriers
+- Tiny bundles (no framework overhead)
+
+Do NOT convert game code to Remix components or any framework. The vanilla DOM approach is optimal for accessible educational games.
 <!-- GSD:stack-end -->
 
 <!-- GSD:conventions-start source:CONVENTIONS.md -->
 ## Conventions
 
-Conventions not yet established. Will populate as patterns emerge during development.
+- **html template tag** for all HTML generation in controllers — auto-escapes by default, use `html.raw` only for trusted fragments
+- **Absolute paths** in generated HTML (`/styles/main.css`, `/client/shell.js`) — no relative `./` paths
+- **Pure state functions** in game code — all state transitions return new state objects
+- **InputCallbacks interface** — all game input sources (pointer, keyboard, gamepad) normalize to semantic game actions
+- **CSS-first animation** — animations as CSS classes, JS wraps in Promises, respects `prefers-reduced-motion`
+- **200KB per-page budget** — HTML + CSS + JS (excluding sourcemaps)
 <!-- GSD:conventions-end -->
 
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
-Architecture not yet mapped. Follow existing patterns found in the codebase.
+### Build Flow
+1. `build.ts` cleans `dist/`, copies `public/` static assets
+2. esbuild bundles `client/*.ts` → `dist/client/` (ESM, minified)
+3. Router pre-renders each route: `router.fetch(url)` → write HTML to `dist/`
+4. Performance budget enforced per page
+
+### Dev Flow
+1. `server.ts` starts esbuild in watch mode (client code → `.dev-client/`)
+2. node-fetch-server creates HTTP server using the router
+3. Router generates HTML fresh on every request (no stale files)
+4. Static files served from `public/` and esbuild output
+5. SSE-based live reload triggers on any file change in `app/`, `client/`, `public/`
+
+### Request Handling (Dev)
+1. `/__reload` → SSE endpoint for live reload
+2. `/client/*` → esbuild output (bundled JS)
+3. `/styles/*`, `/favicon.svg`, etc. → static files from `public/`
+4. `/`, `/super-word/`, etc. → router generates HTML via controllers
+5. Anything else → 404 controller
 <!-- GSD:architecture-end -->
 
 <!-- GSD:workflow-start source:GSD defaults -->

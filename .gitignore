@@ -1,5 +1,6 @@
 /super-word
 .planning/
+.dev-client/
 dist/
 node_modules/
 playwright-report/

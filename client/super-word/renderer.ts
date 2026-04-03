@@ -55,7 +55,10 @@ export function renderScene(puzzle: Puzzle, state: GameState, sceneEl: HTMLEleme
       btn.setAttribute('aria-label', `${item.emoji} ${item.label}`)
     }
 
-    if (!isCollected && !firstUncollectedFound) {
+    if (isCollected) {
+      btn.tabIndex = -1
+      btn.setAttribute('aria-hidden', 'true')
+    } else if (!firstUncollectedFound) {
       btn.tabIndex = 0
       firstUncollectedFound = true
     } else {
@@ -308,15 +311,15 @@ export function setCheckButtonEnabled(enabled: boolean): void {
   }
 }
 
-// ── Puzzle Creator ───────────────────────────────────────────
+// ── Settings Modal (includes Puzzle Creator) ─────────────────
 
-export function renderPuzzleCreator(onPlay: () => void): void {
-  const modal = document.getElementById('puzzle-creator-modal')
-  const openBtn = document.getElementById('puzzle-creator-open')
-  const closeBtn = document.getElementById('puzzle-creator-close')
+export function setupSettingsModal(onPlay: () => void): void {
+  const modal = document.getElementById('settings-modal')
+  const openBtn = document.getElementById('settings-open')
+  const closeBtn = document.getElementById('settings-close')
   const wordsInput = document.getElementById('puzzle-words') as HTMLInputElement | null
   const suggestionsEl = document.getElementById('puzzle-suggestions')
-  const playBtn = document.getElementById('puzzle-play-btn') as HTMLButtonElement | null
+  const playBtn = document.getElementById('settings-play-btn') as HTMLButtonElement | null
   const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
   const countInput = document.getElementById('puzzle-count-input') as HTMLInputElement | null
 
@@ -324,12 +327,18 @@ export function renderPuzzleCreator(onPlay: () => void): void {
 
   function openModal(): void {
     modal!.hidden = false
-    wordsInput!.focus()
+    modal!.focus()
   }
 
   function closeModal(): void {
     modal!.hidden = true
     openBtn!.focus()
+  }
+
+  // Expose open/close for gamepad Start button
+  ;(window as any).__settingsToggle = () => {
+    if (modal!.hidden) openModal()
+    else closeModal()
   }
 
   openBtn.addEventListener('click', openModal)
