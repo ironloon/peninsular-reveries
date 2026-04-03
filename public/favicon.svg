@@ -1,18 +1,25 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <style>
-    .land { fill: #C75B39; }
-    .highlight { fill: #E8A87C; }
-    .hills { fill: #8B7D6B; }
-    .water { fill: #FFF8F0; }
+    .sky { fill: #F8F2E8; }
+    .water { fill: #7BA7C7; }
+    .body { fill: #1A2230; }
+    .neck { fill: #FFF8F0; }
+    .beak { fill: #C78A2C; }
+    .eye { fill: #B63A3A; }
     @media (prefers-color-scheme: dark) {
-      .land { fill: #E8A87C; }
-      .highlight { fill: #C75B39; }
-      .hills { fill: #A89888; }
-      .water { fill: #2D2420; }
+      .sky { fill: #202633; }
+      .water { fill: #4E7292; }
+      .body { fill: #F3F1EC; }
+      .neck { fill: #1A2230; }
+      .beak { fill: #E5B45A; }
+      .eye { fill: #F16C6C; }
     }
   </style>
-  <rect class="water" width="32" height="32" rx="6"/>
-  <path class="hills" d="M0 20 Q8 12 16 18 Q24 10 32 16 L32 32 L0 32Z"/>
-  <path class="land" d="M8 14 Q12 6 18 10 Q20 18 22 22 L6 22 Q6 18 8 14Z"/>
-  <path class="highlight" d="M10 12 Q13 7 16 11 Q14 14 12 16Z"/>
+  <rect class="sky" width="32" height="32" rx="7"/>
+  <ellipse class="water" cx="16" cy="25" rx="13" ry="4.5"/>
+  <path class="body" d="M8 21c1.8-4.8 6.2-7.7 10.2-7.7 4.4 0 6.8 2.8 6.8 6.2 0 3.5-2.8 5.6-6.8 5.6H11.3C9.3 25.1 8 23.7 8 21Z"/>
+  <path class="neck" d="M17.4 13.7c2.7.1 4.9 1.2 6 3.2l-2.5 1.2c-.9-1.3-2.1-2-3.9-2.1Z"/>
+  <circle class="body" cx="22.6" cy="12.4" r="2.5"/>
+  <circle class="eye" cx="23.2" cy="11.9" r="0.52"/>
+  <path class="beak" d="M24.8 12.1h3.7l-3.5 1.6Z"/>
 </svg>

@@ -1,5 +1,6 @@
 import { selectPuzzles } from './puzzles.js'
-import type { GameState, Puzzle, SceneItem } from './types.js'
+import { DIFFICULTIES } from './types.js'
+import type { Difficulty, GameState, Puzzle, SceneItem } from './types.js'
 import {
   createInitialState,
   collectLetter,
@@ -56,14 +57,15 @@ import {
   syncMusicPlayback,
 } from './sounds.js'
 
-const DEFAULT_DIFFICULTY = 'easy' as const
+const DEFAULT_DIFFICULTY: Difficulty = 'easy'
 
-function parseDifficulty(value: string | null | undefined): 'easy' | 'medium' | 'hard' {
-  return (['easy', 'medium', 'hard'] as const).find((difficulty) => difficulty === value) ?? DEFAULT_DIFFICULTY
+function parseDifficulty(value: string | null | undefined): Difficulty {
+  return DIFFICULTIES.find((difficulty) => difficulty === value) ?? DEFAULT_DIFFICULTY
 }
 
 // ── Puzzle Selection ──────────────────────────────────────
 let activePuzzles: readonly Puzzle[] = selectPuzzles(DEFAULT_DIFFICULTY)
+let activeDifficulty: Difficulty = DEFAULT_DIFFICULTY
 
 // ── State Management ──────────────────────────────────────
 let gameState: GameState = createInitialState(activePuzzles.length, false)
@@ -92,7 +94,7 @@ function syncSettingsForm(): void {
   const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
   const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
 
-  if (difficultySelect) difficultySelect.value = DEFAULT_DIFFICULTY
+  if (difficultySelect) difficultySelect.value = activeDifficulty
   if (musicToggle) musicToggle.checked = getMusicEnabled()
 }
 
@@ -113,7 +115,8 @@ function onStartGame(): void {
   sfxButton()
   const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
 
-  activePuzzles = selectPuzzles(parseDifficulty(difficultySelect?.value))
+  activeDifficulty = parseDifficulty(difficultySelect?.value)
+  activePuzzles = selectPuzzles(activeDifficulty)
 
   // Reset game state for new puzzle set
   pendingFlightIndices.clear()
@@ -186,7 +189,8 @@ function onLetterCollected(item: SceneItem): void {
     const uncollected = Array.from(sceneEl.querySelectorAll('.scene-item:not(.collected)')) as HTMLElement[]
     if (uncollected.length > 0) {
       for (const el of uncollected) el.tabIndex = -1
-      uncollected[0].tabIndex = 0
+      const nextLetter = uncollected.find((el) => el.dataset.itemType === 'letter') ?? uncollected[0]
+      nextLetter.tabIndex = 0
     }
   }
 }

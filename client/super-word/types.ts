@@ -8,7 +8,9 @@ export interface SceneItem {
   readonly y: number
 }
 
-export type Difficulty = 'easy' | 'medium' | 'hard'
+export const DIFFICULTIES = ['starter', 'easy', 'medium', 'hard', 'expert'] as const
+
+export type Difficulty = (typeof DIFFICULTIES)[number]
 
 export interface Puzzle {
   readonly answer: string

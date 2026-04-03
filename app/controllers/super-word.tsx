@@ -13,6 +13,7 @@ export async function superWordAction() {
       includeDefaultStyles={false}
       scripts={['/client/super-word/main.js']}
       bodyClass="super-word-game"
+      faviconPath="/favicon-game-super-word.svg"
       manifestPath="/super-word/manifest.json"
       serviceWorkerPath="/super-word/sw.js"
       serviceWorkerScope="/super-word/"
@@ -100,11 +101,13 @@ export async function superWordAction() {
               <h3 className="settings-section-title">🧩 Game</h3>
               <label htmlFor="puzzle-difficulty-select">Difficulty:</label>
               <select id="puzzle-difficulty-select" className="puzzle-select">
-                <option value="easy" selected>Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
+                <option value="starter">Starter · 2 letters</option>
+                <option value="easy" selected>Easy · 3 letters</option>
+                <option value="medium">Medium · 4 letters</option>
+                <option value="hard">Hard · 5 letters</option>
+                <option value="expert">Expert · 6 letters</option>
               </select>
-              <p className="settings-help">Each round randomly picks 5 words from the selected difficulty.</p>
+              <p className="settings-help">Each round randomly picks 5 words from the selected difficulty, from sight-word tiny terms to longer chapter-book words.</p>
             </div>
 
             <div className="settings-section">

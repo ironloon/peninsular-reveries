@@ -32,6 +32,7 @@ test('build script writes the expected static output', () => {
       'client/super-word/main.js',
       'client/404.js',
       'favicon.svg',
+      'favicon-game-super-word.svg',
       'manifest.json',
       'super-word/manifest.json',
       'sw.js',
@@ -47,6 +48,7 @@ test('build script writes the expected static output', () => {
     assert.doesNotMatch(homeHtml, /rel="manifest"/)
     assert.match(attributionsHtml, /Attributions/)
     assert.match(gameHtml, /href="\/super-word\/manifest\.json"/)
+    assert.match(gameHtml, /href="\/favicon-game-super-word\.svg"/)
     assert.doesNotMatch(gameHtml, /href="\/styles\/main\.css"/)
     assert.match(gameHtml, /data-service-worker-path="\/super-word\/sw\.js"/)
   } finally {

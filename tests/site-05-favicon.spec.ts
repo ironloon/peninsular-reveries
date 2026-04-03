@@ -1,19 +1,18 @@
 import { test, expect } from '@playwright/test';
 
 const pages = [
-  { name: 'homepage', path: '/' },
-  { name: 'game page', path: '/super-word/' },
-  { name: '404 page', path: '/404.html' },
+  { name: 'homepage', path: '/', expectedFavicon: '/favicon.svg' },
+  { name: 'game page', path: '/super-word/', expectedFavicon: '/favicon-game-super-word.svg' },
+  { name: '404 page', path: '/404.html', expectedFavicon: '/favicon.svg' },
 ];
 
 test.describe('SITE-05: SVG favicon', () => {
-  for (const { name, path } of pages) {
+  for (const { name, path, expectedFavicon } of pages) {
     test(`${name} has SVG favicon link`, async ({ page }) => {
       await page.goto(path);
       const favicon = page.locator('link[rel="icon"][type="image/svg+xml"]');
       await expect(favicon).toBeAttached();
-      const href = await favicon.getAttribute('href');
-      expect(href).toBeTruthy();
+      await expect(favicon).toHaveAttribute('href', expectedFavicon);
     });
 
     test(`${name} favicon resolves`, async ({ page }) => {

@@ -1,12 +1,11 @@
-const CACHE_NAME = 'super-word-v1'
+const CACHE_NAME = 'super-word-v2'
 const APP_SHELL_URL = new URL('./', self.registration.scope).toString()
 const ASSETS = [
   APP_SHELL_URL,
-  new URL('../styles/main.css', self.registration.scope).toString(),
   new URL('../styles/game.css', self.registration.scope).toString(),
   new URL('../client/shell.js', self.registration.scope).toString(),
   new URL('../client/super-word/main.js', self.registration.scope).toString(),
-  new URL('../favicon.svg', self.registration.scope).toString(),
+  new URL('../favicon-game-super-word.svg', self.registration.scope).toString(),
   new URL('../apple-touch-icon.png', self.registration.scope).toString(),
   new URL('./manifest.json', self.registration.scope).toString(),
 ]

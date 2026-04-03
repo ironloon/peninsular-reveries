@@ -31,7 +31,8 @@ export function renderScene(puzzle: Puzzle, state: GameState, sceneEl: HTMLEleme
   sceneEl.innerHTML = ''
 
   const collectedIds = new Set(state.collectedLetters.map(l => l.sourceId))
-  let firstUncollectedFound = false
+  const firstFocusableId = puzzle.items.find((item) => item.type === 'letter' && !collectedIds.has(item.id))?.id
+    ?? puzzle.items.find((item) => !collectedIds.has(item.id))?.id
 
   for (let i = 0; i < puzzle.items.length; i++) {
     const item = puzzle.items[i]
@@ -57,9 +58,8 @@ export function renderScene(puzzle: Puzzle, state: GameState, sceneEl: HTMLEleme
     if (isCollected) {
       btn.tabIndex = -1
       btn.setAttribute('aria-hidden', 'true')
-    } else if (!firstUncollectedFound) {
+    } else if (item.id === firstFocusableId) {
       btn.tabIndex = 0
-      firstUncollectedFound = true
     } else {
       btn.tabIndex = -1
     }

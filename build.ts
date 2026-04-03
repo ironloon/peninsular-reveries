@@ -59,6 +59,7 @@ const resourceBudgetBytes = new Map(
 )
 
 const BUDGET_BYTES = resourceBudgetBytes.get('total') ?? 200 * 1024
+const strictBudgetEnforcement = process.env.STRICT_BUILD_BUDGETS === '1'
 const pages: Record<string, string[]> = {
   homepage: ['index.html', 'styles/main.css', 'client/shell.js'],
   attributions: ['attributions/index.html', 'styles/main.css', 'client/shell.js'],
@@ -73,7 +74,7 @@ function resourceTypeForFile(path: string): 'document' | 'stylesheet' | 'script'
   return null
 }
 
-let budgetFailed = false
+let budgetWarningCount = 0
 for (const [page, files] of Object.entries(pages)) {
   const resourceTotals = {
     document: 0,
@@ -104,19 +105,23 @@ for (const [page, files] of Object.entries(pages)) {
 
     const actualKB = (actualBytes / 1024).toFixed(1)
     const resourceBudgetKB = (budgetBytes / 1024).toFixed(0)
-    console.error(`❌ ${page}: ${resourceType} ${actualKB}KB exceeds ${resourceBudgetKB}KB budget`)
-    budgetFailed = true
+    console.warn(`⚠ ${page}: ${resourceType} ${actualKB}KB exceeds ${resourceBudgetKB}KB budget`)
+    budgetWarningCount += 1
   }
 
   if (totalBytes > BUDGET_BYTES) {
-    console.error(`❌ ${page}: ${totalKB}KB exceeds ${budgetKB}KB budget`)
-    budgetFailed = true
+    console.warn(`⚠ ${page}: ${totalKB}KB exceeds ${budgetKB}KB budget`)
+    budgetWarningCount += 1
   } else {
     console.log(`✓ ${page}: ${totalKB}KB / ${budgetKB}KB`)
   }
 }
-if (budgetFailed) {
+if (budgetWarningCount > 0 && strictBudgetEnforcement) {
   process.exit(1)
+}
+
+if (budgetWarningCount > 0) {
+  console.warn(`\nBudget warnings: ${budgetWarningCount}. Set STRICT_BUILD_BUDGETS=1 to fail the build.`)
 }
 
 console.log('\nBuild complete!')

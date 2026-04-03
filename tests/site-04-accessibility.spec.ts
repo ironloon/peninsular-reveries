@@ -98,6 +98,7 @@ test.describe('SITE-04: Accessibility', () => {
   test('collecting a letter announces progress in the assertive live region', async ({ page }) => {
     await startGame(page)
 
+    await page.locator('#scene .scene-item[data-item-type="letter"][tabindex="0"]').focus()
     await page.keyboard.press('Enter')
 
     await expect(page.locator('#game-feedback')).toContainText('Collected letter')
@@ -107,6 +108,7 @@ test.describe('SITE-04: Accessibility', () => {
   test('motion-enabled collection keeps the destination tile hidden until the letter lands', async ({ page }) => {
     await startGame(page)
 
+    await page.locator('#scene .scene-item[data-item-type="letter"][tabindex="0"]').focus()
     await page.keyboard.press('Enter')
 
     const tile = page.locator('#letter-slots .letter-tile').first()
@@ -159,6 +161,7 @@ test.describe('SITE-04: Accessibility', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await startGame(page)
 
+    await page.locator('#scene .scene-item[data-item-type="letter"][tabindex="0"]').focus()
     await page.keyboard.press('Enter')
 
     await expect(page.locator('.flying-letter')).toHaveCount(0)

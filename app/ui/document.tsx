@@ -11,6 +11,7 @@ interface DocumentProps {
   includeDefaultStyles?: boolean
   scripts?: string[]
   bodyClass?: string
+  faviconPath?: string
   manifestPath?: string
   serviceWorkerPath?: string
   serviceWorkerScope?: string
@@ -27,6 +28,7 @@ export function Document() {
       includeDefaultStyles = true,
       scripts = [],
       bodyClass,
+      faviconPath = '/favicon.svg',
       manifestPath,
       serviceWorkerPath,
       serviceWorkerScope,
@@ -42,6 +44,7 @@ export function Document() {
       ...stylesheets,
     ].map(href => withBasePath(href, siteBasePath))
     const allScripts = ['/client/shell.js', ...scripts].map(src => withBasePath(src, siteBasePath))
+    const faviconHref = withBasePath(faviconPath, siteBasePath)
     const manifestHref = manifestPath ? withBasePath(manifestPath, siteBasePath) : undefined
     const serviceWorkerHref = serviceWorkerPath ? withBasePath(serviceWorkerPath, siteBasePath) : undefined
     const serviceWorkerScopeHref = serviceWorkerScope ? withBasePath(serviceWorkerScope, siteBasePath) : undefined
@@ -65,7 +68,7 @@ export function Document() {
           <meta property="og:image" content={resolveSiteUrl(siteUrl, '/og-image.png')} />
           <meta property="og:image:width" content="1200" />
           <meta property="og:image:height" content="630" />
-          <link rel="icon" type="image/svg+xml" href={withBasePath('/favicon.svg', siteBasePath)} />
+          <link rel="icon" type="image/svg+xml" href={faviconHref} />
           <link rel="apple-touch-icon" href={withBasePath('/apple-touch-icon.png', siteBasePath)} />
           {manifestHref ? <link rel="manifest" href={manifestHref} /> : null}
           <meta name="theme-color" content="#1a1a2e" />
