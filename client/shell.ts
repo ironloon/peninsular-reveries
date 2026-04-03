@@ -25,3 +25,10 @@ if (footer) {
 
   footer.appendChild(toggle)
 }
+
+// Register service worker for offline support
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {
+    // SW registration failed — offline won't work, that's fine
+  })
+}

@@ -6,7 +6,9 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "remix/component",
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["app/**/*.ts", "client/**/*.ts", "build.ts", "server.ts"]
+  "include": ["app/**/*.ts", "app/**/*.tsx", "client/**/*.ts", "client/**/*.tsx", "build.ts", "server.ts"]
 }
