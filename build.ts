@@ -10,6 +10,7 @@ rmSync(outputDir, { recursive: true, force: true })
 
 // ── Copy static assets ───────────────────────────────────
 cpSync('public', outputDir, { recursive: true })
+mkdirSync(join(outputDir, 'client', 'mission-orbit'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'super-word'), { recursive: true })
 
 // ── Bundle client code ───────────────────────────────────
@@ -17,6 +18,7 @@ await esbuild.build({
   entryPoints: [
     'client/shell.ts',
     'client/404.ts',
+    'client/mission-orbit/main.ts',
     'client/super-word/main.ts',
   ],
   bundle: true,
@@ -33,6 +35,7 @@ const router = createAppRouter()
 const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/', outPath: 'index.html' },
   { url: 'http://localhost/attributions/', outPath: 'attributions/index.html' },
+  { url: 'http://localhost/mission-orbit/', outPath: 'mission-orbit/index.html' },
   { url: 'http://localhost/super-word/', outPath: 'super-word/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
@@ -63,6 +66,7 @@ const strictBudgetEnforcement = process.env.STRICT_BUILD_BUDGETS === '1'
 const pages: Record<string, string[]> = {
   homepage: ['index.html', 'styles/main.css', 'client/shell.js'],
   attributions: ['attributions/index.html', 'styles/main.css', 'client/shell.js'],
+  'mission-orbit': ['mission-orbit/index.html', 'styles/mission-orbit.css', 'client/shell.js', 'client/mission-orbit/main.js'],
   'super-word': ['super-word/index.html', 'styles/game.css', 'client/shell.js', 'client/super-word/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }

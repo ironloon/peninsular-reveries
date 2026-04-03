@@ -8,6 +8,13 @@ export interface GameEntry {
 
 export const games: GameEntry[] = [
   {
+    slug: 'mission-orbit',
+    name: 'Mission: Orbit',
+    description: 'Time the key Artemis II burns from liftoff to splashdown.',
+    icon: '🚀',
+    status: 'live',
+  },
+  {
     slug: 'super-word',
     name: 'Super Word',
     description: 'Find hidden letters and spell the secret word.',

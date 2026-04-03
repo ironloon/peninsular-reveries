@@ -39,10 +39,13 @@ test('site config reads environment overrides correctly', () => {
 test('planning notes and game manifest stay aligned with project-site deployment', () => {
   const planningDoc = readFileSync('docs/game-ideas.md', 'utf-8')
   const gameRegistry = readFileSync('app/data/game-registry.ts', 'utf-8')
-  const manifest = readFileSync('public/super-word/manifest.json', 'utf-8')
+  const superWordManifest = readFileSync('public/super-word/manifest.json', 'utf-8')
+  const missionOrbitManifest = readFileSync('public/mission-orbit/manifest.json', 'utf-8')
 
   assert.match(planningDoc, /Mission: Orbit/)
-  assert.doesNotMatch(gameRegistry, /Mission: Orbit/)
-  assert.match(manifest, /"start_url": "\.\/"/)
-  assert.match(manifest, /"scope": "\.\/"/)
+  assert.match(gameRegistry, /Mission: Orbit/)
+  assert.match(superWordManifest, /"start_url": "\.\/"/)
+  assert.match(superWordManifest, /"scope": "\.\/"/)
+  assert.match(missionOrbitManifest, /"start_url": "\.\/"/)
+  assert.match(missionOrbitManifest, /"scope": "\.\/"/)
 })
