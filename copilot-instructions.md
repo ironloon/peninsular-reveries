@@ -6,6 +6,13 @@ A lo-fi personal website for hosting self-contained web games, puzzles, and code
 
 **Core Value:** A frictionless home for creative projects — dead simple to add new games and experiments, beautiful to look at, zero maintenance overhead.
 
+### README Reference
+
+`README.md` is the source of truth for game principles and site values.
+This file should only capture the repo-specific implementation rules, architecture constraints, and testing conventions that follow from those principles.
+
+Before building or modifying any game, read `README.md` and follow the `Game Principles` section there.
+
 ### Constraints
 
 - **Stack**: TypeScript + Remix 3 (component, fetch-router, node-fetch-server) + esbuild + vanilla CSS + GitHub Pages
@@ -76,7 +83,9 @@ server.ts                ← Dev server with live reload
 5. Add esbuild entry in `build.ts` and `server.ts`
 6. Add CSS to `public/styles/[game-slug].css` if needed
 7. Add static route to `build.ts` `staticRoutes` array
-8. Update `public/sw.js` cache list
+8. Add scoped PWA assets in `public/[game-slug]/manifest.json` and `public/[game-slug]/sw.js`
+9. If the game adds or changes credits, update `app/data/attributions.ts` and run `npm run sync:attributions`
+10. Add tests in both `tests-node/` and `tests/` when the game introduces new logic and UI behavior
 
 ### Game Module Contract
 
@@ -99,6 +108,16 @@ Games use vanilla TypeScript with direct DOM manipulation. This is intentional �
 - No canvas accessibility barriers
 - Tiny bundles (no framework overhead)
 
+### Game Implementation Rules
+
+Game pages should follow these structural rules unless there is a strong reason not to:
+- Use a dedicated body class per game page and treat that body as a full-height flex column root
+- Pair `body.<game> main { display: flex; flex: 1; min-height: 0; }` with a full-width `.scene-track`
+- Include scoped install/offline support per game under `public/[game-slug]/`, not at the site root
+- Include `#game-status` and `#game-feedback` aria-live regions for narrated state changes
+- Include a `noscript` fallback message because the game page itself is pre-rendered even when gameplay needs JS
+- Keep settings/credits in the game UI when the game has entries in `app/data/attributions.ts`
+
 ## Conventions
 
 - **JSX components** for all server-rendered HTML — `app/` files use `.tsx` extension
@@ -108,6 +127,18 @@ Games use vanilla TypeScript with direct DOM manipulation. This is intentional �
 - **InputCallbacks interface** — all game input sources (pointer, keyboard, gamepad) normalize to semantic game actions
 - **CSS-first animation** — animations as CSS classes, JS wraps in Promises, respects `prefers-reduced-motion`
 - **200KB per-page budget** — HTML + CSS + JS (excluding sourcemaps)
+- **Scoped PWA manifests** — game manifests use `"start_url": "./"` and `"scope": "./"` so Pages/project-site deploys work correctly
+- **Playwright spec naming** — browser tests must match `site-*.spec.ts` because `playwright.config.ts` only picks up that pattern
+- **Generated attribution file** — `ATTRIBUTIONS.md` is generated from `app/data/attributions.ts`; keep it synced with `npm run sync:attributions`
+
+## Testing Guidance
+
+- Start with `npm run check` for fast lint + typecheck feedback
+- Keep pure logic, config, build, workflow, and data-shape checks in `tests-node/`
+- Keep rendered-site and browser behavior checks in Playwright under `tests/`
+- Node-side TypeScript tests should use extensionless workspace imports
+- Full local verification is `npm test`
+- When adding a new game route, prefer one targeted Playwright spec for the new page rather than expanding unrelated suites first
 
 ## Architecture
 

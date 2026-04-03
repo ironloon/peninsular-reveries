@@ -10,6 +10,24 @@
 
 ## Games
 
+### Mission: Orbit
+
+- Slug: mission-orbit
+- Code license: GPL-3.0
+- Summary: Mission: Orbit uses original visuals and Web Audio API synthesis. Its in-game settings panel surfaces the same credit summary used here.
+
+#### Entries
+
+##### Mission audio bed and sound effects
+
+- Type: music
+- Used in: Mission: Orbit countdown, burns, coast phases, and splashdown
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: The game synthesizes its sounds at runtime. No recorded loops, samples, or downloaded media files are bundled.
+
 ### Super Word
 
 - Slug: super-word

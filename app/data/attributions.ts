@@ -24,6 +24,24 @@ export const repositoryCodeLicense = 'GPL-3.0'
 
 export const gameAttributions: readonly GameAttribution[] = [
   {
+    slug: 'mission-orbit',
+    name: 'Mission: Orbit',
+    codeLicense: repositoryCodeLicense,
+    summary: 'Mission: Orbit uses original visuals and Web Audio API synthesis. Its in-game settings panel surfaces the same credit summary used here.',
+    entries: [
+      {
+        title: 'Mission audio bed and sound effects',
+        type: 'music',
+        usedIn: 'Mission: Orbit countdown, burns, coast phases, and splashdown',
+        creator: 'Peninsular Reveries',
+        source: 'Generated in-browser with the Web Audio API',
+        license: repositoryCodeLicense,
+        modifications: 'Not applicable',
+        notes: 'The game synthesizes its sounds at runtime. No recorded loops, samples, or downloaded media files are bundled.',
+      },
+    ],
+  },
+  {
     slug: 'super-word',
     name: 'Super Word',
     codeLicense: repositoryCodeLicense,

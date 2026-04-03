@@ -4,6 +4,7 @@ import { attributionsPagePath } from './data/attributions.js'
 export const routes = route({
   home: '/',
   attributions: attributionsPagePath,
+  missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
   notFound: '/404.html',
 })

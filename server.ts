@@ -26,6 +26,7 @@ const ctx = await esbuild.context({
   entryPoints: [
     'client/shell.ts',
     'client/404.ts',
+    'client/mission-orbit/main.ts',
     'client/super-word/main.ts',
   ],
   bundle: true,
