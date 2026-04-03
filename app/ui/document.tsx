@@ -11,6 +11,7 @@ interface DocumentProps {
   includeDefaultStyles?: boolean
   scripts?: string[]
   bodyClass?: string
+  viewportFitCover?: boolean
   faviconPath?: string
   manifestPath?: string
   serviceWorkerPath?: string
@@ -28,6 +29,7 @@ export function Document() {
       includeDefaultStyles = true,
       scripts = [],
       bodyClass,
+      viewportFitCover = false,
       faviconPath = '/favicon.svg',
       manifestPath,
       serviceWorkerPath,
@@ -48,6 +50,9 @@ export function Document() {
     const manifestHref = manifestPath ? withBasePath(manifestPath, siteBasePath) : undefined
     const serviceWorkerHref = serviceWorkerPath ? withBasePath(serviceWorkerPath, siteBasePath) : undefined
     const serviceWorkerScopeHref = serviceWorkerScope ? withBasePath(serviceWorkerScope, siteBasePath) : undefined
+    const viewportContent = viewportFitCover
+      ? 'width=device-width, initial-scale=1.0, viewport-fit=cover'
+      : 'width=device-width, initial-scale=1.0'
 
     return (
       <html
@@ -58,7 +63,7 @@ export function Document() {
       >
         <head>
           <meta charSet="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta name="viewport" content={viewportContent} />
           <title>{fullTitle}</title>
           <meta name="description" content={description} />
           <meta property="og:title" content={fullTitle} />

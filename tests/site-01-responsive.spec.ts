@@ -6,7 +6,7 @@ const viewports = [
   { name: 'desktop', width: 1280, height: 800 },
 ];
 
-const pages = ['/', '/attributions/', '/super-word/'];
+const pages = ['/', '/attributions/', '/super-word/', '/mission-orbit/'];
 
 test.describe('SITE-01: Responsive layout', () => {
   for (const vp of viewports) {
@@ -33,7 +33,7 @@ test.describe('SITE-01: Responsive layout', () => {
   }
 
   test('super word keeps core controls visible on a short landscape viewport', async ({ page }) => {
-    await page.setViewportSize({ width: 1024, height: 600 });
+    await page.setViewportSize({ width: 932, height: 430 });
     await page.goto('/super-word/');
 
     await page.getByRole('button', { name: /let's go/i }).click();
@@ -49,6 +49,36 @@ test.describe('SITE-01: Responsive layout', () => {
       const sceneRect = scene.getBoundingClientRect();
       const buttonRect = checkButton.getBoundingClientRect();
       return sceneRect.height >= 140 && buttonRect.bottom <= window.innerHeight;
+    });
+
+    expect(controlsFit).toBe(true);
+  });
+
+  test('mission orbit keeps start and mission controls visible on a short landscape viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 932, height: 430 });
+    await page.goto('/mission-orbit/');
+
+    const startFits = await page.evaluate(() => {
+      const startButton = document.getElementById('start-btn');
+      if (!startButton) return false;
+
+      const rect = startButton.getBoundingClientRect();
+      return rect.top >= 0 && rect.bottom <= window.innerHeight;
+    });
+
+    expect(startFits).toBe(true);
+
+    await page.getByRole('button', { name: /begin countdown/i }).click();
+    await expect(page.locator('#mission-screen')).toHaveClass(/active/);
+
+    const controlsFit = await page.evaluate(() => {
+      const stage = document.getElementById('mission-stage-shell');
+      const actionButton = document.getElementById('mission-action-btn');
+      if (!stage || !actionButton) return false;
+
+      const stageRect = stage.getBoundingClientRect();
+      const actionRect = actionButton.getBoundingClientRect();
+      return stageRect.height >= 140 && actionRect.bottom <= window.innerHeight;
     });
 
     expect(controlsFit).toBe(true);

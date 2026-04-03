@@ -113,6 +113,9 @@ Games use vanilla TypeScript with direct DOM manipulation. This is intentional â
 Game pages should follow these structural rules unless there is a strong reason not to:
 - Use a dedicated body class per game page and treat that body as a full-height flex column root
 - Pair `body.<game> main { display: flex; flex: 1; min-height: 0; }` with a full-width `.scene-track`
+- For full-screen game pages, opt into `viewport-fit=cover` and pad the game root with `env(safe-area-inset-*)` so iPhone/Dynamic Island/home-indicator devices keep content inside visible bounds
+- Any fixed overlays (`settings`, celebration popups, noscript banners) need the same safe-area-aware padding as the game root
+- On short mobile and landscape viewports, provide a scroll path or tighter layout for non-gameplay screens instead of clipping controls below the fold
 - Include scoped install/offline support per game under `public/[game-slug]/`, not at the site root
 - Include `#game-status` and `#game-feedback` aria-live regions for narrated state changes
 - Include a `noscript` fallback message because the game page itself is pre-rendered even when gameplay needs JS
@@ -137,7 +140,8 @@ Game pages should follow these structural rules unless there is a strong reason 
 - Keep pure logic, config, build, workflow, and data-shape checks in `tests-node/`
 - Keep rendered-site and browser behavior checks in Playwright under `tests/`
 - Node-side TypeScript tests should use extensionless workspace imports
-- Full local verification is `npm test`
+- `npm install` sets `core.hooksPath` to the repo-owned `.githooks/` directory via `prepare`; commits run the local validation gate automatically without an extra hook dependency
+- Full local verification is `npm run test:local`
 - When adding a new game route, prefer one targeted Playwright spec for the new page rather than expanding unrelated suites first
 
 ## Architecture

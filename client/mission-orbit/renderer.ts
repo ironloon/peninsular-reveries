@@ -1,6 +1,6 @@
 import { isReducedMotion } from './animations.js'
-import { getMissionRating, getMissionScore, getMissionStepLabel, getMissionSummary, getMissionTimeLabel } from './state.js'
-import { TOTAL_GAMEPLAY_STEPS, getPhaseDefinition, type BurnGrade, type GameState } from './types.js'
+import { getCueSignal, getMissionStepLabel, getMissionTimeLabel } from './state.js'
+import { getPhaseDefinition, type BurnGrade, type GameState } from './types.js'
 
 declare global {
   interface Window {
@@ -50,8 +50,7 @@ let promptEl: HTMLElement | null = null
 let stepPillEl: HTMLElement | null = null
 let dayPillEl: HTMLElement | null = null
 let clockEl: HTMLElement | null = null
-let ratingEl: HTMLElement | null = null
-let burnSummaryEl: HTMLElement | null = null
+let timingPanelEl: HTMLElement | null = null
 let outcomeEl: HTMLElement | null = null
 let countdownEl: HTMLElement | null = null
 let meterEl: HTMLElement | null = null
@@ -75,8 +74,6 @@ let flameEl: SVGElement | null = null
 let parachuteEl: SVGElement | null = null
 let serviceModuleEl: SVGElement | null = null
 let endSummaryEl: HTMLElement | null = null
-let endStatsEl: HTMLElement | null = null
-let endBurnsEl: HTMLElement | null = null
 
 function requireSvg<T extends SVGElement>(id: string): T {
   return document.getElementById(id) as unknown as T
@@ -88,8 +85,7 @@ function getPrompt(): HTMLElement { return promptEl ??= document.getElementById(
 function getStepPill(): HTMLElement { return stepPillEl ??= document.getElementById('mission-step-pill')! }
 function getDayPill(): HTMLElement { return dayPillEl ??= document.getElementById('mission-day-pill')! }
 function getClock(): HTMLElement { return clockEl ??= document.getElementById('mission-clock')! }
-function getRating(): HTMLElement { return ratingEl ??= document.getElementById('mission-rating')! }
-function getBurnSummary(): HTMLElement { return burnSummaryEl ??= document.getElementById('mission-burn-summary')! }
+function getTimingPanel(): HTMLElement { return timingPanelEl ??= document.getElementById('timing-panel')! }
 function getOutcome(): HTMLElement { return outcomeEl ??= document.getElementById('mission-outcome')! }
 function getCountdown(): HTMLElement { return countdownEl ??= document.getElementById('countdown-overlay')! }
 function getMeter(): HTMLElement { return meterEl ??= document.getElementById('timing-meter')! }
@@ -113,8 +109,6 @@ function getFlame(): SVGElement { return flameEl ??= requireSvg<SVGElement>('mis
 function getParachute(): SVGElement { return parachuteEl ??= requireSvg<SVGElement>('mission-parachute') }
 function getServiceModule(): SVGElement { return serviceModuleEl ??= requireSvg<SVGElement>('mission-service-module') }
 function getEndSummary(): HTMLElement { return endSummaryEl ??= document.getElementById('end-summary')! }
-function getEndStats(): HTMLElement { return endStatsEl ??= document.getElementById('end-stats')! }
-function getEndBurns(): HTMLElement { return endBurnsEl ??= document.getElementById('end-burns')! }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -354,24 +348,54 @@ function renderMeter(state: GameState): void {
 
   const definition = getPhaseDefinition(state.phase)
   const actionBtn = getActionBtn()
+  const panel = getTimingPanel()
   const meter = getMeter()
-  const goodZone = getGoodZone()
-  const sweetZone = getSweetZone()
-  const cursor = getCursor()
+  const stageShell = getStageShell()
 
   const showMeter = definition.mode === 'hold' || definition.mode === 'timing'
-  meter.parentElement?.classList.toggle('is-passive', !showMeter)
+  const cueSignal = showMeter ? getCueSignal(state) : null
+  const cueState = state.slowMoActive ? 'slow-mo' : cueSignal?.band ?? 'idle'
+  const cueWord = state.slowMoActive ? 'NOW!' : cueSignal?.band === 'strike' ? 'NOW!' : cueSignal?.band === 'ready' ? 'READY' : ''
+  const cueIntensity = state.slowMoActive
+    ? Math.max(0.82, cueSignal?.intensity ?? 0.82)
+    : cueSignal?.intensity ?? 0
+
+  panel.classList.toggle('is-passive', !showMeter)
+  panel.dataset.cueState = cueState
+  panel.dataset.slowMo = state.slowMoActive ? 'true' : 'false'
   meter.classList.toggle('is-hidden', !showMeter)
+  meter.dataset.cueState = cueState
+  meter.dataset.slowMo = state.slowMoActive ? 'true' : 'false'
+  meter.style.setProperty('--cue-intensity', cueIntensity.toFixed(3))
+  meter.style.setProperty('--cue-scale', (0.82 + cueIntensity * 0.24).toFixed(3))
+  meter.style.setProperty('--cue-sweet-scale', (0.76 + cueIntensity * 0.2).toFixed(3))
+  meter.style.setProperty('--cue-core-scale', (0.78 + cueIntensity * 0.3).toFixed(3))
+
+  stageShell.dataset.cueState = showMeter ? cueState : 'idle'
+  stageShell.dataset.slowMo = state.slowMoActive ? 'true' : 'false'
+  stageShell.dataset.cueWord = showMeter ? cueWord : ''
+  stageShell.style.setProperty('--cue-intensity', cueIntensity.toFixed(3))
+  stageShell.style.setProperty('--cue-stage-scale', (0.76 + cueIntensity * 0.34).toFixed(3))
 
   getTimingModeChip().textContent = definition.mode === 'hold'
-    ? 'Hold + release'
+    ? state.slowMoActive
+      ? 'Slow-mo rescue'
+      : cueSignal?.band === 'strike'
+        ? 'Release now'
+        : 'Listen + release'
     : definition.mode === 'timing'
-      ? 'Single tap'
+      ? state.slowMoActive
+        ? 'Slow-mo rescue'
+        : cueSignal?.band === 'strike'
+          ? 'Strike now'
+          : 'Listen + tap'
       : definition.mode === 'countdown'
         ? 'Countdown'
         : 'Autopilot'
 
-  getTimingHint().textContent = definition.timingHint
+  getTimingHint().textContent = state.slowMoActive
+    ? 'Guidance slowed the moment. Follow the flare and act now.'
+    : definition.timingHint
 
   const disabled = definition.mode === 'countdown' || definition.mode === 'auto' || state.phaseResolved
   actionBtn.disabled = disabled
@@ -379,21 +403,25 @@ function renderMeter(state: GameState): void {
   actionBtn.textContent = state.phaseResolved
     ? 'Maneuver locked'
     : definition.mode === 'hold'
-      ? state.actionHeld ? 'Release for cutoff' : definition.actionLabel
+      ? state.slowMoActive
+        ? 'Release now'
+        : state.actionHeld
+          ? 'Release for cutoff'
+          : definition.actionLabel
+      : definition.mode === 'timing'
+        ? state.slowMoActive
+          ? 'Tap now'
+          : cueSignal?.band === 'strike'
+            ? 'Strike now'
+            : definition.actionLabel
       : definition.actionLabel
 
-  if (!definition.timingWindow) {
-    return
-  }
-
-  const { goodStart, goodEnd, perfectStart, perfectEnd } = definition.timingWindow
-  goodZone.style.left = `${goodStart * 100}%`
-  goodZone.style.width = `${(goodEnd - goodStart) * 100}%`
-  sweetZone.style.left = `${perfectStart * 100}%`
-  sweetZone.style.width = `${(perfectEnd - perfectStart) * 100}%`
-
-  const cursorPosition = state.phase === 'launch' ? state.launchProgress : state.timingCursor
-  cursor.style.left = `${cursorPosition * 100}%`
+  const goodZone = getGoodZone()
+  const sweetZone = getSweetZone()
+  const cursor = getCursor()
+  goodZone.dataset.cueState = cueState
+  sweetZone.dataset.cueState = cueState
+  cursor.dataset.cueState = cueState
 }
 
 function renderScene(state: GameState): void {
@@ -427,8 +455,6 @@ export function renderMission(state: GameState): void {
   getStepPill().textContent = getMissionStepLabel(state)
   getDayPill().textContent = definition.dayLabel
   getClock().textContent = getMissionTimeLabel(state)
-  getRating().textContent = `Rating: ${getMissionRating(state.burnResults)}`
-  getBurnSummary().textContent = getMissionSummary(state.burnResults)
   getOutcome().textContent = state.outcomeText
   applyBurnClass(getOutcome(), state.outcomeGrade)
   getCountdown().textContent = String(state.countdownValue)
@@ -439,22 +465,7 @@ export function renderMission(state: GameState): void {
 }
 
 export function renderEndScreen(state: GameState): void {
-  const burnCount = state.burnResults.length
-  const score = getMissionScore(state.burnResults)
-  const rating = getMissionRating(state.burnResults)
-  const burnCards = state.burnResults.length === 0
-    ? '<p class="end-burn-card">No burn data recorded.</p>'
-    : state.burnResults.map((result) => (
-      `<article class="end-burn-card is-${result.grade}"><h3>${result.label}</h3><p>${result.detail}</p><span>${result.accuracy}% accuracy</span></article>`
-    )).join('')
-
-  getEndSummary().textContent = `Mission time ${getMissionTimeLabel(state)}. ${burnCount} manual burns logged.`
-  getEndStats().innerHTML = [
-    `<article class="end-stat-card"><span>Rating</span><strong>${rating}</strong></article>`,
-    `<article class="end-stat-card"><span>Mission score</span><strong>${score}</strong></article>`,
-    `<article class="end-stat-card"><span>Burns</span><strong>${burnCount} / ${TOTAL_GAMEPLAY_STEPS - 4}</strong></article>`,
-  ].join('')
-  getEndBurns().innerHTML = burnCards
+  getEndSummary().textContent = `Mission time ${getMissionTimeLabel(state)}. You brought the astronaut home safe, and the recovery crew is ready with a hero's welcome.`
 }
 
 export function showScreen(screenId: string): void {

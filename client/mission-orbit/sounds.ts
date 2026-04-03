@@ -177,6 +177,25 @@ export function sfxBurnWindow(): void {
   tone(620, 0.08, 'sine', 0.04, 0.08)
 }
 
+export function sfxCueApproach(): void {
+  tone(520, 0.06, 'sine', 0.03)
+}
+
+export function sfxCueReady(): void {
+  tone(660, 0.07, 'sine', 0.035)
+  tone(880, 0.08, 'triangle', 0.028, 0.05)
+}
+
+export function sfxCueStrike(): void {
+  chord([659.25, 987.77], 0.12, 0.04)
+  tone(1318.51, 0.1, 'sine', 0.03, 0.03)
+}
+
+export function sfxSlowMo(): void {
+  sweep(740, 280, 0.24, 'triangle', 0.035)
+  tone(420, 0.2, 'sine', 0.022, 0.05)
+}
+
 export function sfxBurnResult(grade: BurnGrade): void {
   if (grade === 'assist') {
     tone(200, 0.18, 'square', 0.05)

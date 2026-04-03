@@ -13,6 +13,7 @@ export async function missionOrbitAction() {
       includeDefaultStyles={false}
       scripts={['/client/mission-orbit/main.js']}
       bodyClass="mission-orbit-game"
+      viewportFitCover
       manifestPath="/mission-orbit/manifest.json"
       serviceWorkerPath="/mission-orbit/sw.js"
       serviceWorkerScope="/mission-orbit/"
@@ -104,7 +105,7 @@ export async function missionOrbitAction() {
 
             <section id="timing-panel" className="timing-panel" aria-labelledby="timing-title">
               <div className="timing-header">
-                <h3 id="timing-title">Burn timing</h3>
+                <h3 id="timing-title">Cue signal</h3>
                 <span id="timing-mode-chip" className="timing-mode-chip">Manual</span>
               </div>
               <div id="timing-meter" className="timing-meter" aria-hidden="true">
@@ -112,7 +113,7 @@ export async function missionOrbitAction() {
                 <div id="timing-sweet-zone" className="timing-sweet-zone"></div>
                 <div id="timing-cursor" className="timing-cursor"></div>
               </div>
-              <p id="timing-hint" className="timing-hint">Hold through ascent, then release in the green band.</p>
+              <p id="timing-hint" className="timing-hint">Listen for the cue swell, then act on the flare.</p>
               <p id="mission-outcome" className="mission-outcome" aria-live="polite"></p>
             </section>
 
@@ -120,21 +121,14 @@ export async function missionOrbitAction() {
               <button id="mission-action-btn" className="mission-btn mission-btn-primary mission-action-btn">Hold engines</button>
               <button data-settings-open="true" className="mission-btn mission-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Settings</button>
             </div>
-
-            <footer className="mission-footer">
-              <p id="mission-rating" className="mission-rating">Rating: awaiting burns</p>
-              <p id="mission-burn-summary" className="mission-burn-summary">No burns logged yet.</p>
-            </footer>
           </div>
         </section>
 
         <section id="end-screen" className="screen" aria-labelledby="mission-end-heading">
           <div className="end-shell">
-            <p className="mission-kicker">Splashdown complete</p>
-            <h2 id="mission-end-heading" className="mission-title mission-title-end">Mission success</h2>
-            <p id="end-summary" className="end-summary">The crew is home and recovery teams are on station.</p>
-            <div id="end-stats" className="end-stats"></div>
-            <div id="end-burns" className="end-burns"></div>
+            <p className="mission-kicker">Pacific splashdown</p>
+            <h2 id="mission-end-heading" className="mission-title mission-title-end">Welcome home, astronaut!</h2>
+            <p id="end-summary" className="end-summary">You brought the astronaut home safe, and the recovery crew is ready with a hero's welcome.</p>
             <div className="start-actions">
               <button id="replay-btn" className="mission-btn mission-btn-primary">Run mission again</button>
               <button data-settings-open="true" className="mission-btn mission-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Settings</button>
@@ -153,7 +147,7 @@ export async function missionOrbitAction() {
                   <h4>Touch / mouse</h4>
                   <ul className="controls-list">
                     <li>Tap or hold the action button.</li>
-                    <li>Release during the ascent cutoff band.</li>
+                    <li>Listen for the cue tone and act on the flare.</li>
                     <li>Use the settings buttons any time.</li>
                   </ul>
                 </div>
@@ -161,6 +155,7 @@ export async function missionOrbitAction() {
                   <h4>Keyboard / controller</h4>
                   <ul className="controls-list">
                     <li><kbd>Space</kbd> or <kbd>Enter</kbd> fires the action.</li>
+                    <li>Bright cue tones signal the strike moment.</li>
                     <li>Controller <kbd>A</kbd> mirrors the action button.</li>
                     <li>Controller <kbd>Start</kbd> toggles settings.</li>
                   </ul>
@@ -174,7 +169,7 @@ export async function missionOrbitAction() {
                 <span>Space ambience</span>
                 <input type="checkbox" id="music-enabled-toggle" />
               </label>
-              <p className="settings-help">Sound effects stay on. Ambient pads only play when you turn them on.</p>
+              <p className="settings-help">Cue tones and sound effects stay on. Ambient pads only play when you turn them on.</p>
             </section>
 
             <section className="settings-section">

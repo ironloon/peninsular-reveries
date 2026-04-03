@@ -28,8 +28,12 @@ export function announceBurnResult(result: BurnResult): void {
   announce(result.detail, result.grade === 'assist' ? 'assertive' : 'polite')
 }
 
-export function announceMissionComplete(rating: string, missionTime: string): void {
-  announce(`Mission complete. Splashdown successful. Rating: ${rating}. Mission time: ${missionTime}.`, 'assertive')
+export function announceSlowMoCue(message: string): void {
+  announce(message, 'assertive')
+}
+
+export function announceMissionComplete(missionTime: string): void {
+  announce(`Mission complete. Splashdown successful. Welcome home, astronaut. Mission time: ${missionTime}.`, 'assertive')
 }
 
 export function updatePhaseDescription(text: string): void {

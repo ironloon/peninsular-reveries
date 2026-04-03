@@ -5,6 +5,10 @@
 /* ── Design Tokens ────────────────────────────────────────── */
 
 .super-word-game {
+  --game-safe-top: env(safe-area-inset-top, 0px);
+  --game-safe-right: env(safe-area-inset-right, 0px);
+  --game-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --game-safe-left: env(safe-area-inset-left, 0px);
   --game-purple: #6C3FC5;
   --game-purple-dark: #4A2A9B;
   --game-purple-light: #9B72E0;
@@ -50,12 +54,13 @@ body.super-word-game .site-footer {
   font-family: var(--game-font);
   font-weight: 700;
   overflow: hidden;
+  min-height: 100svh;
   height: 100dvh;
   width: min(100%, 100vw);
   display: flex;
   flex-direction: column;
   max-width: 100vw;
-  padding: 0;
+  padding: var(--game-safe-top) var(--game-safe-right) var(--game-safe-bottom) var(--game-safe-left);
   margin: 0;
   box-sizing: border-box;
 }
@@ -82,6 +87,7 @@ body.super-word-game main {
   display: flex;
   width: 100%;
   min-width: 100%;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -91,10 +97,13 @@ body.super-word-game main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
   transform: translateX(100%);
   transition: transform 500ms cubic-bezier(0.4, 0, 0.2, 1);
   visibility: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .screen.active {
@@ -182,7 +191,12 @@ body.super-word-game main {
   justify-content: center;
   background: rgba(0, 0, 0, 0.6);
   pointer-events: auto;
-  padding: var(--game-space-md);
+  overflow: auto;
+  padding:
+    max(var(--game-space-md), var(--game-safe-top))
+    max(var(--game-space-md), var(--game-safe-right))
+    max(var(--game-space-md), var(--game-safe-bottom))
+    max(var(--game-space-md), var(--game-safe-left));
 }
 
 .settings-modal[hidden] {
@@ -198,9 +212,8 @@ body.super-word-game main {
   display: flex;
   flex-direction: column;
   gap: var(--game-space-sm);
-  width: 90%;
-  max-width: 380px;
-  max-height: 85dvh;
+  width: min(100%, 380px);
+  max-height: 100%;
   overflow-y: auto;
   animation: celebrationIn 250ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
@@ -369,6 +382,7 @@ body.super-word-game main {
   align-items: stretch;
   justify-content: flex-start;
   min-height: 0;
+  overflow: hidden;
 }
 
 .game-header {
@@ -790,6 +804,12 @@ body.gamepad-active .gamepad-start-hint {
   justify-content: center;
   background: rgba(0, 0, 0, 0.35);
   pointer-events: auto;
+  overflow: auto;
+  padding:
+    max(var(--game-space-md), var(--game-safe-top))
+    max(var(--game-space-md), var(--game-safe-right))
+    max(var(--game-space-md), var(--game-safe-bottom))
+    max(var(--game-space-md), var(--game-safe-left));
 }
 
 .celebration-popup[hidden] {
@@ -800,6 +820,9 @@ body.gamepad-active .gamepad-start-hint {
   background: linear-gradient(140deg, #1B5E20 0%, #2E7D32 60%, #81C784 100%);
   border-radius: 24px;
   padding: var(--game-space-xl) var(--game-space-2xl);
+  width: min(100%, 30rem);
+  max-height: 100%;
+  overflow-y: auto;
   text-align: center;
   color: var(--game-white);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
@@ -1080,6 +1103,12 @@ body.gamepad-active .gamepad-start-hint {
 }
 
 @media (max-height: 760px) {
+  #start-screen,
+  #complete-screen,
+  #win-screen {
+    gap: var(--game-space-md);
+  }
+
   .game-header {
     padding: 0.35rem 0.85rem;
   }
@@ -1103,6 +1132,18 @@ body.gamepad-active .gamepad-start-hint {
 @media (max-height: 760px) and (orientation: landscape) {
   .super-word-game {
     --game-item-w: 72px;
+  }
+
+  #start-screen,
+  #complete-screen,
+  #win-screen {
+    gap: var(--game-space-sm);
+    padding: var(--game-space-lg);
+  }
+
+  .settings-content,
+  .celebration-content {
+    padding: var(--game-space-md) var(--game-space-lg);
   }
 
   .item-card {
@@ -1134,6 +1175,17 @@ body.gamepad-active .gamepad-start-hint {
 @media (max-height: 600px) {
   .super-word-game {
     --game-item-w: 64px;
+  }
+
+  #start-screen,
+  #complete-screen,
+  #win-screen {
+    padding: var(--game-space-md);
+  }
+
+  .settings-content,
+  .celebration-content {
+    padding: var(--game-space-md);
   }
 
   .game-header {

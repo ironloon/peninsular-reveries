@@ -13,6 +13,7 @@ export async function superWordAction() {
       includeDefaultStyles={false}
       scripts={['/client/super-word/main.js']}
       bodyClass="super-word-game"
+      viewportFitCover
       faviconPath="/favicon-game-super-word.svg"
       manifestPath="/super-word/manifest.json"
       serviceWorkerPath="/super-word/sw.js"

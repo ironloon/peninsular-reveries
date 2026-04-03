@@ -60,6 +60,8 @@ export interface GameState {
   readonly burnResults: readonly BurnResult[]
   readonly outcomeText: string
   readonly outcomeGrade: BurnGrade | null
+  readonly slowMoActive: boolean
+  readonly slowMoElapsedMs: number
   readonly phaseResolved: boolean
   readonly serviceModuleDetached: boolean
   readonly parachuteDeployed: boolean
@@ -84,9 +86,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Ascent to orbit',
     dayLabel: 'Flight Day 1',
     status: 'SLS climb is under way',
-    prompt: 'Hold the action button to climb. Release in the green cutoff band for main engine cutoff.',
+    prompt: 'Hold the action button to climb. Listen for the bright cue and release on the flare for main engine cutoff.',
     actionLabel: 'Hold engines',
-    timingHint: 'Hold to climb. Release in the green band for main engine cutoff.',
+    timingHint: 'Listen for the bright cue, then release on the flare.',
     mode: 'hold',
     assistAfterMs: 6500,
     timingWindow: {
@@ -101,9 +103,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Orbit raise burn',
     dayLabel: 'Flight Day 1',
     status: 'Orion is circling Earth',
-    prompt: 'Tap once in the highlighted window to raise perigee and settle into the test orbit.',
+    prompt: 'Listen for the cue swell and tap on the flare to raise perigee and settle into the test orbit.',
     actionLabel: 'Fire orbit burn',
-    timingHint: 'Tap once as the cursor crosses the green zone.',
+    timingHint: 'Listen for the bright tone and tap on the flare.',
     mode: 'timing',
     assistAfterMs: 5200,
     meterSpeed: 0.00058,
@@ -130,9 +132,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Trans-lunar injection',
     dayLabel: 'Flight Day 2',
     status: 'Time to leave Earth orbit',
-    prompt: 'Tap in the green window to light the burn that sends Orion around the Moon on a free-return path.',
+    prompt: 'Listen for the cue flare and tap on the strike to light the burn that sends Orion around the Moon on a free-return path.',
     actionLabel: 'Fire TLI burn',
-    timingHint: 'One clean tap sends the mission toward the Moon.',
+    timingHint: 'One bright cue, one clean tap.',
     mode: 'timing',
     assistAfterMs: 5200,
     meterSpeed: 0.00072,
@@ -148,9 +150,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Lunar flyby',
     dayLabel: 'Flight Day 4',
     status: 'The Moon is filling the windows',
-    prompt: 'Tap once near closest approach for a small correction as the Moon bends the return trajectory home.',
+    prompt: 'Listen for the cue flare and tap once near closest approach for a small correction as the Moon bends the return trajectory home.',
     actionLabel: 'Trim the flyby',
-    timingHint: 'Tap once near closest approach for the cleanest return path.',
+    timingHint: 'Let the cue bloom, then tap once.',
     mode: 'timing',
     assistAfterMs: 5400,
     meterSpeed: 0.00064,
@@ -177,9 +179,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Entry interface',
     dayLabel: 'Flight Day 10',
     status: 'Re-entry heating is building',
-    prompt: 'Tap in the green zone to jettison the service module before Orion commits to atmospheric entry.',
+    prompt: 'Listen for the cue flare and tap to jettison the service module before Orion commits to atmospheric entry.',
     actionLabel: 'Jettison module',
-    timingHint: 'Tap once in the green zone before the heat ramps up.',
+    timingHint: 'Hit the flare before the heat ramps up.',
     mode: 'timing',
     assistAfterMs: 4800,
     meterSpeed: 0.00076,
@@ -195,9 +197,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Parachute deploy',
     dayLabel: 'Flight Day 10',
     status: 'Ocean recovery is in range',
-    prompt: 'Tap in the green zone to open the drogues and mains for the last leg down to the Pacific.',
+    prompt: 'Listen for the cue flare and tap to open the drogues and mains for the last leg down to the Pacific.',
     actionLabel: 'Deploy chutes',
-    timingHint: 'Tap once in the green zone to open the parachutes.',
+    timingHint: 'Let the cue bloom, then open the parachutes.',
     mode: 'timing',
     assistAfterMs: 4800,
     meterSpeed: 0.0007,

@@ -9,7 +9,16 @@ import {
   type TimingWindow,
 } from './types.js'
 
+export type CueSignalBand = 'idle' | 'building' | 'ready' | 'strike'
+
+export interface CueSignalState {
+  readonly band: CueSignalBand
+  readonly intensity: number
+}
+
 const COUNTDOWN_START = 10
+const BASE_SAFE_PADDING = 0.08
+const SLOW_MO_SAFE_PADDING = 0.18
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -24,7 +33,7 @@ function burnMessage(label: string, grade: BurnGrade): string {
     case 'perfect': return `${label}: perfect. Right on the flight profile.`
     case 'good': return `${label}: good burn. The mission stays sharp.`
     case 'safe': return `${label}: safe burn. Guidance trimmed the edges and kept the path clean.`
-    case 'assist': return `${label}: assisted. Autopilot nudged the maneuver back onto profile.`
+    case 'assist': return `${label}: assisted. Guidance slowed the moment and nudged the maneuver back onto profile.`
   }
 }
 
@@ -36,7 +45,13 @@ function accuracyPercent(position: number, center: number): number {
   return Math.round(clamp(1 - Math.abs(position - center) * 2.2, 0, 1) * 100)
 }
 
-function evaluateWindow(position: number, window: TimingWindow, phase: MissionGameplayPhase, label: string): BurnResult {
+function evaluateWindow(
+  position: number,
+  window: TimingWindow,
+  phase: MissionGameplayPhase,
+  label: string,
+  safePadding: number = BASE_SAFE_PADDING,
+): BurnResult {
   const center = centerOf(window)
   const accuracy = accuracyPercent(position, center)
 
@@ -62,8 +77,8 @@ function evaluateWindow(position: number, window: TimingWindow, phase: MissionGa
     }
   }
 
-  const safeStart = clamp(window.goodStart - 0.08, 0, 1)
-  const safeEnd = clamp(window.goodEnd + 0.08, 0, 1)
+  const safeStart = clamp(window.goodStart - safePadding, 0, 1)
+  const safeEnd = clamp(window.goodEnd + safePadding, 0, 1)
   if (position >= safeStart && position <= safeEnd) {
     return {
       phase,
@@ -102,6 +117,8 @@ function applyBurnResult(state: GameState, result: BurnResult): GameState {
     burnResults: [...state.burnResults, result],
     outcomeText: result.detail,
     outcomeGrade: result.grade,
+    slowMoActive: false,
+    slowMoElapsedMs: 0,
     phaseResolved: true,
     actionHeld: false,
     serviceModuleDetached: state.phase === 'service-module-jettison' ? true : state.serviceModuleDetached,
@@ -123,6 +140,8 @@ export function createInitialState(): GameState {
     burnResults: [],
     outcomeText: '',
     outcomeGrade: null,
+    slowMoActive: false,
+    slowMoElapsedMs: 0,
     phaseResolved: false,
     serviceModuleDetached: false,
     parachuteDeployed: false,
@@ -177,8 +196,10 @@ export function setActionHeld(state: GameState, held: boolean): GameState {
 export function updateLaunchProgress(state: GameState, deltaMs: number): GameState {
   if (state.phase !== 'launch' || state.phaseResolved) return state
 
-  const poweredClimb = state.actionHeld ? deltaMs / 2300 : -deltaMs / 6000
-  const passiveClimb = deltaMs / 18000
+  const effectiveDeltaMs = state.slowMoActive ? deltaMs * 0.22 : deltaMs
+
+  const poweredClimb = state.actionHeld ? effectiveDeltaMs / 2300 : -effectiveDeltaMs / 6000
+  const passiveClimb = effectiveDeltaMs / 18000
   const nextProgress = clamp(state.launchProgress + poweredClimb + passiveClimb, 0, 1)
 
   if (nextProgress === state.launchProgress) return state
@@ -194,7 +215,9 @@ export function updateTimingCursor(state: GameState, deltaMs: number, speed: num
   }
   if (state.phaseResolved) return state
 
-  let nextPosition = state.timingCursor + deltaMs * speed * state.timingDirection
+  const effectiveDeltaMs = state.slowMoActive ? deltaMs * 0.24 : deltaMs
+
+  let nextPosition = state.timingCursor + effectiveDeltaMs * speed * state.timingDirection
   let nextDirection = state.timingDirection
 
   while (nextPosition > 1 || nextPosition < 0) {
@@ -218,7 +241,8 @@ export function resolveLaunchRelease(state: GameState): GameState {
   if (state.phase !== 'launch' || state.phaseResolved) return state
 
   const definition = getPhaseDefinition('launch')
-  const result = evaluateWindow(state.launchProgress, definition.timingWindow!, 'launch', 'Main engine cutoff')
+  const safePadding = state.slowMoActive ? SLOW_MO_SAFE_PADDING : BASE_SAFE_PADDING
+  const result = evaluateWindow(state.launchProgress, definition.timingWindow!, 'launch', 'Main engine cutoff', safePadding)
   return applyBurnResult(state, result)
 }
 
@@ -236,7 +260,8 @@ export function resolveTimingAttempt(state: GameState): GameState {
   const definition = getPhaseDefinition(state.phase)
   if (definition.mode !== 'timing' || !definition.timingWindow) return state
 
-  const result = evaluateWindow(state.timingCursor, definition.timingWindow, state.phase, definition.label)
+  const safePadding = state.slowMoActive ? SLOW_MO_SAFE_PADDING : BASE_SAFE_PADDING
+  const result = evaluateWindow(state.timingCursor, definition.timingWindow, state.phase, definition.label, safePadding)
   return applyBurnResult(state, result)
 }
 
@@ -267,6 +292,59 @@ export function clearOutcome(state: GameState): GameState {
   }
 }
 
+export function enterSlowMo(state: GameState, message: string): GameState {
+  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phaseResolved || state.slowMoActive) {
+    return state
+  }
+
+  return {
+    ...state,
+    slowMoActive: true,
+    slowMoElapsedMs: 0,
+    outcomeText: message,
+    outcomeGrade: null,
+  }
+}
+
+export function tickSlowMo(state: GameState, deltaMs: number): GameState {
+  if (!state.slowMoActive || state.phaseResolved) return state
+
+  return {
+    ...state,
+    slowMoElapsedMs: state.slowMoElapsedMs + deltaMs,
+  }
+}
+
+export function getCueSignal(state: GameState): CueSignalState | null {
+  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phaseResolved) {
+    return null
+  }
+
+  const definition = getPhaseDefinition(state.phase)
+  if ((definition.mode !== 'hold' && definition.mode !== 'timing') || !definition.timingWindow) {
+    return null
+  }
+
+  const position = state.phase === 'launch' ? state.launchProgress : state.timingCursor
+  const center = centerOf(definition.timingWindow)
+  const reach = state.slowMoActive ? 0.28 : 0.18
+  const intensity = clamp(1 - Math.abs(position - center) / reach, 0, 1)
+
+  if (position >= definition.timingWindow.perfectStart && position <= definition.timingWindow.perfectEnd) {
+    return { band: 'strike', intensity: 1 }
+  }
+
+  if (position >= definition.timingWindow.goodStart && position <= definition.timingWindow.goodEnd) {
+    return { band: 'ready', intensity: Math.max(0.7, intensity) }
+  }
+
+  if (intensity > 0) {
+    return { band: 'building', intensity }
+  }
+
+  return { band: 'idle', intensity: 0 }
+}
+
 export function advancePhase(state: GameState): GameState {
   if (state.phase === 'title' || state.phase === 'celebration') return state
 
@@ -280,6 +358,8 @@ export function advancePhase(state: GameState): GameState {
       actionHeld: false,
       outcomeText: '',
       outcomeGrade: null,
+      slowMoActive: false,
+      slowMoElapsedMs: 0,
       phaseResolved: false,
     }
   }
@@ -296,46 +376,11 @@ export function advancePhase(state: GameState): GameState {
     timingDirection: 1,
     outcomeText: '',
     outcomeGrade: null,
+    slowMoActive: false,
+    slowMoElapsedMs: 0,
     phaseResolved: false,
     parachuteDeployed: nextPhase === 'parachute-deploy' ? false : state.parachuteDeployed,
   }
-}
-
-export function getMissionRating(results: readonly BurnResult[]): string {
-  if (results.length === 0) return 'awaiting burns'
-
-  const average = results.reduce((total, result) => total + result.score, 0) / results.length
-  if (average >= 90) return 'crisp and clean'
-  if (average >= 75) return 'steady hands'
-  if (average >= 60) return 'safe return'
-  return 'guidance-assisted'
-}
-
-export function getMissionSummary(results: readonly BurnResult[]): string {
-  if (results.length === 0) return 'No burns logged yet.'
-
-  const counts = {
-    perfect: 0,
-    good: 0,
-    safe: 0,
-    assist: 0,
-  }
-
-  for (const result of results) {
-    counts[result.grade] += 1
-  }
-
-  const parts: string[] = []
-  if (counts.perfect > 0) parts.push(`${counts.perfect} perfect`)
-  if (counts.good > 0) parts.push(`${counts.good} good`)
-  if (counts.safe > 0) parts.push(`${counts.safe} safe`)
-  if (counts.assist > 0) parts.push(`${counts.assist} assisted`)
-
-  return parts.join(' - ')
-}
-
-export function getMissionScore(results: readonly BurnResult[]): number {
-  return results.reduce((total, result) => total + result.score, 0)
 }
 
 export function getMissionTimeLabel(state: GameState): string {
@@ -343,14 +388,6 @@ export function getMissionTimeLabel(state: GameState): string {
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-}
-
-export function getBurnCards(results: readonly BurnResult[]): readonly string[] {
-  if (results.length === 0) {
-    return ['No manual burns were logged.']
-  }
-
-  return results.map((result) => `${result.label} - ${result.grade} (${result.accuracy}%)`)
 }
 
 export function getMissionStepLabel(state: GameState): string {
