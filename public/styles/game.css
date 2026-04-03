@@ -39,8 +39,8 @@
 
 /* ── Hide site chrome — game is full-viewport ────────────── */
 
-body:has(.super-word-game) .site-header,
-body:has(.super-word-game) .site-footer {
+body.super-word-game .site-header,
+body.super-word-game .site-footer {
   display: none;
 }
 
@@ -56,6 +56,13 @@ body:has(.super-word-game) .site-footer {
   max-width: none;
   padding: 0;
   margin: 0;
+}
+
+body.super-word-game main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* ── Screen system ────────────────────────────────────────── */

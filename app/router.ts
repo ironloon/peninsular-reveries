@@ -7,9 +7,9 @@ import { superWordAction } from './controllers/super-word.js'
 export function createAppRouter() {
   const router = createRouter()
 
-  router.get(routes.home, homeAction)
-  router.get(routes.superWord, superWordAction)
-  router.get(routes.notFound, notFoundAction)
+  router.get(routes.home, () => homeAction())
+  router.get(routes.superWord, () => superWordAction())
+  router.get(routes.notFound, () => notFoundAction())
 
   return router
 }

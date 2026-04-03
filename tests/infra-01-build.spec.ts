@@ -13,11 +13,12 @@ test.describe('INFRA-01: Build script', () => {
     'dist/super-word/index.html',
     'dist/404.html',
     'dist/styles/main.css',
-    'dist/shared/shell.js',
-    'dist/pages/home.js',
-    'dist/super-word/main.js',
-    'dist/pages/404.js',
+    'dist/client/shell.js',
+    'dist/client/super-word/main.js',
+    'dist/client/404.js',
     'dist/favicon.svg',
+    'dist/manifest.json',
+    'dist/sw.js',
   ];
 
   for (const file of expectedFiles) {
