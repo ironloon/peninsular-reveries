@@ -15,15 +15,15 @@ export async function superWordAction() {
 
         {/* Start Screen */}
         <div id="start-screen" className="screen active">
-          <div className="title" aria-hidden="true">
+          <h1 className="title" aria-label="Super Word">
             <span className="title-bounce">S</span><span className="title-bounce">U</span><span className="title-bounce">P</span><span className="title-bounce">E</span><span className="title-bounce">R</span>
             <br />
             <span className="title-bounce">W</span><span className="title-bounce">O</span><span className="title-bounce">R</span><span className="title-bounce">D</span><span className="title-bounce">!</span>
-          </div>
+          </h1>
           <p className="subtitle">Find hidden letters and solve the word puzzle!</p>
           <button id="start-btn" className="btn btn-primary">Let's Go! 🚀</button>
           <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Press Ⓐ to Start</p>
-          <button id="settings-open" className="settings-toggle-btn" aria-label="Settings">⚙️ Settings</button>
+          <button id="settings-open" className="settings-toggle-btn" aria-label="Settings" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">⚙️ Settings</button>
           <p className="inspiration">Inspired by <a href="https://pbskids.org/superwhy" target="_blank" rel="noopener">Super Why!</a> from PBS Kids</p>
         </div>
 
@@ -45,8 +45,8 @@ export async function superWordAction() {
             <div id="scene" role="group" aria-label="Find letters in the scene"></div>
           </div>
           <div className="collection-area notepad">
-            <span className="collection-label notepad-label">Super Letters</span>
-            <div id="letter-slots" role="listbox" aria-label="Collected letters — arrange to spell the word"></div>
+            <span id="letter-slots-label" className="collection-label notepad-label">Super Letters</span>
+            <div id="letter-slots" role="listbox" aria-labelledby="letter-slots-label" aria-label="Collected letters — arrange to spell the word"></div>
             <div className="button-row">
               <button id="check-btn" className="btn btn-check" disabled>✓ Check Word!</button>
             </div>
@@ -54,19 +54,19 @@ export async function superWordAction() {
         </div>
 
         {/* Celebration Popup */}
-        <div id="celebration-popup" className="celebration-popup" aria-live="polite" hidden>
+        <div id="celebration-popup" className="celebration-popup" role="dialog" aria-modal="true" aria-labelledby="celebration-heading" aria-live="polite" hidden>
           <div className="celebration-content">
             <div className="celebration-stars" aria-hidden="true">⭐⭐⭐</div>
-            <h2 className="celebration-heading">Amazing!</h2>
+            <h2 id="celebration-heading" className="celebration-heading">Amazing!</h2>
             <div id="celebration-word" className="celebration-word"></div>
             <button id="celebration-continue-btn" className="btn btn-primary celebration-continue">Continue →</button>
           </div>
         </div>
 
         {/* Settings Modal */}
-        <div id="settings-modal" className="settings-modal" hidden>
+        <div id="settings-modal" className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" tabIndex={-1} hidden>
           <div className="settings-content">
-            <h2 className="settings-heading">⚙️ Settings</h2>
+            <h2 id="settings-heading" className="settings-heading">⚙️ Settings</h2>
 
             <div className="settings-section">
               <h3 className="settings-section-title">🎮 Controls</h3>

@@ -1,6 +1,7 @@
 /super-word
 .dev-client/
 dist/
+.playwright-build-check/
 node_modules/
 playwright-report/
 test-results/

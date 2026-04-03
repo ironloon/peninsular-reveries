@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
 
+env:
+  NODE_VERSION: 24.14.1
+  SITE_BASE_PATH: /${{ github.event.repository.name }}
+  SITE_ORIGIN: https://${{ github.repository_owner }}.github.io
+
 permissions:
   contents: read
   pages: write
@@ -17,16 +22,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
       - run: npx tsx build.ts
         env:
           NODE_ENV: production
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
         with:
           path: dist
 
@@ -34,40 +39,40 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: 22
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
       - run: npm ci
-      - run: npx tsx build.ts
-        env:
-          NODE_ENV: production
+      - run: npm run check
+      - run: npm run test:unit
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test
+      - run: npm run test:e2e
 
   deploy:
     needs: [build, test]
     runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
 
   lighthouse:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - name: Audit live site with Lighthouse
-        uses: treosh/lighthouse-ci-action@v12
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # 12.6.2
         with:
           urls: |
-            https://jaredkrinke.github.io/peninsular-reveries/
-            https://jaredkrinke.github.io/peninsular-reveries/super-word/
+            ${{ needs.deploy.outputs.page_url }}
+            ${{ needs.deploy.outputs.page_url }}super-word/
           budgetPath: ./budget.json
           uploadArtifacts: true
           runs: 1
-    continue-on-error: true

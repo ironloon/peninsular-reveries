@@ -3,11 +3,14 @@ import { cpSync, rmSync, mkdirSync, writeFileSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { createAppRouter } from './app/router.js'
 
+const outputDir = process.env.BUILD_OUTPUT_DIR || 'dist'
+
 // ── Clean output ──────────────────────────────────────────
-rmSync('dist', { recursive: true, force: true })
+rmSync(outputDir, { recursive: true, force: true })
 
 // ── Copy static assets ───────────────────────────────────
-cpSync('public', 'dist', { recursive: true })
+cpSync('public', outputDir, { recursive: true })
+mkdirSync(join(outputDir, 'client', 'super-word'), { recursive: true })
 
 // ── Bundle client code ───────────────────────────────────
 await esbuild.build({
@@ -17,7 +20,7 @@ await esbuild.build({
     'client/super-word/main.ts',
   ],
   bundle: true,
-  outdir: 'dist/client',
+  outdir: join(outputDir, 'client'),
   format: 'esm',
   target: 'es2022',
   minify: true,
@@ -36,7 +39,7 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
 for (const { url, outPath } of staticRoutes) {
   const response = await router.fetch(new Request(url))
   const html = await response.text()
-  const fullPath = join('dist', outPath)
+  const fullPath = join(outputDir, outPath)
   mkdirSync(dirname(fullPath), { recursive: true })
   writeFileSync(fullPath, html)
   console.log(`  rendered ${outPath}`)
@@ -52,7 +55,7 @@ const pages: Record<string, string[]> = {
 
 let budgetFailed = false
 for (const [page, files] of Object.entries(pages)) {
-  const totalBytes = files.reduce((sum, f) => sum + statSync(join('dist', f)).size, 0)
+  const totalBytes = files.reduce((sum, f) => sum + statSync(join(outputDir, f)).size, 0)
   const totalKB = (totalBytes / 1024).toFixed(1)
   const budgetKB = (BUDGET_BYTES / 1024).toFixed(0)
   if (totalBytes > BUDGET_BYTES) {

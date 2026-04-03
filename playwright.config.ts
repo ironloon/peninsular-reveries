@@ -1,14 +1,17 @@
 import { defineConfig } from '@playwright/test';
 
+const baseURL = 'http://127.0.0.1:4173';
+
 export default defineConfig({
   testDir: './tests',
+  testMatch: ['site-*.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: [['html', { open: 'never' }]],
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
   },
   projects: [
@@ -18,8 +21,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npx serve dist -l 3000',
-    port: 3000,
-    reuseExistingServer: !process.env.CI,
+    command: 'node scripts/playwright-server.mjs',
+    port: 4173,
+    reuseExistingServer: false,
   },
 });

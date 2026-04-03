@@ -49,3 +49,15 @@ export function moveFocusAfterTransition(elementId: string, delayMs: number = 30
     if (el) requestAnimationFrame(() => el.focus())
   }, delayMs)
 }
+
+export function moveFocusToFirstSceneItem(delayMs: number = 300): void {
+  setTimeout(() => {
+    const selector = '#scene .scene-item[tabindex="0"], #scene .scene-item:not(.collected)'
+    const el = document.querySelector(selector) as HTMLElement | null
+    if (!el) return
+    if (el.tabIndex < 0) {
+      el.tabIndex = 0
+    }
+    requestAnimationFrame(() => el.focus())
+  }, delayMs)
+}

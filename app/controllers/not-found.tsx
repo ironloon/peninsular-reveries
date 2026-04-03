@@ -1,7 +1,10 @@
 import { renderToString } from 'remix/component/server'
+import { getSiteBasePath } from '../site-config.js'
+import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
 
 export async function notFoundAction() {
+  const siteBasePath = getSiteBasePath()
   const html = await renderToString(
     <Document
       title="Page Not Found"
@@ -16,7 +19,7 @@ export async function notFoundAction() {
           <span className="four-oh-four-digit">4</span>
         </div>
         <p className="four-oh-four-tagline" id="tagline"></p>
-        <a href="/" className="four-oh-four-link">Back to the homepage →</a>
+        <a href={withBasePath('/', siteBasePath)} className="four-oh-four-link">Back to the homepage →</a>
       </div>
     </Document>
   )

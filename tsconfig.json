@@ -10,5 +10,15 @@
     "jsxImportSource": "remix/component",
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["app/**/*.ts", "app/**/*.tsx", "client/**/*.ts", "client/**/*.tsx", "build.ts", "server.ts"]
+  "include": [
+    "app/**/*.ts",
+    "app/**/*.tsx",
+    "client/**/*.ts",
+    "client/**/*.tsx",
+    "tests/**/*.ts",
+    "tests-node/**/*.ts",
+    "build.ts",
+    "server.ts",
+    "playwright.config.ts"
+  ]
 }

@@ -2,10 +2,10 @@
   /* Colors — warm, earthy (UI-SPEC Color table, CONTEXT D-07) */
   --color-bg: #FFF8F0;
   --color-text: #2D2420;
-  --color-accent: #C75B39;
-  --color-accent-light: #E8A87C;
+  --color-accent: #7A341D;
+  --color-accent-light: #94482B;
   --color-surface: #F5EDE4;
-  --color-muted: #8B7D6B;
+  --color-muted: #53473C;
 
   /* Spacing — 4px base (UI-SPEC Spacing Scale) */
   --space-xs: 0.25rem;
@@ -203,10 +203,10 @@ main {
 [data-theme="light"] {
   --color-bg: #FFF8F0;
   --color-text: #2D2420;
-  --color-accent: #C75B39;
-  --color-accent-light: #E8A87C;
+  --color-accent: #7A341D;
+  --color-accent-light: #94482B;
   --color-surface: #F5EDE4;
-  --color-muted: #8B7D6B;
+  --color-muted: #53473C;
 }
 
 /* Dark mode card hover shadow */

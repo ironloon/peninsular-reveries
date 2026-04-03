@@ -1,4 +1,4 @@
-import { PUZZLES, selectPuzzles } from './puzzles.js'
+import { selectPuzzles } from './puzzles.js'
 import type { GameState, Puzzle, SceneItem } from './types.js'
 import {
   createInitialState,
@@ -32,6 +32,7 @@ import {
   announceNextPuzzle,
   announceGameWin,
   moveFocusAfterTransition,
+  moveFocusToFirstSceneItem,
 } from './accessibility.js'
 import {
   animateCollectPop,
@@ -55,7 +56,6 @@ import {
 
 // ── URL Parameter Parsing ─────────────────────────────────
 const params = new URLSearchParams(window.location.search)
-const startPuzzleParam = parseInt(params.get('puzzle') ?? '0', 10)
 const puzzleFilterParam = params.get('puzzles')?.split(',').map(s => s.trim().toUpperCase())
 const difficultyParam = params.get('difficulty')?.toLowerCase() as 'easy' | 'medium' | 'hard' | undefined
 const countParam = params.get('count') ? parseInt(params.get('count')!, 10) : undefined
@@ -141,7 +141,7 @@ function onStartGame(): void {
     activePuzzles.length,
     currentPuzzle().prompt,
   )
-  moveFocusAfterTransition('scene', 300)
+  moveFocusToFirstSceneItem(300)
 }
 
 function onLetterCollected(item: SceneItem): void {
@@ -280,7 +280,7 @@ function onCheckAnswer(): void {
             activePuzzles.length,
             currentPuzzle().prompt,
           )
-          moveFocusAfterTransition('scene', 300)
+          moveFocusToFirstSceneItem(300)
         },
       )
     })
@@ -296,7 +296,7 @@ function onNextPuzzle(): void {
     activePuzzles.length,
     currentPuzzle().prompt,
   )
-  moveFocusAfterTransition('scene', 300)
+  moveFocusToFirstSceneItem(300)
 }
 
 function onPlayAgain(): void {

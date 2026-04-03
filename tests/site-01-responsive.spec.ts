@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 const viewports = [
   { name: 'phone', width: 375, height: 667 },

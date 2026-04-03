@@ -1,4 +1,6 @@
 import type { RemixNode } from 'remix/component'
+import { getSiteBasePath, getSiteUrl } from '../site-config.js'
+import { resolveSiteUrl, withBasePath } from '../site-paths.js'
 import { Nav } from './nav.js'
 
 interface DocumentProps {
@@ -11,19 +13,19 @@ interface DocumentProps {
   children: RemixNode
 }
 
-const SITE_URL = 'https://jaredkrinke.github.io/peninsular-reveries'
-
 export function Document() {
   return (props: DocumentProps) => {
     const { title, description, path, stylesheets = [], scripts = [], bodyClass, children } = props
+    const siteBasePath = getSiteBasePath()
+    const siteUrl = getSiteUrl()
     const fullTitle = path === '/' ? 'Peninsular Reveries' : `${title} — Peninsular Reveries`
-    const ogUrl = SITE_URL + path
+    const ogUrl = resolveSiteUrl(siteUrl, path)
 
-    const allStyles = ['/styles/main.css', ...stylesheets]
-    const allScripts = ['/client/shell.js', ...scripts]
+    const allStyles = ['/styles/main.css', ...stylesheets].map(href => withBasePath(href, siteBasePath))
+    const allScripts = ['/client/shell.js', ...scripts].map(src => withBasePath(src, siteBasePath))
 
     return (
-      <html lang="en">
+      <html lang="en" data-base-path={siteBasePath}>
         <head>
           <meta charSet="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -33,12 +35,12 @@ export function Document() {
           <meta property="og:description" content={description} />
           <meta property="og:url" content={ogUrl} />
           <meta property="og:type" content="website" />
-          <meta property="og:image" content={`${SITE_URL}/og-image.png`} />
+          <meta property="og:image" content={resolveSiteUrl(siteUrl, '/og-image.png')} />
           <meta property="og:image:width" content="1200" />
           <meta property="og:image:height" content="630" />
-          <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-          <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-          <link rel="manifest" href="/manifest.json" />
+          <link rel="icon" type="image/svg+xml" href={withBasePath('/favicon.svg', siteBasePath)} />
+          <link rel="apple-touch-icon" href={withBasePath('/apple-touch-icon.png', siteBasePath)} />
+          <link rel="manifest" href={withBasePath('/manifest.json', siteBasePath)} />
           <meta name="theme-color" content="#1a1a2e" />
           {allStyles.map(href => <link rel="stylesheet" href={href} />)}
           <script innerHTML={`const theme=localStorage.getItem('theme');if(theme)document.documentElement.setAttribute('data-theme',theme);`} />

@@ -1,5 +1,11 @@
 import type { GameState, Puzzle, SceneItem } from './types.js'
 
+declare global {
+  interface Window {
+    __settingsToggle?: () => void
+  }
+}
+
 export interface InputCallbacks {
   onLetterCollected: (item: SceneItem) => void
   onDistractorClicked: (item: SceneItem) => void
@@ -396,7 +402,7 @@ export function setupInput(
     else if (screen === 'win-screen') replayBtn.click()
     else if (screen === 'game-screen') {
       // Toggle settings modal during gameplay
-      const toggle = (window as any).__settingsToggle
+      const toggle = window.__settingsToggle
       if (typeof toggle === 'function') toggle()
     }
   }

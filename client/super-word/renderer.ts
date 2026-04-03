@@ -148,7 +148,7 @@ export function showScreen(screenId: string): void {
   target.style.transition = 'none'
   target.classList.add('active')
   // Force reflow so the browser registers the initial position
-  target.offsetHeight
+  void target.offsetHeight
 
   // Begin pan
   target.style.transition = ''
@@ -325,38 +325,79 @@ export function setupSettingsModal(onPlay: () => void): void {
 
   if (!modal || !openBtn || !wordsInput || !suggestionsEl || !difficultySelect || !countInput) return
 
+  const modalEl = modal
+  const openButton = openBtn
+
+  let previousFocus: HTMLElement | null = null
+
+  function getFocusableElements(): HTMLElement[] {
+    return Array.from(
+      modalEl.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+    ).filter((element) => !element.hasAttribute('hidden'))
+  }
+
   function openModal(): void {
-    modal!.hidden = false
-    modal!.focus()
+    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : openButton
+    modalEl.hidden = false
+    openButton.setAttribute('aria-expanded', 'true')
+    requestAnimationFrame(() => {
+      const [firstFocusable] = getFocusableElements()
+      ;(firstFocusable ?? modalEl).focus()
+    })
   }
 
   function closeModal(): void {
-    modal!.hidden = true
-    openBtn!.focus()
+    modalEl.hidden = true
+    openButton.setAttribute('aria-expanded', 'false')
+    ;(previousFocus ?? openButton).focus()
   }
 
   // Expose open/close for gamepad Start button
-  ;(window as any).__settingsToggle = () => {
-    if (modal!.hidden) openModal()
+  window.__settingsToggle = () => {
+    if (modalEl.hidden) openModal()
     else closeModal()
   }
 
-  openBtn.addEventListener('click', openModal)
+  openButton.addEventListener('click', openModal)
 
   if (closeBtn) {
     closeBtn.addEventListener('click', closeModal)
   }
 
   // Close on backdrop click
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal()
+  modalEl.addEventListener('click', (e) => {
+    if (e.target === modalEl) closeModal()
   })
 
   // Close on Escape
-  modal.addEventListener('keydown', (e: KeyboardEvent) => {
+  modalEl.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault()
       closeModal()
+      return
+    }
+
+    if (e.key === 'Tab') {
+      const focusable = getFocusableElements()
+      if (focusable.length === 0) {
+        e.preventDefault()
+        modalEl.focus()
+        return
+      }
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      const active = document.activeElement
+
+      if (e.shiftKey && active === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault()
+        first.focus()
+      }
     }
   })
 

@@ -14,11 +14,4 @@ export const games: GameEntry[] = [
     icon: '✦',
     status: 'live',
   },
-  {
-    slug: 'mission-orbit',
-    name: 'Mission: Orbit',
-    description: 'Launch a spacecraft, orbit Earth, fly past the Moon, and explore the solar system. Inspired by Artemis II and The Magic School Bus.',
-    icon: '🚀',
-    status: 'coming-soon',
-  },
 ]

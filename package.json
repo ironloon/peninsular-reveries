@@ -3,21 +3,36 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "npm@11.12.0",
+  "engines": {
+    "node": "24.14.1"
+  },
   "scripts": {
     "build": "tsx build.ts",
+    "check": "npm run lint && npm run typecheck",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "dev": "tsx server.ts",
-    "test": "npx playwright test"
+    "test": "npm run test:unit && npm run test:e2e",
+    "test:unit": "node --import tsx --test tests-node/*.test.ts",
+    "test:e2e": "npx playwright test --reporter=list",
+    "test:report": "npm run test:unit && npx playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "^1.58.2",
-    "@types/node": "^25.5.0",
-    "esbuild": "^0.25.0",
-    "serve": "^14.2.6",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.0"
+    "@axe-core/playwright": "4.11.1",
+    "@playwright/test": "1.58.2",
+    "@types/node": "24.12.2",
+    "@eslint/js": "9.39.4",
+    "esbuild": "0.25.12",
+    "eslint": "9.39.4",
+    "eslint-plugin-jsx-a11y": "6.10.2",
+    "globals": "17.4.0",
+    "serve": "14.2.6",
+    "tsx": "4.21.0",
+    "typescript-eslint": "8.58.0",
+    "typescript": "5.9.3"
   },
   "dependencies": {
-    "remix": "^3.0.0-alpha.4"
+    "remix": "3.0.0-alpha.4"
   }
 }

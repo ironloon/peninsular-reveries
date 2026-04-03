@@ -1,5 +1,11 @@
 // Theme toggle in footer
 const footer = document.querySelector('.site-footer')
+
+function withBasePath(path: string): string {
+  const basePath = document.documentElement.dataset.basePath?.replace(/\/+$/g, '') || ''
+  return basePath ? `${basePath}${path}` : path
+}
+
 if (footer) {
   const toggle = document.createElement('button')
   toggle.className = 'theme-toggle'
@@ -28,7 +34,7 @@ if (footer) {
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').catch(() => {
+  navigator.serviceWorker.register(withBasePath('/sw.js')).catch(() => {
     // SW registration failed — offline won't work, that's fine
   })
 }
