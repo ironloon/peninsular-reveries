@@ -8,5 +8,5 @@
     "skipLibCheck": true,
     "lib": ["ES2022", "DOM", "DOM.Iterable"]
   },
-  "include": ["src/**/*.ts", "build.ts"]
+  "include": ["app/**/*.ts", "client/**/*.ts", "build.ts", "server.ts"]
 }

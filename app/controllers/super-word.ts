@@ -1,29 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Super Word — Peninsular Reveries</title>
-  <meta name="description" content="Find hidden letters and spell the secret word.">
-  <meta property="og:title" content="Super Word — Peninsular Reveries">
-  <meta property="og:description" content="Find hidden letters and spell the secret word.">
-  <meta property="og:url" content="https://jaredkrinke.github.io/peninsular-reveries/super-word/">
-  <meta property="og:type" content="website">
-  <meta property="og:image" content="https://jaredkrinke.github.io/peninsular-reveries/og-image.png">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="630">
-  <link rel="icon" type="image/svg+xml" href="../favicon.svg">
-  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="stylesheet" href="../styles/main.css">
-  <script>
-    const theme = localStorage.getItem('theme');
-    if (theme) document.documentElement.setAttribute('data-theme', theme);
-  </script>
-  <link rel="stylesheet" href="game.css">
-</head>
-<body data-base="..">
-  <header id="site-header" class="site-header"></header>
-  <main class="super-word-game">
+import { html } from 'remix/html-template'
+import { createHtmlResponse } from 'remix/response/html'
+import { document } from '../ui/document.js'
+
+export function superWordAction() {
+  const content = html.raw`
     <div class="scene-track">
 
     <!-- Start Screen -->
@@ -49,7 +29,6 @@
         </div>
         <div class="game-header-right">
           <span id="letters-count" class="letters-count">0 / 3</span>
-
         </div>
       </div>
       <div class="prompt-bubble">
@@ -155,19 +134,24 @@
     <!-- Accessibility: aria-live regions -->
     <div id="game-status" aria-live="polite" aria-atomic="true" class="sr-only"></div>
     <div id="game-feedback" aria-live="assertive" aria-atomic="true" class="sr-only"></div>
-  </main>
 
-  <noscript>
-    <div class="noscript-message">
-      <p>Super Word needs JavaScript to run — it's a game after all! Enable JavaScript in your browser settings and refresh to play.</p>
-    </div>
-  </noscript>
+    <noscript>
+      <div class="noscript-message">
+        <p>Super Word needs JavaScript to run — it's a game after all! Enable JavaScript in your browser settings and refresh to play.</p>
+      </div>
+    </noscript>`
 
-  <footer class="site-footer">
-    <p>A quiet corner of the internet.</p>
-  </footer>
-
-  <script type="module" src="../shared/shell.js"></script>
-  <script type="module" src="../super-word/main.js"></script>
-</body>
-</html>
+  return createHtmlResponse(
+    document(
+      {
+        title: 'Super Word',
+        description: 'Find hidden letters and spell the secret word.',
+        path: '/super-word/',
+        stylesheets: ['/styles/game.css'],
+        scripts: ['/client/super-word/main.js'],
+        bodyAttrs: 'class="super-word-game"',
+      },
+      content,
+    ),
+  )
+}

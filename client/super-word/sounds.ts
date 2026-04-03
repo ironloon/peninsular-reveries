@@ -1,13 +1,31 @@
 // ── Sound Effects (Web Audio API — no external files) ────────
 
 let ctx: AudioContext | null = null
+let unlocked = false
 
 function getCtx(): AudioContext | null {
   if (!ctx) {
     try { ctx = new AudioContext() } catch { return null }
   }
-  if (ctx.state === 'suspended') ctx.resume()
+  if (ctx.state === 'suspended') {
+    ctx.resume()
+  }
   return ctx
+}
+
+// Must be called from a user-gesture event handler (click/pointerdown/keydown)
+export function ensureAudioUnlocked(): void {
+  if (unlocked) return
+  const c = getCtx()
+  if (!c) return
+  if (c.state === 'suspended') c.resume()
+  // Play a silent buffer to unlock on iOS/Safari
+  const buf = c.createBuffer(1, 1, c.sampleRate)
+  const src = c.createBufferSource()
+  src.buffer = buf
+  src.connect(c.destination)
+  src.start()
+  unlocked = true
 }
 
 function playTone(freq: number, duration: number, type: OscillatorType = 'sine', volume = 0.15): void {
