@@ -1,4 +1,5 @@
 import { games } from '../data/game-registry.js'
+import { attributionsPagePath } from '../data/attributions.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 
@@ -22,6 +23,7 @@ export function Nav() {
             </a>
           )
         })}
+        <a href={withBasePath(attributionsPagePath, siteBasePath)} className={isActive(attributionsPagePath, path) ? 'active' : undefined}>Attributions</a>
       </nav>
     )
   }

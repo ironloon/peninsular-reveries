@@ -8,6 +8,7 @@ interface DocumentProps {
   description: string
   path: string
   stylesheets?: string[]
+  includeDefaultStyles?: boolean
   scripts?: string[]
   bodyClass?: string
   manifestPath?: string
@@ -23,6 +24,7 @@ export function Document() {
       description,
       path,
       stylesheets = [],
+      includeDefaultStyles = true,
       scripts = [],
       bodyClass,
       manifestPath,
@@ -35,7 +37,10 @@ export function Document() {
     const fullTitle = path === '/' ? 'Peninsular Reveries' : `${title} — Peninsular Reveries`
     const ogUrl = resolveSiteUrl(siteUrl, path)
 
-    const allStyles = ['/styles/main.css', ...stylesheets].map(href => withBasePath(href, siteBasePath))
+    const allStyles = [
+      ...(includeDefaultStyles ? ['/styles/main.css'] : []),
+      ...stylesheets,
+    ].map(href => withBasePath(href, siteBasePath))
     const allScripts = ['/client/shell.js', ...scripts].map(src => withBasePath(src, siteBasePath))
     const manifestHref = manifestPath ? withBasePath(manifestPath, siteBasePath) : undefined
     const serviceWorkerHref = serviceWorkerPath ? withBasePath(serviceWorkerPath, siteBasePath) : undefined

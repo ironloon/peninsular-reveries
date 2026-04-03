@@ -6,7 +6,7 @@ const viewports = [
   { name: 'desktop', width: 1280, height: 800 },
 ];
 
-const pages = ['/', '/super-word/'];
+const pages = ['/', '/attributions/', '/super-word/'];
 
 test.describe('SITE-01: Responsive layout', () => {
   for (const vp of viewports) {
@@ -31,4 +31,26 @@ test.describe('SITE-01: Responsive layout', () => {
       });
     }
   }
+
+  test('super word keeps core controls visible on a short landscape viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 600 });
+    await page.goto('/super-word/');
+
+    await page.getByRole('button', { name: /let's go/i }).click();
+
+    await expect(page.locator('#scene .scene-item').first()).toBeVisible();
+    await expect(page.locator('#check-btn')).toBeVisible();
+
+    const controlsFit = await page.evaluate(() => {
+      const scene = document.getElementById('scene-wrapper');
+      const checkButton = document.getElementById('check-btn');
+      if (!scene || !checkButton) return false;
+
+      const sceneRect = scene.getBoundingClientRect();
+      const buttonRect = checkButton.getBoundingClientRect();
+      return sceneRect.height >= 140 && buttonRect.bottom <= window.innerHeight;
+    });
+
+    expect(controlsFit).toBe(true);
+  });
 });

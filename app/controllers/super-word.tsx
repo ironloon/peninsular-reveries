@@ -1,13 +1,16 @@
 import { renderToString } from 'remix/component/server'
 import { Document } from '../ui/document.js'
+import { getGameAttribution } from '../data/attributions.js'
 
 export async function superWordAction() {
+  const attribution = getGameAttribution('super-word')
   const html = await renderToString(
     <Document
       title="Super Word"
       description="Find hidden letters and spell the secret word."
       path="/super-word/"
       stylesheets={['/styles/game.css']}
+      includeDefaultStyles={false}
       scripts={['/client/super-word/main.js']}
       bodyClass="super-word-game"
       manifestPath="/super-word/manifest.json"
@@ -94,20 +97,52 @@ export async function superWordAction() {
             </div>
 
             <div className="settings-section">
-              <h3 className="settings-section-title">🛠️ Puzzle Creator</h3>
-              <label htmlFor="puzzle-words">Words (comma-separated):</label>
-              <input type="text" id="puzzle-words" className="puzzle-input" placeholder="CAT, DOG, SUN" autoComplete="off" />
-              <div id="puzzle-suggestions" className="puzzle-suggestions"></div>
-              <div className="puzzle-options-row">
-                <label htmlFor="puzzle-difficulty-select">Difficulty:</label>
-                <select id="puzzle-difficulty-select" className="puzzle-select">
-                  <option value="">Any</option>
-                  <option value="easy">Easy</option>
-                  <option value="medium">Medium</option>
-                  <option value="hard">Hard</option>
-                </select>
-                <label htmlFor="puzzle-count-input">Count:</label>
-                <input type="number" id="puzzle-count-input" className="puzzle-input puzzle-input-small" min={1} max={50} placeholder="5" />
+              <h3 className="settings-section-title">🧩 Game</h3>
+              <label htmlFor="puzzle-difficulty-select">Difficulty:</label>
+              <select id="puzzle-difficulty-select" className="puzzle-select">
+                <option value="easy" selected>Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+              <p className="settings-help">Each round randomly picks 5 words from the selected difficulty.</p>
+            </div>
+
+            <div className="settings-section">
+              <h3 className="settings-section-title">🎵 Audio</h3>
+              <label className="settings-toggle-row" htmlFor="music-enabled-toggle">
+                <span>Chill music</span>
+                <input type="checkbox" id="music-enabled-toggle" />
+              </label>
+              <p className="settings-help">Soft ambient synth music. It stays off until you turn it on.</p>
+              <p className="settings-help">Sound effects stay on by default.</p>
+            </div>
+
+            <div className="settings-section">
+              <h3 className="settings-section-title">© Credits &amp; License</h3>
+              <p className="settings-help"><span className="settings-detail-label">Code license:</span> {attribution.codeLicense}</p>
+              <p className="settings-help">{attribution.summary}</p>
+              <div className="settings-attributions">
+                {attribution.entries.map((entry) => (
+                  <article className="settings-attribution-card" aria-label={`${entry.title} credit`}>
+                    <h4 className="settings-attribution-title">{entry.title}</h4>
+                    <p className="settings-attribution-meta">{entry.type} · {entry.creator}</p>
+                    <p className="settings-attribution-copy"><span className="settings-detail-label">Used in:</span> {entry.usedIn}</p>
+                    <p className="settings-attribution-copy">
+                      <span className="settings-detail-label">Source:</span>{' '}
+                      {entry.sourceUrl
+                        ? <a href={entry.sourceUrl} target="_blank" rel="noopener">{entry.source}</a>
+                        : entry.source}
+                    </p>
+                    <p className="settings-attribution-copy">
+                      <span className="settings-detail-label">License:</span>{' '}
+                      {entry.licenseUrl
+                        ? <a href={entry.licenseUrl} target="_blank" rel="noopener">{entry.license}</a>
+                        : entry.license}
+                    </p>
+                    <p className="settings-attribution-copy"><span className="settings-detail-label">Modifications:</span> {entry.modifications}</p>
+                    {entry.notes ? <p className="settings-attribution-copy"><span className="settings-detail-label">Notes:</span> {entry.notes}</p> : null}
+                  </article>
+                ))}
               </div>
             </div>
 

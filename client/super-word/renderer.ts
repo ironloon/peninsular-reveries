@@ -1,5 +1,4 @@
 import type { GameState, Puzzle } from './types.js'
-import { PUZZLES } from './puzzles.js'
 import { isReducedMotion } from './animations.js'
 
 // ── Lazy element cache ───────────────────────────────────────
@@ -86,21 +85,35 @@ export function renderScene(puzzle: Puzzle, state: GameState, sceneEl: HTMLEleme
   }
 }
 
-export function renderLetterSlots(state: GameState, puzzle: Puzzle, slotsEl: HTMLElement): void {
+export function renderLetterSlots(
+  state: GameState,
+  puzzle: Puzzle,
+  slotsEl: HTMLElement,
+  options: { pendingIndices?: Iterable<number> } = {},
+): void {
   slotsEl.innerHTML = ''
   const totalSlots = puzzle.answer.length
+  const pendingIndices = new Set(options.pendingIndices ?? [])
 
   for (let i = 0; i < totalSlots; i++) {
     if (i < state.collectedLetters.length) {
       const letter = state.collectedLetters[i]
+      const isPending = pendingIndices.has(i)
       const tile = document.createElement('div')
       tile.className = 'letter-tile'
+      if (isPending) tile.classList.add('pending-flight')
       if (i === state.selectedTileIndex) tile.classList.add('selected')
-      tile.setAttribute('role', 'option')
-      tile.tabIndex = 0
       tile.dataset.index = String(i)
       tile.textContent = letter.char
-      tile.setAttribute('aria-label', `${letter.char}, position ${i + 1} of ${totalSlots}`)
+      if (isPending) {
+        tile.setAttribute('aria-hidden', 'true')
+        tile.setAttribute('role', 'presentation')
+        tile.tabIndex = -1
+      } else {
+        tile.setAttribute('role', 'option')
+        tile.tabIndex = 0
+        tile.setAttribute('aria-label', `${letter.char}, position ${i + 1} of ${totalSlots}`)
+      }
       slotsEl.appendChild(tile)
     } else {
       const slot = document.createElement('div')
@@ -210,94 +223,62 @@ export function slideSceneTransition(
   refreshCallback: () => void,
   onComplete: () => void,
 ): void {
-  const gameScreen = document.getElementById('game-screen')!
+  const scene = document.getElementById('scene')
+  const promptBubble = document.querySelector('.prompt-bubble') as HTMLElement | null
+  const elements = [promptBubble, scene].filter((element): element is HTMLElement => element !== null)
 
-  if (isReducedMotion()) {
+  if (isReducedMotion() || elements.length === 0 || typeof elements[0].animate !== 'function') {
     refreshCallback()
     onComplete()
     return
   }
 
-  // Slide current scene out to the left
-  gameScreen.classList.add('scene-slide-out')
+  const animateGroup = (
+    keyframes: Keyframe[],
+    options: KeyframeAnimationOptions,
+  ): Promise<void> => Promise.all(
+    elements.map((element) => {
+      element.getAnimations().forEach((animation) => animation.cancel())
+      return element.animate(keyframes, options).finished.catch(() => undefined)
+    }),
+  ).then(() => undefined)
 
-  setTimeout(() => {
-    // Swap content while off-screen
-    gameScreen.classList.remove('scene-slide-out')
+  animateGroup([
+    { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+    { opacity: 0, transform: 'translate3d(-8%, 0, 0)' },
+  ], {
+    duration: 180,
+    easing: 'cubic-bezier(0.4, 0, 1, 1)',
+    fill: 'forwards',
+  }).then(() => {
     refreshCallback()
 
-    // Slide new scene in from the right
-    gameScreen.classList.add('scene-slide-in')
-    setTimeout(() => {
-      gameScreen.classList.remove('scene-slide-in')
-      onComplete()
-    }, 400)
-  }, 400)
+    for (const element of elements) {
+      element.style.opacity = '0'
+      element.style.transform = 'translate3d(8%, 0, 0)'
+    }
+
+    requestAnimationFrame(() => {
+      animateGroup([
+        { opacity: 0, transform: 'translate3d(8%, 0, 0)' },
+        { opacity: 1, transform: 'translate3d(0, 0, 0)' },
+      ], {
+        duration: 260,
+        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+        fill: 'forwards',
+      }).then(() => {
+        for (const element of elements) {
+          element.style.opacity = ''
+          element.style.transform = ''
+        }
+        onComplete()
+      })
+    })
+  })
 }
 
 export function renderWinScreen(state: GameState): void {
   getFinalScore().textContent = `⭐ ${state.score}`
-
-  // Generate share text
-  const maxScore = state.completed.length * 10
-  const stars = '⭐'.repeat(state.completed.length)
-  const shareText = `Super Word 🔤 ${state.score}/${maxScore} ${stars}`
-
-  // Share URL
-  const baseUrl = window.location.origin + window.location.pathname
-  const shareData = `${state.score}`
-  const encoded = btoa(shareData)
-  const shareUrl = `${baseUrl}?s=${encoded}`
-  const fullShareText = `${shareText}\n${shareUrl}`
-
-  // Render share button
-  let shareBtn = document.getElementById('share-btn') as HTMLButtonElement | null
-  if (!shareBtn) {
-    shareBtn = document.createElement('button')
-    shareBtn.id = 'share-btn'
-    shareBtn.className = 'btn btn-primary btn-share'
-    const replayBtn = document.getElementById('replay-btn')
-    if (replayBtn?.parentElement) {
-      replayBtn.parentElement.insertBefore(shareBtn, replayBtn)
-    }
-  }
-  shareBtn.textContent = 'Share Results 📋'
-  shareBtn.onclick = () => handleShareClick(shareBtn!, fullShareText)
-}
-
-function handleShareClick(btn: HTMLButtonElement, text: string): void {
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard.writeText(text).then(() => {
-      btn.textContent = 'Copied! ✓'
-      btn.style.backgroundColor = 'var(--game-green)'
-      btn.style.color = 'var(--game-white)'
-      btn.style.boxShadow = '0 4px 0 var(--game-green-dark)'
-      setTimeout(() => {
-        btn.textContent = 'Share Results 📋'
-        btn.style.backgroundColor = ''
-        btn.style.color = ''
-        btn.style.boxShadow = ''
-      }, 1500)
-    }).catch(() => {
-      showFallbackCopy(btn, text)
-    })
-  } else {
-    showFallbackCopy(btn, text)
-  }
-}
-
-function showFallbackCopy(btn: HTMLButtonElement, text: string): void {
-  btn.textContent = 'Tap to select, then copy'
-  const textarea = document.createElement('textarea')
-  textarea.value = text
-  textarea.setAttribute('readonly', '')
-  textarea.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);width:90%;max-width:400px;padding:12px;font-size:14px;z-index:200;border-radius:12px;border:2px solid var(--game-yellow);'
-  document.body.appendChild(textarea)
-  textarea.select()
-  setTimeout(() => {
-    textarea.remove()
-    btn.textContent = 'Share Results 📋'
-  }, 3000)
 }
 
 export function setCheckButtonEnabled(enabled: boolean): void {
@@ -311,19 +292,16 @@ export function setCheckButtonEnabled(enabled: boolean): void {
   }
 }
 
-// ── Settings Modal (includes Puzzle Creator) ─────────────────
+// ── Settings Modal ───────────────────────────────────────────
 
 export function setupSettingsModal(onPlay: () => void): void {
   const modal = document.getElementById('settings-modal')
   const openBtn = document.getElementById('settings-open')
   const closeBtn = document.getElementById('settings-close')
-  const wordsInput = document.getElementById('puzzle-words') as HTMLInputElement | null
-  const suggestionsEl = document.getElementById('puzzle-suggestions')
   const playBtn = document.getElementById('settings-play-btn') as HTMLButtonElement | null
   const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
-  const countInput = document.getElementById('puzzle-count-input') as HTMLInputElement | null
 
-  if (!modal || !openBtn || !wordsInput || !suggestionsEl || !difficultySelect || !countInput) return
+  if (!modal || !openBtn || !difficultySelect) return
 
   const modalEl = modal
   const openButton = openBtn
@@ -399,38 +377,6 @@ export function setupSettingsModal(onPlay: () => void): void {
         first.focus()
       }
     }
-  })
-
-  function showSuggestions(): void {
-    const parts = wordsInput!.value.split(',')
-    const current = parts[parts.length - 1].trim().toUpperCase()
-    suggestionsEl!.innerHTML = ''
-
-    if (current.length === 0) return
-
-    const existing = new Set(parts.slice(0, -1).map(w => w.trim().toUpperCase()))
-    const matches = PUZZLES
-      .filter(p => p.answer.startsWith(current) && !existing.has(p.answer))
-      .slice(0, 8)
-
-    for (const puzzle of matches) {
-      const chip = document.createElement('button')
-      chip.type = 'button'
-      chip.className = 'puzzle-suggestion-chip'
-      chip.textContent = `${puzzle.answer} (${puzzle.difficulty})`
-      chip.addEventListener('click', () => {
-        const words = wordsInput!.value.split(',').map(w => w.trim()).filter(Boolean)
-        words[words.length - 1] = puzzle.answer
-        wordsInput!.value = words.join(', ') + ', '
-        suggestionsEl!.innerHTML = ''
-        wordsInput!.focus()
-      })
-      suggestionsEl!.appendChild(chip)
-    }
-  }
-
-  wordsInput.addEventListener('input', () => {
-    showSuggestions()
   })
 
   if (playBtn) {

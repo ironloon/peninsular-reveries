@@ -24,6 +24,7 @@ test('build script writes the expected static output', () => {
 
     for (const relativePath of [
       'index.html',
+      'attributions/index.html',
       'super-word/index.html',
       '404.html',
       'styles/main.css',
@@ -40,10 +41,13 @@ test('build script writes the expected static output', () => {
     }
 
     const homeHtml = readFileSync(join(outputDir, 'index.html'), 'utf-8')
+    const attributionsHtml = readFileSync(join(outputDir, 'attributions/index.html'), 'utf-8')
     const gameHtml = readFileSync(join(outputDir, 'super-word/index.html'), 'utf-8')
 
     assert.doesNotMatch(homeHtml, /rel="manifest"/)
+    assert.match(attributionsHtml, /Attributions/)
     assert.match(gameHtml, /href="\/super-word\/manifest\.json"/)
+    assert.doesNotMatch(gameHtml, /href="\/styles\/main\.css"/)
     assert.match(gameHtml, /data-service-worker-path="\/super-word\/sw\.js"/)
   } finally {
     rmSync(outputDir, { recursive: true, force: true })

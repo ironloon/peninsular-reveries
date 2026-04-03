@@ -226,6 +226,66 @@ main {
   gap: var(--space-md);
 }
 
+.page-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.page-hero {
+  padding: var(--space-2xl) 0 var(--space-sm);
+}
+
+.page-hero h1 {
+  font-size: var(--text-xl);
+}
+
+.page-hero p {
+  color: var(--color-muted);
+  margin-top: var(--space-sm);
+}
+
+.section-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background: var(--color-surface);
+  border-radius: 10px;
+  padding: var(--space-lg);
+}
+
+.section-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.section-muted {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.section-label {
+  font-weight: 700;
+}
+
+.attribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.attribution-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  background: var(--color-bg);
+  border-radius: 8px;
+  padding: var(--space-md);
+}
+
 /* Theme toggle button */
 .theme-toggle {
   background: none;

@@ -7,6 +7,11 @@ test.describe('SITE-02: Navigation', () => {
     await expect(gameLink).toBeVisible();
   });
 
+  test('homepage has link to attributions page', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Attributions' })).toBeVisible();
+  });
+
   test('clicking game link navigates to /super-word/', async ({ page }) => {
     await page.goto('/');
     await page.locator('a[href*="super-word"]').first().click();
@@ -39,6 +44,12 @@ test.describe('SITE-02: Navigation', () => {
     const response = await page.goto('/super-word/');
     expect(response?.status()).toBe(200);
     await expect(page.locator('main')).toBeVisible();
+  });
+
+  test('attributions page is directly URL-addressable', async ({ page }) => {
+    const response = await page.goto('/attributions/');
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('main')).toContainText('Attributions');
   });
 
   test('404 page is directly URL-addressable', async ({ page }) => {

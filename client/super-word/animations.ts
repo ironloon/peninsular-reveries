@@ -103,40 +103,32 @@ export function animateFlyToNotepad(
   targetSlot: HTMLElement,
 ): Promise<void> {
   return new Promise<void>((resolve) => {
-    const itemRect = sceneItem.getBoundingClientRect()
+    const badge = sceneItem.querySelector('.item-badge') as HTMLElement | null
+    const startRect = badge?.getBoundingClientRect() ?? sceneItem.getBoundingClientRect()
     const slotRect = targetSlot.getBoundingClientRect()
 
-    // Create flying clone
     const clone = document.createElement('div')
-    clone.className = 'flying-letter'
-    const badge = sceneItem.querySelector('.item-badge')
-    clone.textContent = badge?.textContent ?? ''
+    clone.className = 'letter-tile flying-letter'
+    clone.textContent = badge?.textContent ?? targetSlot.textContent ?? ''
+    clone.setAttribute('aria-hidden', 'true')
 
-    // Style clone like a letter tile
-    const startLeft = itemRect.left + itemRect.width / 2 - 27
-    const startTop = itemRect.top + itemRect.height / 2 - 27
-    clone.style.cssText = `
-      width: 54px; height: 54px;
-      background: var(--game-yellow); color: var(--game-purple-dark);
-      border-radius: 12px; font-size: 1.75rem; font-weight: 900;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 0 var(--game-yellow-dark);
-      left: ${startLeft}px;
-      top: ${startTop}px;
-    `
+    const startLeft = startRect.left + startRect.width / 2 - slotRect.width / 2
+    const startTop = startRect.top + startRect.height / 2 - slotRect.height / 2
+    const endX = slotRect.left - startLeft
+    const endY = slotRect.top - startTop
+    const midX = endX * 0.55
+    const arcHeight = Math.min(76, Math.max(26, Math.abs(endY) * 0.35 + 20))
+    const midY = endY * 0.5 - arcHeight
+    const startScale = Math.max(0.52, Math.min(0.88, startRect.width / Math.max(slotRect.width, 1)))
 
-    // Set CSS custom properties for keyframe endpoints
-    const endX = (slotRect.left + slotRect.width / 2 - 27) - startLeft
-    const endY = (slotRect.top + slotRect.height / 2 - 27) - startTop
-    clone.style.setProperty('--fly-start-x', '0px')
-    clone.style.setProperty('--fly-start-y', '0px')
-    clone.style.setProperty('--fly-end-x', `${endX}px`)
-    clone.style.setProperty('--fly-end-y', `${endY}px`)
+    clone.style.left = `${startLeft}px`
+    clone.style.top = `${startTop}px`
+    clone.style.width = `${slotRect.width}px`
+    clone.style.height = `${slotRect.height}px`
+    clone.style.fontSize = getComputedStyle(targetSlot).fontSize
+    clone.style.borderRadius = getComputedStyle(targetSlot).borderRadius
 
     document.body.appendChild(clone)
-
-    // Hide the original scene item immediately
-    sceneItem.style.display = 'none'
 
     let resolved = false
     const onEnd = () => {
@@ -146,8 +138,22 @@ export function animateFlyToNotepad(
       resolve()
     }
 
-    clone.addEventListener('animationend', onEnd, { once: true })
-    setTimeout(onEnd, 500) // fallback > 450ms animation
+    if (typeof clone.animate !== 'function') {
+      setTimeout(onEnd, 0)
+      return
+    }
+
+    clone.animate([
+      { transform: `translate3d(0, 0, 0) scale(${startScale})`, opacity: 0.94, offset: 0 },
+      { transform: `translate3d(${midX}px, ${midY}px, 0) scale(1.08)`, opacity: 1, offset: 0.68 },
+      { transform: `translate3d(${endX}px, ${endY}px, 0) scale(1)`, opacity: 1, offset: 1 },
+    ], {
+      duration: 520,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      fill: 'forwards',
+    }).finished.then(onEnd).catch(onEnd)
+
+    setTimeout(onEnd, 700)
   })
 }
 

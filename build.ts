@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild'
-import { cpSync, rmSync, mkdirSync, writeFileSync, statSync } from 'node:fs'
+import { cpSync, readFileSync, rmSync, mkdirSync, writeFileSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { createAppRouter } from './app/router.js'
 
@@ -32,6 +32,7 @@ const router = createAppRouter()
 
 const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/', outPath: 'index.html' },
+  { url: 'http://localhost/attributions/', outPath: 'attributions/index.html' },
   { url: 'http://localhost/super-word/', outPath: 'super-word/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
@@ -46,18 +47,67 @@ for (const { url, outPath } of staticRoutes) {
 }
 
 // ── Performance budget ───────────────────────────────────
-const BUDGET_BYTES = 200 * 1024
+const budgetConfig = JSON.parse(readFileSync('budget.json', 'utf-8')) as Array<{
+  resourceSizes?: Array<{
+    resourceType: 'document' | 'stylesheet' | 'script' | 'total'
+    budget: number
+  }>
+}>
+
+const resourceBudgetBytes = new Map(
+  (budgetConfig[0]?.resourceSizes ?? []).map(({ resourceType, budget }) => [resourceType, budget * 1024]),
+)
+
+const BUDGET_BYTES = resourceBudgetBytes.get('total') ?? 200 * 1024
 const pages: Record<string, string[]> = {
   homepage: ['index.html', 'styles/main.css', 'client/shell.js'],
-  'super-word': ['super-word/index.html', 'styles/main.css', 'styles/game.css', 'client/shell.js', 'client/super-word/main.js'],
+  attributions: ['attributions/index.html', 'styles/main.css', 'client/shell.js'],
+  'super-word': ['super-word/index.html', 'styles/game.css', 'client/shell.js', 'client/super-word/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
+}
+
+function resourceTypeForFile(path: string): 'document' | 'stylesheet' | 'script' | null {
+  if (path.endsWith('.html')) return 'document'
+  if (path.endsWith('.css')) return 'stylesheet'
+  if (path.endsWith('.js')) return 'script'
+  return null
 }
 
 let budgetFailed = false
 for (const [page, files] of Object.entries(pages)) {
-  const totalBytes = files.reduce((sum, f) => sum + statSync(join(outputDir, f)).size, 0)
+  const resourceTotals = {
+    document: 0,
+    stylesheet: 0,
+    script: 0,
+    total: 0,
+  }
+
+  for (const file of files) {
+    const size = statSync(join(outputDir, file)).size
+    resourceTotals.total += size
+
+    const resourceType = resourceTypeForFile(file)
+    if (resourceType) {
+      resourceTotals[resourceType] += size
+    }
+  }
+
+  const totalBytes = resourceTotals.total
   const totalKB = (totalBytes / 1024).toFixed(1)
   const budgetKB = (BUDGET_BYTES / 1024).toFixed(0)
+
+  for (const [resourceType, budgetBytes] of resourceBudgetBytes.entries()) {
+    if (resourceType === 'total') continue
+
+    const actualBytes = resourceTotals[resourceType]
+    if (actualBytes <= budgetBytes) continue
+
+    const actualKB = (actualBytes / 1024).toFixed(1)
+    const resourceBudgetKB = (budgetBytes / 1024).toFixed(0)
+    console.error(`❌ ${page}: ${resourceType} ${actualKB}KB exceeds ${resourceBudgetKB}KB budget`)
+    budgetFailed = true
+  }
+
   if (totalBytes > BUDGET_BYTES) {
     console.error(`❌ ${page}: ${totalKB}KB exceeds ${budgetKB}KB budget`)
     budgetFailed = true

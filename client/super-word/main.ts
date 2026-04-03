@@ -39,7 +39,6 @@ import {
   animateItemShake,
   animateTileAppear,
   animateTileWrongShake,
-  setWowMode,
   animateFlyToNotepad,
   isReducedMotion,
 } from './animations.js'
@@ -52,39 +51,22 @@ import {
   sfxButton,
   sfxSwap,
   ensureAudioUnlocked,
+  getMusicEnabled,
+  setMusicEnabled,
+  syncMusicPlayback,
 } from './sounds.js'
 
-// ── URL Parameter Parsing ─────────────────────────────────
-const params = new URLSearchParams(window.location.search)
-const puzzleFilterParam = params.get('puzzles')?.split(',').map(s => s.trim().toUpperCase())
-const difficultyParam = params.get('difficulty')?.toLowerCase() as 'easy' | 'medium' | 'hard' | undefined
-const countParam = params.get('count') ? parseInt(params.get('count')!, 10) : undefined
-const wowModeParam = params.get('wow') === 'true'
-const shareParam = params.get('s')
-if (shareParam) {
-  try {
-    const decoded = atob(shareParam)
-    console.log('Shared result:', decoded)
-  } catch {
-    // Invalid share param — ignore silently
-  }
+const DEFAULT_DIFFICULTY = 'easy' as const
+
+function parseDifficulty(value: string | null | undefined): 'easy' | 'medium' | 'hard' {
+  return (['easy', 'medium', 'hard'] as const).find((difficulty) => difficulty === value) ?? DEFAULT_DIFFICULTY
 }
 
 // ── Puzzle Selection ──────────────────────────────────────
-// If specific puzzles requested via URL, use those; otherwise random selection
-const validDifficulty = difficultyParam && ['easy', 'medium', 'hard'].includes(difficultyParam)
-  ? difficultyParam : undefined
-
-let activePuzzles: readonly Puzzle[] = selectPuzzles({
-  answers: puzzleFilterParam,
-  difficulty: validDifficulty,
-  count: countParam,
-})
-
-const hasUrlParams = !!(puzzleFilterParam || validDifficulty || countParam)
+let activePuzzles: readonly Puzzle[] = selectPuzzles(DEFAULT_DIFFICULTY)
 
 // ── State Management ──────────────────────────────────────
-let gameState: GameState = createInitialState(activePuzzles.length, wowModeParam)
+let gameState: GameState = createInitialState(activePuzzles.length, false)
 
 function getState(): GameState { return gameState }
 function setState(newState: GameState): void { gameState = newState }
@@ -93,16 +75,35 @@ function currentPuzzle(): Puzzle { return activePuzzles[gameState.currentPuzzleI
 // ── DOM Element References ────────────────────────────────
 const sceneEl = document.getElementById('scene')!
 const slotsEl = document.getElementById('letter-slots')!
-const gameContainer = document.querySelector('.super-word-game') as HTMLElement
+const pendingFlightIndices = new Set<number>()
+
+function renderCollectedLetters(): void {
+  renderLetterSlots(getState(), currentPuzzle(), slotsEl, { pendingIndices: pendingFlightIndices })
+}
+
+function updateCheckButtonState(): void {
+  setCheckButtonEnabled(
+    pendingFlightIndices.size === 0
+    && getState().collectedLetters.length === currentPuzzle().answer.length,
+  )
+}
+
+function syncSettingsForm(): void {
+  const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
+  const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
+
+  if (difficultySelect) difficultySelect.value = DEFAULT_DIFFICULTY
+  if (musicToggle) musicToggle.checked = getMusicEnabled()
+}
 
 // ── Helper: Refresh Game Screen ───────────────────────────
 function refreshGameScreen(): void {
   const puzzle = currentPuzzle()
   const state = getState()
   renderScene(puzzle, state, sceneEl)
-  renderLetterSlots(state, puzzle, slotsEl)
+  renderCollectedLetters()
   renderGameHeader(state, puzzle, state.currentPuzzleIndex, activePuzzles.length)
-  setCheckButtonEnabled(state.collectedLetters.length === puzzle.answer.length)
+  updateCheckButtonState()
 }
 
 // ── Game Flow — InputCallbacks ────────────────────────────
@@ -110,29 +111,13 @@ function refreshGameScreen(): void {
 function onStartGame(): void {
   ensureAudioUnlocked()
   sfxButton()
-  // Read puzzle creator settings
-  const wordsInput = document.getElementById('puzzle-words') as HTMLInputElement | null
   const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
-  const countInput = document.getElementById('puzzle-count-input') as HTMLInputElement | null
 
-  const creatorWords = wordsInput?.value.split(',').map(w => w.trim().toUpperCase()).filter(Boolean) ?? []
-  const creatorDifficultyRaw = difficultySelect?.value ?? ''
-  const creatorDifficulty = (['easy', 'medium', 'hard'] as const).find(d => d === creatorDifficultyRaw)
-  const creatorCount = countInput?.value ? parseInt(countInput.value, 10) : undefined
-
-  const hasCreatorSettings = creatorWords.length > 0 || creatorDifficulty !== undefined || creatorCount !== undefined
-
-  if (hasCreatorSettings || !hasUrlParams) {
-    // Re-select puzzles based on creator settings (or re-roll random)
-    activePuzzles = selectPuzzles({
-      answers: creatorWords.length > 0 ? creatorWords : undefined,
-      difficulty: creatorDifficulty,
-      count: creatorCount,
-    })
-  }
+  activePuzzles = selectPuzzles(parseDifficulty(difficultySelect?.value))
 
   // Reset game state for new puzzle set
-  gameState = createInitialState(activePuzzles.length, wowModeParam)
+  pendingFlightIndices.clear()
+  gameState = createInitialState(activePuzzles.length, false)
 
   refreshGameScreen()
   showScreen('game-screen')
@@ -151,22 +136,36 @@ function onLetterCollected(item: SceneItem): void {
 
   const sceneItem = sceneEl.querySelector(`[data-item-id="${item.id}"]`) as HTMLElement | null
   sceneItem?.classList.add('collected')
+  const collectedIndex = getState().collectedLetters.length - 1
+  const shouldAnimateFlight = !isReducedMotion() && !!sceneItem
 
-  renderLetterSlots(getState(), currentPuzzle(), slotsEl)
+  if (shouldAnimateFlight) {
+    pendingFlightIndices.add(collectedIndex)
+    sceneItem?.classList.add('is-flying-letter')
+  }
 
-  const tiles = slotsEl.querySelectorAll('.letter-tile')
-  const newTile = tiles.length > 0 ? tiles[tiles.length - 1] as HTMLElement : null
+  renderCollectedLetters()
+  const newTile = slotsEl.querySelector(`[data-index="${collectedIndex}"]`) as HTMLElement | null
 
   if (isReducedMotion()) {
     // Instant collection — no flight animation
     if (newTile) animateTileAppear(newTile)
   } else if (sceneItem && newTile) {
     animateFlyToNotepad(sceneItem, newTile).then(() => {
-      if (newTile) animateTileAppear(newTile)
+      pendingFlightIndices.delete(collectedIndex)
+      sceneItem.classList.remove('is-flying-letter')
+      renderCollectedLetters()
+      const arrivedTile = slotsEl.querySelector(`[data-index="${collectedIndex}"]`) as HTMLElement | null
+      if (arrivedTile) animateTileAppear(arrivedTile)
+      updateCheckButtonState()
     })
   } else if (sceneItem) {
+    pendingFlightIndices.delete(collectedIndex)
+    sceneItem.classList.remove('is-flying-letter')
+    renderCollectedLetters()
     animateCollectPop(sceneItem)
-    if (newTile) animateTileAppear(newTile)
+    const arrivedTile = slotsEl.querySelector(`[data-index="${collectedIndex}"]`) as HTMLElement | null
+    if (arrivedTile) animateTileAppear(arrivedTile)
   }
 
   announceLetterCollected(
@@ -176,7 +175,7 @@ function onLetterCollected(item: SceneItem): void {
     currentPuzzle().answer.length,
   )
 
-  setCheckButtonEnabled(getState().collectedLetters.length === currentPuzzle().answer.length)
+  updateCheckButtonState()
   renderGameHeader(getState(), currentPuzzle(), getState().currentPuzzleIndex, activePuzzles.length)
 
   // Keep focus on current position — don't auto-advance
@@ -207,7 +206,7 @@ function onDistractorClicked(item: SceneItem): void {
 function onTileSelected(index: number): void {
   const prevState = getState()
   setState(selectTile(prevState, index))
-  renderLetterSlots(getState(), currentPuzzle(), slotsEl)
+  renderCollectedLetters()
 
   if (getState().selectedTileIndex !== null) {
     announceLetterSelected(
@@ -228,7 +227,7 @@ function onTileSelected(index: number): void {
 function onLettersSwapped(indexA: number, indexB: number): void {
   sfxSwap()
   setState(swapLetters(getState(), indexA, indexB))
-  renderLetterSlots(getState(), currentPuzzle(), slotsEl)
+  renderCollectedLetters()
 
   const letters = getState().collectedLetters.map(l => l.char)
   announceLettersSwapped(letters[indexA], letters[indexB], letters)
@@ -271,6 +270,7 @@ function onCheckAnswer(): void {
     showCelebrationPopup(solvedWord, () => {
       slideSceneTransition(
         () => {
+          pendingFlightIndices.clear()
           setState(advancePuzzle(getState()))
           refreshGameScreen()
         },
@@ -288,6 +288,7 @@ function onCheckAnswer(): void {
 }
 
 function onNextPuzzle(): void {
+  pendingFlightIndices.clear()
   setState(advancePuzzle(getState()))
   refreshGameScreen()
   showScreen('game-screen')
@@ -301,16 +302,13 @@ function onNextPuzzle(): void {
 
 function onPlayAgain(): void {
   sfxButton()
+  pendingFlightIndices.clear()
   setState(resetGame(getState()))
   showScreen('start-screen')
   moveFocusAfterTransition('start-btn', 300)
 }
 
 // ── Initialization ────────────────────────────────────────
-setWowMode(gameContainer, wowModeParam)
-if (isReducedMotion()) {
-  setWowMode(gameContainer, false)
-}
 
 const callbacks: InputCallbacks = {
   onStartGame,
@@ -323,7 +321,18 @@ const callbacks: InputCallbacks = {
   onPlayAgain,
 }
 
+syncSettingsForm()
 setupInput(getState, setState, currentPuzzle, callbacks)
 setupSettingsModal(onStartGame)
+
+const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
+if (musicToggle) {
+  musicToggle.addEventListener('change', () => {
+    if (musicToggle.checked) ensureAudioUnlocked()
+    setMusicEnabled(musicToggle.checked)
+  })
+}
+
+document.addEventListener('visibilitychange', syncMusicPlayback)
 
 showScreen('start-screen')

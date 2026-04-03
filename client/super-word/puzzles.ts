@@ -1,4 +1,4 @@
-import type { Puzzle } from './types.js'
+import type { Difficulty, Puzzle } from './types.js'
 
 // ── Easy (3 letters) ──────────────────────────────────────
 const EASY_PUZZLES: readonly Puzzle[] = [
@@ -123,18 +123,48 @@ const EASY_PUZZLES: readonly Puzzle[] = [
     ],
   },
   {
-    answer: 'OWL',
+    answer: 'BED',
     difficulty: 'easy',
-    prompt: "This wise bird comes out at night and says 'hoo hoo'! 🦉",
+    prompt: 'You sleep in this cozy place at night. Find the letters! 🛏️',
     items: [
-      { id: 'o0', type: 'letter', char: 'O', emoji: '🍊', label: 'Orange', x: 18, y: 18 },
-      { id: 'w0', type: 'letter', char: 'W', emoji: '🌊', label: 'Wave', x: 58, y: 16 },
-      { id: 'l0', type: 'letter', char: 'L', emoji: '🍋', label: 'Lemon', x: 82, y: 28 },
+      { id: 'b0', type: 'letter', char: 'B', emoji: '🎈', label: 'Balloon', x: 18, y: 18 },
+      { id: 'e0', type: 'letter', char: 'E', emoji: '🥚', label: 'Egg', x: 58, y: 16 },
+      { id: 'd_0', type: 'letter', char: 'D', emoji: '🥁', label: 'Drum', x: 82, y: 28 },
       { id: 'd0', type: 'distractor', emoji: '🌙', label: 'Moon', x: 36, y: 38 },
-      { id: 'd1', type: 'distractor', emoji: '🌲', label: 'Pine Tree', x: 68, y: 46 },
-      { id: 'd2', type: 'distractor', emoji: '🐭', label: 'Mouse', x: 20, y: 60 },
-      { id: 'd3', type: 'distractor', emoji: '🌌', label: 'Night Sky', x: 50, y: 66 },
-      { id: 'd4', type: 'distractor', emoji: '🪶', label: 'Feather', x: 78, y: 62 },
+      { id: 'd1', type: 'distractor', emoji: '🛏️', label: 'Pillow', x: 68, y: 46 },
+      { id: 'd2', type: 'distractor', emoji: '🧸', label: 'Teddy Bear', x: 20, y: 60 },
+      { id: 'd3', type: 'distractor', emoji: '💡', label: 'Lamp', x: 50, y: 66 },
+      { id: 'd4', type: 'distractor', emoji: '⭐', label: 'Star', x: 78, y: 62 },
+    ],
+  },
+  {
+    answer: 'HEN',
+    difficulty: 'easy',
+    prompt: 'This farm bird clucks, lays eggs, and pecks for corn! 🐔',
+    items: [
+      { id: 'h0', type: 'letter', char: 'H', emoji: '🏠', label: 'House', x: 20, y: 18 },
+      { id: 'e0', type: 'letter', char: 'E', emoji: '🥚', label: 'Egg', x: 58, y: 14 },
+      { id: 'n0', type: 'letter', char: 'N', emoji: '🌰', label: 'Nut', x: 82, y: 30 },
+      { id: 'd0', type: 'distractor', emoji: '🌾', label: 'Wheat', x: 38, y: 38 },
+      { id: 'd1', type: 'distractor', emoji: '🐥', label: 'Chick', x: 68, y: 48 },
+      { id: 'd2', type: 'distractor', emoji: '🪶', label: 'Feather', x: 20, y: 60 },
+      { id: 'd3', type: 'distractor', emoji: '🌽', label: 'Corn', x: 50, y: 66 },
+      { id: 'd4', type: 'distractor', emoji: '🚜', label: 'Tractor', x: 78, y: 62 },
+    ],
+  },
+  {
+    answer: 'MAP',
+    difficulty: 'easy',
+    prompt: 'You can look at this to help find the way! 🗺️',
+    items: [
+      { id: 'm0', type: 'letter', char: 'M', emoji: '🍄', label: 'Mushroom', x: 18, y: 18 },
+      { id: 'a0', type: 'letter', char: 'A', emoji: '🍎', label: 'Apple', x: 58, y: 14 },
+      { id: 'p0', type: 'letter', char: 'P', emoji: '🍐', label: 'Pear', x: 82, y: 28 },
+      { id: 'd0', type: 'distractor', emoji: '🧭', label: 'Compass', x: 38, y: 38 },
+      { id: 'd1', type: 'distractor', emoji: '⛺', label: 'Tent', x: 68, y: 48 },
+      { id: 'd2', type: 'distractor', emoji: '🏔️', label: 'Mountain', x: 20, y: 60 },
+      { id: 'd3', type: 'distractor', emoji: '🌲', label: 'Pine Tree', x: 50, y: 66 },
+      { id: 'd4', type: 'distractor', emoji: '⭐', label: 'Star', x: 78, y: 62 },
     ],
   },
   {
@@ -493,32 +523,10 @@ function shuffle<T>(arr: readonly T[]): T[] {
 }
 
 /**
- * Select puzzles for a game session.
- * - If `answers` is provided, filter to those specific puzzles.
- * - If `difficulty` is provided, filter to that difficulty level.
- * - Otherwise, randomly pick `DEFAULT_SESSION_SIZE` puzzles from the full pool.
- * Always returns puzzles in shuffled order.
+ * Select a shuffled five-puzzle round for the requested difficulty.
  */
-export function selectPuzzles(opts: {
-  answers?: string[]
-  difficulty?: 'easy' | 'medium' | 'hard'
-  count?: number
-}): Puzzle[] {
-  let pool: readonly Puzzle[] = PUZZLES
-
-  // Filter by specific answers first
-  if (opts.answers && opts.answers.length > 0) {
-    const filtered = pool.filter(p => opts.answers!.includes(p.answer))
-    if (filtered.length > 0) pool = filtered
-  }
-
-  // Filter by difficulty
-  if (opts.difficulty) {
-    const filtered = pool.filter(p => p.difficulty === opts.difficulty)
-    if (filtered.length > 0) pool = filtered
-  }
-
-  const shuffled = shuffle(pool)
-  const count = opts.count ?? DEFAULT_SESSION_SIZE
-  return shuffled.slice(0, Math.min(count, shuffled.length))
+export function selectPuzzles(difficulty: Difficulty): Puzzle[] {
+  const filtered = PUZZLES.filter((puzzle) => puzzle.difficulty === difficulty)
+  const pool = filtered.length > 0 ? filtered : PUZZLES
+  return shuffle(pool).slice(0, Math.min(DEFAULT_SESSION_SIZE, pool.length))
 }

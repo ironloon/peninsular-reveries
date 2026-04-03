@@ -3,14 +3,15 @@ import { test, expect, type Page } from '@playwright/test'
 
 const staticPages = [
   { name: 'homepage', path: '/' },
+  { name: 'attributions page', path: '/attributions/' },
   { name: 'game start screen', path: '/super-word/' },
   { name: '404 page', path: '/404.html' },
 ]
 
-const deterministicGamePath = '/super-word/?puzzles=CAT&count=1'
+const gamePath = '/super-word/'
 
-async function startDeterministicGame(page: Page): Promise<void> {
-  await page.goto(deterministicGamePath)
+async function startGame(page: Page): Promise<void> {
+  await page.goto(gamePath)
 
   const startButton = page.getByRole('button', { name: /let's go/i })
   await startButton.focus()
@@ -43,7 +44,12 @@ test.describe('SITE-04: Accessibility', () => {
 
     const dialog = page.getByRole('dialog', { name: 'Settings' })
     await expect(dialog).toBeVisible()
-    await expect(page.getByLabel('Words (comma-separated):')).toBeFocused()
+    await expect(page.locator('#puzzle-difficulty-select')).toBeFocused()
+    await expect(page.locator('#puzzle-difficulty-select')).toHaveValue('easy')
+    await expect(page.locator('#music-enabled-toggle')).not.toBeChecked()
+    await expect(dialog).toContainText('Credits & License')
+    await expect(dialog).toContainText('GPL-3.0')
+    await expect(dialog).toContainText('Generated in-browser with the Web Audio API')
 
     await page.keyboard.press('Escape')
 
@@ -52,12 +58,12 @@ test.describe('SITE-04: Accessibility', () => {
   })
 
   test('starting the game moves focus into the custom-rendered puzzle scene', async ({ page }) => {
-    await startDeterministicGame(page)
+    await startGame(page)
   })
 
   test('phone-sized start button is pointer clickable', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto(deterministicGamePath)
+    await page.goto(gamePath)
 
     await page.getByRole('button', { name: /let's go/i }).click()
 
@@ -66,15 +72,18 @@ test.describe('SITE-04: Accessibility', () => {
   })
 
   test('starting the game announces the current puzzle in the polite live region', async ({ page }) => {
-    await startDeterministicGame(page)
+    await startGame(page)
 
     const status = page.locator('#game-status')
-    await expect(status).toContainText('Puzzle 1 of 1')
-    await expect(status).toContainText('meow')
+    const prompt = (await page.locator('#prompt-text').textContent())?.trim() ?? ''
+
+    expect(prompt.length).toBeGreaterThan(0)
+    await expect(status).toContainText('Puzzle 1 of 5')
+    await expect(status).toContainText(prompt)
   })
 
   test('active gameplay state has no critical accessibility violations in the rendered build', async ({ page }) => {
-    await startDeterministicGame(page)
+    await startGame(page)
 
     const results = await new AxeBuilder({ page })
       .include('#game-screen')
@@ -87,7 +96,7 @@ test.describe('SITE-04: Accessibility', () => {
   })
 
   test('collecting a letter announces progress in the assertive live region', async ({ page }) => {
-    await startDeterministicGame(page)
+    await startGame(page)
 
     await page.keyboard.press('Enter')
 
@@ -95,8 +104,21 @@ test.describe('SITE-04: Accessibility', () => {
     await expect(page.locator('#letter-slots .letter-tile')).toHaveCount(1)
   })
 
+  test('motion-enabled collection keeps the destination tile hidden until the letter lands', async ({ page }) => {
+    await startGame(page)
+
+    await page.keyboard.press('Enter')
+
+    const tile = page.locator('#letter-slots .letter-tile').first()
+    await expect(tile).toHaveClass(/pending-flight/)
+    await expect(page.locator('.flying-letter')).toHaveCount(1)
+    await expect(tile).not.toHaveClass(/pending-flight/)
+    await expect(tile).toBeVisible()
+    await expect(page.locator('.flying-letter')).toHaveCount(0)
+  })
+
   test('activating a distractor announces feedback without collecting a tile', async ({ page }) => {
-    await startDeterministicGame(page)
+    await startGame(page)
 
     const distractor = page.locator('#scene .scene-item[data-item-type="distractor"]').first()
     await distractor.focus()
@@ -107,7 +129,7 @@ test.describe('SITE-04: Accessibility', () => {
   })
 
   test('keyboard tile swapping updates the polite live region and tile order', async ({ page }) => {
-    await startDeterministicGame(page)
+    await startGame(page)
 
     const remainingLetters = page.locator('#scene .scene-item[data-item-type="letter"]:not(.collected)')
     await remainingLetters.first().focus()
@@ -115,18 +137,27 @@ test.describe('SITE-04: Accessibility', () => {
     await remainingLetters.first().focus()
     await page.keyboard.press('Enter')
 
+    await expect(page.locator('#letter-slots .letter-tile')).toHaveCount(2)
+    await expect(page.locator('#letter-slots .letter-tile.pending-flight')).toHaveCount(0)
+
+    const firstBefore = (await page.locator('#letter-slots .letter-tile').nth(0).textContent())?.trim() ?? ''
+    const secondBefore = (await page.locator('#letter-slots .letter-tile').nth(1).textContent())?.trim() ?? ''
+
+    expect(firstBefore.length).toBeGreaterThan(0)
+    expect(secondBefore.length).toBeGreaterThan(0)
+
     const firstTile = page.locator('#letter-slots .letter-tile').first()
     await firstTile.focus()
     await page.keyboard.press('ArrowRight')
 
     await expect(page.locator('#game-status')).toContainText('Swapped')
-    await expect(page.locator('#letter-slots .letter-tile').nth(0)).toContainText('A')
-    await expect(page.locator('#letter-slots .letter-tile').nth(1)).toContainText('C')
+    await expect(page.locator('#letter-slots .letter-tile').nth(0)).toContainText(secondBefore)
+    await expect(page.locator('#letter-slots .letter-tile').nth(1)).toContainText(firstBefore)
   })
 
   test('reduced motion keeps gameplay functional without fly-to-notepad animation', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
-    await startDeterministicGame(page)
+    await startGame(page)
 
     await page.keyboard.press('Enter')
 
