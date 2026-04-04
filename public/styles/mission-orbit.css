@@ -439,6 +439,16 @@ body.mission-orbit-game main {
   transform: translate(-50%, -50%) scale(1.12);
 }
 
+.mission-stage-shell[data-briefing='true']::before {
+  opacity: 0.36;
+  filter: blur(4px);
+}
+
+.mission-stage-shell[data-briefing='true']::after {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1);
+}
+
 .mission-stage-shell[data-phase='countdown'],
 .mission-stage-shell[data-phase='launch'] {
   background:
@@ -680,6 +690,10 @@ body.mission-orbit-game main {
 
 .mission-stage-target[data-mode='timing'] {
   border-color: rgba(255, 209, 102, 0.28);
+}
+
+.mission-stage-target[data-mode='briefing'] {
+  border-color: rgba(166, 205, 255, 0.28);
 }
 
 .countdown-overlay.is-visible {

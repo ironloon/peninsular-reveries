@@ -62,7 +62,7 @@ export async function missionOrbitAction() {
             <div id="mission-stage-shell" className="mission-stage-shell">
               <svg id="mission-map" className="mission-map" viewBox="0 0 100 100" aria-hidden="true">
                 <g id="mission-stars"></g>
-                <path id="mission-free-return" d="M 34 69 C 45 58, 57 44, 70 29 C 76 22, 84 19, 89 23 C 93 27, 92 35, 86 39 C 79 43, 72 41, 71 34 C 70 27, 75 22, 81 22 C 88 21, 92 27, 90 34 C 85 49, 70 63, 38 73" />
+                <path id="mission-free-return" d="M 34 69 C 45 58, 58 44, 69 31 C 75 24, 82 20, 87 22 C 92 25, 91 34, 84 40 C 72 49, 58 60, 38 73" />
                 <path id="mission-orbit-path" d="M 22 59 C 34 59, 42 66, 42 76 C 42 86, 34 93, 22 93 C 10 93, 2 86, 2 76 C 2 66, 10 59, 22 59 Z" />
 
                 <circle id="mission-earth-glow" cx="22" cy="76" r="20" />
@@ -84,22 +84,24 @@ export async function missionOrbitAction() {
                   <circle id="mission-rocket-hit-area" cx="0" cy="0" r="12" />
                   <circle id="mission-rocket-glow" cx="0" cy="0" r="9.6" />
                   <circle id="mission-rocket-cue-ring" cx="0" cy="0" r="7.8" />
-                  <g id="mission-service-module">
-                    <rect x="-1.9" y="3.8" width="3.8" height="6" rx="1.2" />
+                  <g id="mission-rocket-frame">
+                    <g id="mission-service-module">
+                      <rect x="-1.9" y="3.8" width="3.8" height="6" rx="1.2" />
+                    </g>
+                    <g id="mission-parachute">
+                      <path d="M -7 -10 C -4 -16, 4 -16, 7 -10" />
+                      <line x1="-4.5" y1="-10" x2="-2" y2="-2" />
+                      <line x1="0" y1="-10.5" x2="0" y2="-2" />
+                      <line x1="4.5" y1="-10" x2="2" y2="-2" />
+                    </g>
+                    <g id="mission-flame">
+                      <path d="M -1.3 10 C -3 15, -1 18, 0 20 C 1 18, 3 15, 1.3 10 Z" />
+                    </g>
+                    <path id="mission-capsule" d="M 0 -8 C 4 -7, 5 -2, 5 3 C 5 8, 2 10, 0 10 C -2 10, -5 8, -5 3 C -5 -2, -4 -7, 0 -8 Z" />
+                    <circle id="mission-window" cx="0" cy="-1" r="1.6" />
+                    <path id="mission-fin-left" d="M -5 4 L -7 8 L -4 8 Z" />
+                    <path id="mission-fin-right" d="M 5 4 L 7 8 L 4 8 Z" />
                   </g>
-                  <g id="mission-parachute">
-                    <path d="M -7 -10 C -4 -16, 4 -16, 7 -10" />
-                    <line x1="-4.5" y1="-10" x2="-2" y2="-2" />
-                    <line x1="0" y1="-10.5" x2="0" y2="-2" />
-                    <line x1="4.5" y1="-10" x2="2" y2="-2" />
-                  </g>
-                  <g id="mission-flame">
-                    <path d="M -1.3 10 C -3 15, -1 18, 0 20 C 1 18, 3 15, 1.3 10 Z" />
-                  </g>
-                  <path id="mission-capsule" d="M 0 -8 C 4 -7, 5 -2, 5 3 C 5 8, 2 10, 0 10 C -2 10, -5 8, -5 3 C -5 -2, -4 -7, 0 -8 Z" />
-                  <circle id="mission-window" cx="0" cy="-1" r="1.6" />
-                  <path id="mission-fin-left" d="M -5 4 L -7 8 L -4 8 Z" />
-                  <path id="mission-fin-right" d="M 5 4 L 7 8 L 4 8 Z" />
                 </g>
               </svg>
 

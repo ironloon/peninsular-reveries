@@ -116,6 +116,7 @@ function applyBurnResult(state: GameState, result: BurnResult): GameState {
     burnResults: [...state.burnResults, result],
     outcomeText: result.detail,
     outcomeGrade: result.grade,
+    briefingActive: false,
     stopMoActive: false,
     phaseResolved: true,
     actionHeld: false,
@@ -130,6 +131,7 @@ export function createInitialState(): GameState {
     phaseIndex: -1,
     phaseElapsedMs: 0,
     missionElapsedMs: 0,
+    briefingActive: false,
     countdownValue: COUNTDOWN_START,
     actionHeld: false,
     launchProgress: 0,
@@ -191,7 +193,7 @@ export function setActionHeld(state: GameState, held: boolean): GameState {
 }
 
 export function updateLaunchProgress(state: GameState, deltaMs: number): GameState {
-  if (state.phase !== 'launch' || state.phaseResolved || state.stopMoActive) return state
+  if (state.phase !== 'launch' || state.briefingActive || state.phaseResolved || state.stopMoActive) return state
 
   const poweredClimb = state.actionHeld ? deltaMs / 2300 : -deltaMs / 6000
   const passiveClimb = deltaMs / 18000
@@ -208,7 +210,7 @@ export function updateTimingCursor(state: GameState, deltaMs: number, speed: num
   if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phase === 'launch') {
     return state
   }
-  if (state.phaseResolved || state.stopMoActive) return state
+  if (state.briefingActive || state.phaseResolved || state.stopMoActive) return state
 
   let nextPosition = state.timingCursor + deltaMs * speed * state.timingDirection
   let nextDirection = state.timingDirection
@@ -231,7 +233,7 @@ export function updateTimingCursor(state: GameState, deltaMs: number, speed: num
 }
 
 export function resolveLaunchRelease(state: GameState): GameState {
-  if (state.phase !== 'launch' || state.phaseResolved) return state
+  if (state.phase !== 'launch' || state.briefingActive || state.phaseResolved) return state
 
   const definition = getPhaseDefinition('launch')
   if (state.stopMoActive) {
@@ -248,6 +250,7 @@ export function resolveTimingAttempt(state: GameState): GameState {
     || state.phase === 'celebration'
     || state.phase === 'countdown'
     || state.phase === 'launch'
+    || state.briefingActive
     || state.phaseResolved
   ) {
     return state
@@ -269,6 +272,7 @@ export function autoAssistCurrentPhase(state: GameState): GameState {
     state.phase === 'title'
     || state.phase === 'celebration'
     || state.phase === 'countdown'
+    || state.briefingActive
     || state.phaseResolved
   ) {
     return state
@@ -291,8 +295,27 @@ export function clearOutcome(state: GameState): GameState {
   }
 }
 
+export function endBriefing(state: GameState): GameState {
+  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || !state.briefingActive) {
+    return state
+  }
+
+  return {
+    ...state,
+    briefingActive: false,
+    phaseElapsedMs: 0,
+  }
+}
+
 export function enterStopMo(state: GameState, message: string): GameState {
-  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phaseResolved || state.stopMoActive) {
+  if (
+    state.phase === 'title'
+    || state.phase === 'celebration'
+    || state.phase === 'countdown'
+    || state.briefingActive
+    || state.phaseResolved
+    || state.stopMoActive
+  ) {
     return state
   }
 
@@ -314,7 +337,13 @@ export function enterStopMo(state: GameState, message: string): GameState {
 }
 
 export function getCueSignal(state: GameState): CueSignalState | null {
-  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phaseResolved) {
+  if (
+    state.phase === 'title'
+    || state.phase === 'celebration'
+    || state.phase === 'countdown'
+    || state.briefingActive
+    || state.phaseResolved
+  ) {
     return null
   }
 
@@ -360,16 +389,20 @@ export function advancePhase(state: GameState): GameState {
       actionHeld: false,
       outcomeText: '',
       outcomeGrade: null,
+      briefingActive: false,
       stopMoActive: false,
       phaseResolved: false,
     }
   }
+
+  const nextDefinition = getPhaseDefinition(nextPhase)
 
   return {
     ...state,
     phase: nextPhase,
     phaseIndex: currentIndex + 1,
     phaseElapsedMs: 0,
+    briefingActive: Boolean(nextDefinition.briefingMs),
     countdownValue: nextPhase === 'countdown' ? COUNTDOWN_START : state.countdownValue,
     actionHeld: false,
     launchProgress: nextPhase === 'launch' ? 0 : state.launchProgress,

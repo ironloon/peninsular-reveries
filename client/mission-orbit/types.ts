@@ -32,6 +32,7 @@ export interface MissionPhaseDefinition {
   readonly actionLabel: string
   readonly timingHint: string
   readonly mode: PhaseMode
+  readonly briefingMs?: number
   readonly autoAdvanceMs?: number
   readonly assistAfterMs?: number
   readonly meterSpeed?: number
@@ -52,6 +53,7 @@ export interface GameState {
   readonly phaseIndex: number
   readonly phaseElapsedMs: number
   readonly missionElapsedMs: number
+  readonly briefingActive: boolean
   readonly countdownValue: number
   readonly actionHeld: boolean
   readonly launchProgress: number
@@ -89,6 +91,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     actionLabel: 'Hold to climb',
     timingHint: 'Hold to climb. Release when the flare blooms.',
     mode: 'hold',
+    briefingMs: 1600,
     assistAfterMs: 9000,
     timingWindow: {
       perfectStart: 0.79,
@@ -106,6 +109,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     actionLabel: 'Tap spacecraft',
     timingHint: 'Tap the spacecraft, or use the action control, on the flare.',
     mode: 'timing',
+    briefingMs: 2200,
     assistAfterMs: 7600,
     meterSpeed: 0.00035,
     timingWindow: {
@@ -124,6 +128,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     actionLabel: 'Coasting',
     timingHint: 'Coasting segment. Watch the trajectory settle.',
     mode: 'auto',
+    briefingMs: 1800,
     autoAdvanceMs: 5200,
   },
   {
@@ -135,6 +140,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     actionLabel: 'Tap spacecraft',
     timingHint: 'One bright cue, one clean tap on the spacecraft.',
     mode: 'timing',
+    briefingMs: 2400,
     assistAfterMs: 7600,
     meterSpeed: 0.00043,
     timingWindow: {
@@ -153,6 +159,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     actionLabel: 'Tap spacecraft',
     timingHint: 'Let the cue bloom, then tap the spacecraft once.',
     mode: 'timing',
+    briefingMs: 2200,
     assistAfterMs: 7800,
     meterSpeed: 0.00039,
     timingWindow: {
@@ -171,6 +178,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     actionLabel: 'Coasting',
     timingHint: 'Coasting segment. Watch Earth grow in the windows.',
     mode: 'auto',
+    briefingMs: 1800,
     autoAdvanceMs: 5600,
   },
   {
@@ -182,6 +190,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     actionLabel: 'Tap spacecraft',
     timingHint: 'Hit the flare before the heat ramps up.',
     mode: 'timing',
+    briefingMs: 2200,
     assistAfterMs: 7000,
     meterSpeed: 0.00046,
     timingWindow: {
@@ -200,6 +209,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     actionLabel: 'Tap spacecraft',
     timingHint: 'Let the cue bloom, then open the parachutes.',
     mode: 'timing',
+    briefingMs: 2200,
     assistAfterMs: 7000,
     meterSpeed: 0.00042,
     timingWindow: {
@@ -218,6 +228,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     actionLabel: 'Recovery underway',
     timingHint: 'Recovery has the capsule. Watch the splash zone.',
     mode: 'auto',
+    briefingMs: 1600,
     autoAdvanceMs: 3600,
   },
 ] as const
