@@ -152,7 +152,13 @@ const callbacks: InputCallbacks = {
 
     ensureAudioUnlocked()
     sfxChomp()
-    const result = attemptChomp(getState())
+    const arena = document.getElementById('game-arena') as HTMLElement | null
+    const result = attemptChomp(getState(), arena
+      ? {
+        width: arena.clientWidth,
+        height: arena.clientHeight,
+      }
+      : undefined)
     setState(result.state)
     renderGame(getState())
 

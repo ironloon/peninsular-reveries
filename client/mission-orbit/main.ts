@@ -1,13 +1,10 @@
-import { DEFAULT_CREW_IDS } from '../../app/data/mission-orbit-crew.js'
 import { pulseElement } from './animations.js'
 import {
-  announceBurnResult,
   announceCountdown,
   announceKeepHolding,
   announceMissionComplete,
   announcePhase,
   announcePhaseReady,
-  announceStopMoCue,
   moveFocusAfterTransition,
   updatePhaseDescription,
 } from './accessibility.js'
@@ -21,37 +18,27 @@ import {
 } from './renderer.js'
 import {
   advancePhase,
-  autoAssistCurrentPhase,
   createInitialState,
   endBriefing,
-  enterStopMo,
-  getCueSignal,
-  isRecoveryActionReady,
   getMissionTimeLabel,
+  isRecoveryActionReady,
   resetGame,
   resolveLaunchRelease,
-  resolveTimingAttempt,
+  resolveNarrativePhase,
   setActionHeld,
   startMission,
   tickClock,
   updateCountdown,
   updateLaunchProgress,
-  updateTimingCursor,
-  type CueSignalBand,
 } from './state.js'
 import {
   ensureAudioUnlocked,
   getMusicEnabled,
   getSfxIntensityMode,
   loadSamples,
-  setSfxIntensityMode,
   setMusicEnabled,
-  sfxCueApproach,
-  sfxCueReady,
-  sfxCueStrike,
+  setSfxIntensityMode,
   sfxBurnPulse,
-  sfxBurnResult,
-  sfxBurnWindow,
   sfxButton,
   sfxCelebration,
   sfxCountdownBeep,
@@ -59,11 +46,10 @@ import {
   sfxLiftoff,
   sfxParachute,
   sfxReentry,
-  sfxStopMo,
   sfxSplashdown,
   syncMusicPlayback,
 } from './sounds.js'
-import { getPhaseDefinition, type GameState, type MissionGameplayPhase } from './types.js'
+import { getPhaseDefinition, type GameState, type MissionGameplayPhase, type MissionPhaseDefinition } from './types.js'
 
 let state: GameState = createInitialState()
 let lastFrame = performance.now()
@@ -71,48 +57,6 @@ let phaseAdvanceTimer: number | null = null
 let lastCountdownValue = state.countdownValue
 let lastPhase: GameState['phase'] = state.phase
 let enginePulseBudgetMs = 0
-let lastBurnCount = 0
-let lastCueBand: CueSignalBand | null = null
-let lastStopMoActive = false
-
-const crewCheckboxes = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="mission-crew"]'))
-const crewPickerHelp = document.getElementById('crew-picker-help') as HTMLElement | null
-
-function syncCrewPicker(): void {
-  if (crewCheckboxes.length === 0) return
-
-  const selectedCount = crewCheckboxes.filter((checkbox) => checkbox.checked).length
-  const lockOpenSeats = selectedCount >= 3
-
-  for (const checkbox of crewCheckboxes) {
-    checkbox.disabled = !checkbox.checked && lockOpenSeats
-  }
-
-  if (!crewPickerHelp) return
-
-  if (selectedCount === 3) {
-    crewPickerHelp.textContent = 'Crew locked in. They will appear during boarding, lunar flyby, and recovery.'
-    return
-  }
-
-  const remaining = Math.max(0, 3 - selectedCount)
-  crewPickerHelp.textContent = `Choose ${remaining} more crew member${remaining === 1 ? '' : 's'}, or launch with the defaults.`
-}
-
-function readSelectedCrewIds(): string[] {
-  const selectedIds = crewCheckboxes
-    .filter((checkbox) => checkbox.checked)
-    .map((checkbox) => checkbox.value)
-
-  const fallbackIds = DEFAULT_CREW_IDS.filter((id) => !selectedIds.includes(id))
-  return [...selectedIds, ...fallbackIds].slice(0, 3)
-}
-
-for (const checkbox of crewCheckboxes) {
-  checkbox.addEventListener('change', syncCrewPicker)
-}
-
-syncCrewPicker()
 
 function primeMissionAudio(): void {
   ensureAudioUnlocked()
@@ -141,7 +85,7 @@ if (sfxIntensitySelect) {
 
 setupSettingsModal()
 
-function currentPhaseDefinition() {
+function currentPhaseDefinition(): MissionPhaseDefinition | null {
   if (state.phase === 'title' || state.phase === 'celebration') return null
   return getPhaseDefinition(state.phase)
 }
@@ -156,14 +100,6 @@ function clearAdvanceTimer(): void {
 function playPhaseActivationAudio(): void {
   if (state.phase === 'title' || state.phase === 'celebration') return
 
-  const definition = getPhaseDefinition(state.phase)
-
-  if (definition.mode === 'timing') {
-    sfxBurnWindow()
-  }
-  if (state.phase === 'service-module-jettison') {
-    sfxReentry()
-  }
   if (state.phase === 'splashdown') {
     sfxSplashdown()
   }
@@ -173,15 +109,11 @@ function buildPhaseReadyMessage(): string {
   const definition = currentPhaseDefinition()
   if (!definition) return ''
 
-  if (definition.mode === 'hold') {
-    return `${definition.label}. Action live. ${definition.timingHint}`
+  if (definition.mode === 'hold' || definition.mode === 'narrative') {
+    return `${definition.label}. ${definition.timingHint}`
   }
 
-  if (definition.mode === 'timing') {
-    return `${definition.label}. Action live. ${definition.timingHint}`
-  }
-
-  return `${definition.label}. Segment under way.`
+  return `${definition.label}. ${definition.prompt}`
 }
 
 function finishBriefing(): void {
@@ -198,9 +130,6 @@ function finishBriefing(): void {
 
 function onPhaseEntered(previousPhase: GameState['phase']): void {
   if (state.phase === previousPhase) return
-
-  lastCueBand = null
-  lastStopMoActive = false
 
   syncMusicPlayback(state.phase)
 
@@ -229,7 +158,7 @@ function onPhaseEntered(previousPhase: GameState['phase']): void {
 
   renderMission(state)
 
-  if (definition.mode === 'hold' || definition.mode === 'timing') {
+  if (definition.mode === 'hold' || definition.mode === 'narrative') {
     moveFocusAfterTransition('mission-action-btn', 180)
   }
 }
@@ -250,92 +179,42 @@ function scheduleNextPhase(delayMs: number): void {
   }, delayMs)
 }
 
-function handleBurnResolved(): void {
-  const latestBurn = state.burnResults[state.burnResults.length - 1]
-  if (!latestBurn) return
-
-  sfxBurnResult(latestBurn.grade)
-  announceBurnResult(latestBurn)
-  if (state.phase === 'parachute-deploy') {
-    sfxParachute()
-  }
-  void pulseElement(
-    getOutcomeElement(),
-    latestBurn.grade === 'assist' ? 'outcome-pulse-assist' : 'outcome-pulse-success',
-  )
-  scheduleNextPhase(2200)
-}
-
-function resolveCurrentPhase(assisted: boolean): void {
-  const previousBurnCount = state.burnResults.length
-
-  if (assisted) {
-    state = autoAssistCurrentPhase(state)
-  } else if (state.phase === 'launch') {
-    state = resolveLaunchRelease(state)
-  } else {
-    state = resolveTimingAttempt(state)
-  }
-
-  renderMission(state)
-
-  if (state.burnResults.length > previousBurnCount) {
-    handleBurnResolved()
-  }
-}
-
-function buildStopMoMessage(): string {
-  if (state.phase === 'launch') {
-    return 'Guidance is holding main engine cutoff. Let go when you are ready.'
-  }
-
+function resolveCurrentPhase(): void {
   const definition = currentPhaseDefinition()
-  return definition
-    ? `${definition.label}. Guidance is holding the cue. Act when you are ready.`
-    : 'Guidance is holding the cue. Act when you are ready.'
-}
+  if (!definition || state.phaseResolved) return
 
-function triggerStopMoRescue(): void {
-  const message = buildStopMoMessage()
-  state = enterStopMo(state, message)
-  announceStopMoCue(message)
-  sfxStopMo()
-}
-
-function syncCueAudio(): void {
-  const cueSignal = getCueSignal(state)
-  const nextCueBand = cueSignal?.band ?? null
-
-  if (state.stopMoActive && !lastStopMoActive) {
-    lastStopMoActive = true
-    lastCueBand = nextCueBand
+  if (state.phase === 'launch') {
+    state = resolveLaunchRelease(state)
+    renderMission(state)
+    void pulseElement(getOutcomeElement(), 'outcome-pulse-success')
+    scheduleNextPhase(1400)
     return
   }
 
-  if (!state.stopMoActive && nextCueBand !== lastCueBand) {
-    if (nextCueBand === 'building') {
-      sfxCueApproach()
-    } else if (nextCueBand === 'ready') {
-      sfxCueReady()
-    } else if (nextCueBand === 'strike') {
-      sfxCueStrike()
-    }
+  if (definition.mode !== 'narrative') return
+
+  state = resolveNarrativePhase(state)
+  renderMission(state)
+
+  if (state.phase === 'service-module-jettison') {
+    sfxReentry()
   }
 
-  lastCueBand = nextCueBand
-  lastStopMoActive = state.stopMoActive
+  if (state.phase === 'parachute-deploy') {
+    sfxParachute()
+  }
+
+  void pulseElement(getOutcomeElement(), 'outcome-pulse-success')
+  scheduleNextPhase(definition.autoAdvanceMs ?? 3600)
 }
 
 function startGame(): void {
   primeMissionAudio()
   sfxButton()
   clearAdvanceTimer()
-  state = startMission(readSelectedCrewIds())
+  state = startMission()
   lastPhase = state.phase
   lastCountdownValue = state.countdownValue
-  lastBurnCount = 0
-  lastCueBand = null
-  lastStopMoActive = false
   enginePulseBudgetMs = 0
   showScreen('mission-screen')
   renderMission(state)
@@ -348,9 +227,6 @@ function replayGame(): void {
   state = resetGame()
   lastPhase = state.phase
   lastCountdownValue = state.countdownValue
-  lastBurnCount = 0
-  lastCueBand = null
-  lastStopMoActive = false
   enginePulseBudgetMs = 0
   syncMusicPlayback(state.phase)
   showScreen('start-screen')
@@ -385,11 +261,6 @@ const callbacks: InputCallbacks = {
 
     if (state.briefingActive) {
       finishBriefing()
-
-      if (definition.mode === 'hold') {
-        state = setActionHeld(state, true)
-      }
-
       renderMission(state)
       return
     }
@@ -400,8 +271,9 @@ const callbacks: InputCallbacks = {
       return
     }
 
-    if (definition.mode === 'timing') {
-      resolveCurrentPhase(false)
+    if (definition.mode === 'narrative') {
+      sfxButton()
+      resolveCurrentPhase()
     }
   },
   onActionEnd: () => {
@@ -409,14 +281,11 @@ const callbacks: InputCallbacks = {
     if (!definition || definition.mode !== 'hold' || state.phaseResolved || !state.actionHeld) return
 
     state = setActionHeld(state, false)
+    renderMission(state)
 
-    if (!state.stopMoActive && state.launchProgress < 0.35) {
-      renderMission(state)
+    if (state.launchProgress < 1) {
       announceKeepHolding()
-      return
     }
-
-    resolveCurrentPhase(false)
   },
   onReplay: replayGame,
 }
@@ -462,7 +331,7 @@ function tick(now: number): void {
     } else if (state.phase === 'launch') {
       state = updateLaunchProgress(state, deltaMs)
 
-      if (state.actionHeld && !state.stopMoActive) {
+      if (state.actionHeld) {
         enginePulseBudgetMs += deltaMs
         if (enginePulseBudgetMs >= 360) {
           sfxBurnPulse()
@@ -472,28 +341,18 @@ function tick(now: number): void {
         enginePulseBudgetMs = 0
       }
 
-      const definition = getPhaseDefinition('launch')
-      if (!state.briefingActive && !state.phaseResolved && !state.stopMoActive && ((definition.assistAfterMs && state.phaseElapsedMs >= definition.assistAfterMs) || state.launchProgress >= 1)) {
-        triggerStopMoRescue()
+      if (!state.phaseResolved && state.launchProgress >= 1) {
+        resolveCurrentPhase()
       }
     } else {
-      const definition = getPhaseDefinition(state.phase as MissionGameplayPhase)
+      const liveDefinition = getPhaseDefinition(state.phase as MissionGameplayPhase)
 
-      if (!state.briefingActive && definition.mode === 'timing' && !state.phaseResolved) {
-        state = updateTimingCursor(state, deltaMs, definition.meterSpeed ?? 0.00064)
-
-        if (!state.stopMoActive && definition.assistAfterMs && state.phaseElapsedMs >= definition.assistAfterMs) {
-          triggerStopMoRescue()
-        }
-      }
-
-      if (!state.briefingActive && definition.mode === 'auto' && definition.autoAdvanceMs && state.phaseElapsedMs >= definition.autoAdvanceMs) {
+      if (!state.briefingActive && liveDefinition.mode === 'auto' && liveDefinition.autoAdvanceMs && state.phaseElapsedMs >= liveDefinition.autoAdvanceMs) {
         goToNextPhase()
       }
     }
 
     if (state.phase !== 'celebration') {
-      syncCueAudio()
       renderMission(state)
     }
   }
@@ -501,10 +360,6 @@ function tick(now: number): void {
   if (state.phase !== lastPhase) {
     onPhaseEntered(lastPhase)
     lastPhase = state.phase
-  }
-
-  if (state.burnResults.length !== lastBurnCount) {
-    lastBurnCount = state.burnResults.length
   }
 
   requestAnimationFrame(tick)

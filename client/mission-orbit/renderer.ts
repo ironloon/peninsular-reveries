@@ -1,5 +1,5 @@
 import { isReducedMotion } from './animations.js'
-import { getCueSignal, getMissionStepLabel, getMissionTimeLabel, isRecoveryActionReady } from './state.js'
+import { getMissionStepLabel, getMissionTimeLabel, isRecoveryActionReady } from './state.js'
 import { MISSION_SEQUENCE, getPhaseDefinition, type BurnGrade, type GameState, type MissionPhase } from './types.js'
 import type { MissionCrewProfile } from '../../app/data/mission-orbit-crew.js'
 import { bindReduceMotionToggle } from '../preferences.js'
@@ -175,7 +175,7 @@ function countdownState(value: number): 'steady' | 'engines' | 'final' | 'liftof
 }
 
 function crewChipMarkup(crew: MissionCrewProfile): string {
-  return `<article class="mission-crew-chip"><span class="mission-crew-badge" style="--crew-accent:${escapeHtml(crew.accent)};--crew-accent-soft:${escapeHtml(crew.accentSoft)}">${escapeHtml(crew.badge)}</span><span class="mission-crew-copy"><strong>${escapeHtml(crew.name)}</strong><span>${escapeHtml(crew.role)}</span></span></article>`
+  return `<article class="mission-crew-chip"><span class="mission-crew-badge" style="--crew-accent:${escapeHtml(crew.accent)};--crew-accent-soft:${escapeHtml(crew.accentSoft)}">${escapeHtml(crew.badge)}</span><span class="mission-crew-copy"><strong>${escapeHtml(crew.name)}</strong><span>${escapeHtml(crew.role)} · ${escapeHtml(crew.agency)}</span></span></article>`
 }
 
 function setCrewOverlay(state: GameState): void {
@@ -195,11 +195,11 @@ function setCrewOverlay(state: GameState): void {
     mode = 'lunar'
     title = 'Cabin view'
     caption = 'The crew is at the windows while Orion slides around the far side of the Moon.'
-  } else if (state.phase === 'splashdown' && state.phaseElapsedMs >= 2200) {
+  } else if (state.phase === 'splashdown' && state.phaseElapsedMs >= 3000) {
     mode = 'recovery'
     title = 'Recovery team inbound'
     caption = isRecoveryActionReady(state)
-      ? 'Recovery is alongside. Tap Done when you are ready to wrap the mission.'
+      ? 'Recovery is alongside. Continue when you are ready to leave the water.'
       : 'The recovery boat is easing in beside the capsule.'
   }
 
@@ -224,15 +224,15 @@ function setCrewOverlay(state: GameState): void {
 
 function renderRecoveryBoat(state: GameState): void {
   const boat = getRecoveryBoat()
-  if (state.phase !== 'splashdown' || state.phaseElapsedMs < 1200) {
+  if (state.phase !== 'splashdown' || state.phaseElapsedMs < 2000) {
     boat.dataset.visible = 'false'
     boat.style.opacity = '0'
     return
   }
 
-  const progress = easeOutCubic(clamp((state.phaseElapsedMs - 1200) / 2400, 0, 1))
-  const left = lerp(110, 64, progress)
-  const top = lerp(90, 84.5, progress)
+  const progress = easeOutCubic(clamp((state.phaseElapsedMs - 2000) / 6000, 0, 1))
+  const left = lerp(130, 58, progress)
+  const top = lerp(92, 82, progress)
 
   boat.dataset.visible = progress >= 1 ? 'ready' : 'true'
   boat.style.opacity = String(clamp(progress * 1.2, 0, 1))
@@ -353,7 +353,6 @@ function applyBriefingPose(state: GameState, scene: SceneShape): SceneShape {
 }
 
 function buildSceneShape(state: GameState): SceneShape {
-  const cueSignal = state.briefingActive ? null : getCueSignal(state)
   const phaseElapsedMs = state.briefingActive ? 0 : state.phaseElapsedMs
 
   switch (state.phase) {
@@ -436,7 +435,7 @@ function buildSceneShape(state: GameState): SceneShape {
           rocketX: quadraticBezier(orbitExit.x, 49, pathEntry.x, bridgeProgress),
           rocketY: quadraticBezier(orbitExit.y, 57, pathEntry.y, bridgeProgress),
           rocketAngle: lerpAngle(orbitExit.angle, pathEntry.angle, bridgeProgress),
-          flameVisible: cueSignal?.band === 'strike' || state.stopMoActive,
+          flameVisible: progress <= 0.22,
           parachuteVisible: false,
           orbitOpacity: 0.48,
           freeReturnOpacity: 0.55,
@@ -453,7 +452,7 @@ function buildSceneShape(state: GameState): SceneShape {
         rocketX: point.x,
         rocketY: point.y,
         rocketAngle: point.angle,
-        flameVisible: cueSignal?.band === 'strike' || state.stopMoActive,
+        flameVisible: progress <= 0.22,
         parachuteVisible: false,
         orbitOpacity: 0.55,
         freeReturnOpacity: 0.75,
@@ -590,75 +589,48 @@ function renderMeter(state: GameState): void {
   const stageTarget = getStageTarget()
   const recoveryReady = isRecoveryActionReady(state)
 
-  const showMeter = !state.briefingActive && (definition.mode === 'hold' || definition.mode === 'timing')
-  const showStageTarget = state.briefingActive || showMeter || definition.mode === 'countdown' || state.phase === 'splashdown'
-  const cueSignal = showMeter ? getCueSignal(state) : null
-  const cueState = state.briefingActive
-    ? 'idle'
-    : state.stopMoActive
-      ? 'stop-mo'
-      : cueSignal?.band ?? 'idle'
-  const cueWord = state.briefingActive
-    ? 'STAND BY'
-    : state.stopMoActive
-    ? definition.mode === 'hold'
-      ? 'LET GO'
-      : 'ACT NOW'
-    : cueSignal?.band === 'strike'
-      ? definition.mode === 'hold'
-        ? 'LET GO'
-        : 'ACT NOW'
-      : cueSignal?.band === 'ready'
-        ? 'READY'
-        : ''
-  const cueIntensity = state.briefingActive
-    ? 0.2
-    : state.stopMoActive
-    ? 1
-    : cueSignal?.intensity ?? 0
+  const showMeter = !state.briefingActive && definition.mode === 'hold'
+  const showStageTarget = state.briefingActive || showMeter || definition.mode === 'narrative' || definition.mode === 'countdown' || state.phase === 'splashdown'
+  const cueState = showMeter && state.actionHeld ? 'ready' : 'idle'
+  const cueWord = state.briefingActive ? 'STAND BY' : showMeter && state.actionHeld ? 'HOLD' : ''
+  const cueIntensity = showMeter ? Math.max(0.16, state.launchProgress) : 0
 
   panel.classList.toggle('is-passive', !showMeter)
   panel.dataset.cueState = cueState
-  panel.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
+  panel.dataset.stopMo = 'false'
   meter.classList.toggle('is-hidden', !showMeter)
   meter.dataset.cueState = cueState
-  meter.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
+  meter.dataset.stopMo = 'false'
   meter.style.setProperty('--cue-intensity', cueIntensity.toFixed(3))
-  meter.style.setProperty('--cue-scale', (0.82 + cueIntensity * 0.24).toFixed(3))
-  meter.style.setProperty('--cue-sweet-scale', (0.76 + cueIntensity * 0.2).toFixed(3))
-  meter.style.setProperty('--cue-core-scale', (0.78 + cueIntensity * 0.3).toFixed(3))
+  meter.style.setProperty('--cue-scale', (0.82 + cueIntensity * 0.12).toFixed(3))
+  meter.style.setProperty('--cue-sweet-scale', '0.76')
+  meter.style.setProperty('--cue-core-scale', (0.78 + cueIntensity * 0.16).toFixed(3))
 
   stageShell.dataset.cueState = showMeter ? cueState : 'idle'
-  stageShell.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
+  stageShell.dataset.stopMo = 'false'
   stageShell.dataset.briefing = state.briefingActive ? 'true' : 'false'
   stageShell.dataset.cueWord = state.briefingActive ? cueWord : showMeter ? cueWord : ''
   stageShell.style.setProperty('--cue-intensity', cueIntensity.toFixed(3))
-  stageShell.style.setProperty('--cue-stage-scale', (0.76 + cueIntensity * 0.34).toFixed(3))
+  stageShell.style.setProperty('--cue-stage-scale', (0.76 + cueIntensity * 0.12).toFixed(3))
 
   stageTarget.classList.toggle('is-visible', showStageTarget && !state.phaseResolved)
   stageTarget.dataset.mode = state.briefingActive ? 'briefing' : definition.mode
   stageTarget.textContent = state.briefingActive
     ? definition.mode === 'hold'
       ? 'Stand by for ascent'
-      : definition.mode === 'timing'
-        ? 'Stand by for burn cue'
+      : definition.mode === 'narrative'
+        ? 'Read the mission log'
         : 'Watch the flight path'
     : state.phase === 'splashdown'
       ? recoveryReady
         ? 'Recovery boat alongside'
         : 'Recovery boat inbound'
     : definition.mode === 'hold'
-      ? state.stopMoActive
-        ? 'Let go of the spacecraft'
-        : state.actionHeld
-          ? 'Hold steady'
-          : 'Hold the spacecraft'
-      : definition.mode === 'timing'
-        ? state.stopMoActive
-          ? 'Act on the spacecraft'
-          : cueSignal?.band === 'strike'
-            ? 'Act now'
-            : 'Tap the spacecraft'
+      ? state.actionHeld
+        ? 'Hold steady'
+        : 'Hold the spacecraft'
+      : definition.mode === 'narrative'
+        ? 'Continue when ready'
         : definition.mode === 'countdown'
           ? 'Watch the clock'
           : ''
@@ -666,17 +638,9 @@ function renderMeter(state: GameState): void {
   getTimingModeChip().textContent = state.briefingActive
     ? 'Mission brief'
     : definition.mode === 'hold'
-    ? state.stopMoActive
-      ? 'Waiting for instruction'
-      : cueSignal?.band === 'strike'
-        ? 'Let go'
-        : 'Release on cue'
-    : definition.mode === 'timing'
-      ? state.stopMoActive
-        ? 'Waiting for instruction'
-        : cueSignal?.band === 'strike'
-          ? 'Act now'
-          : 'Tap on cue'
+    ? 'Ascent'
+    : definition.mode === 'narrative'
+      ? 'Mission log'
       : definition.mode === 'countdown'
         ? 'Countdown'
         : state.phase === 'splashdown'
@@ -685,14 +649,12 @@ function renderMeter(state: GameState): void {
 
   getTimingHint().textContent = state.briefingActive
     ? definition.prompt
-    : state.stopMoActive
-    ? definition.mode === 'hold'
-      ? 'Guidance is holding cutoff. Let go when you are ready.'
-      : 'Guidance is holding the cue. Act when you are ready.'
     : state.phase === 'splashdown'
       ? recoveryReady
-        ? 'Recovery is alongside. Tap Done when you want to wrap the mission.'
+        ? 'Recovery is alongside. Continue when you are ready to wrap the mission.'
         : 'The capsule is steady while the recovery boat closes the last gap.'
+      : definition.mode === 'hold' && state.actionHeld
+        ? 'Keep holding until Orion reaches orbit.'
       : definition.timingHint
 
   const disabled = definition.mode === 'countdown'
@@ -702,31 +664,21 @@ function renderMeter(state: GameState): void {
   actionBtn.disabled = disabled
   actionBtn.classList.toggle('is-held', state.actionHeld)
   actionBtn.textContent = state.briefingActive
-    ? definition.mode === 'auto'
-      ? state.phase === 'splashdown'
+    ? definition.mode === 'hold'
+      ? 'Begin ascent'
+      : definition.mode === 'auto' && state.phase === 'splashdown'
         ? 'Track recovery'
-        : 'Continue mission'
-      : definition.mode === 'hold'
-        ? 'Begin ascent'
-        : 'Begin maneuver'
+        : 'Continue'
     : state.phaseResolved
-    ? 'Maneuver locked'
+    ? 'Step logged'
     : state.phase === 'splashdown'
       ? recoveryReady
-        ? 'Done'
+        ? 'Continue'
         : 'Recovery approaching'
     : definition.mode === 'hold'
-      ? state.stopMoActive
-        ? 'Let go'
-        : state.actionHeld
-          ? 'Release for cutoff'
-          : definition.actionLabel
-      : definition.mode === 'timing'
-        ? state.stopMoActive
-          ? 'Act now'
-          : cueSignal?.band === 'strike'
-            ? 'Act now'
-            : definition.actionLabel
+      ? state.actionHeld
+        ? 'Hold steady'
+        : definition.actionLabel
       : definition.actionLabel
 
   const goodZone = getGoodZone()
@@ -743,11 +695,10 @@ function renderScene(state: GameState): void {
   const scene = applyBriefingPose(state, buildSceneShape(state))
   const stageShell = getStageShell()
   const definition = getPhaseDefinition(state.phase)
-  const manualPhase = definition.mode === 'hold' || definition.mode === 'timing'
+  const manualPhase = definition.mode === 'hold' || definition.mode === 'narrative'
   const interactive = state.briefingActive || (manualPhase && !state.phaseResolved)
-  const cueSignal = manualPhase && !state.briefingActive ? getCueSignal(state) : null
-  const cueState = manualPhase && !state.briefingActive ? (state.stopMoActive ? 'stop-mo' : cueSignal?.band ?? 'idle') : 'idle'
-  const cueIntensity = manualPhase && !state.briefingActive ? (state.stopMoActive ? 1 : cueSignal?.intensity ?? 0) : 0
+  const cueState = definition.mode === 'hold' && !state.briefingActive && state.actionHeld ? 'ready' : 'idle'
+  const cueIntensity = definition.mode === 'hold' && !state.briefingActive ? state.launchProgress : 0
   const countdownBeat = state.phase === 'countdown' ? countdownState(state.countdownValue) : 'steady'
   const countdownGlow = state.phase === 'countdown'
     ? countdownBeat === 'liftoff'
@@ -809,8 +760,8 @@ function renderScene(state: GameState): void {
 function missionDisplayCopy(state: GameState): { status: string; prompt: string; callout: string } {
   if (state.phase === 'title') {
     return {
-      status: 'Crew ready on the gantry',
-      prompt: 'Choose a crew and launch when the stack is ready.',
+      status: 'Artemis II crew ready on the gantry',
+      prompt: 'The Artemis II crew is set. Launch when you are ready to fly.',
       callout: '',
     }
   }
@@ -870,12 +821,12 @@ function missionDisplayCopy(state: GameState): { status: string; prompt: string;
     if (isRecoveryActionReady(state)) {
       return {
         status: 'Recovery boat is alongside',
-        prompt: 'The capsule is secure. Take a last look, then tap Done when you are ready.',
+        prompt: 'The capsule is secure. Take a last look, then continue when you are ready.',
         callout: '',
       }
     }
 
-    if (state.phaseElapsedMs >= 1200) {
+    if (state.phaseElapsedMs >= 2000) {
       return {
         status: 'Recovery boat is closing in',
         prompt: 'The capsule is floating steady while the boat eases in from starboard.',
@@ -919,9 +870,13 @@ export function renderMission(state: GameState): void {
 
 export function renderEndScreen(state: GameState): void {
   const crewNames = state.crew.map((crew) => crew.name.split(' ')[0])
-  const crewSummary = crewNames.length >= 3
-    ? `${crewNames[0]}, ${crewNames[1]}, and ${crewNames[2]} are back aboard the recovery ship.`
-    : 'The crew is back aboard the recovery ship.'
+  const crewSummary = crewNames.length === 0
+    ? 'The crew is back aboard the recovery ship.'
+    : crewNames.length === 1
+      ? `${crewNames[0]} is back aboard the recovery ship.`
+      : crewNames.length === 2
+        ? `${crewNames[0]} and ${crewNames[1]} are back aboard the recovery ship.`
+        : `${crewNames.slice(0, -1).join(', ')}, and ${crewNames.at(-1)} are back aboard the recovery ship.`
 
   getEndSummary().textContent = `Mission time ${getMissionTimeLabel(state)}. ${crewSummary}`
 }

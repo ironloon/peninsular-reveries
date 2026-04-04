@@ -3,7 +3,7 @@ import { defineConfig } from '@playwright/test';
 const baseURL = 'http://127.0.0.1:4173';
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: './tests/e2e',
   testMatch: ['site-*.spec.ts'],
   fullyParallel: true,
   forbidOnly: !!process.env.CI,

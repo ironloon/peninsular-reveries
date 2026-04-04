@@ -57,7 +57,7 @@ test.describe('SITE-08: Chompers', () => {
     await expect(page.locator('#settings-modal')).toBeHidden()
   })
 
-  test('center-lane chomp scores points immediately', async ({ page }) => {
+  test('center-lane chomp scores once the opening apple drops into range', async ({ page }) => {
     await page.goto('/chompers/')
     await page.getByRole('button', { name: 'Start Chomping' }).click()
 
@@ -67,6 +67,7 @@ test.describe('SITE-08: Chompers', () => {
       throw new Error('Missing game arena bounds')
     }
 
+    await page.waitForTimeout(2500)
     await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.82)
     await page.mouse.click(box.x + box.width / 2, box.y + box.height * 0.82)
 

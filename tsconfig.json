@@ -16,7 +16,6 @@
     "client/**/*.ts",
     "client/**/*.tsx",
     "tests/**/*.ts",
-    "tests-node/**/*.ts",
     "build.ts",
     "server.ts",
     "playwright.config.ts"

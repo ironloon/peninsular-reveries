@@ -16,7 +16,7 @@
     "dev": "tsx server.ts",
     "test": "npm run test:unit && npm run test:e2e",
     "test:local": "npm run check && npm run test",
-    "test:unit": "node --import tsx --test tests-node/*.test.ts",
+    "test:unit": "node --import tsx --test tests/unit/*.test.ts",
     "test:e2e": "npx playwright test --reporter=list",
     "test:report": "npm run test:unit && npx playwright test",
     "prepare": "node scripts/install-git-hooks.mjs"

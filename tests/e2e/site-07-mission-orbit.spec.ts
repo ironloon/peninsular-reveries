@@ -10,8 +10,9 @@ test.describe('SITE-07: Mission Orbit', () => {
     await page.goto('/mission-orbit/')
 
     await expect(page.getByRole('heading', { name: 'Mission: Orbit' })).toBeVisible()
-    await expect(page.getByText('Pick three crew members')).toBeVisible()
-    await expect(page.locator('input[name="mission-crew"]:checked')).toHaveCount(3)
+    await expect(page.getByRole('heading', { name: 'Artemis II crew' })).toBeVisible()
+    await expect(page.locator('.crew-option-static')).toHaveCount(4)
+    await expect(page.locator('input[name="mission-crew"]')).toHaveCount(0)
     await page.getByRole('button', { name: 'Begin countdown' }).click()
 
     await expect(page.locator('#mission-screen')).toHaveClass(/active/)
@@ -40,14 +41,16 @@ test.describe('SITE-07: Mission Orbit', () => {
     await page.getByRole('button', { name: 'Begin countdown' }).click()
     await expect(page.locator('#mission-screen')).toHaveClass(/active/)
     await page.waitForFunction(() => document.getElementById('mission-phase-label')?.textContent?.includes('Ascent to orbit'))
+    await expect(page.locator('#mission-action-btn')).toHaveText('Hold to launch')
 
     const hitArea = page.locator('#mission-rocket-hit-area')
     await hitArea.dispatchEvent('pointerdown', { pointerId: 1, pointerType: 'touch', isPrimary: true })
-    await page.waitForTimeout(2100)
+    await page.waitForTimeout(2600)
     await hitArea.dispatchEvent('pointerup', { pointerId: 1, pointerType: 'touch', isPrimary: true })
 
-    await expect(page.locator('#mission-outcome')).toContainText('Main engine cutoff')
     await page.waitForFunction(() => document.getElementById('mission-phase-label')?.textContent?.includes('Orbit raise burn'))
+    await expect(page.locator('#mission-action-btn')).toHaveText('Continue')
+    await expect(page.locator('#timing-mode-chip')).toContainText('Mission log')
   })
 
   test('portrait orbit animation stays on-stage and moves smoothly', async ({ page }) => {
@@ -56,10 +59,11 @@ test.describe('SITE-07: Mission Orbit', () => {
 
     await page.getByRole('button', { name: 'Begin countdown' }).click()
     await page.waitForFunction(() => document.getElementById('mission-phase-label')?.textContent?.includes('Ascent to orbit'))
+    await expect(page.locator('#mission-action-btn')).toHaveText('Hold to launch')
 
     const hitArea = page.locator('#mission-rocket-hit-area')
     await hitArea.dispatchEvent('pointerdown', { pointerId: 1, pointerType: 'touch', isPrimary: true })
-    await page.waitForTimeout(2100)
+    await page.waitForTimeout(2600)
     await hitArea.dispatchEvent('pointerup', { pointerId: 1, pointerType: 'touch', isPrimary: true })
 
     await page.waitForFunction(() => document.getElementById('mission-phase-label')?.textContent?.includes('Orbit raise burn'))
@@ -128,13 +132,18 @@ test.describe('SITE-07: Mission Orbit', () => {
     await page.locator('.mission-toolbar').scrollIntoViewIfNeeded()
     await expect(page.locator('.mission-stage-shell')).toBeVisible()
     await expect(page.locator('.mission-toolbar')).toBeVisible()
-    await expect(page.locator('#mission-stage-target')).toContainText(/spacecraft|clock/i)
+    await expect(page.locator('#mission-stage-target')).toContainText(/continue|spacecraft|clock|recovery/i)
   })
 
-  test('start screen crew picker keeps exactly three seats active by default', async ({ page }) => {
+  test('start screen shows the fixed Artemis II roster', async ({ page }) => {
     await page.goto('/mission-orbit/')
 
-    await expect(page.locator('input[name="mission-crew"]:checked')).toHaveCount(3)
-    await expect(page.locator('#crew-picker-help')).toContainText(/Crew locked in/i)
+    const roster = page.locator('.crew-picker-grid')
+    await expect(page.locator('.crew-option-static')).toHaveCount(4)
+    await expect(roster.getByText('Reid Wiseman', { exact: true })).toBeVisible()
+    await expect(roster.getByText('Victor Glover', { exact: true })).toBeVisible()
+    await expect(roster.getByText('Christina Koch', { exact: true })).toBeVisible()
+    await expect(roster.getByText('Jeremy Hansen', { exact: true })).toBeVisible()
+    await expect(page.locator('#crew-picker-help')).toContainText(/Crew is locked in/i)
   })
 })

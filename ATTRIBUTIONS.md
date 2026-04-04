@@ -14,19 +14,29 @@
 
 - Slug: mission-orbit
 - Code license: GPL-3.0
-- Summary: Mission: Orbit uses original visuals, browser-synthesized cue tones, and a bundled set of curated CC0 light/heavy sound-effect variants. Its in-game settings panel surfaces the same credit summary used here.
+- Summary: Mission: Orbit uses original visuals, browser-synthesized ambience, a bundled set of curated CC0 light/heavy sound-effect variants, and public-domain Artemis II crew information from NASA. Its in-game settings panel surfaces the same credit summary used here.
 
 #### Entries
 
-##### Mission interface cues and adaptive synth bed
+##### Mission ambience and interface synth bed
 
 - Type: music
-- Used in: Mission: Orbit countdown, burn windows, cue bands, burn-result grades, stop-mo cue, and current coast-phase synthesized bed
+- Used in: Mission: Orbit countdown, mission transitions, calm interface accents, and optional coast-phase ambience
 - Creator: Peninsular Reveries
 - Source: Generated in-browser with the Web Audio API
 - License: GPL-3.0
 - Modifications: Not applicable
-- Notes: The synthesized cue tones remain in use alongside bundled CC0 light/heavy sample variants for launch, burn-thrust pulse, reentry, parachute deployment, splashdown, cabin ambience, and celebration. The settings panel defaults to the heavier physical-sound mix.
+- Notes: The synthesized sounds sit alongside bundled CC0 light/heavy sample variants for launch, burn-thrust pulse, reentry, parachute deployment, splashdown, cabin ambience, and celebration. The settings panel defaults to the heavier physical-sound mix.
+
+##### Artemis II crew information
+
+- Type: other
+- Used in: Mission: Orbit start screen crew roster and in-mission crew overlays
+- Creator: NASA
+- Source: Our Artemis Crew (https://www.nasa.gov/feature/our-artemis-crew/)
+- License: Public domain (U.S. government work)
+- Modifications: Condensed into short crew cards naming the four Artemis II astronauts and their roles.
+- Notes: Crew roster matches Reid Wiseman, Victor Glover, Christina Koch, and Jeremy Hansen.
 
 ##### Rocket Launch Rumble at Canaveral
 

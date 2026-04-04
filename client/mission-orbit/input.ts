@@ -35,7 +35,7 @@ function canUseMissionAction(state: GameState): boolean {
   }
 
   const definition = getPhaseDefinition(state.phase)
-  return definition.mode === 'hold' || definition.mode === 'timing'
+  return definition.mode === 'hold' || definition.mode === 'narrative'
 }
 
 function bindPressTarget(target: PressTarget | null, isDisabled: () => boolean, callbacks: Pick<InputCallbacks, 'onActionStart' | 'onActionEnd'>): void {

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { advancePuzzle, checkAnswer, collectLetter, createInitialState, resetGame, selectTile } from '../client/super-word/state'
-import type { Puzzle } from '../client/super-word/types'
+import { advancePuzzle, checkAnswer, collectLetter, createInitialState, resetGame, selectTile } from '../../client/super-word/state'
+import type { Puzzle } from '../../client/super-word/types'
 
 const samplePuzzle: Puzzle = {
   answer: 'CAT',

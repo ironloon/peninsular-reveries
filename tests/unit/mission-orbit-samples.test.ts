@@ -7,7 +7,7 @@ import {
   getDiyMissionOrbitSamples,
   getDownloadableMissionOrbitSamples,
   missionOrbitSampleManifest,
-} from '../client/mission-orbit/sample-manifest.js'
+} from '../../client/mission-orbit/sample-manifest.js'
 
 test('mission orbit sample manifest keeps expected CC0 and DIY split', () => {
   const bundled = getBundledMissionOrbitSamples()
@@ -30,7 +30,7 @@ test('mission orbit sample manifest keeps expected CC0 and DIY split', () => {
 
 test('mission orbit bundled samples exist on disk', () => {
   for (const sample of Object.values(missionOrbitSampleManifest)) {
-    const filePath = fileURLToPath(new URL(`../public${sample.url}`, import.meta.url))
+    const filePath = fileURLToPath(new URL(`../../public${sample.url}`, import.meta.url))
     assert.equal(existsSync(filePath), sample.bundled)
   }
 })

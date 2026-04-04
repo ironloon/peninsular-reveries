@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { attemptChomp, createInitialState, moveHippo, nudgeHippo, spawnItem, tickState } from '../client/chompers/state'
-import { FRUIT_DEFINITIONS, ZEN_ROUND_ITEMS } from '../client/chompers/types'
+import { attemptChomp, createInitialState, moveHippo, nudgeHippo, spawnItem, tickState } from '../../client/chompers/state'
+import { FRUIT_DEFINITIONS, ZEN_ROUND_ITEMS } from '../../client/chompers/types'
 
 test('initial rush state opens with starter fruit and a centered hippo', () => {
   const state = createInitialState('rush')
@@ -9,13 +9,17 @@ test('initial rush state opens with starter fruit and a centered hippo', () => {
   assert.equal(state.mode, 'rush')
   assert.equal(state.phase, 'playing')
   assert.equal(state.items.length, 3)
+  assert.ok(state.items.every((item) => item.y <= 10))
   assert.equal(state.hippo.x, 50)
   assert.equal(state.timeRemainingMs, 60_000)
 })
 
-test('opening chomp catches the centered apple and starts a combo', () => {
-  const state = createInitialState('rush')
-  const result = attemptChomp(state)
+test('opening chomp catches the centered apple after it drops into range', () => {
+  const opening = tickState({
+    ...createInitialState('rush'),
+    spawnTimerMs: 99_999,
+  }, 2_500)
+  const result = attemptChomp(opening.state)
 
   assert.equal(result.hitItem?.kind, 'apple')
   assert.equal(result.scoreDelta, 2)
@@ -23,6 +27,40 @@ test('opening chomp catches the centered apple and starts a combo', () => {
   assert.equal(result.state.itemsChomped, 1)
   assert.equal(result.state.combo, 1)
   assert.equal(result.state.items.length, 2)
+})
+
+test('landscape hit testing matches the visible chomp lane instead of a fixed arena percent', () => {
+  const state = createInitialState('rush')
+
+  const wideMiss = attemptChomp({
+    ...state,
+    items: [{
+      id: 100,
+      kind: 'apple',
+      x: 59,
+      y: 60,
+      speed: 12,
+      rotation: 0,
+      rotationSpeed: 0,
+    }],
+  }, { width: 932, height: 430 })
+
+  assert.equal(wideMiss.hitItem, null)
+
+  const centeredHit = attemptChomp({
+    ...state,
+    items: [{
+      id: 101,
+      kind: 'apple',
+      x: 53,
+      y: 60,
+      speed: 12,
+      rotation: 0,
+      rotationSpeed: 0,
+    }],
+  }, { width: 932, height: 430 })
+
+  assert.equal(centeredHit.hitItem?.id, 101)
 })
 
 test('survival misses cost lives and bombs cost a life on chomp', () => {

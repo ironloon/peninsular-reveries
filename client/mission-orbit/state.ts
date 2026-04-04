@@ -1,4 +1,4 @@
-import { DEFAULT_CREW_IDS, MISSION_CREW_ROSTER, type MissionCrewProfile } from '../../app/data/mission-orbit-crew.js'
+import { MISSION_CREW_ROSTER, type MissionCrewProfile } from '../../app/data/mission-orbit-crew.js'
 import {
   MISSION_SEQUENCE,
   TOTAL_GAMEPLAY_STEPS,
@@ -19,19 +19,14 @@ export interface CueSignalState {
 
 const COUNTDOWN_START = 10
 const SAFE_PADDING = 0.12
-const SPLASHDOWN_RECOVERY_READY_MS = 3600
+const SPLASHDOWN_RECOVERY_READY_MS = 6500
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
 }
 
-function pickCrew(ids: readonly string[] = DEFAULT_CREW_IDS): readonly MissionCrewProfile[] {
-  const selected = ids
-    .map((id) => MISSION_CREW_ROSTER.find((profile) => profile.id === id))
-    .filter((profile): profile is MissionCrewProfile => profile !== undefined)
-
-  const fallback = MISSION_CREW_ROSTER.filter((profile) => !selected.some((item) => item.id === profile.id))
-  return [...selected, ...fallback].slice(0, 3)
+function pickCrew(): readonly MissionCrewProfile[] {
+  return [...MISSION_CREW_ROSTER]
 }
 
 function phaseIndexOf(phase: MissionGameplayPhase): number {
@@ -162,10 +157,10 @@ export function createInitialState(): GameState {
   }
 }
 
-export function startMission(crewIds: readonly string[] = DEFAULT_CREW_IDS): GameState {
+export function startMission(): GameState {
   return {
     ...createInitialState(),
-    crew: pickCrew(crewIds),
+    crew: pickCrew(),
     phase: 'countdown',
     phaseIndex: 0,
   }
@@ -210,12 +205,11 @@ export function setActionHeld(state: GameState, held: boolean): GameState {
 export function updateLaunchProgress(state: GameState, deltaMs: number): GameState {
   if (state.phase !== 'launch' || state.briefingActive || state.phaseResolved || state.stopMoActive) return state
 
-  const poweredClimb = state.actionHeld ? deltaMs / 2300 : -deltaMs / 6000
-  const passiveClimb = deltaMs / 18000
-  const latchPoint = centerOf(getPhaseDefinition('launch').timingWindow!)
-  const nextProgress = state.actionHeld && state.launchProgress >= latchPoint
-    ? latchPoint
-    : clamp(state.launchProgress + poweredClimb + passiveClimb, 0, latchPoint)
+  const nextProgress = clamp(
+    state.launchProgress + (state.actionHeld ? deltaMs / 2500 : -deltaMs / 4500),
+    0,
+    1,
+  )
 
   if (nextProgress === state.launchProgress) return state
   return {
@@ -256,13 +250,63 @@ export function updateTimingCursor(state: GameState, deltaMs: number, speed: num
 export function resolveLaunchRelease(state: GameState): GameState {
   if (state.phase !== 'launch' || state.briefingActive || state.phaseResolved) return state
 
-  const definition = getPhaseDefinition('launch')
-  if (state.stopMoActive) {
-    return applyBurnResult(state, createAssistBurn('launch', 'Main engine cutoff'))
+  return {
+    ...state,
+    actionHeld: false,
+    launchProgress: 1,
+    outcomeText: 'Orbit reached. Orion is moving around Earth.',
+    outcomeGrade: null,
+    briefingActive: false,
+    phaseResolved: true,
+    stopMoActive: false,
+    timingLatched: false,
+  }
+}
+
+function narrativeOutcome(phase: MissionGameplayPhase): string {
+  switch (phase) {
+    case 'orbit-insertion':
+      return 'Orbit set. Orion settles into its path around Earth.'
+    case 'trans-lunar-injection':
+      return 'Burn complete. Orion is on the way to the Moon.'
+    case 'lunar-flyby':
+      return 'Flyby complete. Orion is turning back toward Earth.'
+    case 'service-module-jettison':
+      return 'Service module clear. The crew capsule keeps falling home.'
+    case 'parachute-deploy':
+      return 'Parachutes open. Orion slows for splashdown.'
+    default:
+      return getPhaseDefinition(phase).prompt
+  }
+}
+
+export function resolveNarrativePhase(state: GameState): GameState {
+  if (
+    state.phase === 'title'
+    || state.phase === 'celebration'
+    || state.phase === 'countdown'
+    || state.phase === 'launch'
+    || state.phase === 'high-earth-orbit'
+    || state.phase === 'return-coast'
+    || state.phase === 'splashdown'
+    || state.briefingActive
+    || state.phaseResolved
+  ) {
+    return state
   }
 
-  const result = evaluateWindow(state.launchProgress, definition.timingWindow!, 'launch', 'Main engine cutoff')
-  return applyBurnResult(state, result)
+  return {
+    ...state,
+    actionHeld: false,
+    outcomeText: narrativeOutcome(state.phase),
+    outcomeGrade: null,
+    briefingActive: false,
+    phaseResolved: true,
+    stopMoActive: false,
+    timingLatched: false,
+    serviceModuleDetached: state.phase === 'service-module-jettison' ? true : state.serviceModuleDetached,
+    parachuteDeployed: state.phase === 'parachute-deploy' ? true : state.parachuteDeployed,
+  }
 }
 
 export function resolveTimingAttempt(state: GameState): GameState {
@@ -278,7 +322,7 @@ export function resolveTimingAttempt(state: GameState): GameState {
   }
 
   const definition = getPhaseDefinition(state.phase)
-  if (definition.mode !== 'timing' || !definition.timingWindow) return state
+  if (definition.mode !== 'hold' || !definition.timingWindow) return state
 
   if (state.stopMoActive) {
     return applyBurnResult(state, createAssistBurn(state.phase, definition.label))
@@ -370,7 +414,7 @@ export function getCueSignal(state: GameState): CueSignalState | null {
   }
 
   const definition = getPhaseDefinition(state.phase)
-  if ((definition.mode !== 'hold' && definition.mode !== 'timing') || !definition.timingWindow) {
+  if (definition.mode !== 'hold' || !definition.timingWindow) {
     return null
   }
 

@@ -1,6 +1,6 @@
 import { renderToString } from 'remix/component/server'
 import { getGameAttribution } from '../data/attributions.js'
-import { DEFAULT_CREW_IDS, MISSION_CREW_ROSTER } from '../data/mission-orbit-crew.js'
+import { MISSION_CREW_ROSTER } from '../data/mission-orbit-crew.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
@@ -12,7 +12,7 @@ export async function missionOrbitAction() {
   const html = await renderToString(
     <Document
       title="Mission: Orbit"
-      description="Time the key Artemis II burns from countdown to Pacific splashdown."
+      description="Guide an Artemis II-inspired trip from countdown to Pacific splashdown, one calm mission step at a time."
       path="/mission-orbit/"
       includeNav={false}
       stylesheets={['/styles/mission-orbit.css']}
@@ -29,27 +29,21 @@ export async function missionOrbitAction() {
           <div className="start-shell">
             <p className="mission-kicker">Artemis II-inspired mission</p>
             <h1 id="mission-title" className="mission-title">Mission: Orbit</h1>
-            <p className="mission-subtitle">A one-button flight from the pad to lunar flyby and back home.</p>
+            <p className="mission-subtitle">A guided trip from the pad to the Moon and back home.</p>
 
             <ol className="mission-outline" aria-label="Mission outline">
-              <li>Count down and ride the climb to orbit.</li>
-              <li>Time the burns that send Orion around the Moon.</li>
-              <li>Jettison, deploy parachutes, and splash down in the Pacific.</li>
+              <li>Count down and leave Earth.</li>
+              <li>Follow Orion around the Moon.</li>
+              <li>Watch splashdown and the recovery boat come in.</li>
             </ol>
 
-            <fieldset className="crew-picker-panel" aria-describedby="crew-picker-help">
-              <legend className="crew-picker-title">Pick three crew members</legend>
-              <p className="crew-picker-copy">The selected crew will appear during boarding, lunar flyby, and recovery.</p>
+            <section className="crew-picker-panel" aria-labelledby="crew-roster-title" aria-describedby="crew-picker-help">
+              <h2 id="crew-roster-title" className="crew-picker-title">Artemis II crew</h2>
+              <p className="crew-picker-copy">These four astronauts ride with you through launch, lunar flyby, and recovery.</p>
               <div className="crew-picker-grid">
                 {MISSION_CREW_ROSTER.map((crew) => (
-                  <label className="crew-option" aria-label={`${crew.name}, ${crew.role}`}>
-                    <input
-                      type="checkbox"
-                      name="mission-crew"
-                      value={crew.id}
-                      checked={DEFAULT_CREW_IDS.includes(crew.id as (typeof DEFAULT_CREW_IDS)[number])}
-                    />
-                    <span className="crew-option-body">
+                  <article className="crew-option crew-option-static" aria-label={`${crew.name}, ${crew.role}, ${crew.agency}`}>
+                    <div className="crew-option-body">
                       <span
                         className="crew-option-badge"
                         style={`--crew-accent:${crew.accent};--crew-accent-soft:${crew.accentSoft}`}
@@ -59,14 +53,14 @@ export async function missionOrbitAction() {
                       </span>
                       <span className="crew-option-copy">
                         <strong>{crew.name}</strong>
-                        <span>{crew.role}</span>
+                        <span>{crew.role} · {crew.agency}</span>
                       </span>
-                    </span>
-                  </label>
+                    </div>
+                  </article>
                 ))}
               </div>
-              <p id="crew-picker-help" className="settings-help">Crew locked in. They will appear during boarding, lunar flyby, and recovery.</p>
-            </fieldset>
+              <p id="crew-picker-help" className="settings-help">Crew is locked in. You guide the pace, and the mission waits for you.</p>
+            </section>
 
             <div className="start-actions">
               <button id="start-btn" className="mission-btn mission-btn-primary">Begin countdown</button>
@@ -160,15 +154,15 @@ export async function missionOrbitAction() {
 
             <section id="timing-panel" className="timing-panel" aria-labelledby="timing-title">
               <div className="timing-header">
-                <h3 id="timing-title">Flight cue</h3>
-                <span id="timing-mode-chip" className="timing-mode-chip">Manual</span>
+                <h3 id="timing-title">Mission log</h3>
+                <span id="timing-mode-chip" className="timing-mode-chip">Mission brief</span>
               </div>
               <div id="timing-meter" className="timing-meter" aria-hidden="true">
                 <div id="timing-good-zone" className="timing-good-zone"></div>
                 <div id="timing-sweet-zone" className="timing-sweet-zone"></div>
                 <div id="timing-cursor" className="timing-cursor"></div>
               </div>
-              <p id="timing-hint" className="timing-hint">Listen for the cue swell, then act on the flare.</p>
+              <p id="timing-hint" className="timing-hint">Each step tells you what is happening. Continue when you are ready.</p>
               <p id="mission-outcome" className="mission-outcome" aria-live="polite"></p>
             </section>
 
@@ -203,7 +197,7 @@ export async function missionOrbitAction() {
                   <ul className="controls-list">
                     <li>Tap or hold the spacecraft directly.</li>
                     <li>The action button stays available as a backup control.</li>
-                    <li>Listen for the cue tone and act on the flare.</li>
+                    <li>Read the mission log and continue when you are ready.</li>
                     <li>Use the settings buttons any time.</li>
                   </ul>
                 </div>
@@ -211,7 +205,7 @@ export async function missionOrbitAction() {
                   <h4>Keyboard / controller</h4>
                   <ul className="controls-list">
                     <li><kbd>Space</kbd> or <kbd>Enter</kbd> fires the action.</li>
-                    <li>Bright cue tones signal the strike moment.</li>
+                    <li>The mission waits at each step until you move on.</li>
                     <li>Controller <kbd>A</kbd> mirrors the action button.</li>
                     <li>Controller <kbd>Start</kbd> toggles settings.</li>
                   </ul>
@@ -232,7 +226,7 @@ export async function missionOrbitAction() {
                   <option value="light">Light</option>
                 </select>
               </label>
-              <p className="settings-help">Cue tones and sound effects stay on. Ambient pads only play when you turn them on.</p>
+              <p className="settings-help">Sound effects stay on. Ambient pads only play when you turn them on.</p>
               <p className="settings-help">Heavy is the default mix and swaps in fuller light/heavy sample variants across launch, burns, reentry, parachute, splashdown, ambience, and celebration. Light keeps every physical sound gentler.</p>
             </section>
 

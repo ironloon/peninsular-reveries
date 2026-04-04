@@ -2,7 +2,6 @@ import {
   ARENA_MAX_X,
   ARENA_MIN_X,
   CHOMP_DURATION_MS,
-  CHOMP_HALF_WIDTH,
   CHOMP_REACH,
   FRUIT_DEFINITIONS,
   FRUIT_KINDS,
@@ -15,21 +14,31 @@ import {
 import type { ChompResult, FallingItem, FruitKind, GameMode, GameState, HippoState, TickResult } from './types.js'
 
 const OPENING_PATTERN: ReadonlyArray<Pick<FallingItem, 'kind' | 'x' | 'y' | 'speed' | 'rotation' | 'rotationSpeed'>> = [
-  { kind: 'cherry', x: 26, y: 18, speed: 18, rotation: -8, rotationSpeed: -42 },
-  { kind: 'apple', x: 50, y: 58, speed: 16, rotation: 4, rotationSpeed: 36 },
-  { kind: 'orange', x: 75, y: 8, speed: 21, rotation: -2, rotationSpeed: 48 },
+  { kind: 'cherry', x: 26, y: 10, speed: 18, rotation: -8, rotationSpeed: -42 },
+  { kind: 'apple', x: 50, y: 6, speed: 16, rotation: 4, rotationSpeed: 36 },
+  { kind: 'orange', x: 75, y: 2, speed: 21, rotation: -2, rotationSpeed: 48 },
 ]
 
 const INITIAL_SEED = 0x0c0ffee
 const ITEM_START_Y = -10
 const GROUND_Y = 106
 const MAX_ITEMS = 18
+const DEFAULT_ARENA_WIDTH = 640
+const DEFAULT_ARENA_HEIGHT = 480
+const CHOMP_HALF_WIDTH_RATIO = 0.035
+const CHOMP_HALF_WIDTH_MIN_PX = 30.4
+const CHOMP_HALF_WIDTH_MAX_PX = 43.2
 const ITEM_MIN_X = 12
 const ITEM_X_SPAN = 76
 const SPAWN_PATH_BUFFER = 14
 const SPAWN_PATH_LOOKAHEAD_Y = 54
 const MAX_SPAWN_X_ATTEMPTS = 6
 const FALLBACK_SPAWN_XS = [14, 28, 42, 58, 72, 86] as const
+
+interface ArenaMetrics {
+  readonly width: number
+  readonly height: number
+}
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
@@ -325,10 +334,26 @@ function isCollectible(kind: FruitKind): boolean {
   return !FRUIT_DEFINITIONS[kind].hazard
 }
 
-function isCatchable(item: FallingItem, hippoX: number, hippoY: number): boolean {
-  const distanceX = Math.abs(item.x - hippoX)
-  const distanceY = hippoY - item.y
-  return distanceX <= CHOMP_HALF_WIDTH && distanceY >= 0 && distanceY <= CHOMP_REACH
+function percentToPixels(percent: number, size: number): number {
+  return (percent / 100) * size
+}
+
+function resolveArenaMetrics(metrics?: ArenaMetrics): ArenaMetrics {
+  return {
+    width: Math.max(metrics?.width ?? DEFAULT_ARENA_WIDTH, 1),
+    height: Math.max(metrics?.height ?? DEFAULT_ARENA_HEIGHT, 1),
+  }
+}
+
+function getChompHalfWidthPx(width: number): number {
+  return clamp(width * CHOMP_HALF_WIDTH_RATIO, CHOMP_HALF_WIDTH_MIN_PX, CHOMP_HALF_WIDTH_MAX_PX)
+}
+
+function isCatchable(item: FallingItem, hippoX: number, hippoY: number, arenaMetrics?: ArenaMetrics): boolean {
+  const { width, height } = resolveArenaMetrics(arenaMetrics)
+  const distanceX = Math.abs(percentToPixels(item.x, width) - percentToPixels(hippoX, width))
+  const distanceY = percentToPixels(hippoY, height) - percentToPixels(item.y, height)
+  return distanceX <= getChompHalfWidthPx(width) && distanceY >= 0 && distanceY <= percentToPixels(CHOMP_REACH, height)
 }
 
 export function createInitialState(mode: GameMode): GameState {
@@ -443,7 +468,7 @@ export function tickState(state: GameState, deltaMs: number): TickResult {
   }
 }
 
-export function attemptChomp(state: GameState): ChompResult {
+export function attemptChomp(state: GameState, arenaMetrics?: ArenaMetrics): ChompResult {
   if (state.phase !== 'playing') {
     return {
       state,
@@ -455,7 +480,7 @@ export function attemptChomp(state: GameState): ChompResult {
   }
 
   const hitItem = [...state.items]
-    .filter((item) => isCatchable(item, state.hippo.x, state.hippo.y))
+    .filter((item) => isCatchable(item, state.hippo.x, state.hippo.y, arenaMetrics))
     .sort((left, right) => right.y - left.y)[0] ?? null
 
   let score = state.score

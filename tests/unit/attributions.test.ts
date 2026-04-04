@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { getGameAttribution, renderAttributionsMarkdown, repositoryCodeLicense } from '../app/data/attributions'
+import { getGameAttribution, renderAttributionsMarkdown, repositoryCodeLicense } from '../../app/data/attributions'
 
 test('super word attribution data is available for deployed UI', () => {
   const attribution = getGameAttribution('super-word')
@@ -12,7 +12,7 @@ test('super word attribution data is available for deployed UI', () => {
 })
 
 test('ATTRIBUTIONS.md stays synced with the attribution source data', () => {
-  const markdownOnDisk = readFileSync(new URL('../ATTRIBUTIONS.md', import.meta.url), 'utf-8')
+  const markdownOnDisk = readFileSync(new URL('../../ATTRIBUTIONS.md', import.meta.url), 'utf-8')
 
   assert.equal(markdownOnDisk, renderAttributionsMarkdown())
 })

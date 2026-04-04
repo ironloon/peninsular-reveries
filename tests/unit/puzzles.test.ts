@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { DEFAULT_SESSION_SIZE, PUZZLES, selectPuzzles } from '../client/super-word/puzzles'
-import { DIFFICULTIES } from '../client/super-word/types'
+import { DEFAULT_SESSION_SIZE, PUZZLES, selectPuzzles } from '../../client/super-word/puzzles'
+import { DIFFICULTIES } from '../../client/super-word/types'
 
 const expectedWordLengths = {
   starter: 2,

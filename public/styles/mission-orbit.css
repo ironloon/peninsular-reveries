@@ -1516,7 +1516,7 @@ body.mission-orbit-game main {
 @media (orientation: landscape) and (max-height: 560px) {
   .screen {
     align-items: stretch;
-    padding: 0.6rem;
+    padding: 0.45rem;
   }
 
   .mission-kicker,
@@ -1543,8 +1543,9 @@ body.mission-orbit-game main {
       'actions actions'
       'hint hint';
     align-content: start;
-    column-gap: 0.95rem;
-    row-gap: 0.5rem;
+    column-gap: 0.75rem;
+    row-gap: 0.35rem;
+    padding: 0.8rem 0.9rem;
   }
 
   #start-screen .mission-kicker {
@@ -1558,28 +1559,65 @@ body.mission-orbit-game main {
   #start-screen .mission-subtitle {
     grid-area: subtitle;
     margin-top: 0;
+    font-size: 0.84rem;
+    line-height: 1.25;
   }
 
   #start-screen .mission-outline {
     grid-area: outline;
-    margin-top: 0.2rem;
+    margin-top: 0.35rem;
+    gap: 0.4rem;
+  }
+
+  #start-screen .mission-outline li {
+    font-size: 0.8rem;
+    line-height: 1.25;
   }
 
   #start-screen .crew-picker-panel {
     grid-area: crew;
     margin-top: 0;
     min-width: 0;
+    padding: 0.6rem;
+  }
+
+  #start-screen .crew-picker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+  }
+
+  #start-screen .crew-option-body {
+    min-height: 2.85rem;
+    padding: 0.45rem 0.55rem;
+    gap: 0.45rem;
+  }
+
+  #start-screen .crew-option-badge {
+    width: 1.9rem;
+    height: 1.9rem;
+    font-size: 0.68rem;
+  }
+
+  #start-screen .crew-option-copy strong {
+    font-size: 0.74rem;
+  }
+
+  #start-screen .crew-option-copy span {
+    font-size: 0.6rem;
+    line-height: 1.2;
   }
 
   #start-screen .start-actions {
     grid-area: actions;
-    margin-top: 0.8rem;
+    margin-top: 0.45rem;
     justify-content: flex-start;
   }
 
   #start-screen #gamepad-start-hint {
     grid-area: hint;
     margin-top: 0;
+    font-size: 0.72rem;
   }
 
   .mission-subtitle,

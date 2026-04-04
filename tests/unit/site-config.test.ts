@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { getSiteBasePath, getSiteUrl } from '../app/site-config'
-import { normalizeBasePath, resolveSiteUrl, withBasePath } from '../app/site-paths'
+import { getSiteBasePath, getSiteUrl } from '../../app/site-config'
+import { normalizeBasePath, resolveSiteUrl, withBasePath } from '../../app/site-paths'
 
 test('site path helpers produce GitHub Pages-safe URLs', () => {
   assert.equal(normalizeBasePath('/peninsular-reveries/'), '/peninsular-reveries')
@@ -36,14 +36,13 @@ test('site config reads environment overrides correctly', () => {
   }
 })
 
-test('planning notes and game manifest stay aligned with project-site deployment', () => {
-  const planningDoc = readFileSync('docs/game-ideas.md', 'utf-8')
+test('game registry and manifests stay aligned with project-site deployment', () => {
   const gameRegistry = readFileSync('app/data/game-registry.ts', 'utf-8')
   const superWordManifest = readFileSync('public/super-word/manifest.json', 'utf-8')
   const missionOrbitManifest = readFileSync('public/mission-orbit/manifest.json', 'utf-8')
 
-  assert.match(planningDoc, /Mission: Orbit/)
   assert.match(gameRegistry, /Mission: Orbit/)
+  assert.match(gameRegistry, /Chompers/)
   assert.match(superWordManifest, /"start_url": "\.\/"/)
   assert.match(superWordManifest, /"scope": "\.\/"/)
   assert.match(missionOrbitManifest, /"start_url": "\.\/"/)
