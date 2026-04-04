@@ -59,6 +59,24 @@ export const gameAttributions: readonly GameAttribution[] = [
       },
     ],
   },
+  {
+    slug: 'chompers',
+    name: 'Chompers',
+    codeLicense: repositoryCodeLicense,
+    summary: 'Chompers uses geometric CSS artwork and browser-synthesized Web Audio effects. The in-game settings panel shows the same credits summary surfaced here.',
+    entries: [
+      {
+        title: 'Fruit-chomping soundtrack and effects',
+        type: 'music',
+        usedIn: 'Chompers start screen, gameplay chomps, countdown cues, and game-over stingers',
+        creator: 'Peninsular Reveries',
+        source: 'Generated in-browser with the Web Audio API',
+        license: repositoryCodeLicense,
+        modifications: 'Not applicable',
+        notes: 'The game synthesizes its sounds at runtime. No downloaded loops, recorded samples, or image assets are bundled.',
+      },
+    ],
+  },
 ]
 
 export function getGameAttribution(slug: string): GameAttribution {

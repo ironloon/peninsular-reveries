@@ -45,3 +45,21 @@
 - License: GPL-3.0
 - Modifications: Not applicable
 - Notes: This soundtrack is synthesized at runtime. No external recording, loop, or sample pack is used.
+
+### Chompers
+
+- Slug: chompers
+- Code license: GPL-3.0
+- Summary: Chompers uses geometric CSS artwork and browser-synthesized Web Audio effects. The in-game settings panel shows the same credits summary surfaced here.
+
+#### Entries
+
+##### Fruit-chomping soundtrack and effects
+
+- Type: music
+- Used in: Chompers start screen, gameplay chomps, countdown cues, and game-over stingers
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: The game synthesizes its sounds at runtime. No downloaded loops, recorded samples, or image assets are bundled.

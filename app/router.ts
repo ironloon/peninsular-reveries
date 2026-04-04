@@ -1,6 +1,7 @@
 import { createRouter } from 'remix/fetch-router'
 import { routes } from './routes.js'
 import { attributionsAction } from './controllers/attributions.js'
+import { chompersAction } from './controllers/chompers.js'
 import { homeAction } from './controllers/home.js'
 import { missionOrbitAction } from './controllers/mission-orbit.js'
 import { notFoundAction } from './controllers/not-found.js'
@@ -13,6 +14,7 @@ export function createAppRouter() {
   router.get(routes.attributions, () => attributionsAction())
   router.get(routes.missionOrbit, () => missionOrbitAction())
   router.get(routes.superWord, () => superWordAction())
+  router.get(routes.chompers, () => chompersAction())
   router.get(routes.notFound, () => notFoundAction())
 
   return router

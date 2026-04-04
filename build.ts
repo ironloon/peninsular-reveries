@@ -12,6 +12,7 @@ rmSync(outputDir, { recursive: true, force: true })
 cpSync('public', outputDir, { recursive: true })
 mkdirSync(join(outputDir, 'client', 'mission-orbit'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'super-word'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'chompers'), { recursive: true })
 
 // ── Bundle client code ───────────────────────────────────
 await esbuild.build({
@@ -20,6 +21,7 @@ await esbuild.build({
     'client/404.ts',
     'client/mission-orbit/main.ts',
     'client/super-word/main.ts',
+    'client/chompers/main.ts',
   ],
   bundle: true,
   outdir: join(outputDir, 'client'),
@@ -37,6 +39,7 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/attributions/', outPath: 'attributions/index.html' },
   { url: 'http://localhost/mission-orbit/', outPath: 'mission-orbit/index.html' },
   { url: 'http://localhost/super-word/', outPath: 'super-word/index.html' },
+  { url: 'http://localhost/chompers/', outPath: 'chompers/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -68,6 +71,7 @@ const pages: Record<string, string[]> = {
   attributions: ['attributions/index.html', 'styles/main.css', 'client/shell.js'],
   'mission-orbit': ['mission-orbit/index.html', 'styles/mission-orbit.css', 'client/shell.js', 'client/mission-orbit/main.js'],
   'super-word': ['super-word/index.html', 'styles/game.css', 'client/shell.js', 'client/super-word/main.js'],
+  chompers: ['chompers/index.html', 'styles/chompers.css', 'client/shell.js', 'client/chompers/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 
