@@ -1,14 +1,19 @@
 import { renderToString } from 'remix/component/server'
 import { getGameAttribution } from '../data/attributions.js'
+import { getSiteBasePath } from '../site-config.js'
+import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
 
 export async function missionOrbitAction() {
   const attribution = getGameAttribution('mission-orbit')
+  const siteBasePath = getSiteBasePath()
+  const homePath = withBasePath('/', siteBasePath)
   const html = await renderToString(
     <Document
       title="Mission: Orbit"
       description="Time the key Artemis II burns from countdown to Pacific splashdown."
       path="/mission-orbit/"
+      includeNav={false}
       stylesheets={['/styles/mission-orbit.css']}
       includeDefaultStyles={false}
       scripts={['/client/mission-orbit/main.js']}
@@ -33,7 +38,7 @@ export async function missionOrbitAction() {
 
             <div className="start-actions">
               <button id="start-btn" className="mission-btn mission-btn-primary">Begin countdown</button>
-              <button data-settings-open="true" className="mission-btn mission-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Mission settings</button>
+              <button data-settings-open="true" className="mission-btn mission-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
             </div>
 
             <p id="gamepad-start-hint" className="start-hint" hidden>Controller A starts the mission.</p>
@@ -144,7 +149,7 @@ export async function missionOrbitAction() {
 
         <div id="settings-modal" className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" tabIndex={-1} hidden>
           <div className="settings-content mission-settings-content">
-            <h2 id="settings-heading" className="settings-heading">Mission settings</h2>
+            <h2 id="settings-heading" className="settings-heading">Menu</h2>
 
             <section className="settings-section">
               <h3 className="settings-section-title">Controls</h3>
@@ -188,6 +193,15 @@ export async function missionOrbitAction() {
             </section>
 
             <section className="settings-section">
+              <h3 className="settings-section-title">Accessibility</h3>
+              <label className="settings-toggle-row" htmlFor="reduce-motion-toggle">
+                <span>Reduce motion</span>
+                <input type="checkbox" id="reduce-motion-toggle" />
+              </label>
+              <p id="reduce-motion-help" className="settings-help">Defaults to your device setting until you change it here.</p>
+            </section>
+
+            <section className="settings-section">
               <h3 className="settings-section-title">Credits</h3>
               <p className="settings-help"><span className="settings-detail-label">Code license:</span> {attribution.codeLicense}</p>
               <p className="settings-help">{attribution.summary}</p>
@@ -207,6 +221,7 @@ export async function missionOrbitAction() {
             </section>
 
             <div className="settings-actions">
+              <a href={homePath} className="mission-btn mission-btn-secondary settings-home-link">Home</a>
               <button id="settings-close" className="mission-btn mission-btn-secondary">Close</button>
             </div>
           </div>

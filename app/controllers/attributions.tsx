@@ -12,9 +12,11 @@ export async function attributionsAction() {
       title="Attributions"
       description="Licensing and credits for Peninsular Reveries and its games."
       path={attributionsPagePath}
+      includeNav={false}
     >
       <div className="page-stack">
         <section className="page-hero">
+          <a href={withBasePath('/', siteBasePath)} className="page-home-link">← Home</a>
           <h1>Attributions</h1>
           <p>One place for licensing and credits across the site and its games.</p>
         </section>
@@ -26,7 +28,7 @@ export async function attributionsAction() {
         </section>
 
         {gameAttributions.map((game) => (
-          <section className="section-card attribution-section">
+          <section id={game.slug} className="section-card attribution-section">
             <div className="section-card-heading">
               <div>
                 <h2>{game.name}</h2>

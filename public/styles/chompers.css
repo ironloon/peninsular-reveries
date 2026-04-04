@@ -227,6 +227,10 @@ body.chompers-game main {
   margin-top: 1.4rem;
 }
 
+.settings-actions > * {
+  flex: 1 1 0;
+}
+
 .start-notes,
 .settings-list {
   margin: 1.2rem 0 0;
@@ -686,9 +690,38 @@ body.chompers-game main {
   line-height: 1.55;
 }
 
+.settings-help {
+  margin-top: 0.6rem;
+}
+
 .settings-label {
   color: var(--ink);
   font-weight: 800;
+}
+
+.settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  margin-top: 0.7rem;
+}
+
+.settings-toggle-row span {
+  font-weight: 800;
+}
+
+.settings-toggle-row input[type='checkbox'] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--accent);
+}
+
+.settings-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .settings-attribution {
@@ -795,20 +828,36 @@ body.chompers-game main {
   }
 }
 
+[data-reduce-motion='reduce'] .screen,
+[data-reduce-motion='reduce'] .chomp-btn,
+[data-reduce-motion='reduce'] .mode-card-copy,
+[data-reduce-motion='reduce'] .chomp-column,
+[data-reduce-motion='reduce'] .hippo,
+[data-reduce-motion='reduce'] .points-popup,
+[data-reduce-motion='reduce'] .arena-sunburst,
+[data-reduce-motion='reduce'] .fruit-star {
+  animation: none !important;
+  transition: none !important;
+}
+
+[data-reduce-motion='reduce'] .points-popup {
+  opacity: 0.95;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .screen,
-  .chomp-btn,
-  .mode-card-copy,
-  .chomp-column,
-  .hippo,
-  .points-popup,
-  .arena-sunburst,
-  .fruit-star {
+  :root:not([data-reduce-motion='no-preference']) .screen,
+  :root:not([data-reduce-motion='no-preference']) .chomp-btn,
+  :root:not([data-reduce-motion='no-preference']) .mode-card-copy,
+  :root:not([data-reduce-motion='no-preference']) .chomp-column,
+  :root:not([data-reduce-motion='no-preference']) .hippo,
+  :root:not([data-reduce-motion='no-preference']) .points-popup,
+  :root:not([data-reduce-motion='no-preference']) .arena-sunburst,
+  :root:not([data-reduce-motion='no-preference']) .fruit-star {
     animation: none !important;
     transition: none !important;
   }
 
-  .points-popup {
+  :root:not([data-reduce-motion='no-preference']) .points-popup {
     opacity: 0.95;
   }
 }

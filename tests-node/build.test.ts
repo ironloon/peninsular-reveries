@@ -29,6 +29,7 @@ test('build script writes the expected static output', () => {
       '404.html',
       'styles/main.css',
       'client/shell.js',
+      'client/home.js',
       'client/super-word/main.js',
       'client/404.js',
       'favicon.svg',
@@ -45,7 +46,7 @@ test('build script writes the expected static output', () => {
     const attributionsHtml = readFileSync(join(outputDir, 'attributions/index.html'), 'utf-8')
     const gameHtml = readFileSync(join(outputDir, 'super-word/index.html'), 'utf-8')
 
-    assert.doesNotMatch(homeHtml, /rel="manifest"/)
+    assert.match(homeHtml, /href="\/manifest\.json"/)
     assert.match(attributionsHtml, /Attributions/)
     assert.match(gameHtml, /href="\/super-word\/manifest\.json"/)
     assert.match(gameHtml, /href="\/favicon-game-super-word\.svg"/)

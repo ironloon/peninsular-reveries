@@ -1,5 +1,7 @@
+import { isReducedMotionEnabled } from '../preferences.js'
+
 export function isReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  return isReducedMotionEnabled()
 }
 
 export function animateCollectPop(element: HTMLElement): Promise<void> {

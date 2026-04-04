@@ -10,6 +10,7 @@ export async function notFoundAction() {
       title="Page Not Found"
       description="This page wandered off. Head back to the homepage."
       path="/404.html"
+      includeNav={false}
       scripts={['/client/404.js']}
     >
       <div className="four-oh-four">

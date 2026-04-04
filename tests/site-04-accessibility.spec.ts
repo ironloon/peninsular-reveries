@@ -38,11 +38,11 @@ test.describe('SITE-04: Accessibility', () => {
   test('settings dialog is keyboard accessible and restores focus when closed', async ({ page }) => {
     await page.goto('/super-word/')
 
-    const settingsButton = page.getByRole('button', { name: 'Settings' })
+    const settingsButton = page.getByRole('button', { name: 'Menu' })
     await settingsButton.focus()
     await page.keyboard.press('Enter')
 
-    const dialog = page.getByRole('dialog', { name: 'Settings' })
+    const dialog = page.getByRole('dialog', { name: 'Menu' })
     await expect(dialog).toBeVisible()
     await expect(page.locator('#puzzle-difficulty-select')).toBeFocused()
     await expect(page.locator('#puzzle-difficulty-select')).toHaveValue('easy')

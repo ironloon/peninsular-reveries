@@ -1,5 +1,6 @@
 import type { GameState, Puzzle } from './types.js'
 import { isReducedMotion } from './animations.js'
+import { bindReduceMotionToggle } from '../preferences.js'
 
 // ── Lazy element cache ───────────────────────────────────────
 let puzzleCounterEl: HTMLElement | null = null
@@ -294,17 +295,16 @@ export function setCheckButtonEnabled(enabled: boolean): void {
 
 // ── Settings Modal ───────────────────────────────────────────
 
-export function setupSettingsModal(onPlay: () => void): void {
+export function setupSettingsModal(): void {
   const modal = document.getElementById('settings-modal')
-  const openBtn = document.getElementById('settings-open')
   const closeBtn = document.getElementById('settings-close')
-  const playBtn = document.getElementById('settings-play-btn') as HTMLButtonElement | null
-  const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
+  const openButtons = Array.from(document.querySelectorAll<HTMLElement>('[data-settings-open="true"]'))
+  const reduceMotionToggle = document.getElementById('reduce-motion-toggle') as HTMLInputElement | null
+  const reduceMotionHelp = document.getElementById('reduce-motion-help') as HTMLElement | null
 
-  if (!modal || !openBtn || !difficultySelect) return
+  if (!modal || !closeBtn || openButtons.length === 0) return
 
   const modalEl = modal
-  const openButton = openBtn
 
   let previousFocus: HTMLElement | null = null
 
@@ -317,9 +317,11 @@ export function setupSettingsModal(onPlay: () => void): void {
   }
 
   function openModal(): void {
-    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : openButton
+    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : openButtons[0]
     modalEl.hidden = false
-    openButton.setAttribute('aria-expanded', 'true')
+    for (const openButton of openButtons) {
+      openButton.setAttribute('aria-expanded', 'true')
+    }
     requestAnimationFrame(() => {
       const [firstFocusable] = getFocusableElements()
       ;(firstFocusable ?? modalEl).focus()
@@ -328,8 +330,10 @@ export function setupSettingsModal(onPlay: () => void): void {
 
   function closeModal(): void {
     modalEl.hidden = true
-    openButton.setAttribute('aria-expanded', 'false')
-    ;(previousFocus ?? openButton).focus()
+    for (const openButton of openButtons) {
+      openButton.setAttribute('aria-expanded', 'false')
+    }
+    ;(previousFocus ?? openButtons[0]).focus()
   }
 
   // Expose open/close for gamepad Start button
@@ -338,11 +342,13 @@ export function setupSettingsModal(onPlay: () => void): void {
     else closeModal()
   }
 
-  openButton.addEventListener('click', openModal)
-
-  if (closeBtn) {
-    closeBtn.addEventListener('click', closeModal)
+  for (const openButton of openButtons) {
+    openButton.addEventListener('click', openModal)
   }
+
+  closeBtn.addEventListener('click', closeModal)
+
+  bindReduceMotionToggle(reduceMotionToggle, reduceMotionHelp)
 
   // Close on backdrop click
   modalEl.addEventListener('click', (e) => {
@@ -379,10 +385,4 @@ export function setupSettingsModal(onPlay: () => void): void {
     }
   })
 
-  if (playBtn) {
-    playBtn.addEventListener('click', () => {
-      closeModal()
-      onPlay()
-    })
-  }
 }

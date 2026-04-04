@@ -3,32 +3,31 @@ import { test, expect } from '@playwright/test';
 test.describe('SITE-02: Navigation', () => {
   test('homepage has link to Super Word game', async ({ page }) => {
     await page.goto('/');
-    const gameLink = page.locator('a[href*="super-word"]').first();
+    const gameLink = page.getByRole('link', { name: 'Open Super Word' });
     await expect(gameLink).toBeVisible();
   });
 
   test('homepage has link to attributions page', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'Attributions' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View attributions for Super Word' })).toBeVisible();
   });
 
   test('clicking game link navigates to /super-word/', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a[href*="super-word"]').first().click();
+    await page.getByRole('link', { name: 'Open Super Word' }).click();
     await page.waitForURL('**/super-word/**');
     expect(page.url()).toContain('super-word');
   });
 
-  test('game page has navigation back to homepage', async ({ page }) => {
+  test('game page exposes Home inside the Menu', async ({ page }) => {
     await page.goto('/super-word/');
-    // Nav exists but is hidden in full-viewport game mode
-    const homeLink = page.locator('nav a[href*="/"]').first();
-    await expect(homeLink).toBeAttached();
+    await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Home' })).toBeVisible();
   });
 
   test('back button returns to previous page', async ({ page }) => {
     await page.goto('/');
-    await page.locator('a[href*="super-word"]').first().click();
+    await page.getByRole('link', { name: 'Open Super Word' }).click();
     await page.waitForURL('**/super-word/**');
     await page.goBack();
     await expect(page.locator('h1')).toContainText('Peninsular Reveries');

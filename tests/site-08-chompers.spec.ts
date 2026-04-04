@@ -48,9 +48,9 @@ test.describe('SITE-08: Chompers', () => {
   test('settings modal opens and closes from the start screen', async ({ page }) => {
     await page.goto('/chompers/')
 
-    await page.getByRole('button', { name: 'How To Play' }).click()
+    await page.getByRole('button', { name: 'Menu' }).click()
     await expect(page.locator('#settings-modal')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'How To Play' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Menu' })).toBeVisible()
     await expect(page.getByText('Gamepad: left stick or D-pad moves, A chomps.')).toBeVisible()
 
     await page.getByRole('button', { name: 'Close' }).click()

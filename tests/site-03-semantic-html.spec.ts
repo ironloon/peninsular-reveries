@@ -1,23 +1,21 @@
 import { test, expect } from '@playwright/test';
 
 const pages = [
-  { name: 'homepage', path: '/' },
-  { name: 'game page', path: '/super-word/' },
-  { name: '404 page', path: '/404.html' },
+  { name: 'homepage', path: '/', role: 'link', text: 'Open Super Word' },
+  { name: 'game page', path: '/super-word/', role: 'button', text: 'Menu' },
+  { name: '404 page', path: '/404.html', role: 'link', text: 'Back to the homepage →' },
 ];
 
 test.describe('SITE-03: Semantic HTML', () => {
-  for (const { name, path } of pages) {
+  for (const { name, path, role, text } of pages) {
     test(`${name} has <main> element`, async ({ page }) => {
       await page.goto(path);
       await expect(page.locator('main')).toBeAttached();
     });
 
-    test(`${name} has navigation`, async ({ page }) => {
+    test(`${name} keeps its primary interactive affordance accessible`, async ({ page }) => {
       await page.goto(path);
-      // shell.ts injects <nav> dynamically into #site-header
-      const nav = page.locator('nav');
-      await expect(nav).toBeAttached();
+      await expect(page.getByRole(role as 'button' | 'link', { name: text })).toBeAttached();
     });
 
     test(`${name} has meta description`, async ({ page }) => {

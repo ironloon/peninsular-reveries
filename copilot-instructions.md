@@ -98,8 +98,10 @@ server.ts                ← Dev server with live reload
 6. Add CSS to `public/styles/[game-slug].css` if needed
 7. Add static route to `build.ts` `staticRoutes` array
 8. Add scoped PWA assets in `public/[game-slug]/manifest.json` and `public/[game-slug]/sw.js`
-9. If the game adds or changes credits, update `app/data/attributions.ts` and run `npm run sync:attributions`
-10. Add tests in both `tests-node/` and `tests/` when the game introduces new logic and UI behavior
+9. Pass `includeNav={false}` from the game controller and keep site-level navigation inside the game UI, not in the shared header
+10. Add a `Menu` overlay with a Home action, controls help, any game-specific settings, a reduce-motion toggle, and credits when the game uses attributed media
+11. If the game adds or changes credits, update `app/data/attributions.ts` and run `npm run sync:attributions`
+12. Add tests in both `tests-node/` and `tests/` when the game introduces new logic and UI behavior
 
 ### Game Module Contract
 
@@ -110,7 +112,7 @@ Every game in `client/` follows this file pattern:
 - `renderer.ts` — DOM rendering (creates/updates elements)
 - `input.ts` — Unified pointer/keyboard/gamepad handling via InputCallbacks interface
 - `accessibility.ts` — ARIA announcements, focus management
-- `animations.ts` — CSS-first animation promises, respects prefers-reduced-motion
+- `animations.ts` — CSS-first animation promises, respects prefers-reduced-motion plus the repo's `data-reduce-motion` override
 - `sounds.ts` — Web Audio API synth (no external audio files)
 
 ### Games: DOM-Based Architecture
@@ -127,13 +129,16 @@ Games use vanilla TypeScript with direct DOM manipulation. This is intentional �
 Game pages should follow these structural rules unless there is a strong reason not to:
 - Use a dedicated body class per game page and treat that body as a full-height flex column root
 - Pair `body.<game> main { display: flex; flex: 1; min-height: 0; }` with a full-width `.scene-track`
+- Pass `includeNav={false}` to `Document`; full-screen game pages should not rely on the shared site header for navigation
 - For full-screen game pages, opt into `viewport-fit=cover` and pad the game root with `env(safe-area-inset-*)` so iPhone/Dynamic Island/home-indicator devices keep content inside visible bounds
 - Any fixed overlays (`settings`, celebration popups, noscript banners) need the same safe-area-aware padding as the game root
 - On short mobile and landscape viewports, provide a scroll path or tighter layout for non-gameplay screens instead of clipping controls below the fold
 - Include scoped install/offline support per game under `public/[game-slug]/`, not at the site root
 - Include `#game-status` and `#game-feedback` aria-live regions for narrated state changes
 - Include a `noscript` fallback message because the game page itself is pre-rendered even when gameplay needs JS
+- Keep a consistent `Menu` button on the game's start screen and active game UI, and expose a Home action inside the modal so players can exit without browser chrome
 - Keep settings/credits in the game UI when the game has entries in `app/data/attributions.ts`
+- Game motion controls should default to the OS setting until changed, then persist via `localStorage('reduce-motion')` and `data-reduce-motion` on `<html>` so CSS and JS both honor the same override
 
 ## Conventions
 
@@ -143,8 +148,10 @@ Game pages should follow these structural rules unless there is a strong reason 
 - **Pure state functions** in game code — all state transitions return new state objects
 - **InputCallbacks interface** — all game input sources (pointer, keyboard, gamepad) normalize to semantic game actions
 - **CSS-first animation** — animations as CSS classes, JS wraps in Promises, respects `prefers-reduced-motion`
+- **Homepage controller navigation** — launch-card pages should keep keyboard semantics first and may add a small client helper (for example `client/home.ts`) for gamepad focus/activation when it improves accessibility
 - **200KB per-page budget** — HTML + CSS + JS (excluding sourcemaps)
 - **Scoped PWA manifests** — game manifests use `"start_url": "./"` and `"scope": "./"` so Pages/project-site deploys work correctly
+- **Site-wide offline support** — the root `public/sw.js` handles whole-site caching and the root `public/manifest.json` is the install surface for browsing the site offline, while game-scoped workers still own game-specific caches
 - **Playwright spec naming** — browser tests must match `site-*.spec.ts` because `playwright.config.ts` only picks up that pattern
 - **Generated attribution file** — `ATTRIBUTIONS.md` is generated from `app/data/attributions.ts`; keep it synced with `npm run sync:attributions`
 

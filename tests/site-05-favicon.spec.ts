@@ -32,9 +32,11 @@ test.describe('SITE-05: SVG favicon', () => {
     });
   }
 
-  test('homepage does not advertise a site-wide install manifest', async ({ page }) => {
+  test('homepage advertises the site-wide install manifest', async ({ page }) => {
     await page.goto('/');
-    await expect(page.locator('link[rel="manifest"]')).toHaveCount(0);
+    const manifest = page.locator('link[rel="manifest"]');
+    await expect(manifest).toBeAttached();
+    await expect(manifest).toHaveAttribute('href', '/manifest.json');
   });
 
   test('game page advertises a game-scoped install manifest', async ({ page }) => {
