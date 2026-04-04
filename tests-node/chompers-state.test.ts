@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { attemptChomp, createInitialState, moveHippo, nudgeHippo, spawnItem, tickState } from '../client/chompers/state'
+import { FRUIT_DEFINITIONS, ZEN_ROUND_ITEMS } from '../client/chompers/types'
 
 test('initial rush state opens with starter fruit and a centered hippo', () => {
   const state = createInitialState('rush')
@@ -73,4 +74,96 @@ test('movement clamps to the arena and spawning adds a new falling item', () => 
   const spawned = spawnItem(state)
   assert.equal(spawned.items.length, state.items.length + 1)
   assert.equal(spawned.nextItemId, state.nextItemId + 1)
+})
+
+test('rush difficulty ramps more gently and no longer multiplies fall speed twice', () => {
+  const state = createInitialState('rush')
+  const result = tickState({
+    ...state,
+    elapsedMs: 79_900,
+    spawnTimerMs: 99_999,
+    items: [{
+      id: 40,
+      kind: 'apple',
+      x: 50,
+      y: 10,
+      speed: 20,
+      rotation: 0,
+      rotationSpeed: 0,
+    }],
+  }, 100)
+
+  assert.equal(result.state.difficultyLevel, 3)
+  assert.equal(result.state.items[0]?.y, 12)
+})
+
+test('spawned fruit avoids a nearby rotten path when a conflict would feel unfair', () => {
+  const state = {
+    ...createInitialState('rush'),
+    items: [{
+      id: 99,
+      kind: 'rotten' as const,
+      x: 50,
+      y: 20,
+      speed: 18,
+      rotation: 0,
+      rotationSpeed: 0,
+    }],
+    spawnTimerMs: 0,
+  }
+
+  let probe = state
+
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const spawned = spawnItem(probe)
+    const item = spawned.items[spawned.items.length - 1]
+
+    if (!item) {
+      assert.fail('Expected spawnItem to add a falling item')
+    }
+
+    if (!FRUIT_DEFINITIONS[item.kind].hazard) {
+      assert.ok(Math.abs(item.x - 50) >= 14)
+      return
+    }
+
+    probe = {
+      ...spawned,
+      items: state.items,
+      spawnTimerMs: 0,
+    }
+  }
+
+  assert.fail('Expected a collectible spawn while probing overlap avoidance')
+})
+
+test('zen mode keeps a flat difficulty and ends after the final fruit resolves', () => {
+  const zenState = createInitialState('zen')
+  const calmTick = tickState({
+    ...zenState,
+    items: [],
+    spawnTimerMs: 99_999,
+  }, 120_000)
+
+  assert.equal(calmTick.state.phase, 'playing')
+  assert.equal(calmTick.state.difficultyLevel, 1)
+  assert.equal(calmTick.state.timeRemainingMs, 0)
+
+  const completionTick = tickState({
+    ...zenState,
+    nextItemId: ZEN_ROUND_ITEMS + 1,
+    itemsMissed: ZEN_ROUND_ITEMS - 1,
+    items: [{
+      id: 200,
+      kind: 'apple',
+      x: 50,
+      y: 107,
+      speed: 16,
+      rotation: 0,
+      rotationSpeed: 0,
+    }],
+    spawnTimerMs: 99_999,
+  }, 16)
+
+  assert.equal(completionTick.state.phase, 'gameover')
 })

@@ -1,5 +1,5 @@
 import { isReducedMotion } from './animations.js'
-import { FRUIT_DEFINITIONS } from './types.js'
+import { FRUIT_DEFINITIONS, ZEN_ROUND_ITEMS } from './types.js'
 import type { GameMode, GameState } from './types.js'
 
 export interface SettingsModalController {
@@ -41,11 +41,24 @@ function getFinalCombo(): HTMLElement { return finalComboEl ??= document.getElem
 function getEndSummary(): HTMLElement { return endSummaryEl ??= document.getElementById('end-summary')! }
 
 function modeLabel(mode: GameMode): string {
-  return mode === 'survival' ? 'Survival' : 'Rush'
+  if (mode === 'survival') {
+    return 'Survival'
+  }
+
+  if (mode === 'zen') {
+    return 'Zen'
+  }
+
+  return 'Rush'
 }
 
 function formatTimer(ms: number): string {
   return `${(Math.max(ms, 0) / 1000).toFixed(1)}s`
+}
+
+function formatZenProgress(state: GameState): string {
+  const remainingFruit = Math.max(0, ZEN_ROUND_ITEMS - (state.itemsChomped + state.itemsMissed))
+  return remainingFruit === 1 ? '1 left' : `${remainingFruit} left`
 }
 
 function formatLives(lives: number): string {
@@ -54,6 +67,14 @@ function formatLives(lives: number): string {
 }
 
 function buildEndSummary(state: GameState): string {
+  if (state.mode === 'zen') {
+    if (state.itemsMissed === 0) {
+      return 'Zen round cleared. Slow pace, clean board, and not a single splat.'
+    }
+
+    return 'Zen round complete. No clock, no hazards, just a calmer fruit run from start to finish.'
+  }
+
   if (state.mode === 'survival' && state.lives <= 0) {
     return `You lasted ${Math.max(1, Math.round(state.elapsedMs / 1000))} seconds before the orchard fought back.`
   }
@@ -70,19 +91,32 @@ function buildEndSummary(state: GameState): string {
 }
 
 function renderHud(state: GameState): void {
+  const timerReadout = getTimerReadout()
+  const livesReadout = getLivesReadout()
+
   getModeChip().textContent = modeLabel(state.mode)
   getScore().textContent = String(state.score)
   getScore().setAttribute('aria-label', `Score: ${state.score}`)
 
   if (state.mode === 'rush') {
-    getTimerReadout().hidden = false
-    getTimerReadout().textContent = formatTimer(state.timeRemainingMs)
-    getLivesReadout().hidden = true
+    timerReadout.hidden = false
+    timerReadout.setAttribute('role', 'timer')
+    timerReadout.textContent = formatTimer(state.timeRemainingMs)
+    timerReadout.setAttribute('aria-label', `${formatTimer(state.timeRemainingMs)} remaining`)
+    livesReadout.hidden = true
+  } else if (state.mode === 'survival') {
+    timerReadout.hidden = true
+    timerReadout.removeAttribute('role')
+    livesReadout.hidden = false
+    livesReadout.textContent = formatLives(state.lives)
+    livesReadout.setAttribute('aria-label', `${state.lives} lives remaining`)
   } else {
-    getTimerReadout().hidden = true
-    getLivesReadout().hidden = false
-    getLivesReadout().textContent = formatLives(state.lives)
-    getLivesReadout().setAttribute('aria-label', `${state.lives} lives remaining`)
+    const remainingFruit = Math.max(0, ZEN_ROUND_ITEMS - (state.itemsChomped + state.itemsMissed))
+    timerReadout.hidden = false
+    timerReadout.removeAttribute('role')
+    timerReadout.textContent = formatZenProgress(state)
+    timerReadout.setAttribute('aria-label', `${remainingFruit} fruit left in the zen round`)
+    livesReadout.hidden = true
   }
 
   getComboReadout().textContent = `Combo x${state.combo}`

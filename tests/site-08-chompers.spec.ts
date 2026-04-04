@@ -12,6 +12,7 @@ test.describe('SITE-08: Chompers', () => {
 
     await expect(page.getByRole('heading', { name: 'Chompers' })).toBeVisible()
     await expect(page.getByLabel('Pick a mode')).toContainText('Rush')
+    await expect(page.getByLabel('Pick a mode')).toContainText('Zen')
 
     await page.getByRole('button', { name: 'Start Chomping' }).click()
 
@@ -30,6 +31,18 @@ test.describe('SITE-08: Chompers', () => {
     await expect(page.locator('#mode-chip')).toContainText('Survival')
     await expect(page.locator('#lives-readout')).toBeVisible()
     await expect(page.locator('#timer-readout')).toBeHidden()
+  })
+
+  test('zen mode selection carries into gameplay with a calm progress readout', async ({ page }) => {
+    await page.goto('/chompers/')
+
+    await page.getByLabel('Zen mode').check()
+    await page.getByRole('button', { name: 'Start Chomping' }).click()
+
+    await expect(page.locator('#mode-chip')).toContainText('Zen')
+    await expect(page.locator('#timer-readout')).toBeVisible()
+    await expect(page.locator('#timer-readout')).toContainText('left')
+    await expect(page.locator('#lives-readout')).toBeHidden()
   })
 
   test('settings modal opens and closes from the start screen', async ({ page }) => {
