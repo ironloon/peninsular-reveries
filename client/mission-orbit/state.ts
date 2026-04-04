@@ -1,3 +1,4 @@
+import { DEFAULT_CREW_IDS, MISSION_CREW_ROSTER, type MissionCrewProfile } from '../../app/data/mission-orbit-crew.js'
 import {
   MISSION_SEQUENCE,
   TOTAL_GAMEPLAY_STEPS,
@@ -18,9 +19,19 @@ export interface CueSignalState {
 
 const COUNTDOWN_START = 10
 const SAFE_PADDING = 0.12
+const SPLASHDOWN_RECOVERY_READY_MS = 3600
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
+}
+
+function pickCrew(ids: readonly string[] = DEFAULT_CREW_IDS): readonly MissionCrewProfile[] {
+  const selected = ids
+    .map((id) => MISSION_CREW_ROSTER.find((profile) => profile.id === id))
+    .filter((profile): profile is MissionCrewProfile => profile !== undefined)
+
+  const fallback = MISSION_CREW_ROSTER.filter((profile) => !selected.some((item) => item.id === profile.id))
+  return [...selected, ...fallback].slice(0, 3)
 }
 
 function phaseIndexOf(phase: MissionGameplayPhase): number {
@@ -32,7 +43,7 @@ function burnMessage(label: string, grade: BurnGrade): string {
     case 'perfect': return `${label}: perfect. Right on the flight profile.`
     case 'good': return `${label}: good burn. The mission stays sharp.`
     case 'safe': return `${label}: safe burn. Guidance trimmed the edges and kept the path clean.`
-    case 'assist': return `${label}: assisted. Guidance froze the window and kept the maneuver on profile.`
+    case 'assist': return `${label}: assisted. Guidance held the cue and kept the maneuver on profile.`
   }
 }
 
@@ -120,6 +131,7 @@ function applyBurnResult(state: GameState, result: BurnResult): GameState {
     stopMoActive: false,
     phaseResolved: true,
     actionHeld: false,
+    timingLatched: false,
     serviceModuleDetached: state.phase === 'service-module-jettison' ? true : state.serviceModuleDetached,
     parachuteDeployed: state.phase === 'parachute-deploy' ? true : state.parachuteDeployed,
   }
@@ -131,12 +143,14 @@ export function createInitialState(): GameState {
     phaseIndex: -1,
     phaseElapsedMs: 0,
     missionElapsedMs: 0,
+    crew: pickCrew(),
     briefingActive: false,
     countdownValue: COUNTDOWN_START,
     actionHeld: false,
     launchProgress: 0,
     timingCursor: 0.08,
     timingDirection: 1,
+    timingLatched: false,
     burnResults: [],
     outcomeText: '',
     outcomeGrade: null,
@@ -148,9 +162,10 @@ export function createInitialState(): GameState {
   }
 }
 
-export function startMission(): GameState {
+export function startMission(crewIds: readonly string[] = DEFAULT_CREW_IDS): GameState {
   return {
     ...createInitialState(),
+    crew: pickCrew(crewIds),
     phase: 'countdown',
     phaseIndex: 0,
   }
@@ -197,7 +212,10 @@ export function updateLaunchProgress(state: GameState, deltaMs: number): GameSta
 
   const poweredClimb = state.actionHeld ? deltaMs / 2300 : -deltaMs / 6000
   const passiveClimb = deltaMs / 18000
-  const nextProgress = clamp(state.launchProgress + poweredClimb + passiveClimb, 0, 1)
+  const latchPoint = centerOf(getPhaseDefinition('launch').timingWindow!)
+  const nextProgress = state.actionHeld && state.launchProgress >= latchPoint
+    ? latchPoint
+    : clamp(state.launchProgress + poweredClimb + passiveClimb, 0, latchPoint)
 
   if (nextProgress === state.launchProgress) return state
   return {
@@ -210,25 +228,28 @@ export function updateTimingCursor(state: GameState, deltaMs: number, speed: num
   if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phase === 'launch') {
     return state
   }
-  if (state.briefingActive || state.phaseResolved || state.stopMoActive) return state
+  if (state.briefingActive || state.phaseResolved || state.stopMoActive || state.timingLatched) return state
 
-  let nextPosition = state.timingCursor + deltaMs * speed * state.timingDirection
-  let nextDirection = state.timingDirection
+  const definition = getPhaseDefinition(state.phase)
+  if (!definition.timingWindow) return state
 
-  while (nextPosition > 1 || nextPosition < 0) {
-    if (nextPosition > 1) {
-      nextPosition = 1 - (nextPosition - 1)
-      nextDirection = -1
-    } else if (nextPosition < 0) {
-      nextPosition = -nextPosition
-      nextDirection = 1
+  const latchPoint = centerOf(definition.timingWindow)
+  const speedScale = state.timingCursor >= definition.timingWindow.goodStart ? 0.24 : 1
+  const nextPosition = state.timingCursor + deltaMs * speed * speedScale
+
+  if (nextPosition >= latchPoint) {
+    return {
+      ...state,
+      timingCursor: latchPoint,
+      timingDirection: 1,
+      timingLatched: true,
     }
   }
 
   return {
     ...state,
     timingCursor: clamp(nextPosition, 0, 1),
-    timingDirection: nextDirection,
+    timingDirection: 1,
   }
 }
 
@@ -331,6 +352,7 @@ export function enterStopMo(state: GameState, message: string): GameState {
     timingCursor: state.phase !== 'launch' && cueCenter !== null
       ? cueCenter
       : state.timingCursor,
+    timingLatched: state.phase !== 'launch' && cueCenter !== null ? true : state.timingLatched,
     outcomeText: message,
     outcomeGrade: null,
   }
@@ -387,6 +409,7 @@ export function advancePhase(state: GameState): GameState {
       phase: 'celebration',
       missionComplete: true,
       actionHeld: false,
+      timingLatched: false,
       outcomeText: '',
       outcomeGrade: null,
       briefingActive: false,
@@ -408,6 +431,7 @@ export function advancePhase(state: GameState): GameState {
     launchProgress: nextPhase === 'launch' ? 0 : state.launchProgress,
     timingCursor: 0.08,
     timingDirection: 1,
+    timingLatched: false,
     outcomeText: '',
     outcomeGrade: null,
     stopMoActive: false,
@@ -426,4 +450,8 @@ export function getMissionTimeLabel(state: GameState): string {
 export function getMissionStepLabel(state: GameState): string {
   const step = state.phaseIndex < 0 ? 0 : Math.min(state.phaseIndex + 1, TOTAL_GAMEPLAY_STEPS)
   return `Step ${step} / ${TOTAL_GAMEPLAY_STEPS}`
+}
+
+export function isRecoveryActionReady(state: GameState): boolean {
+  return state.phase === 'splashdown' && !state.briefingActive && state.phaseElapsedMs >= SPLASHDOWN_RECOVERY_READY_MS
 }

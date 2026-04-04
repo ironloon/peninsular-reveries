@@ -10,6 +10,8 @@ test.describe('SITE-07: Mission Orbit', () => {
     await page.goto('/mission-orbit/')
 
     await expect(page.getByRole('heading', { name: 'Mission: Orbit' })).toBeVisible()
+    await expect(page.getByText('Pick three crew members')).toBeVisible()
+    await expect(page.locator('input[name="mission-crew"]:checked')).toHaveCount(3)
     await page.getByRole('button', { name: 'Begin countdown' }).click()
 
     await expect(page.locator('#mission-screen')).toHaveClass(/active/)
@@ -73,10 +75,14 @@ test.describe('SITE-07: Mission Orbit', () => {
 
       for (let index = 0; index < 34; index += 1) {
         const stageRect = stage.getBoundingClientRect()
-        const rocketRect = rocket.getBoundingClientRect()
+        const rocketMatrix = rocket.getScreenCTM()
+        if (!rocketMatrix) {
+          return []
+        }
+
         samples.push({
-          centerX: rocketRect.left + rocketRect.width / 2 - stageRect.left,
-          centerY: rocketRect.top + rocketRect.height / 2 - stageRect.top,
+          centerX: rocketMatrix.e - stageRect.left,
+          centerY: rocketMatrix.f - stageRect.top,
           stageWidth: stageRect.width,
           stageHeight: stageRect.height,
         })
@@ -123,5 +129,12 @@ test.describe('SITE-07: Mission Orbit', () => {
     await expect(page.locator('.mission-stage-shell')).toBeVisible()
     await expect(page.locator('.mission-toolbar')).toBeVisible()
     await expect(page.locator('#mission-stage-target')).toContainText(/spacecraft|clock/i)
+  })
+
+  test('start screen crew picker keeps exactly three seats active by default', async ({ page }) => {
+    await page.goto('/mission-orbit/')
+
+    await expect(page.locator('input[name="mission-crew"]:checked')).toHaveCount(3)
+    await expect(page.locator('#crew-picker-help')).toContainText(/Crew locked in/i)
   })
 })

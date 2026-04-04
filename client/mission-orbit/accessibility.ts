@@ -17,11 +17,18 @@ export function announcePhaseReady(message: string): void {
 }
 
 export function announceCountdown(value: number): void {
-  if (value > 0) {
-    announce(`T minus ${value}.`, 'assertive')
+  if (value === 7) {
+    announce('T minus 7. Main engines start.', 'assertive')
     return
   }
-  announce('Liftoff.', 'assertive')
+
+  if (value > 0) {
+    const suffix = value <= 3 ? ' Booster ignition is next.' : ''
+    announce(`T minus ${value}.${suffix}`, 'assertive')
+    return
+  }
+
+  announce('Booster ignition. Liftoff.', 'assertive')
 }
 
 export function announceKeepHolding(): void {

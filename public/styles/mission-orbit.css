@@ -206,6 +206,108 @@ body.mission-orbit-game main {
 .mission-outline li:nth-child(2)::before { content: '2'; }
 .mission-outline li:nth-child(3)::before { content: '3'; }
 
+.crew-picker-panel {
+  position: relative;
+  margin: 1.4rem 0 0;
+  padding: 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.05);
+  z-index: 2;
+}
+
+.crew-picker-title {
+  margin: 0;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.crew-picker-copy {
+  margin: 0.35rem 0 0;
+  color: var(--mission-muted);
+  line-height: 1.45;
+}
+
+.crew-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.7rem;
+  margin-top: 0.85rem;
+}
+
+.crew-option {
+  display: block;
+  position: relative;
+}
+
+.crew-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.crew-option-body {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 4.2rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  transition: transform 140ms ease, border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+  cursor: pointer;
+}
+
+.crew-option:hover .crew-option-body,
+.crew-option input:focus-visible + .crew-option-body {
+  transform: translateY(-1px);
+  border-color: rgba(255, 209, 102, 0.26);
+}
+
+.crew-option input:checked + .crew-option-body {
+  background: rgba(255, 209, 102, 0.1);
+  border-color: rgba(255, 209, 102, 0.34);
+  box-shadow: 0 12px 26px rgba(255, 209, 102, 0.08);
+}
+
+.crew-option input:disabled + .crew-option-body {
+  opacity: 0.58;
+}
+
+.crew-option-badge {
+  --crew-accent: var(--mission-signal);
+  --crew-accent-soft: rgba(255, 255, 255, 0.16);
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: #081421;
+  background: radial-gradient(circle at 35% 30%, var(--crew-accent-soft), var(--crew-accent));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.crew-option-copy {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.crew-option-copy strong {
+  font-size: 0.92rem;
+}
+
+.crew-option-copy span {
+  color: var(--mission-muted);
+  line-height: 1.35;
+}
+
 .start-actions,
 .mission-toolbar,
 .settings-actions {
@@ -282,7 +384,7 @@ body.mission-orbit-game main {
   max-width: 100%;
   max-height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(17rem, 0.8fr);
+  grid-template-columns: minmax(0, 1.45fr) minmax(14rem, 0.62fr);
   grid-template-areas:
     'header header'
     'copy panel'
@@ -625,13 +727,7 @@ body.mission-orbit-game main {
 }
 
 #mission-rocket[data-cue-state='building'] #mission-rocket-cue-ring {
-  animation: missionRocketPulse 900ms ease-in-out infinite;
-}
-
-#mission-rocket[data-cue-state='ready'] #mission-rocket-cue-ring,
-#mission-rocket[data-cue-state='strike'] #mission-rocket-cue-ring,
-#mission-rocket[data-stop-mo='true'] #mission-rocket-cue-ring {
-  animation: missionRocketPulse 620ms ease-in-out infinite;
+  animation: missionRocketPulse 1200ms ease-in-out infinite;
 }
 
 #mission-rocket[data-cue-state='strike'] #mission-rocket-cue-ring,
@@ -660,6 +756,141 @@ body.mission-orbit-game main {
   text-shadow: 0 0 28px rgba(255, 209, 102, 0.28);
   pointer-events: none;
   z-index: 3;
+}
+
+.mission-countdown-callout {
+  position: absolute;
+  left: 50%;
+  top: 1rem;
+  z-index: 4;
+  transform: translateX(-50%);
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.22);
+  background: rgba(7, 18, 34, 0.78);
+  color: rgba(255, 248, 232, 0.96);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: center;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
+}
+
+.mission-crew-overlay {
+  position: absolute;
+  left: 0.9rem;
+  top: 0.9rem;
+  z-index: 4;
+  width: min(24rem, calc(100% - 1.8rem));
+  pointer-events: none;
+}
+
+.mission-crew-shell {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(6, 17, 32, 0.76);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.mission-crew-title {
+  margin: 0;
+  color: var(--mission-signal);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mission-crew-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.mission-crew-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.mission-crew-badge {
+  --crew-accent: var(--mission-signal);
+  --crew-accent-soft: rgba(255, 255, 255, 0.16);
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, var(--crew-accent-soft), var(--crew-accent));
+  color: #081421;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.mission-crew-copy {
+  display: grid;
+  gap: 0.08rem;
+}
+
+.mission-crew-copy strong {
+  font-size: 0.86rem;
+}
+
+.mission-crew-copy span,
+.mission-crew-caption {
+  color: var(--mission-muted);
+  font-size: 0.76rem;
+  line-height: 1.35;
+}
+
+.mission-recovery-boat {
+  position: absolute;
+  z-index: 4;
+  width: clamp(5rem, 18vw, 8rem);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, left 220ms ease, top 220ms ease;
+}
+
+.mission-recovery-boat[data-visible='ready'] {
+  opacity: 1;
+}
+
+.mission-recovery-boat-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.mission-boat-wake {
+  fill: none;
+  stroke: rgba(191, 233, 248, 0.8);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.mission-boat-hull {
+  fill: #f7fbff;
+  stroke: #9bb5c9;
+  stroke-width: 2;
+}
+
+.mission-boat-cabin {
+  fill: #ff8a65;
+}
+
+.mission-boat-cabin-top {
+  fill: #ffd166;
+}
+
+.mission-boat-light {
+  fill: #ffe9a8;
 }
 
 .mission-stage-target {
@@ -705,13 +936,44 @@ body.mission-orbit-game main {
   transform: scale(1);
 }
 
+.countdown-overlay[data-beat='final'] {
+  animation: missionCountdownPulse 1000ms ease-in-out infinite;
+}
+
+.countdown-overlay[data-beat='liftoff'] {
+  color: #fff5d7;
+  text-shadow: 0 0 34px rgba(255, 209, 102, 0.42);
+  animation: missionCountdownPulse 640ms ease-in-out infinite;
+}
+
+.mission-countdown-callout[data-beat='engines'] {
+  border-color: rgba(255, 122, 79, 0.3);
+  color: #ffe9d6;
+}
+
+.mission-countdown-callout[data-beat='final'],
+.mission-countdown-callout[data-beat='liftoff'] {
+  border-color: rgba(255, 209, 102, 0.38);
+  box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.18), 0 14px 30px rgba(255, 122, 79, 0.2);
+}
+
+.mission-recovery-boat[data-visible='ready'] {
+  animation: missionBoatBob 2.2s ease-in-out infinite;
+}
+
 .timing-panel {
   grid-area: panel;
   position: relative;
   display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'header header'
+    'meter hint'
+    'meter outcome';
   align-content: start;
-  gap: 0.8rem;
-  padding: 1rem;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.85rem;
   border-radius: 22px;
   background: linear-gradient(180deg, rgba(15, 36, 64, 0.88), rgba(6, 16, 31, 0.92));
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -739,6 +1001,7 @@ body.mission-orbit-game main {
 }
 
 .timing-header {
+  grid-area: header;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -768,7 +1031,8 @@ body.mission-orbit-game main {
   --cue-sweet-scale: 0.76;
   --cue-core-scale: 0.78;
   position: relative;
-  width: min(100%, 9rem);
+  grid-area: meter;
+  width: min(100%, 6.6rem);
   aspect-ratio: 1;
   margin-inline: auto;
   display: grid;
@@ -856,15 +1120,16 @@ body.mission-orbit-game main {
 }
 
 .timing-meter[data-cue-state='building'] .timing-good-zone,
-.timing-meter[data-cue-state='ready'] .timing-good-zone,
-.timing-meter[data-cue-state='strike'] .timing-good-zone {
-  animation: missionCueBreath 840ms ease-in-out infinite;
+.timing-meter[data-cue-state='building'] .timing-sweet-zone {
+  animation: missionCueBreath 1800ms ease-in-out infinite;
 }
 
-.timing-meter[data-cue-state='ready'] .timing-sweet-zone,
-.timing-meter[data-cue-state='strike'] .timing-sweet-zone,
-.timing-meter[data-stop-mo='true'] .timing-sweet-zone {
-  animation: missionCueBreath 620ms ease-in-out infinite;
+.timing-hint {
+  grid-area: hint;
+}
+
+.mission-outcome {
+  grid-area: outcome;
 }
 
 .timing-hint,
@@ -1082,6 +1347,11 @@ body.mission-orbit-game main {
   100% { transform: scale(1); }
 }
 
+@keyframes missionCountdownPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+
 @keyframes missionCueBreath {
   0%, 100% { filter: saturate(1); }
   50% { filter: saturate(1.16); }
@@ -1095,6 +1365,11 @@ body.mission-orbit-game main {
 @keyframes missionRocketPulse {
   0%, 100% { opacity: 0.72; filter: drop-shadow(0 0 0 rgba(255, 209, 102, 0)); }
   50% { opacity: 1; filter: drop-shadow(0 0 12px rgba(255, 209, 102, 0.28)); }
+}
+
+@keyframes missionBoatBob {
+  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+  50% { transform: translate(-50%, -50%) translateY(-4px); }
 }
 
 @media (max-width: 960px) {
@@ -1147,6 +1422,28 @@ body.mission-orbit-game main {
 
   .mission-stage-shell {
     min-height: clamp(15.5rem, 40dvh, 22rem);
+  }
+
+  .crew-picker-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-countdown-callout {
+    left: 0.7rem;
+    right: 0.7rem;
+    top: 0.7rem;
+    transform: none;
+    font-size: 0.72rem;
+  }
+
+  .mission-crew-overlay {
+    left: 0.7rem;
+    top: 0.7rem;
+    width: min(calc(100% - 1.4rem), 18rem);
+  }
+
+  .mission-recovery-boat {
+    width: clamp(4.4rem, 26vw, 6.2rem);
   }
 
   .mission-stage-target {
@@ -1233,6 +1530,58 @@ body.mission-orbit-game main {
     font-size: clamp(1.9rem, 5.2vw, 3.4rem);
   }
 
+  #start-screen .start-shell {
+    display: grid;
+    width: min(100%, 58rem);
+    max-width: 100%;
+    grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.16fr);
+    grid-template-areas:
+      'kicker crew'
+      'title crew'
+      'subtitle crew'
+      'outline crew'
+      'actions actions'
+      'hint hint';
+    align-content: start;
+    column-gap: 0.95rem;
+    row-gap: 0.5rem;
+  }
+
+  #start-screen .mission-kicker {
+    grid-area: kicker;
+  }
+
+  #start-screen .mission-title {
+    grid-area: title;
+  }
+
+  #start-screen .mission-subtitle {
+    grid-area: subtitle;
+    margin-top: 0;
+  }
+
+  #start-screen .mission-outline {
+    grid-area: outline;
+    margin-top: 0.2rem;
+  }
+
+  #start-screen .crew-picker-panel {
+    grid-area: crew;
+    margin-top: 0;
+    min-width: 0;
+  }
+
+  #start-screen .start-actions {
+    grid-area: actions;
+    margin-top: 0.8rem;
+    justify-content: flex-start;
+  }
+
+  #start-screen #gamepad-start-hint {
+    grid-area: hint;
+    margin-top: 0;
+  }
+
   .mission-subtitle,
   .end-summary {
     margin-top: 0.65rem;
@@ -1256,6 +1605,33 @@ body.mission-orbit-game main {
     width: 1.65rem;
     height: 1.65rem;
     font-size: 0.75rem;
+  }
+
+  .crew-picker-panel {
+    margin-top: 0.9rem;
+    padding: 0.75rem;
+  }
+
+  .crew-picker-copy,
+  #crew-picker-help {
+    font-size: 0.76rem;
+    line-height: 1.35;
+  }
+
+  .crew-picker-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .crew-option-body {
+    min-height: 3.6rem;
+    padding: 0.6rem 0.72rem;
+  }
+
+  .crew-option-badge {
+    width: 2.1rem;
+    height: 2.1rem;
+    font-size: 0.74rem;
   }
 
   .start-actions,
@@ -1324,6 +1700,33 @@ body.mission-orbit-game main {
     min-height: 9rem;
   }
 
+  .mission-countdown-callout {
+    top: 0.55rem;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.68rem;
+  }
+
+  .mission-crew-overlay {
+    left: 0.6rem;
+    top: 0.6rem;
+    width: min(14.5rem, calc(100% - 1.2rem));
+  }
+
+  .mission-crew-shell {
+    gap: 0.35rem;
+    padding: 0.55rem 0.65rem;
+  }
+
+  .mission-crew-title,
+  .mission-crew-caption,
+  .mission-crew-copy span {
+    font-size: 0.68rem;
+  }
+
+  .mission-crew-copy strong {
+    font-size: 0.78rem;
+  }
+
   .timing-panel {
     grid-template-columns: 1fr;
     grid-template-areas: none;
@@ -1352,7 +1755,9 @@ body.mission-orbit-game main {
 
 [data-reduce-motion='reduce'] .screen,
 [data-reduce-motion='reduce'] .mission-btn,
+[data-reduce-motion='reduce'] .mission-countdown-callout,
 [data-reduce-motion='reduce'] .countdown-overlay,
+[data-reduce-motion='reduce'] .mission-recovery-boat,
 [data-reduce-motion='reduce'] .mission-star {
   animation: none !important;
   transition: none !important;
@@ -1361,7 +1766,9 @@ body.mission-orbit-game main {
 @media (prefers-reduced-motion: reduce) {
   :root:not([data-reduce-motion='no-preference']) .screen,
   :root:not([data-reduce-motion='no-preference']) .mission-btn,
+  :root:not([data-reduce-motion='no-preference']) .mission-countdown-callout,
   :root:not([data-reduce-motion='no-preference']) .countdown-overlay,
+  :root:not([data-reduce-motion='no-preference']) .mission-recovery-boat,
   :root:not([data-reduce-motion='no-preference']) .mission-star {
     animation: none !important;
     transition: none !important;

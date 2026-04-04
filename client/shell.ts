@@ -37,14 +37,46 @@ async function syncServiceWorker(): Promise<void> {
   const siteServiceWorkerScope = document.documentElement.dataset.siteServiceWorkerScope ?? withBasePath('/')
   const serviceWorkerPath = document.documentElement.dataset.serviceWorkerPath
   const serviceWorkerScope = document.documentElement.dataset.serviceWorkerScope
+  const registrations = new Map<string, ServiceWorkerRegistration>()
+
+  const trackRegistration = async (registration: ServiceWorkerRegistration): Promise<void> => {
+    registrations.set(registration.scope, registration)
+
+    try {
+      await registration.update()
+    } catch {
+      // Ignore update probe failures.
+    }
+  }
 
   try {
-    await navigator.serviceWorker.register(siteServiceWorkerPath, { scope: siteServiceWorkerScope })
+    const siteRegistration = await navigator.serviceWorker.register(siteServiceWorkerPath, {
+      scope: siteServiceWorkerScope,
+      updateViaCache: 'none',
+    })
+    await trackRegistration(siteRegistration)
 
     if (serviceWorkerPath && serviceWorkerPath !== siteServiceWorkerPath) {
-      const options = serviceWorkerScope ? { scope: serviceWorkerScope } : undefined
-      await navigator.serviceWorker.register(serviceWorkerPath, options)
+      const options = serviceWorkerScope
+        ? { scope: serviceWorkerScope, updateViaCache: 'none' as const }
+        : { updateViaCache: 'none' as const }
+      const gameRegistration = await navigator.serviceWorker.register(serviceWorkerPath, options)
+      await trackRegistration(gameRegistration)
     }
+
+    const refreshRegistrations = (): void => {
+      for (const registration of registrations.values()) {
+        void registration.update().catch(() => undefined)
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        refreshRegistrations()
+      }
+    })
+
+    window.addEventListener('focus', refreshRegistrations)
   } catch {
     // SW sync failed — offline won't work, that's fine
   }
@@ -52,5 +84,13 @@ async function syncServiceWorker(): Promise<void> {
 
 // Register scoped service worker for offline support
 if ('serviceWorker' in navigator) {
+  let reloadingForServiceWorker = false
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloadingForServiceWorker) return
+    reloadingForServiceWorker = true
+    window.location.reload()
+  })
+
   void syncServiceWorker()
 }

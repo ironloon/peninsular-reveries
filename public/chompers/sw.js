@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chompers-v1'
+const CACHE_NAME = 'chompers-v2'
 const APP_SHELL_URL = new URL('./', self.registration.scope).toString()
 const ASSETS = [
   APP_SHELL_URL,
@@ -23,6 +23,55 @@ self.addEventListener('activate', (event) => {
   })())
 })
 
+function isNetworkFirstRequest(request) {
+  if (request.mode === 'navigate') return true
+
+  const url = new URL(request.url)
+  return request.destination === 'script'
+    || request.destination === 'style'
+    || request.destination === 'document'
+    || url.pathname.endsWith('.js')
+    || url.pathname.endsWith('.css')
+    || url.pathname.endsWith('.html')
+    || url.pathname.endsWith('.json')
+}
+
+async function cacheResponse(request, response) {
+  if (!response || !response.ok) return response
+
+  const cache = await caches.open(CACHE_NAME)
+  await cache.put(request, response.clone())
+  return response
+}
+
+async function networkFirst(request, fallbackRequest) {
+  const cache = await caches.open(CACHE_NAME)
+
+  try {
+    const response = await fetch(new Request(request, { cache: 'no-cache' }))
+    return await cacheResponse(request, response)
+  } catch {
+    return (await cache.match(request))
+      || (fallbackRequest ? await cache.match(fallbackRequest) : undefined)
+      || Response.error()
+  }
+}
+
+async function cacheFirst(request, fallbackRequest) {
+  const cache = await caches.open(CACHE_NAME)
+  const cached = await cache.match(request)
+  if (cached) {
+    return cached
+  }
+
+  try {
+    const response = await fetch(request)
+    return await cacheResponse(request, response)
+  } catch {
+    return (fallbackRequest ? await cache.match(fallbackRequest) : undefined) || Response.error()
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
 
@@ -30,33 +79,14 @@ self.addEventListener('fetch', (event) => {
   if (requestUrl.origin !== self.location.origin) return
 
   if (event.request.mode === 'navigate') {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(APP_SHELL_URL, clone))
-          }
-          return response
-        })
-        .catch(async () => (await caches.match(APP_SHELL_URL)) || Response.error()),
-    )
+    event.respondWith(networkFirst(event.request, APP_SHELL_URL))
     return
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const fetched = fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-          }
-          return response
-        })
-        .catch(() => cached)
+  if (isNetworkFirstRequest(event.request)) {
+    event.respondWith(networkFirst(event.request))
+    return
+  }
 
-      return cached || fetched
-    }),
-  )
+  event.respondWith(cacheFirst(event.request))
 })

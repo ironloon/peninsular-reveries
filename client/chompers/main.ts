@@ -137,11 +137,15 @@ const callbacks: InputCallbacks = {
   },
   onMoveHippo(x) {
     setState(moveHippo(getState(), x))
-    renderGame(getState())
+    if (frameHandle === 0) {
+      renderGame(getState())
+    }
   },
   onNudgeHippo(delta) {
     setState(nudgeHippo(getState(), delta))
-    renderGame(getState())
+    if (frameHandle === 0) {
+      renderGame(getState())
+    }
   },
   onChomp() {
     if (settingsModal.isOpen()) return

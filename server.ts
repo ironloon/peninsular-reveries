@@ -59,6 +59,14 @@ const router = createAppRouter()
 
 const LIVE_RELOAD_SCRIPT = `<script>new EventSource('/__reload').addEventListener('message', () => location.reload());</script>`
 
+function cacheControlHeader(ext: string): string {
+  if (ext === '.html' || ext === '.css' || ext === '.js' || ext === '.mjs' || ext === '.json' || ext === '.woff2') {
+    return 'no-cache'
+  }
+
+  return 'public, max-age=600'
+}
+
 async function handler(request: Request): Promise<Response> {
   const url = new URL(request.url)
 
@@ -74,7 +82,10 @@ async function handler(request: Request): Promise<Response> {
     if (existsSync(filePath) && statSync(filePath).isFile()) {
       const ext = extname(filePath)
       return new Response(readFileSync(filePath), {
-        headers: { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' },
+        headers: {
+          'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
+          'Cache-Control': cacheControlHeader(ext),
+        },
       })
     }
   }
@@ -85,7 +96,10 @@ async function handler(request: Request): Promise<Response> {
     if (existsSync(filePath) && statSync(filePath).isFile()) {
       const ext = extname(filePath)
       return new Response(readFileSync(filePath), {
-        headers: { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' },
+        headers: {
+          'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
+          'Cache-Control': cacheControlHeader(ext),
+        },
       })
     }
   }
@@ -98,9 +112,11 @@ async function handler(request: Request): Promise<Response> {
     if (contentType.includes('text/html')) {
       const body = await response.text()
       const injected = body.replace('</body>', `${LIVE_RELOAD_SCRIPT}\n</body>`)
+      const headers = new Headers(response.headers)
+      headers.set('Cache-Control', 'no-cache')
       return new Response(injected, {
         status: response.status,
-        headers: response.headers,
+        headers,
       })
     }
     return response
@@ -112,7 +128,10 @@ async function handler(request: Request): Promise<Response> {
   const injected = body.replace('</body>', `${LIVE_RELOAD_SCRIPT}\n</body>`)
   return new Response(injected, {
     status: 404,
-    headers: { 'Content-Type': 'text/html' },
+    headers: {
+      'Content-Type': 'text/html',
+      'Cache-Control': 'no-cache',
+    },
   })
 }
 

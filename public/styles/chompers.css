@@ -357,7 +357,6 @@ body.chompers-game main {
   border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 241, 191, 0.78), rgba(255, 209, 102, 0.1) 58%, transparent 74%);
   opacity: 0.86;
-  animation: sunFloat 5.6s ease-in-out infinite;
 }
 
 .arena-grid {
@@ -374,6 +373,7 @@ body.chompers-game main {
 .effect-layer {
   position: absolute;
   inset: 0;
+  contain: layout paint;
 }
 
 .ground-band {
@@ -395,7 +395,7 @@ body.chompers-game main {
   width: clamp(2.8rem, 6vw, 4.2rem);
   aspect-ratio: 1;
   border-radius: 50%;
-  box-shadow: 0 12px 24px rgba(17, 33, 29, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: 0 7px 16px rgba(17, 33, 29, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.34);
   will-change: transform;
 }
 
@@ -412,7 +412,6 @@ body.chompers-game main {
   position: relative;
   z-index: 1;
   font-size: clamp(1.7rem, 4vw, 2.3rem);
-  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.12));
 }
 
 .fruit-cherry {
@@ -447,16 +446,17 @@ body.chompers-game main {
 .chomp-column {
   position: absolute;
   bottom: 14%;
-  left: 50%;
+  left: 0;
   width: clamp(3.8rem, 7vw, 5.4rem);
   height: 12%;
-  transform: translateX(-50%);
+  transform: translate3d(-50%, 0, 0);
   border-radius: 999px 999px 1.6rem 1.6rem;
   background: linear-gradient(180deg, rgba(255, 220, 149, 0.72), rgba(255, 169, 77, 0.2));
   box-shadow: 0 0 34px rgba(255, 209, 102, 0.3);
   opacity: 0;
   pointer-events: none;
-  transition: left 50ms linear, height 60ms linear, opacity 90ms ease;
+  transition: transform 50ms linear, height 60ms linear, opacity 90ms ease;
+  will-change: transform, height, opacity;
 }
 
 .chomp-column.active {
@@ -469,13 +469,14 @@ body.chompers-game main {
   --jaw-angle: 0deg;
   --hippo-tilt: 0deg;
   position: absolute;
-  left: 50%;
+  left: 0;
   bottom: 1%;
   width: clamp(11rem, 18vw, 14rem);
   height: clamp(13.5rem, 24vw, 18rem);
-  transform: translateX(-50%);
-  transition: left 50ms linear;
+  transform: translate3d(-50%, 0, 0);
+  transition: transform 50ms linear;
   pointer-events: none;
+  will-change: transform;
 }
 
 .hippo::before {

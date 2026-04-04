@@ -1,5 +1,6 @@
 import { renderToString } from 'remix/component/server'
 import { getGameAttribution } from '../data/attributions.js'
+import { DEFAULT_CREW_IDS, MISSION_CREW_ROSTER } from '../data/mission-orbit-crew.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
@@ -35,6 +36,37 @@ export async function missionOrbitAction() {
               <li>Time the burns that send Orion around the Moon.</li>
               <li>Jettison, deploy parachutes, and splash down in the Pacific.</li>
             </ol>
+
+            <fieldset className="crew-picker-panel" aria-describedby="crew-picker-help">
+              <legend className="crew-picker-title">Pick three crew members</legend>
+              <p className="crew-picker-copy">The selected crew will appear during boarding, lunar flyby, and recovery.</p>
+              <div className="crew-picker-grid">
+                {MISSION_CREW_ROSTER.map((crew) => (
+                  <label className="crew-option" aria-label={`${crew.name}, ${crew.role}`}>
+                    <input
+                      type="checkbox"
+                      name="mission-crew"
+                      value={crew.id}
+                      checked={DEFAULT_CREW_IDS.includes(crew.id as (typeof DEFAULT_CREW_IDS)[number])}
+                    />
+                    <span className="crew-option-body">
+                      <span
+                        className="crew-option-badge"
+                        style={`--crew-accent:${crew.accent};--crew-accent-soft:${crew.accentSoft}`}
+                        data-crew-badge={crew.id}
+                      >
+                        {crew.badge}
+                      </span>
+                      <span className="crew-option-copy">
+                        <strong>{crew.name}</strong>
+                        <span>{crew.role}</span>
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p id="crew-picker-help" className="settings-help">Crew locked in. They will appear during boarding, lunar flyby, and recovery.</p>
+            </fieldset>
 
             <div className="start-actions">
               <button id="start-btn" className="mission-btn mission-btn-primary">Begin countdown</button>
@@ -111,12 +143,24 @@ export async function missionOrbitAction() {
               </svg>
 
               <div id="mission-stage-target" className="mission-stage-target" aria-hidden="true"></div>
+              <div id="mission-countdown-callout" className="mission-countdown-callout" aria-hidden="true" hidden>Go for launch</div>
+              <div id="mission-crew-overlay" className="mission-crew-overlay" aria-hidden="true" hidden></div>
+              <div id="mission-recovery-boat" className="mission-recovery-boat" aria-hidden="true">
+                <svg className="mission-recovery-boat-svg" viewBox="0 0 120 48">
+                  <path className="mission-boat-wake" d="M 10 36 C 18 30, 30 30, 38 36 C 46 42, 58 42, 66 36" />
+                  <path className="mission-boat-wake" d="M 58 38 C 66 32, 78 32, 86 38 C 94 44, 106 44, 114 38" />
+                  <path className="mission-boat-hull" d="M 18 32 H 98 L 88 42 H 26 Z" />
+                  <rect className="mission-boat-cabin" x="44" y="15" width="24" height="14" rx="4" />
+                  <rect className="mission-boat-cabin mission-boat-cabin-top" x="52" y="10" width="10" height="8" rx="3" />
+                  <circle className="mission-boat-light" cx="88" cy="28" r="3" />
+                </svg>
+              </div>
               <div id="countdown-overlay" className="countdown-overlay" aria-hidden="true">10</div>
             </div>
 
             <section id="timing-panel" className="timing-panel" aria-labelledby="timing-title">
               <div className="timing-header">
-                <h3 id="timing-title">Cue signal</h3>
+                <h3 id="timing-title">Flight cue</h3>
                 <span id="timing-mode-chip" className="timing-mode-chip">Manual</span>
               </div>
               <div id="timing-meter" className="timing-meter" aria-hidden="true">

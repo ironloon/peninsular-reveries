@@ -54,6 +54,25 @@ test.describe('SITE-01: Responsive layout', () => {
     expect(controlsFit).toBe(true);
   });
 
+  test('super word header stays inside a tablet landscape viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 600 });
+    await page.goto('/super-word/');
+
+    await page.getByRole('button', { name: /let's go/i }).click();
+
+    const headerFits = await page.evaluate(() => {
+      const header = document.querySelector('.game-header');
+      const right = document.querySelector('.game-header-right');
+      if (!(header instanceof HTMLElement) || !(right instanceof HTMLElement)) return false;
+
+      const headerRect = header.getBoundingClientRect();
+      const rightRect = right.getBoundingClientRect();
+      return rightRect.right <= headerRect.right + 1;
+    });
+
+    expect(headerFits).toBe(true);
+  });
+
   test('mission orbit keeps start and mission controls visible on a short landscape viewport', async ({ page }) => {
     await page.setViewportSize({ width: 932, height: 430 });
     await page.goto('/mission-orbit/');

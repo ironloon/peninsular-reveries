@@ -1,6 +1,7 @@
 import { isReducedMotion } from './animations.js'
-import { getCueSignal, getMissionStepLabel, getMissionTimeLabel } from './state.js'
+import { getCueSignal, getMissionStepLabel, getMissionTimeLabel, isRecoveryActionReady } from './state.js'
 import { MISSION_SEQUENCE, getPhaseDefinition, type BurnGrade, type GameState, type MissionPhase } from './types.js'
+import type { MissionCrewProfile } from '../../app/data/mission-orbit-crew.js'
 import { bindReduceMotionToggle } from '../preferences.js'
 
 declare global {
@@ -60,6 +61,7 @@ let clockEl: HTMLElement | null = null
 let timingPanelEl: HTMLElement | null = null
 let outcomeEl: HTMLElement | null = null
 let countdownEl: HTMLElement | null = null
+let countdownCalloutEl: HTMLElement | null = null
 let meterEl: HTMLElement | null = null
 let goodZoneEl: HTMLElement | null = null
 let sweetZoneEl: HTMLElement | null = null
@@ -86,6 +88,10 @@ let flameEl: SVGElement | null = null
 let parachuteEl: SVGElement | null = null
 let serviceModuleEl: SVGElement | null = null
 let endSummaryEl: HTMLElement | null = null
+let crewOverlayEl: HTMLElement | null = null
+let recoveryBoatEl: HTMLElement | null = null
+
+let lastCrewOverlayKey = ''
 
 function requireSvg<T extends SVGElement>(id: string): T {
   return document.getElementById(id) as unknown as T
@@ -100,6 +106,7 @@ function getClock(): HTMLElement { return clockEl ??= document.getElementById('m
 function getTimingPanel(): HTMLElement { return timingPanelEl ??= document.getElementById('timing-panel')! }
 function getOutcome(): HTMLElement { return outcomeEl ??= document.getElementById('mission-outcome')! }
 function getCountdown(): HTMLElement { return countdownEl ??= document.getElementById('countdown-overlay')! }
+function getCountdownCallout(): HTMLElement { return countdownCalloutEl ??= document.getElementById('mission-countdown-callout')! }
 function getMeter(): HTMLElement { return meterEl ??= document.getElementById('timing-meter')! }
 function getGoodZone(): HTMLElement { return goodZoneEl ??= document.getElementById('timing-good-zone')! }
 function getSweetZone(): HTMLElement { return sweetZoneEl ??= document.getElementById('timing-sweet-zone')! }
@@ -126,9 +133,19 @@ function getFlame(): SVGElement { return flameEl ??= requireSvg<SVGElement>('mis
 function getParachute(): SVGElement { return parachuteEl ??= requireSvg<SVGElement>('mission-parachute') }
 function getServiceModule(): SVGElement { return serviceModuleEl ??= requireSvg<SVGElement>('mission-service-module') }
 function getEndSummary(): HTMLElement { return endSummaryEl ??= document.getElementById('end-summary')! }
+function getCrewOverlay(): HTMLElement { return crewOverlayEl ??= document.getElementById('mission-crew-overlay')! }
+function getRecoveryBoat(): HTMLElement { return recoveryBoatEl ??= document.getElementById('mission-recovery-boat')! }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
 }
 
 function lerp(start: number, end: number, amount: number): number {
@@ -148,6 +165,79 @@ function easeOutCubic(amount: number): number {
 function lerpAngle(start: number, end: number, amount: number): number {
   const delta = ((end - start + 540) % 360) - 180
   return start + delta * amount
+}
+
+function countdownState(value: number): 'steady' | 'engines' | 'final' | 'liftoff' {
+  if (value === 0) return 'liftoff'
+  if (value <= 3) return 'final'
+  if (value <= 7) return 'engines'
+  return 'steady'
+}
+
+function crewChipMarkup(crew: MissionCrewProfile): string {
+  return `<article class="mission-crew-chip"><span class="mission-crew-badge" style="--crew-accent:${escapeHtml(crew.accent)};--crew-accent-soft:${escapeHtml(crew.accentSoft)}">${escapeHtml(crew.badge)}</span><span class="mission-crew-copy"><strong>${escapeHtml(crew.name)}</strong><span>${escapeHtml(crew.role)}</span></span></article>`
+}
+
+function setCrewOverlay(state: GameState): void {
+  const overlay = getCrewOverlay()
+
+  let mode = 'hidden'
+  let title = ''
+  let caption = ''
+
+  if (state.phase === 'countdown' && state.countdownValue >= 8) {
+    mode = 'boarding'
+    title = 'Crew boarding complete'
+    caption = state.countdownValue >= 9
+      ? 'Hatches are sealed, straps are tight, and the cabin is ready for launch.'
+      : 'The crew is strapped in and listening for engine start.'
+  } else if (state.phase === 'lunar-flyby') {
+    mode = 'lunar'
+    title = 'Cabin view'
+    caption = 'The crew is at the windows while Orion slides around the far side of the Moon.'
+  } else if (state.phase === 'splashdown' && state.phaseElapsedMs >= 2200) {
+    mode = 'recovery'
+    title = 'Recovery team inbound'
+    caption = isRecoveryActionReady(state)
+      ? 'Recovery is alongside. Tap Done when you are ready to wrap the mission.'
+      : 'The recovery boat is easing in beside the capsule.'
+  }
+
+  const nextKey = `${mode}:${title}:${caption}:${state.crew.map((crew) => crew.id).join(',')}`
+  if (nextKey === lastCrewOverlayKey) {
+    overlay.dataset.mode = mode
+    overlay.hidden = mode === 'hidden'
+    return
+  }
+
+  lastCrewOverlayKey = nextKey
+  overlay.dataset.mode = mode
+  overlay.hidden = mode === 'hidden'
+
+  if (mode === 'hidden') {
+    overlay.innerHTML = ''
+    return
+  }
+
+  overlay.innerHTML = `<div class="mission-crew-shell"><p class="mission-crew-title">${escapeHtml(title)}</p><div class="mission-crew-list">${state.crew.map(crewChipMarkup).join('')}</div><p class="mission-crew-caption">${escapeHtml(caption)}</p></div>`
+}
+
+function renderRecoveryBoat(state: GameState): void {
+  const boat = getRecoveryBoat()
+  if (state.phase !== 'splashdown' || state.phaseElapsedMs < 1200) {
+    boat.dataset.visible = 'false'
+    boat.style.opacity = '0'
+    return
+  }
+
+  const progress = easeOutCubic(clamp((state.phaseElapsedMs - 1200) / 2400, 0, 1))
+  const left = lerp(110, 64, progress)
+  const top = lerp(90, 84.5, progress)
+
+  boat.dataset.visible = progress >= 1 ? 'ready' : 'true'
+  boat.style.opacity = String(clamp(progress * 1.2, 0, 1))
+  boat.style.left = `${left}%`
+  boat.style.top = `${top}%`
 }
 
 function ensureStars(): void {
@@ -337,7 +427,28 @@ function buildSceneShape(state: GameState): SceneShape {
     }
     case 'trans-lunar-injection': {
       const progress = clamp(phaseElapsedMs / 7600, 0, 1)
-      const point = sampleFreeReturn(0.03 + progress * 0.22)
+      const orbitExit = sampleOrbit(0.18)
+      const pathEntry = sampleFreeReturn(0.14)
+
+      if (progress < 0.34) {
+        const bridgeProgress = easeOutCubic(progress / 0.34)
+        return {
+          rocketX: quadraticBezier(orbitExit.x, 49, pathEntry.x, bridgeProgress),
+          rocketY: quadraticBezier(orbitExit.y, 57, pathEntry.y, bridgeProgress),
+          rocketAngle: lerpAngle(orbitExit.angle, pathEntry.angle, bridgeProgress),
+          flameVisible: cueSignal?.band === 'strike' || state.stopMoActive,
+          parachuteVisible: false,
+          orbitOpacity: 0.48,
+          freeReturnOpacity: 0.55,
+          moonOpacity: 0.68,
+          launchPadOpacity: 0,
+          oceanOpacity: 0,
+          splashOpacity: 0,
+          serviceModuleOpacity: 1,
+        }
+      }
+
+      const point = sampleFreeReturn(0.14 + ((progress - 0.34) / 0.66) * 0.11)
       return {
         rocketX: point.x,
         rocketY: point.y,
@@ -477,9 +588,10 @@ function renderMeter(state: GameState): void {
   const meter = getMeter()
   const stageShell = getStageShell()
   const stageTarget = getStageTarget()
+  const recoveryReady = isRecoveryActionReady(state)
 
   const showMeter = !state.briefingActive && (definition.mode === 'hold' || definition.mode === 'timing')
-  const showStageTarget = state.briefingActive || showMeter || definition.mode === 'countdown'
+  const showStageTarget = state.briefingActive || showMeter || definition.mode === 'countdown' || state.phase === 'splashdown'
   const cueSignal = showMeter ? getCueSignal(state) : null
   const cueState = state.briefingActive
     ? 'idle'
@@ -490,12 +602,12 @@ function renderMeter(state: GameState): void {
     ? 'STAND BY'
     : state.stopMoActive
     ? definition.mode === 'hold'
-      ? 'RELEASE'
-      : 'TAP NOW'
+      ? 'LET GO'
+      : 'ACT NOW'
     : cueSignal?.band === 'strike'
       ? definition.mode === 'hold'
-        ? 'RELEASE'
-        : 'NOW!'
+        ? 'LET GO'
+        : 'ACT NOW'
       : cueSignal?.band === 'ready'
         ? 'READY'
         : ''
@@ -531,17 +643,21 @@ function renderMeter(state: GameState): void {
       : definition.mode === 'timing'
         ? 'Stand by for burn cue'
         : 'Watch the flight path'
+    : state.phase === 'splashdown'
+      ? recoveryReady
+        ? 'Recovery boat alongside'
+        : 'Recovery boat inbound'
     : definition.mode === 'hold'
       ? state.stopMoActive
-        ? 'Release the spacecraft'
+        ? 'Let go of the spacecraft'
         : state.actionHeld
           ? 'Hold steady'
           : 'Hold the spacecraft'
       : definition.mode === 'timing'
         ? state.stopMoActive
-          ? 'Tap the spacecraft'
+          ? 'Act on the spacecraft'
           : cueSignal?.band === 'strike'
-            ? 'Tap now'
+            ? 'Act now'
             : 'Tap the spacecraft'
         : definition.mode === 'countdown'
           ? 'Watch the clock'
@@ -551,52 +667,65 @@ function renderMeter(state: GameState): void {
     ? 'Mission brief'
     : definition.mode === 'hold'
     ? state.stopMoActive
-      ? 'Window frozen'
+      ? 'Waiting for instruction'
       : cueSignal?.band === 'strike'
-        ? 'Release now'
-        : 'Listen + release'
+        ? 'Let go'
+        : 'Release on cue'
     : definition.mode === 'timing'
       ? state.stopMoActive
-        ? 'Window frozen'
+        ? 'Waiting for instruction'
         : cueSignal?.band === 'strike'
-          ? 'Strike now'
-          : 'Listen + tap'
+          ? 'Act now'
+          : 'Tap on cue'
       : definition.mode === 'countdown'
         ? 'Countdown'
+        : state.phase === 'splashdown'
+          ? 'Recovery'
         : 'Coast phase'
 
   getTimingHint().textContent = state.briefingActive
     ? definition.prompt
     : state.stopMoActive
     ? definition.mode === 'hold'
-      ? 'Guidance froze cutoff. Release the spacecraft when ready.'
-      : 'Guidance froze the cue window. Tap the spacecraft when ready.'
-    : definition.timingHint
+      ? 'Guidance is holding cutoff. Let go when you are ready.'
+      : 'Guidance is holding the cue. Act when you are ready.'
+    : state.phase === 'splashdown'
+      ? recoveryReady
+        ? 'Recovery is alongside. Tap Done when you want to wrap the mission.'
+        : 'The capsule is steady while the recovery boat closes the last gap.'
+      : definition.timingHint
 
   const disabled = definition.mode === 'countdown'
     || state.phaseResolved
-    || (definition.mode === 'auto' && !state.briefingActive)
+    || (state.phase === 'splashdown' && !state.briefingActive && !recoveryReady)
+    || (definition.mode === 'auto' && state.phase !== 'splashdown' && !state.briefingActive)
   actionBtn.disabled = disabled
   actionBtn.classList.toggle('is-held', state.actionHeld)
   actionBtn.textContent = state.briefingActive
     ? definition.mode === 'auto'
-      ? 'Continue mission'
+      ? state.phase === 'splashdown'
+        ? 'Track recovery'
+        : 'Continue mission'
       : definition.mode === 'hold'
         ? 'Begin ascent'
         : 'Begin maneuver'
     : state.phaseResolved
     ? 'Maneuver locked'
+    : state.phase === 'splashdown'
+      ? recoveryReady
+        ? 'Done'
+        : 'Recovery approaching'
     : definition.mode === 'hold'
       ? state.stopMoActive
-        ? 'Release now'
+        ? 'Let go'
         : state.actionHeld
           ? 'Release for cutoff'
           : definition.actionLabel
       : definition.mode === 'timing'
         ? state.stopMoActive
-          ? 'Tap spacecraft'
+          ? 'Act now'
           : cueSignal?.band === 'strike'
-            ? 'Strike now'
+            ? 'Act now'
             : definition.actionLabel
       : definition.actionLabel
 
@@ -619,6 +748,16 @@ function renderScene(state: GameState): void {
   const cueSignal = manualPhase && !state.briefingActive ? getCueSignal(state) : null
   const cueState = manualPhase && !state.briefingActive ? (state.stopMoActive ? 'stop-mo' : cueSignal?.band ?? 'idle') : 'idle'
   const cueIntensity = manualPhase && !state.briefingActive ? (state.stopMoActive ? 1 : cueSignal?.intensity ?? 0) : 0
+  const countdownBeat = state.phase === 'countdown' ? countdownState(state.countdownValue) : 'steady'
+  const countdownGlow = state.phase === 'countdown'
+    ? countdownBeat === 'liftoff'
+      ? 1
+      : countdownBeat === 'final'
+        ? 0.74
+        : countdownBeat === 'engines'
+          ? 0.44
+          : 0.12
+    : 0
   const rocket = getRocket()
   const rocketFrame = getRocketFrame()
   const rocketHitArea = getRocketHitArea()
@@ -627,6 +766,7 @@ function renderScene(state: GameState): void {
 
   stageShell.dataset.phase = state.phase
   stageShell.dataset.briefing = state.briefingActive ? 'true' : 'false'
+  stageShell.dataset.countdownState = state.phase === 'countdown' ? countdownBeat : 'idle'
   rocket.setAttribute('transform', `translate(${scene.rocketX} ${scene.rocketY})`)
   rocketFrame.setAttribute('transform', `rotate(${scene.rocketAngle})`)
   rocket.dataset.interactive = interactive ? 'true' : 'false'
@@ -634,10 +774,22 @@ function renderScene(state: GameState): void {
   rocket.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
   rocketHitArea.style.pointerEvents = interactive ? 'all' : 'none'
   rocketHitArea.style.cursor = interactive ? 'pointer' : 'default'
-  rocketCueGlow.style.opacity = state.briefingActive ? '0.18' : manualPhase ? String(0.08 + cueIntensity * 0.34) : '0'
-  rocketCueRing.style.opacity = state.briefingActive ? '0.22' : manualPhase ? String(0.14 + cueIntensity * 0.72) : '0'
-  rocketCueGlow.setAttribute('transform', `scale(${(1.04 + cueIntensity * 0.2).toFixed(3)})`)
-  rocketCueRing.setAttribute('transform', `scale(${(0.92 + cueIntensity * 0.24).toFixed(3)})`)
+  rocketCueGlow.style.opacity = state.briefingActive
+    ? '0.18'
+    : manualPhase
+      ? String(0.08 + cueIntensity * 0.34)
+      : state.phase === 'countdown'
+        ? String(0.08 + countdownGlow * 0.18)
+        : '0'
+  rocketCueRing.style.opacity = state.briefingActive
+    ? '0.22'
+    : manualPhase
+      ? String(0.14 + cueIntensity * 0.72)
+      : state.phase === 'countdown' && countdownBeat !== 'steady'
+        ? String(0.16 + countdownGlow * 0.34)
+        : '0'
+  rocketCueGlow.setAttribute('transform', `scale(${state.phase === 'countdown' ? (1.02 + countdownGlow * 0.16).toFixed(3) : (1.04 + cueIntensity * 0.2).toFixed(3)})`)
+  rocketCueRing.setAttribute('transform', `scale(${state.phase === 'countdown' ? (0.94 + countdownGlow * 0.18).toFixed(3) : (0.92 + cueIntensity * 0.24).toFixed(3)})`)
 
   getFlame().style.opacity = scene.flameVisible ? '1' : '0'
   getParachute().style.opacity = scene.parachuteVisible ? '1' : '0'
@@ -649,6 +801,94 @@ function renderScene(state: GameState): void {
   getOcean().style.opacity = String(scene.oceanOpacity)
   getSplash().style.opacity = String(scene.splashOpacity)
   getServiceModule().style.opacity = String(scene.serviceModuleOpacity)
+
+  setCrewOverlay(state)
+  renderRecoveryBoat(state)
+}
+
+function missionDisplayCopy(state: GameState): { status: string; prompt: string; callout: string } {
+  if (state.phase === 'title') {
+    return {
+      status: 'Crew ready on the gantry',
+      prompt: 'Choose a crew and launch when the stack is ready.',
+      callout: '',
+    }
+  }
+
+  if (state.phase === 'celebration') {
+    return {
+      status: 'Recovery complete',
+      prompt: 'The capsule is aboard and the crew is heading home.',
+      callout: '',
+    }
+  }
+
+  const definition = getPhaseDefinition(state.phase)
+
+  if (state.phase === 'countdown') {
+    const beat = countdownState(state.countdownValue)
+    if (beat === 'steady') {
+      return {
+        status: 'Final go / no-go poll is complete',
+        prompt: 'Crew boarding is complete and the stack is alive on the pad.',
+        callout: 'Go for launch',
+      }
+    }
+
+    if (beat === 'engines') {
+      return {
+        status: 'Main engines start',
+        prompt: 'Engine ignition is under way. Hold for booster ignition at zero.',
+        callout: 'Main engines start',
+      }
+    }
+
+    if (beat === 'final') {
+      return {
+        status: 'Auto-sequence is locked',
+        prompt: 'Boosters are armed. Ride the last beats of the clock.',
+        callout: 'Hold for booster ignition',
+      }
+    }
+
+    return {
+      status: 'Booster ignition',
+      prompt: 'Liftoff. Climb clean and hold for orbit.',
+      callout: 'Liftoff',
+    }
+  }
+
+  if (state.phase === 'lunar-flyby') {
+    return {
+      status: 'The crew has the far side in view',
+      prompt: 'Set the correction, then let the crew watch Earthrise slide back into view.',
+      callout: '',
+    }
+  }
+
+  if (state.phase === 'splashdown') {
+    if (isRecoveryActionReady(state)) {
+      return {
+        status: 'Recovery boat is alongside',
+        prompt: 'The capsule is secure. Take a last look, then tap Done when you are ready.',
+        callout: '',
+      }
+    }
+
+    if (state.phaseElapsedMs >= 1200) {
+      return {
+        status: 'Recovery boat is closing in',
+        prompt: 'The capsule is floating steady while the boat eases in from starboard.',
+        callout: '',
+      }
+    }
+  }
+
+  return {
+    status: definition.status,
+    prompt: definition.prompt,
+    callout: '',
+  }
 }
 
 export function renderMission(state: GameState): void {
@@ -657,9 +897,10 @@ export function renderMission(state: GameState): void {
   ensureStars()
 
   const definition = getPhaseDefinition(state.phase)
+  const displayCopy = missionDisplayCopy(state)
   getPhaseLabel().textContent = definition.label
-  getStatusLine().textContent = definition.status
-  getPrompt().textContent = definition.prompt
+  getStatusLine().textContent = displayCopy.status
+  getPrompt().textContent = displayCopy.prompt
   getStepPill().textContent = getMissionStepLabel(state)
   getDayPill().textContent = definition.dayLabel
   getClock().textContent = getMissionTimeLabel(state)
@@ -667,13 +908,22 @@ export function renderMission(state: GameState): void {
   applyBurnClass(getOutcome(), state.outcomeGrade)
   getCountdown().textContent = String(state.countdownValue)
   getCountdown().classList.toggle('is-visible', state.phase === 'countdown')
+  getCountdown().dataset.beat = state.phase === 'countdown' ? countdownState(state.countdownValue) : 'steady'
+  getCountdownCallout().hidden = state.phase !== 'countdown' || displayCopy.callout.length === 0
+  getCountdownCallout().textContent = displayCopy.callout
+  getCountdownCallout().dataset.beat = state.phase === 'countdown' ? countdownState(state.countdownValue) : 'steady'
 
   renderMeter(state)
   renderScene(state)
 }
 
 export function renderEndScreen(state: GameState): void {
-  getEndSummary().textContent = `Mission time ${getMissionTimeLabel(state)}. You brought the astronaut home safe, and the recovery crew is ready with a hero's welcome.`
+  const crewNames = state.crew.map((crew) => crew.name.split(' ')[0])
+  const crewSummary = crewNames.length >= 3
+    ? `${crewNames[0]}, ${crewNames[1]}, and ${crewNames[2]} are back aboard the recovery ship.`
+    : 'The crew is back aboard the recovery ship.'
+
+  getEndSummary().textContent = `Mission time ${getMissionTimeLabel(state)}. ${crewSummary}`
 }
 
 export function showScreen(screenId: string): void {

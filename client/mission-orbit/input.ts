@@ -1,3 +1,4 @@
+import { isRecoveryActionReady } from './state.js'
 import { getPhaseDefinition, type GameState } from './types.js'
 
 declare global {
@@ -27,6 +28,10 @@ function canUseMissionAction(state: GameState): boolean {
 
   if (state.briefingActive) {
     return true
+  }
+
+  if (state.phase === 'splashdown') {
+    return isRecoveryActionReady(state)
   }
 
   const definition = getPhaseDefinition(state.phase)
@@ -74,7 +79,10 @@ export function setupInput(getState: () => GameState, callbacks: InputCallbacks)
   replayBtn?.addEventListener('click', () => callbacks.onReplay())
 
   bindPressTarget(actionBtn, () => Boolean(actionBtn?.disabled), callbacks)
-  bindPressTarget(rocketHitArea, () => isModalOpen() || !canUseMissionAction(getState()), callbacks)
+  bindPressTarget(rocketHitArea, () => {
+    const state = getState()
+    return isModalOpen() || state.phase === 'splashdown' || !canUseMissionAction(state)
+  }, callbacks)
 
   let keyboardActionActive = false
   document.addEventListener('keydown', (event) => {

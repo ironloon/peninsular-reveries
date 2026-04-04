@@ -7,6 +7,7 @@ import {
   enterStopMo,
   getCueSignal,
   getMissionStepLabel,
+  isRecoveryActionReady,
   resolveLaunchRelease,
   resolveTimingAttempt,
   setActionHeld,
@@ -103,6 +104,42 @@ test('stop-mo rescue freezes a manual timing window until the player acts', () =
   assert.equal(state.phaseResolved, true)
   assert.equal(state.stopMoActive, false)
   assert.equal(state.burnResults[1]?.grade, 'assist')
+})
+
+test('timing cursor eases in once and latches at the cue instead of bouncing back out', () => {
+  let state = startMission()
+  state = advancePhase(state)
+  state = endBriefing(state)
+  state = autoAssistCurrentPhase(state)
+  state = advancePhase(state)
+  state = endBriefing(state)
+
+  let previousCursor = state.timingCursor
+  for (let index = 0; index < 12; index += 1) {
+    state = updateTimingCursor(state, 700, 0.00035)
+    assert.ok(state.timingCursor >= previousCursor)
+    previousCursor = state.timingCursor
+    if (state.timingLatched) break
+  }
+
+  assert.equal(state.timingLatched, true)
+  const latchedCursor = state.timingCursor
+  state = updateTimingCursor(state, 2800, 0.00035)
+  assert.equal(state.timingCursor, latchedCursor)
+})
+
+test('recovery phase becomes manually completable before the celebration screen', () => {
+  let state = startMission()
+
+  while (state.phase !== 'splashdown') {
+    state = advancePhase(state)
+  }
+
+  state = endBriefing(state)
+  assert.equal(isRecoveryActionReady(state), false)
+
+  state = tickClock(state, 3600)
+  assert.equal(isRecoveryActionReady(state), true)
 })
 
 test('auto assist keeps the mission moving and final phase advances to celebration', () => {

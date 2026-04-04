@@ -1,3 +1,4 @@
+import { DEFAULT_CREW_IDS } from '../../app/data/mission-orbit-crew.js'
 import { pulseElement } from './animations.js'
 import {
   announceBurnResult,
@@ -25,6 +26,7 @@ import {
   endBriefing,
   enterStopMo,
   getCueSignal,
+  isRecoveryActionReady,
   getMissionTimeLabel,
   resetGame,
   resolveLaunchRelease,
@@ -73,6 +75,45 @@ let lastBurnCount = 0
 let lastCueBand: CueSignalBand | null = null
 let lastStopMoActive = false
 
+const crewCheckboxes = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="mission-crew"]'))
+const crewPickerHelp = document.getElementById('crew-picker-help') as HTMLElement | null
+
+function syncCrewPicker(): void {
+  if (crewCheckboxes.length === 0) return
+
+  const selectedCount = crewCheckboxes.filter((checkbox) => checkbox.checked).length
+  const lockOpenSeats = selectedCount >= 3
+
+  for (const checkbox of crewCheckboxes) {
+    checkbox.disabled = !checkbox.checked && lockOpenSeats
+  }
+
+  if (!crewPickerHelp) return
+
+  if (selectedCount === 3) {
+    crewPickerHelp.textContent = 'Crew locked in. They will appear during boarding, lunar flyby, and recovery.'
+    return
+  }
+
+  const remaining = Math.max(0, 3 - selectedCount)
+  crewPickerHelp.textContent = `Choose ${remaining} more crew member${remaining === 1 ? '' : 's'}, or launch with the defaults.`
+}
+
+function readSelectedCrewIds(): string[] {
+  const selectedIds = crewCheckboxes
+    .filter((checkbox) => checkbox.checked)
+    .map((checkbox) => checkbox.value)
+
+  const fallbackIds = DEFAULT_CREW_IDS.filter((id) => !selectedIds.includes(id))
+  return [...selectedIds, ...fallbackIds].slice(0, 3)
+}
+
+for (const checkbox of crewCheckboxes) {
+  checkbox.addEventListener('change', syncCrewPicker)
+}
+
+syncCrewPicker()
+
 function primeMissionAudio(): void {
   ensureAudioUnlocked()
   void loadSamples()
@@ -117,9 +158,6 @@ function playPhaseActivationAudio(): void {
 
   const definition = getPhaseDefinition(state.phase)
 
-  if (state.phase === 'launch') {
-    sfxLiftoff()
-  }
   if (definition.mode === 'timing') {
     sfxBurnWindow()
   }
@@ -248,13 +286,13 @@ function resolveCurrentPhase(assisted: boolean): void {
 
 function buildStopMoMessage(): string {
   if (state.phase === 'launch') {
-    return 'Guidance froze main engine cutoff. Release when ready.'
+    return 'Guidance is holding main engine cutoff. Let go when you are ready.'
   }
 
   const definition = currentPhaseDefinition()
   return definition
-    ? `${definition.label}. Guidance froze the cue window. Tap when ready.`
-    : 'Guidance froze the cue window. Tap when ready.'
+    ? `${definition.label}. Guidance is holding the cue. Act when you are ready.`
+    : 'Guidance is holding the cue. Act when you are ready.'
 }
 
 function triggerStopMoRescue(): void {
@@ -292,12 +330,13 @@ function startGame(): void {
   primeMissionAudio()
   sfxButton()
   clearAdvanceTimer()
-  state = startMission()
+  state = startMission(readSelectedCrewIds())
   lastPhase = state.phase
   lastCountdownValue = state.countdownValue
   lastBurnCount = 0
   lastCueBand = null
   lastStopMoActive = false
+  enginePulseBudgetMs = 0
   showScreen('mission-screen')
   renderMission(state)
   onPhaseEntered('title')
@@ -312,6 +351,7 @@ function replayGame(): void {
   lastBurnCount = 0
   lastCueBand = null
   lastStopMoActive = false
+  enginePulseBudgetMs = 0
   syncMusicPlayback(state.phase)
   showScreen('start-screen')
   moveFocusAfterTransition('start-btn', 220)
@@ -329,6 +369,14 @@ const callbacks: InputCallbacks = {
 
     if (state.phase === 'celebration') {
       replayGame()
+      return
+    }
+
+    if (state.phase === 'splashdown' && !state.briefingActive) {
+      if (isRecoveryActionReady(state)) {
+        sfxButton()
+        goToNextPhase()
+      }
       return
     }
 
@@ -400,6 +448,9 @@ function tick(now: number): void {
         }
         if (state.countdownValue === 7) {
           sfxEngineIgnition()
+        }
+        if (state.countdownValue === 0) {
+          sfxLiftoff()
         }
         announceCountdown(state.countdownValue)
         lastCountdownValue = state.countdownValue

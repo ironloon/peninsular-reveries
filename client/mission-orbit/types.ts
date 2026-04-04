@@ -1,3 +1,5 @@
+import type { MissionCrewProfile } from '../../app/data/mission-orbit-crew.js'
+
 export const MISSION_SEQUENCE = [
   'countdown',
   'launch',
@@ -53,12 +55,14 @@ export interface GameState {
   readonly phaseIndex: number
   readonly phaseElapsedMs: number
   readonly missionElapsedMs: number
+  readonly crew: readonly MissionCrewProfile[]
   readonly briefingActive: boolean
   readonly countdownValue: number
   readonly actionHeld: boolean
   readonly launchProgress: number
   readonly timingCursor: number
   readonly timingDirection: 1 | -1
+  readonly timingLatched: boolean
   readonly burnResults: readonly BurnResult[]
   readonly outcomeText: string
   readonly outcomeGrade: BurnGrade | null
@@ -77,7 +81,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Final countdown',
     dayLabel: 'Flight Day 1',
     status: 'Pad 39B is live',
-    prompt: 'Stand by. Main engines ignite at T minus 7, boosters at T zero.',
+    prompt: 'Stand by. Main engines start at T minus 7, boosters ignite at T zero.',
     actionLabel: 'Countdown running',
     timingHint: 'Watch the clock. Liftoff comes at zero.',
     mode: 'countdown',
@@ -87,9 +91,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Ascent to orbit',
     dayLabel: 'Flight Day 1',
     status: 'SLS climb is under way',
-    prompt: 'Hold the spacecraft, or hold the action control, to climb. Release on the flare for main engine cutoff.',
+    prompt: 'Hold the spacecraft, or hold the action control, to climb. Let go on the cue for main engine cutoff.',
     actionLabel: 'Hold to climb',
-    timingHint: 'Hold to climb. Release when the flare blooms.',
+    timingHint: 'Hold steady. Let go on the bright cue.',
     mode: 'hold',
     briefingMs: 1600,
     assistAfterMs: 9000,
@@ -105,9 +109,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Orbit raise burn',
     dayLabel: 'Flight Day 1',
     status: 'Orion is circling Earth',
-    prompt: 'Tap the spacecraft on the flare to raise perigee and settle into the test orbit.',
+    prompt: 'Tap the spacecraft on cue to raise perigee and settle into the test orbit.',
     actionLabel: 'Tap spacecraft',
-    timingHint: 'Tap the spacecraft, or use the action control, on the flare.',
+    timingHint: 'Tap the spacecraft, or use the action control, on cue.',
     mode: 'timing',
     briefingMs: 2200,
     assistAfterMs: 7600,
@@ -136,7 +140,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Trans-lunar injection',
     dayLabel: 'Flight Day 2',
     status: 'Time to leave Earth orbit',
-    prompt: 'Tap the spacecraft on the flare to light the burn that sends Orion around the Moon on a free-return path.',
+    prompt: 'Tap the spacecraft on cue to light the burn that sends Orion around the Moon on a free-return path.',
     actionLabel: 'Tap spacecraft',
     timingHint: 'One bright cue, one clean tap on the spacecraft.',
     mode: 'timing',
@@ -157,7 +161,7 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     status: 'The Moon is filling the windows',
     prompt: 'Tap near closest approach for a small correction as the Moon bends the return trajectory home.',
     actionLabel: 'Tap spacecraft',
-    timingHint: 'Let the cue bloom, then tap the spacecraft once.',
+    timingHint: 'Hold for the cue, then tap the spacecraft once.',
     mode: 'timing',
     briefingMs: 2200,
     assistAfterMs: 7800,
@@ -186,9 +190,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Entry interface',
     dayLabel: 'Flight Day 10',
     status: 'Re-entry heating is building',
-    prompt: 'Tap the spacecraft on the flare to jettison the service module before Orion commits to atmospheric entry.',
+    prompt: 'Tap the spacecraft on cue to jettison the service module before Orion commits to atmospheric entry.',
     actionLabel: 'Tap spacecraft',
-    timingHint: 'Hit the flare before the heat ramps up.',
+    timingHint: 'Tap on cue before the heat ramps up.',
     mode: 'timing',
     briefingMs: 2200,
     assistAfterMs: 7000,
@@ -205,9 +209,9 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Parachute deploy',
     dayLabel: 'Flight Day 10',
     status: 'Ocean recovery is in range',
-    prompt: 'Tap the spacecraft on the flare to open the drogues and mains for the last leg down to the Pacific.',
+    prompt: 'Tap the spacecraft on cue to open the drogues and mains for the last leg down to the Pacific.',
     actionLabel: 'Tap spacecraft',
-    timingHint: 'Let the cue bloom, then open the parachutes.',
+    timingHint: 'Hold for the cue, then open the parachutes.',
     mode: 'timing',
     briefingMs: 2200,
     assistAfterMs: 7000,
@@ -224,12 +228,12 @@ const PHASE_DEFINITIONS: readonly MissionPhaseDefinition[] = [
     label: 'Pacific splashdown',
     dayLabel: 'Flight Day 10',
     status: 'Recovery teams are moving in',
-    prompt: 'The capsule is home. Navy recovery vessels close in while Orion settles into the Pacific.',
+    prompt: 'The capsule is home. Recovery boats close in while Orion settles into the Pacific.',
     actionLabel: 'Recovery underway',
-    timingHint: 'Recovery has the capsule. Watch the splash zone.',
+    timingHint: 'Watch the splash zone while recovery moves in.',
     mode: 'auto',
     briefingMs: 1600,
-    autoAdvanceMs: 3600,
+    autoAdvanceMs: 14000,
   },
 ] as const
 

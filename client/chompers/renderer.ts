@@ -41,6 +41,10 @@ function getFinalMissed(): HTMLElement { return finalMissedEl ??= document.getEl
 function getFinalCombo(): HTMLElement { return finalComboEl ??= document.getElementById('final-combo')! }
 function getEndSummary(): HTMLElement { return endSummaryEl ??= document.getElementById('end-summary')! }
 
+function percentToPixels(percent: number, size: number): number {
+  return (percent / 100) * size
+}
+
 function modeLabel(mode: GameMode): string {
   if (mode === 'survival') {
     return 'Survival'
@@ -123,18 +127,19 @@ function renderHud(state: GameState): void {
   getComboReadout().textContent = `Combo x${state.combo}`
 }
 
-function renderHippo(state: GameState): void {
+function renderHippo(state: GameState, arenaWidth: number): void {
   const hippo = getHippo()
   const chompColumn = getChompColumn()
+  const hippoX = percentToPixels(state.hippo.x, arenaWidth)
 
-  hippo.style.left = `${state.hippo.x}%`
+  hippo.style.transform = `translate3d(${hippoX.toFixed(1)}px, 0, 0) translate3d(-50%, 0, 0)`
   hippo.style.setProperty('--neck-height', `${58 + state.hippo.neckExtension * 112}px`)
   hippo.style.setProperty('--head-shift', `${-state.hippo.neckExtension * 108}px`)
   hippo.style.setProperty('--jaw-angle', `${state.hippo.neckExtension * 22}deg`)
   hippo.style.setProperty('--hippo-tilt', `${-state.hippo.neckExtension * 8}deg`)
   hippo.classList.toggle('is-chomping', state.hippo.chomping)
 
-  chompColumn.style.left = `${state.hippo.x}%`
+  chompColumn.style.transform = `translate3d(${hippoX.toFixed(1)}px, 0, 0) translate3d(-50%, 0, 0)`
   chompColumn.style.height = `${12 + state.hippo.neckExtension * 50}%`
   chompColumn.classList.toggle('active', state.hippo.chomping)
 }
@@ -153,7 +158,7 @@ function createItemElement(kind: keyof typeof FRUIT_DEFINITIONS): HTMLElement {
   return item
 }
 
-function renderItems(state: GameState): void {
+function renderItems(state: GameState, arenaWidth: number, arenaHeight: number): void {
   const nextIds = new Set<number>()
   const itemLayer = getItemLayer()
 
@@ -166,9 +171,9 @@ function renderItems(state: GameState): void {
       itemLayer.appendChild(element)
     }
 
-    element.style.left = `${item.x}%`
-    element.style.top = `${item.y}%`
-    element.style.transform = `translate(-50%, -50%) rotate(${item.rotation}deg)`
+    const itemX = percentToPixels(item.x, arenaWidth)
+    const itemY = percentToPixels(item.y, arenaHeight)
+    element.style.transform = `translate3d(${itemX.toFixed(1)}px, ${itemY.toFixed(1)}px, 0) translate3d(-50%, -50%, 0) rotate(${item.rotation}deg)`
   }
 
   for (const [id, element] of itemElements.entries()) {
@@ -179,11 +184,15 @@ function renderItems(state: GameState): void {
 }
 
 export function renderGame(state: GameState): void {
+  const arena = getGameArena()
+  const arenaWidth = Math.max(arena.clientWidth, 1)
+  const arenaHeight = Math.max(arena.clientHeight, 1)
+
   renderHud(state)
-  renderItems(state)
-  renderHippo(state)
-  getGameArena().dataset.mode = state.mode
-  getGameArena().dataset.phase = state.phase
+  renderItems(state, arenaWidth, arenaHeight)
+  renderHippo(state, arenaWidth)
+  arena.dataset.mode = state.mode
+  arena.dataset.phase = state.phase
 }
 
 export function renderEndScreen(state: GameState): void {
