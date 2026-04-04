@@ -10,6 +10,7 @@ import {
   HIPPO_Y,
   ROUND_TIME_MS,
   START_LIVES,
+  ZEN_ROUND_ITEMS,
 } from './types.js'
 import type { ChompResult, FallingItem, FruitKind, GameMode, GameState, HippoState, TickResult } from './types.js'
 
@@ -23,6 +24,12 @@ const INITIAL_SEED = 0x0c0ffee
 const ITEM_START_Y = -10
 const GROUND_Y = 106
 const MAX_ITEMS = 18
+const ITEM_MIN_X = 12
+const ITEM_X_SPAN = 76
+const SPAWN_PATH_BUFFER = 14
+const SPAWN_PATH_LOOKAHEAD_Y = 54
+const MAX_SPAWN_X_ATTEMPTS = 6
+const FALLBACK_SPAWN_XS = [14, 28, 42, 58, 72, 86] as const
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max)
@@ -62,32 +69,57 @@ function createHippoState(): HippoState {
 }
 
 function getSpawnIntervalMs(mode: GameMode, difficultyLevel: number): number {
+  if (mode === 'zen') {
+    return 1_120
+  }
+
   const base = mode === 'rush' ? 860 : 940
   return Math.max(260, base - (difficultyLevel - 1) * 120)
 }
 
-function getDifficultyLevel(elapsedMs: number): number {
-  return 1 + Math.min(elapsedMs / 18_000, 3)
+function getDifficultyLevel(mode: GameMode, elapsedMs: number): number {
+  if (mode === 'zen') {
+    return 1
+  }
+
+  return 1 + Math.min(elapsedMs / 40_000, 3)
+}
+
+function getModeWeight(kind: FruitKind, mode: GameMode): number {
+  const definition = FRUIT_DEFINITIONS[kind]
+
+  if (mode === 'rush') {
+    return definition.rushWeight
+  }
+
+  if (mode === 'survival') {
+    return definition.survivalWeight
+  }
+
+  return definition.zenWeight
 }
 
 function getWeights(mode: GameMode, difficultyLevel: number): ReadonlyArray<[FruitKind, number]> {
+  if (mode === 'zen') {
+    return FRUIT_KINDS.map((kind) => [kind, getModeWeight(kind, mode)] as const)
+  }
+
   const hazardBoost = Math.max(0, Math.floor((difficultyLevel - 1) * 3))
 
   return FRUIT_KINDS.map((kind) => {
-    const def = FRUIT_DEFINITIONS[kind]
     if (kind === 'rotten') {
-      return [kind, def[mode === 'rush' ? 'rushWeight' : 'survivalWeight'] + hazardBoost] as const
+      return [kind, getModeWeight(kind, mode) + hazardBoost] as const
     }
 
     if (kind === 'bomb') {
-      return [kind, mode === 'survival' ? def.survivalWeight + hazardBoost : 0] as const
+      return [kind, mode === 'survival' ? getModeWeight(kind, mode) + hazardBoost : 0] as const
     }
 
     if (kind === 'star') {
-      return [kind, Math.max(1, def[mode === 'rush' ? 'rushWeight' : 'survivalWeight'] - Math.floor(difficultyLevel / 2))] as const
+      return [kind, Math.max(1, getModeWeight(kind, mode) - Math.floor(difficultyLevel / 2))] as const
     }
 
-    return [kind, def[mode === 'rush' ? 'rushWeight' : 'survivalWeight']] as const
+    return [kind, getModeWeight(kind, mode)] as const
   })
 }
 
@@ -107,10 +139,137 @@ function pickKind(mode: GameMode, difficultyLevel: number, seed: number): { kind
   return { kind: 'apple', seed: roll.seed }
 }
 
-function createRandomItem(id: number, mode: GameMode, difficultyLevel: number, seed: number): { item: FallingItem; seed: number } {
+function isHazardKind(kind: FruitKind): boolean {
+  return FRUIT_DEFINITIONS[kind].hazard
+}
+
+function hasSpawnPathConflict(kind: FruitKind, x: number, items: readonly FallingItem[]): boolean {
+  const nextItemIsHazard = isHazardKind(kind)
+
+  return items.some((item) => {
+    if (item.y > SPAWN_PATH_LOOKAHEAD_Y) {
+      return false
+    }
+
+    if (isHazardKind(item.kind) === nextItemIsHazard) {
+      return false
+    }
+
+    return Math.abs(item.x - x) < SPAWN_PATH_BUFFER
+  })
+}
+
+function scoreSpawnX(kind: FruitKind, x: number, items: readonly FallingItem[]): number {
+  let minDistance = Number.POSITIVE_INFINITY
+  let conflictCount = 0
+
+  for (const item of items) {
+    if (item.y > SPAWN_PATH_LOOKAHEAD_Y) {
+      continue
+    }
+
+    if (isHazardKind(item.kind) === isHazardKind(kind)) {
+      continue
+    }
+
+    const distance = Math.abs(item.x - x)
+    minDistance = Math.min(minDistance, distance)
+
+    if (distance < SPAWN_PATH_BUFFER) {
+      conflictCount += 1
+    }
+  }
+
+  if (conflictCount === 0) {
+    return Number.POSITIVE_INFINITY
+  }
+
+  return minDistance - conflictCount * SPAWN_PATH_BUFFER
+}
+
+function pickSpawnX(kind: FruitKind, items: readonly FallingItem[], x: number, seed: number): { x: number; seed: number } {
+  let nextX = x
+  let nextSeed = seed
+
+  for (let attempt = 0; attempt < MAX_SPAWN_X_ATTEMPTS; attempt += 1) {
+    if (!hasSpawnPathConflict(kind, nextX, items)) {
+      return { x: nextX, seed: nextSeed }
+    }
+
+    const reroll = random(nextSeed)
+    nextSeed = reroll.seed
+    nextX = ITEM_MIN_X + reroll.value * ITEM_X_SPAN
+  }
+
+  let bestX = nextX
+  let bestScore = scoreSpawnX(kind, nextX, items)
+
+  for (const candidateX of FALLBACK_SPAWN_XS) {
+    const candidateScore = scoreSpawnX(kind, candidateX, items)
+    if (candidateScore > bestScore) {
+      bestScore = candidateScore
+      bestX = candidateX
+    }
+  }
+
+  return { x: bestX, seed: nextSeed }
+}
+
+function getItemSpeed(mode: GameMode, difficultyLevel: number, speedRollValue: number): number {
+  if (mode === 'zen') {
+    return 14 + speedRollValue * 6
+  }
+
+  return 18 + difficultyLevel * 5 + speedRollValue * 9
+}
+
+function getRotationSpeed(mode: GameMode, difficultyLevel: number, rotationSpeedValue: number): number {
+  const spinRange = mode === 'zen'
+    ? 24
+    : 36 + difficultyLevel * 18
+
+  return (rotationSpeedValue * 2 - 1) * spinRange
+}
+
+function getInitialSpawnTimerMs(mode: GameMode): number {
+  return mode === 'zen' ? getSpawnIntervalMs(mode, 1) : 720
+}
+
+function getTotalSpawnedItems(state: Pick<GameState, 'nextItemId'>): number {
+  return state.nextItemId - 1
+}
+
+function canSpawnMoreItems(state: Pick<GameState, 'mode' | 'nextItemId'>): boolean {
+  return state.mode !== 'zen' || getTotalSpawnedItems(state) < ZEN_ROUND_ITEMS
+}
+
+function isZenRoundComplete(state: Pick<GameState, 'mode' | 'nextItemId' | 'items'>): boolean {
+  return state.mode === 'zen' && getTotalSpawnedItems(state) >= ZEN_ROUND_ITEMS && state.items.length === 0
+}
+
+function hasRoundEnded(state: Pick<GameState, 'mode' | 'timeRemainingMs' | 'lives' | 'nextItemId' | 'items'>): boolean {
+  if (state.mode === 'rush') {
+    return state.timeRemainingMs <= 0
+  }
+
+  if (state.mode === 'survival') {
+    return state.lives <= 0
+  }
+
+  return isZenRoundComplete(state)
+}
+
+function createRandomItem(
+  id: number,
+  mode: GameMode,
+  difficultyLevel: number,
+  seed: number,
+  items: readonly FallingItem[],
+): { item: FallingItem; seed: number } {
   const kindPick = pickKind(mode, difficultyLevel, seed)
   const xRoll = random(kindPick.seed)
-  const speedRoll = random(xRoll.seed)
+  const xPick = pickSpawnX(kindPick.kind, items, ITEM_MIN_X + xRoll.value * ITEM_X_SPAN, xRoll.seed)
+  const speedRoll = random(xPick.seed)
   const rotationRoll = random(speedRoll.seed)
   const rotationSpeedRoll = random(rotationRoll.seed)
 
@@ -118,11 +277,11 @@ function createRandomItem(id: number, mode: GameMode, difficultyLevel: number, s
     item: {
       id,
       kind: kindPick.kind,
-      x: 12 + xRoll.value * 76,
+      x: xPick.x,
       y: ITEM_START_Y,
-      speed: 18 + difficultyLevel * 5 + speedRoll.value * 9,
+      speed: getItemSpeed(mode, difficultyLevel, speedRoll.value),
       rotation: -12 + rotationRoll.value * 24,
-      rotationSpeed: (rotationSpeedRoll.value * 2 - 1) * (36 + difficultyLevel * 18),
+      rotationSpeed: getRotationSpeed(mode, difficultyLevel, rotationSpeedRoll.value),
     },
     seed: rotationSpeedRoll.seed,
   }
@@ -177,11 +336,11 @@ export function createInitialState(mode: GameMode): GameState {
     phase: 'playing',
     mode,
     score: 0,
-    timeRemainingMs: ROUND_TIME_MS,
-    lives: START_LIVES,
+    timeRemainingMs: mode === 'rush' ? ROUND_TIME_MS : 0,
+    lives: mode === 'survival' ? START_LIVES : 0,
     items: createOpeningItems(),
     hippo: createHippoState(),
-    spawnTimerMs: 720,
+    spawnTimerMs: getInitialSpawnTimerMs(mode),
     difficultyLevel: 1,
     elapsedMs: 0,
     itemsChomped: 0,
@@ -210,7 +369,11 @@ export function nudgeHippo(state: GameState, delta: number): GameState {
 }
 
 export function spawnItem(state: GameState): GameState {
-  const created = createRandomItem(state.nextItemId, state.mode, state.difficultyLevel, state.rngSeed)
+  if (!canSpawnMoreItems(state)) {
+    return state
+  }
+
+  const created = createRandomItem(state.nextItemId, state.mode, state.difficultyLevel, state.rngSeed, state.items)
   return {
     ...state,
     items: [...state.items, created.item],
@@ -226,7 +389,7 @@ export function tickState(state: GameState, deltaMs: number): TickResult {
   }
 
   const elapsedMs = state.elapsedMs + deltaMs
-  const difficultyLevel = getDifficultyLevel(elapsedMs)
+  const difficultyLevel = getDifficultyLevel(state.mode, elapsedMs)
   const timeRemainingMs = state.mode === 'rush'
     ? Math.max(0, state.timeRemainingMs - deltaMs)
     : state.timeRemainingMs
@@ -237,7 +400,7 @@ export function tickState(state: GameState, deltaMs: number): TickResult {
   const hippo = tickHippo(state.hippo, deltaMs)
   const items = state.items.map((item) => ({
     ...item,
-    y: item.y + item.speed * difficultyLevel * (deltaMs / 1000),
+    y: item.y + item.speed * (deltaMs / 1000),
     rotation: item.rotation + item.rotationSpeed * (deltaMs / 1000),
   }))
 
@@ -262,13 +425,11 @@ export function tickState(state: GameState, deltaMs: number): TickResult {
     combo: missedItems.length > 0 ? 0 : state.combo,
   }
 
-  const shouldEndRound = (state.mode === 'rush' && timeRemainingMs <= 0) || lives <= 0
-
-  while (!shouldEndRound && nextState.spawnTimerMs <= 0 && nextState.items.length < MAX_ITEMS && nextState.phase === 'playing') {
+  while (!hasRoundEnded(nextState) && nextState.spawnTimerMs <= 0 && nextState.items.length < MAX_ITEMS && nextState.phase === 'playing' && canSpawnMoreItems(nextState)) {
     nextState = spawnItem(nextState)
   }
 
-  if (shouldEndRound) {
+  if (hasRoundEnded(nextState)) {
     nextState = {
       ...nextState,
       phase: 'gameover',
@@ -333,7 +494,15 @@ export function attemptChomp(state: GameState): ChompResult {
     comboBroken = true
   }
 
-  const phase = lives <= 0 ? 'gameover' : state.phase
+  const phase = hasRoundEnded({
+    ...state,
+    lives,
+    timeRemainingMs: state.timeRemainingMs,
+    nextItemId: state.nextItemId,
+    items: remainingItems,
+  })
+    ? 'gameover'
+    : state.phase
 
   return {
     state: {

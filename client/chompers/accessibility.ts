@@ -8,12 +8,25 @@ function announce(message: string, priority: 'polite' | 'assertive'): void {
 }
 
 function modeLabel(mode: GameMode): string {
-  return mode === 'survival' ? 'Survival' : 'Rush'
+  if (mode === 'survival') {
+    return 'Survival'
+  }
+
+  if (mode === 'zen') {
+    return 'Zen'
+  }
+
+  return 'Rush'
 }
 
 export function announceGameStart(mode: GameMode): void {
   if (mode === 'survival') {
     announce('Survival mode. Three hearts. Missed fruit costs a life. Good luck.', 'polite')
+    return
+  }
+
+  if (mode === 'zen') {
+    announce('Zen mode. No hazards, no speed ramp, and thirty slow fruit to clear at your own pace.', 'polite')
     return
   }
 
@@ -41,6 +54,11 @@ export function announceMiss(mode: GameMode, count: number, lives: number): void
 
   if (mode === 'survival') {
     announce(`${count} fruit ${count === 1 ? 'splatted' : 'splatted'}. ${lives} hearts left.`, 'assertive')
+    return
+  }
+
+  if (mode === 'zen') {
+    announce(`${count} fruit ${count === 1 ? 'drifted by' : 'drifted by'}. No pressure.`, 'polite')
     return
   }
 

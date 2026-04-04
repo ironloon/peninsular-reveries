@@ -72,12 +72,23 @@ function startGame(mode: GameMode): void {
 function handleMissedItems(state: GameState, missedItems: readonly GameState['items'][number][]): void {
   if (missedItems.length === 0) return
 
-  sfxMiss()
+  if (state.mode !== 'zen') {
+    sfxMiss()
+  }
+
   announceMiss(state.mode, missedItems.length, state.lives)
 
   for (const item of missedItems) {
-    const tone = state.mode === 'survival' && !FRUIT_DEFINITIONS[item.kind].hazard ? 'danger' : 'warning'
-    const text = state.mode === 'survival' && !FRUIT_DEFINITIONS[item.kind].hazard ? '-1♥' : 'MISS'
+    const tone = state.mode === 'survival' && !FRUIT_DEFINITIONS[item.kind].hazard
+      ? 'danger'
+      : state.mode === 'zen'
+        ? 'positive'
+        : 'warning'
+    const text = state.mode === 'survival' && !FRUIT_DEFINITIONS[item.kind].hazard
+      ? '-1♥'
+      : state.mode === 'zen'
+        ? 'PASS'
+        : 'MISS'
     spawnPointsPopup(item.x, 90, text, tone)
   }
 

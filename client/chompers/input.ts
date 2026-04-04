@@ -23,7 +23,11 @@ function isEndScreenActive(): boolean {
 
 function selectedMode(): GameMode {
   const selected = document.querySelector<HTMLInputElement>('input[name="game-mode"]:checked')?.value
-  return selected === 'survival' ? 'survival' : 'rush'
+  if (selected === 'survival' || selected === 'zen') {
+    return selected
+  }
+
+  return 'rush'
 }
 
 function isTextEntryTarget(target: EventTarget | null): boolean {

@@ -1,4 +1,4 @@
-export const GAME_MODES = ['rush', 'survival'] as const
+export const GAME_MODES = ['rush', 'survival', 'zen'] as const
 export type GameMode = (typeof GAME_MODES)[number]
 
 export type GamePhase = 'playing' | 'gameover'
@@ -14,6 +14,7 @@ export interface FruitDefinition {
   readonly hazard: boolean
   readonly rushWeight: number
   readonly survivalWeight: number
+  readonly zenWeight: number
 }
 
 export const FRUIT_DEFINITIONS: Record<FruitKind, FruitDefinition> = {
@@ -25,6 +26,7 @@ export const FRUIT_DEFINITIONS: Record<FruitKind, FruitDefinition> = {
     hazard: false,
     rushWeight: 28,
     survivalWeight: 24,
+    zenWeight: 28,
   },
   apple: {
     kind: 'apple',
@@ -34,6 +36,7 @@ export const FRUIT_DEFINITIONS: Record<FruitKind, FruitDefinition> = {
     hazard: false,
     rushWeight: 24,
     survivalWeight: 22,
+    zenWeight: 24,
   },
   orange: {
     kind: 'orange',
@@ -43,6 +46,7 @@ export const FRUIT_DEFINITIONS: Record<FruitKind, FruitDefinition> = {
     hazard: false,
     rushWeight: 18,
     survivalWeight: 18,
+    zenWeight: 18,
   },
   grapes: {
     kind: 'grapes',
@@ -52,6 +56,7 @@ export const FRUIT_DEFINITIONS: Record<FruitKind, FruitDefinition> = {
     hazard: false,
     rushWeight: 10,
     survivalWeight: 10,
+    zenWeight: 12,
   },
   star: {
     kind: 'star',
@@ -61,6 +66,7 @@ export const FRUIT_DEFINITIONS: Record<FruitKind, FruitDefinition> = {
     hazard: false,
     rushWeight: 2,
     survivalWeight: 2,
+    zenWeight: 4,
   },
   rotten: {
     kind: 'rotten',
@@ -70,6 +76,7 @@ export const FRUIT_DEFINITIONS: Record<FruitKind, FruitDefinition> = {
     hazard: true,
     rushWeight: 5,
     survivalWeight: 8,
+    zenWeight: 0,
   },
   bomb: {
     kind: 'bomb',
@@ -79,6 +86,7 @@ export const FRUIT_DEFINITIONS: Record<FruitKind, FruitDefinition> = {
     hazard: true,
     rushWeight: 0,
     survivalWeight: 6,
+    zenWeight: 0,
   },
 }
 
@@ -137,6 +145,7 @@ export interface ChompResult {
 
 export const ROUND_TIME_MS = 60_000
 export const START_LIVES = 3
+export const ZEN_ROUND_ITEMS = 30
 export const CHOMP_DURATION_MS = 280
 export const HIPPO_START_X = 50
 export const HIPPO_Y = 90

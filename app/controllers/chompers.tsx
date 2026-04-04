@@ -43,6 +43,14 @@ export async function chompersAction() {
                   <span>3 hearts. Miss a fruit or bite a bomb and you pay for it.</span>
                 </span>
               </label>
+
+              <label className="mode-card" htmlFor="mode-zen" aria-label="Zen mode">
+                <input id="mode-zen" type="radio" name="game-mode" value="zen" />
+                <span className="mode-card-copy">
+                  <strong>Zen</strong>
+                  <span>No clock. No hazards. Thirty slow fruit, then you're done.</span>
+                </span>
+              </label>
             </fieldset>
 
             <div className="start-actions">
@@ -155,7 +163,7 @@ export async function chompersAction() {
 
           <section className="settings-section">
             <h3>Modes</h3>
-            <p>Rush is a 60-second score sprint. Survival gives you 3 hearts and ends when you run out.</p>
+            <p>Rush is a 60-second score sprint. Survival gives you 3 hearts and ends when you run out. Zen drops 30 slow fruit with no hazards and no speed ramp.</p>
           </section>
 
           <section className="settings-section">
