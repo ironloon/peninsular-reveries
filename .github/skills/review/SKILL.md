@@ -12,6 +12,7 @@ Use this skill for substantial work in this repository.
 
 - Load [architecture](./references/architecture.md) for project structure, stack, build flow, game module contract, and implementation conventions.
 - Load [game quality](./references/game-quality.md) for layout, pacing, orientation, and sourcing expectations.
+- Load [file size](./references/file-size.md) when a task involves large files, refactors, or deciding whether to split a module.
 - Load [testing](./references/testing.md) for test organization, validation gates, CI behavior, and attribution sync requirements.
 - Load [security](./references/security.md) for secret-handling, review-before-push, and remediation expectations when credentials or generated env files are involved.
 

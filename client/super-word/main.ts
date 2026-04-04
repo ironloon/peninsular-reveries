@@ -19,8 +19,8 @@ import {
   slideSceneTransition,
   renderWinScreen,
   setCheckButtonEnabled,
-  setupSettingsModal,
 } from './renderer.js'
+import { setupSettingsModal } from './settings-modal.js'
 import { setupInput } from './input.js'
 import type { InputCallbacks } from './input.js'
 import {

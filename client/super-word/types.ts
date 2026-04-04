@@ -2,6 +2,7 @@ export interface SceneItem {
   readonly id: string
   readonly type: 'letter' | 'distractor'
   readonly zone?: 'sky' | 'ground' | 'middle'
+  readonly scale?: number
   readonly char?: string
   readonly emoji: string
   readonly label: string

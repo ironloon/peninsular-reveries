@@ -12,20 +12,23 @@ const expectedWordLengths = {
 } as const
 
 const minimumCounts = {
-  starter: 15,
-  easy: 20,
-  medium: 20,
-  hard: 15,
-  expert: 10,
+  starter: 25,
+  easy: 40,
+  medium: 40,
+  hard: 35,
+  expert: 30,
 } as const
 
 test('puzzle bank covers every difficulty with the expected word length', () => {
   for (const difficulty of DIFFICULTIES) {
     const pool = PUZZLES.filter((puzzle) => puzzle.difficulty === difficulty)
+    const answers = new Set(pool.map((puzzle) => puzzle.answer))
 
     assert.ok(pool.length >= minimumCounts[difficulty])
+    assert.equal(answers.size, pool.length)
     assert.ok(pool.every((puzzle) => puzzle.answer.length === expectedWordLengths[difficulty]))
     assert.ok(pool.every((puzzle) => puzzle.items.filter((item) => item.type === 'letter').length === puzzle.answer.length))
+    assert.ok(pool.every((puzzle) => puzzle.items.every((item) => item.type !== 'letter' || item.emoji !== '🔤')))
   }
 })
 

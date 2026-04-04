@@ -1,6 +1,5 @@
 import type { GameState, Puzzle } from './types.js'
 import { isReducedMotion } from './animations.js'
-import { bindReduceMotionToggle } from '../preferences.js'
 
 // ── Lazy element cache ───────────────────────────────────────
 let puzzleCounterEl: HTMLElement | null = null
@@ -41,10 +40,11 @@ export function renderScene(puzzle: Puzzle, state: GameState, sceneEl: HTMLEleme
     const visualClassName = item.type === 'letter' ? 'scene-visual item-card' : 'scene-visual scene-object'
 
     const btn = document.createElement('button')
-    btn.className = `scene-item scene-item-${item.type}`
+    btn.className = `scene-item scene-item-${item.type} scene-item-zone-${item.zone ?? 'middle'}`
     if (isCollected) btn.classList.add('collected')
     btn.dataset.itemId = item.id
     btn.dataset.itemType = item.type
+    btn.style.setProperty('--scene-item-scale', String(item.scale ?? 1))
     if (item.type === 'letter' && item.char) {
       btn.dataset.char = item.char
     }
@@ -67,7 +67,7 @@ export function renderScene(puzzle: Puzzle, state: GameState, sceneEl: HTMLEleme
     }
 
     const card = document.createElement('div')
-  card.className = visualClassName
+    card.className = visualClassName
 
     const emojiSpan = document.createElement('span')
     emojiSpan.className = 'item-emoji'
@@ -293,98 +293,4 @@ export function setCheckButtonEnabled(enabled: boolean): void {
     btn.setAttribute('disabled', '')
     btn.classList.add('disabled')
   }
-}
-
-// ── Settings Modal ───────────────────────────────────────────
-
-export function setupSettingsModal(): void {
-  const modal = document.getElementById('settings-modal')
-  const closeBtn = document.getElementById('settings-close')
-  const openButtons = Array.from(document.querySelectorAll<HTMLElement>('[data-settings-open="true"]'))
-  const reduceMotionToggle = document.getElementById('reduce-motion-toggle') as HTMLInputElement | null
-  const reduceMotionHelp = document.getElementById('reduce-motion-help') as HTMLElement | null
-
-  if (!modal || !closeBtn || openButtons.length === 0) return
-
-  const modalEl = modal
-
-  let previousFocus: HTMLElement | null = null
-
-  function getFocusableElements(): HTMLElement[] {
-    return Array.from(
-      modalEl.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      )
-    ).filter((element) => !element.hasAttribute('hidden'))
-  }
-
-  function openModal(): void {
-    previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : openButtons[0]
-    modalEl.hidden = false
-    for (const openButton of openButtons) {
-      openButton.setAttribute('aria-expanded', 'true')
-    }
-    requestAnimationFrame(() => {
-      const [firstFocusable] = getFocusableElements()
-      ;(firstFocusable ?? modalEl).focus()
-    })
-  }
-
-  function closeModal(): void {
-    modalEl.hidden = true
-    for (const openButton of openButtons) {
-      openButton.setAttribute('aria-expanded', 'false')
-    }
-    ;(previousFocus ?? openButtons[0]).focus()
-  }
-
-  // Expose open/close for gamepad Start button
-  window.__settingsToggle = () => {
-    if (modalEl.hidden) openModal()
-    else closeModal()
-  }
-
-  for (const openButton of openButtons) {
-    openButton.addEventListener('click', openModal)
-  }
-
-  closeBtn.addEventListener('click', closeModal)
-
-  bindReduceMotionToggle(reduceMotionToggle, reduceMotionHelp)
-
-  // Close on backdrop click
-  modalEl.addEventListener('click', (e) => {
-    if (e.target === modalEl) closeModal()
-  })
-
-  // Close on Escape
-  modalEl.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      e.preventDefault()
-      closeModal()
-      return
-    }
-
-    if (e.key === 'Tab') {
-      const focusable = getFocusableElements()
-      if (focusable.length === 0) {
-        e.preventDefault()
-        modalEl.focus()
-        return
-      }
-
-      const first = focusable[0]
-      const last = focusable[focusable.length - 1]
-      const active = document.activeElement
-
-      if (e.shiftKey && active === first) {
-        e.preventDefault()
-        last.focus()
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault()
-        first.focus()
-      }
-    }
-  })
-
 }

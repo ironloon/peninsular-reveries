@@ -49,7 +49,7 @@ export async function superWordAction() {
               <span id="score" className="score" aria-label="Score: 0">⭐ 0</span>
             </div>
             <div className="game-header-right">
-              <button data-settings-open="true" className="settings-toggle-btn settings-toggle-btn-inline" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
+              <button data-settings-open="true" className="settings-toggle-btn settings-toggle-btn-inline" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">☰</button>
               <span id="letters-count" className="letters-count" aria-label="Letters found: 0 of 3">0 / 3</span>
             </div>
           </div>
@@ -115,8 +115,8 @@ export async function superWordAction() {
                 <option value="hard">Hard · 5 letters</option>
                 <option value="expert">Expert · 6 letters</option>
               </select>
-              <p className="settings-help">Each round randomly picks 5 words from the selected difficulty, from sight-word tiny terms to longer chapter-book words.</p>
-              <p className="settings-help">Word groups follow a simple early-reader progression. <a href={superWordAttributionsPath}>See reading notes</a>.</p>
+              <p className="settings-help">Each round randomly picks 5 words from the selected difficulty, from high-frequency starter words to longer concrete words for fluent early readers.</p>
+              <p className="settings-help">The tiers draw on Dolch and Fry high-frequency words, systematic phonics progressions, and Common Core K–3 reading patterns. <a href={superWordAttributionsPath}>See reading notes</a>.</p>
             </div>
 
             <div className="settings-section">

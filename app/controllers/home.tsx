@@ -41,7 +41,9 @@ export async function homeAction() {
                   <p>{game.description}</p>
                 </div>
               </a>
-              <a href={attributionPath} className="game-card-info-btn" aria-label={`View attributions for ${game.name}`} title={`Attributions for ${game.name}`}>i</a>
+              <a href={attributionPath} className="game-card-info-btn" aria-label={`View attributions for ${game.name}`} title={`Attributions for ${game.name}`}>
+                <span className="game-card-info-text">ATTRIBUTION</span>
+              </a>
             </article>
           )
         })}
