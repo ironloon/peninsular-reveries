@@ -1,9 +1,42 @@
+import { css } from 'remix/component'
 import { renderToString } from 'remix/component/server'
 import { attributionsPagePath } from '../data/attributions.js'
 import { Document } from '../ui/document.js'
 import { games } from '../data/game-registry.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
+import { ComingSoonGameCard, GameCard } from '../ui/game-card.js'
+
+const heroStyles = {
+  textAlign: 'center',
+  padding: 'var(--space-3xl) 0 var(--space-2xl)',
+  '& h1': {
+    fontSize: 'var(--text-xl)',
+  },
+  '& p': {
+    fontSize: 'var(--text-base)',
+    color: 'var(--color-muted)',
+    marginTop: 'var(--space-sm)',
+  },
+}
+
+const homeGamepadHintStyles = {
+  fontSize: 'var(--text-sm)',
+}
+
+const gamesListStyles = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 'var(--space-md)',
+}
+
+const noscriptMessageStyles = {
+  background: 'var(--color-surface)',
+  padding: 'var(--space-md)',
+  borderRadius: '8px',
+  textAlign: 'center',
+  marginTop: 'var(--space-md)',
+}
 
 export async function homeAction() {
   const siteBasePath = getSiteBasePath()
@@ -19,45 +52,32 @@ export async function homeAction() {
       manifestPath="/manifest.json"
       scripts={['/client/home.js']}
     >
-      <div className="hero">
+      <div className="hero" mix={[css(heroStyles)]}>
         <h1>Peninsular Reveries</h1>
         <p>Games, puzzles, and experiments — made for fun.</p>
-        <p id="home-gamepad-hint" className="home-gamepad-hint" hidden>Use a controller to move between games, then press A to open one.</p>
+        <p id="home-gamepad-hint" className="home-gamepad-hint" hidden mix={[css(homeGamepadHintStyles)]}>Use a controller to move between games, then press A to open one.</p>
       </div>
-      <section id="games" className="games-list">
+      <section id="games" className="games-list" mix={[css(gamesListStyles)]}>
         <noscript>
-          <p className="noscript-message">JavaScript adds navigation and interactive features. The content below is still browsable without it.</p>
+          <p className="noscript-message" mix={[css(noscriptMessageStyles)]}>JavaScript adds navigation and interactive features. The content below is still browsable without it.</p>
         </noscript>
         {liveGames.map(game => {
           const gamePath = withBasePath(`/${game.slug}/`, siteBasePath)
           const attributionPath = withBasePath(`${attributionsPagePath}#${game.slug}`, siteBasePath)
 
           return (
-            <article className="game-card" data-game-card={game.slug}>
-              <a href={gamePath} className="game-card-primary" aria-label={`Open ${game.name}`}>
-                <span className="game-card-icon" aria-hidden="true">{game.icon}</span>
-                <div className="game-card-copy">
-                  <h2>{game.name}</h2>
-                  <p>{game.description}</p>
-                </div>
-              </a>
-              <a href={attributionPath} className="game-card-info-btn" aria-label={`View attributions for ${game.name}`} title={`Attributions for ${game.name}`}>
-                <span className="game-card-info-text">ATTRIBUTION</span>
-              </a>
-            </article>
+            <GameCard
+              slug={game.slug}
+              name={game.name}
+              description={game.description}
+              icon={game.icon}
+              gamePath={gamePath}
+              attributionPath={attributionPath}
+            />
           )
         })}
         {comingSoon.map(game => (
-          <article className="game-card game-card-coming-soon">
-            <div className="game-card-body">
-              <span className="game-card-icon" aria-hidden="true">{game.icon}</span>
-              <div className="game-card-copy">
-                <h2>{game.name}</h2>
-                <p>{game.description}</p>
-              </div>
-            </div>
-            <span className="coming-soon-badge">Coming Soon</span>
-          </article>
+          <ComingSoonGameCard name={game.name} description={game.description} icon={game.icon} />
         ))}
       </section>
     </Document>

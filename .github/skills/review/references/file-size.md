@@ -13,6 +13,7 @@ Use these thresholds as a readability heuristic for this repository. They are gu
 - Target: keep most stylesheets at or under 800 lines.
 - Investigate at 1000 lines: look for repeated layout primitives, duplicated button states, or animation patterns that belong in shared base styles.
 - Game stylesheets may exceed this when they carry many breakpoints or animation states, but they should stay heavily sectioned and avoid duplicated shared rules across multiple games.
+- When stylesheet growth comes from shared shell/layout behavior, move those rules into shared `app/ui/` helpers or co-located `css()` mixins before splitting purely by file size.
 
 ## Data Files
 
@@ -26,6 +27,7 @@ Use these thresholds as a readability heuristic for this repository. They are gu
 - `renderer.ts`: extract self-contained UI chrome such as settings modals, focus traps, or celebration overlays.
 - `sounds.ts`: split ambient music orchestration from moment-to-moment SFX when both keep growing.
 - `input.ts`: split pointer, keyboard, and gamepad paths when they stop sharing enough code to justify a single file.
+- `public/styles/[game].css`: move repeated shell/layout rules into shared `app/ui/` helpers like `game-shell.tsx` before splitting game-specific visual sections further.
 
 ## Decision Rule
 

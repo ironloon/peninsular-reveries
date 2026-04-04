@@ -4,6 +4,13 @@ import { getGameAttribution } from '../data/attributions.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
+import { GameScreen, GameSettingsModal, SrOnly } from '../ui/game-shell.js'
+
+const pixelPassportModalOverlayStyles = {
+  zIndex: 30,
+  background: 'rgba(4, 10, 20, 0.72)',
+  backdropFilter: 'blur(8px)',
+}
 
 function renderMarkerButtons(group: 'globe' | 'mystery') {
   return DESTINATIONS.map((destination) => (
@@ -32,6 +39,7 @@ export async function pixelPassportAction() {
       description="Ride a magic bus around the world, learn simple facts, and solve kid-friendly destination mysteries."
       path="/pixel-passport/"
       includeNav={false}
+      includeFooter={false}
       stylesheets={['/styles/pixel-passport.css']}
       includeDefaultStyles={false}
       scripts={['/client/pixel-passport/main.js']}
@@ -42,7 +50,7 @@ export async function pixelPassportAction() {
       serviceWorkerScope="/pixel-passport/"
     >
       <div className="scene-track">
-        <section id="start-screen" className="screen active" aria-labelledby="passport-title">
+        <GameScreen id="start-screen" className="active" labelledBy="passport-title" padded>
           <div className="start-shell passport-panel">
             <div className="start-copy">
               <p className="screen-kicker">Magic bus world trip</p>
@@ -80,9 +88,9 @@ export async function pixelPassportAction() {
               </div>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="globe-screen" className="screen" aria-labelledby="globe-heading">
+        <GameScreen id="globe-screen" labelledBy="globe-heading" padded>
           <div className="globe-shell passport-panel">
             <header className="screen-header passport-topbar">
               <div>
@@ -118,9 +126,9 @@ export async function pixelPassportAction() {
               </div>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="travel-screen" className="screen" aria-labelledby="travel-heading">
+        <GameScreen id="travel-screen" labelledBy="travel-heading" padded>
           <div className="travel-shell passport-panel">
             <header className="screen-header passport-topbar">
               <div>
@@ -142,9 +150,9 @@ export async function pixelPassportAction() {
               </div>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="explore-screen" className="screen" aria-labelledby="explore-heading">
+        <GameScreen id="explore-screen" labelledBy="explore-heading" padded>
           <div className="explore-shell passport-panel">
             <header className="screen-header passport-topbar">
               <div>
@@ -170,9 +178,9 @@ export async function pixelPassportAction() {
               <button id="explore-next-btn" className="passport-btn passport-btn-primary" type="button">Next fact <span aria-hidden="true">→</span></button>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="memory-screen" className="screen" aria-labelledby="memory-heading">
+        <GameScreen id="memory-screen" labelledBy="memory-heading" padded>
           <div className="memory-shell passport-panel">
             <p className="screen-kicker">Memory found</p>
             <h2 id="memory-heading" className="screen-title">Souvenir time</h2>
@@ -194,9 +202,9 @@ export async function pixelPassportAction() {
               <button data-settings-open="true" className="passport-btn passport-btn-ghost" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="room-screen" className="screen" aria-labelledby="room-heading">
+        <GameScreen id="room-screen" labelledBy="room-heading" padded>
           <div className="room-shell passport-panel">
             <header className="screen-header passport-topbar">
               <div>
@@ -229,9 +237,9 @@ export async function pixelPassportAction() {
               <button id="room-back-btn" className="passport-btn passport-btn-primary" type="button">Back to globe <span aria-hidden="true">→</span></button>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="mystery-screen" className="screen" aria-labelledby="mystery-heading">
+        <GameScreen id="mystery-screen" labelledBy="mystery-heading" padded>
           <div className="mystery-shell passport-panel">
             <header className="screen-header passport-topbar">
               <div>
@@ -260,9 +268,9 @@ export async function pixelPassportAction() {
               <p id="mystery-selected-copy" className="screen-copy mystery-selected-copy">Tap the place you think fits the clue.</p>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="mystery-result-screen" className="screen" aria-labelledby="mystery-result-heading">
+        <GameScreen id="mystery-result-screen" labelledBy="mystery-result-heading" padded>
           <div className="result-shell passport-panel">
             <p className="screen-kicker">Mystery result</p>
             <h2 id="mystery-result-heading" className="screen-title">Let's see!</h2>
@@ -276,12 +284,10 @@ export async function pixelPassportAction() {
               <button id="mystery-result-btn" className="passport-btn passport-btn-primary" type="button">Next clue <span aria-hidden="true">→</span></button>
             </div>
           </div>
-        </section>
+        </GameScreen>
       </div>
 
-      <div id="settings-modal" className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" tabIndex={-1} hidden>
-        <div className="settings-content">
-          <h2 id="settings-heading">Menu</h2>
+      <GameSettingsModal title="Menu" overlayStyles={pixelPassportModalOverlayStyles}>
 
           <section className="settings-section">
             <h3>Controls</h3>
@@ -335,11 +341,10 @@ export async function pixelPassportAction() {
             <a href={homePath} className="passport-btn passport-btn-secondary settings-home-link">Home</a>
             <button id="settings-close" className="passport-btn passport-btn-primary" type="button">Close</button>
           </div>
-        </div>
-      </div>
+      </GameSettingsModal>
 
-      <div id="game-status" aria-live="polite" aria-atomic="true" className="sr-only"></div>
-      <div id="game-feedback" aria-live="assertive" aria-atomic="true" className="sr-only"></div>
+      <SrOnly id="game-status" ariaLive="polite" ariaAtomic />
+      <SrOnly id="game-feedback" ariaLive="assertive" ariaAtomic />
 
       <noscript>
         <div className="noscript-message">

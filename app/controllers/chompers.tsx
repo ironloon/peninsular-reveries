@@ -3,6 +3,12 @@ import { getGameAttribution } from '../data/attributions.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
+import { GameScreen, GameSettingsModal, SrOnly } from '../ui/game-shell.js'
+
+const chompersModalOverlayStyles = {
+  zIndex: 200,
+  background: 'rgba(5, 16, 14, 0.72)',
+}
 
 export async function chompersAction() {
   const attribution = getGameAttribution('chompers')
@@ -14,6 +20,7 @@ export async function chompersAction() {
       description="Guide a geometric hippo and chomp falling fruit before it splats."
       path="/chompers/"
       includeNav={false}
+      includeFooter={false}
       stylesheets={['/styles/chompers.css']}
       includeDefaultStyles={false}
       scripts={['/client/chompers/main.js']}
@@ -24,7 +31,7 @@ export async function chompersAction() {
       serviceWorkerScope="/chompers/"
     >
       <div className="scene-track">
-        <section id="start-screen" className="screen active" aria-labelledby="start-heading">
+        <GameScreen id="start-screen" className="active" labelledBy="start-heading" padded>
           <div className="start-shell">
             <p className="screen-kicker">Fruit Drop Frenzy</p>
             <h1 id="start-heading" className="start-title">Chompers</h1>
@@ -69,11 +76,11 @@ export async function chompersAction() {
               <li>Golden stars are rare and worth a lot.</li>
             </ul>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="game-screen" className="screen" aria-labelledby="game-screen-heading">
+        <GameScreen id="game-screen" labelledBy="game-screen-heading" padded>
           <div className="game-shell">
-            <h2 id="game-screen-heading" className="sr-only">Chompers game screen</h2>
+            <SrOnly as="h2" id="game-screen-heading">Chompers game screen</SrOnly>
 
             <div className="game-hud" aria-label="Game status">
               <div className="hud-group">
@@ -118,9 +125,9 @@ export async function chompersAction() {
               <button data-settings-open="true" className="chomp-btn chomp-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="end-screen" className="screen" aria-labelledby="end-heading">
+        <GameScreen id="end-screen" labelledBy="end-heading" padded>
           <div className="end-shell">
             <p className="screen-kicker">Round Complete</p>
             <h2 id="end-heading" className="end-title">Nice Chomping.</h2>
@@ -150,12 +157,10 @@ export async function chompersAction() {
               <button id="menu-btn" className="chomp-btn chomp-btn-secondary">Pick Another Mode</button>
             </div>
           </div>
-        </section>
+        </GameScreen>
       </div>
 
-      <div id="settings-modal" className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" tabIndex={-1} hidden>
-        <div className="settings-content">
-          <h2 id="settings-heading">Menu</h2>
+      <GameSettingsModal title="Menu" overlayStyles={chompersModalOverlayStyles}>
 
           <section className="settings-section">
             <h3>Controls</h3>
@@ -200,11 +205,10 @@ export async function chompersAction() {
             <a href={homePath} className="chomp-btn chomp-btn-secondary settings-home-link">Home</a>
             <button id="settings-close" className="chomp-btn chomp-btn-primary">Close</button>
           </div>
-        </div>
-      </div>
+      </GameSettingsModal>
 
-      <div id="game-status" aria-live="polite" aria-atomic="true" className="sr-only"></div>
-      <div id="game-feedback" aria-live="assertive" aria-atomic="true" className="sr-only"></div>
+      <SrOnly id="game-status" ariaLive="polite" ariaAtomic />
+      <SrOnly id="game-feedback" ariaLive="assertive" ariaAtomic />
 
       <noscript>
         <div className="noscript-message">

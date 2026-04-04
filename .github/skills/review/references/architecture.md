@@ -8,7 +8,7 @@
 
 ## Constraints
 
-- Stack: TypeScript + Remix 3 packages (`component`, `fetch-router`, `node-fetch-server`) + esbuild + vanilla CSS + GitHub Pages
+- Stack: TypeScript + Remix 3 packages (`component`, `fetch-router`, `node-fetch-server`) + esbuild + hybrid CSS (`css()` mixins for shared/page UI, external stylesheets for large game-specific systems) + GitHub Pages
 - Hosting: GitHub Pages with static files in `dist/`
 - Build: `tsx --tsconfig config/tsconfig.json build.ts`
 - Dev: `tsx --tsconfig config/tsconfig.json server.ts`
@@ -44,7 +44,7 @@ app/                     server and build-time code
   routes.ts              route map
   router.ts              router setup
   controllers/           page controllers
-  ui/                    document shell and shared UI
+  ui/                    document shell, shared UI, and shared style helpers
   data/                  registry and content data
 
 client/                  browser code bundled into dist/client/
@@ -57,7 +57,7 @@ e2e/                     Playwright browser specs for rendered-site behavior
   site-*.spec.ts         responsive, navigation, semantic HTML, a11y, and gameplay UI checks
 
 public/                  static assets copied to dist/
-  styles/                site and game CSS
+  styles/                global foundation CSS plus large game-specific stylesheets
   manifest.json          root PWA manifest
   sw.js                  root service worker
 
@@ -72,10 +72,10 @@ server.ts                dev server with live reload
 3. Create `app/controllers/[game-slug].tsx`.
 4. Add the route in `app/routes.ts` and wire it in `app/router.ts`.
 5. Add esbuild entries in `build.ts` and `server.ts`.
-6. Add `public/styles/[game-slug].css` if needed.
+6. Add `public/styles/[game-slug].css` when the game needs substantial game-specific art, animation, or client-runtime class hooks; use shared `app/ui/` helpers and `css()` mixins for repeated shell/layout rules.
 7. Add the static route to `build.ts`.
 8. Add scoped PWA assets in `public/[game-slug]/manifest.json` and `public/[game-slug]/sw.js`.
-9. Pass `includeNav={false}` from the game controller.
+9. Pass `includeNav={false}` and `includeFooter={false}` from the game controller.
 10. Add a `Menu` overlay with Home, controls help, settings, reduce-motion, and credits when needed.
 11. If media attributions change, update `app/data/attributions.ts` and run `npm run sync:attributions`.
 12. Add both unit and e2e tests for new logic and UI behavior.
@@ -99,11 +99,24 @@ Every game in `client/` follows this pattern:
 
 Games use vanilla TypeScript with direct DOM manipulation. This is intentional for accessibility, tiny bundles, CSS-first motion, and responsive layout without canvas barriers.
 
+Site pages and shared server-rendered UI may use Remix `css()` mixins for co-located styles without changing the DOM-first game runtime model.
+
+## Styling Architecture
+
+This repo uses a hybrid CSS model.
+
+- Prefer Remix `css()` mixins in `app/` for shared server-rendered UI, page layouts, repeated game shell rules, modal shells, live-region helpers, and other styles that belong next to JSX structure.
+- Keep `public/styles/*.css` for global foundation CSS and large game-specific visual systems, especially when browser code relies on stable class hooks or when a game carries art-heavy selectors and long animation sections.
+- `public/styles/main.css` is the global foundation stylesheet: root tokens, theme overrides, theme-toggle styling, and view-transition/reduced-motion glue. Avoid moving page-specific layouts or reusable component chrome back into it.
+- Shared site/page styling lives in `app/ui/` alongside the owning component or shared helper, for example `site-styles.ts`, `game-card.tsx`, and `game-shell.tsx`.
+- Shared full-screen game shell behavior belongs in `app/ui/game-shell.tsx`. Do not duplicate site chrome hiding, game `main` layout, base screen-slide transitions, base settings-modal overlay behavior, or `.sr-only` rules across every game stylesheet unless a game truly needs an override.
+
 ## Game Implementation Rules
 
-- Use a dedicated body class per game page and treat that body as a full-height flex column root.
-- Pair `body.<game> main { display: flex; flex: 1; min-height: 0; }` with a full-width scene container.
-- Pass `includeNav={false}` to `Document` for full-screen game pages.
+- Use a dedicated body class per game page and treat that body as the game-specific token/background root.
+- Let `Document` apply the shared full-screen `main` layout for games; do not restate `body.<game> main` rules unless a game needs a real override.
+- Hide shared site chrome by omitting it in `Document` (`includeNav={false}`, `includeFooter={false}`) instead of re-adding hide rules in each game stylesheet.
+- Use shared game shell helpers for screen wrappers, settings modal shells, and live regions when the markup shape matches.
 - Use `viewport-fit=cover` and safe-area padding for full-screen game pages.
 - Give fixed overlays the same safe-area-aware padding as the game root.
 - Keep site navigation inside the game UI, not the shared site header.
@@ -118,6 +131,7 @@ Games use vanilla TypeScript with direct DOM manipulation. This is intentional f
 - Use `.tsx` for server-rendered JSX in `app/`.
 - Use `innerHTML` prop for inline scripts in JSX.
 - Generated HTML should use absolute paths.
+- Prefer co-located `css()` mixins for shared/page UI and reserve external stylesheets for game-specific, art-heavy, or class-driven runtime styles.
 - State functions should stay pure.
 - Normalize game input sources to semantic actions.
 - Prefer CSS-first animation with JS promise wrappers.

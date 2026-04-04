@@ -1,8 +1,18 @@
 import { renderToString } from 'remix/component/server'
 import { Document } from '../ui/document.js'
+import { GameScreen, GameSettingsModal, SrOnly } from '../ui/game-shell.js'
 import { attributionsPagePath, getGameAttribution } from '../data/attributions.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
+
+const superWordScreenStyles = {
+  transition: 'transform 500ms cubic-bezier(0.4, 0, 0.2, 1)',
+}
+
+const superWordModalOverlayStyles = {
+  zIndex: 150,
+  background: 'rgba(0, 0, 0, 0.6)',
+}
 
 export async function superWordAction() {
   const attribution = getGameAttribution('super-word')
@@ -15,6 +25,7 @@ export async function superWordAction() {
       description="Find hidden letters and spell the secret word."
       path="/super-word/"
       includeNav={false}
+      includeFooter={false}
       stylesheets={['/styles/game.css']}
       includeDefaultStyles={false}
       scripts={['/client/super-word/main.js']}
@@ -28,7 +39,7 @@ export async function superWordAction() {
       <div className="scene-track">
 
         {/* Start Screen */}
-        <div id="start-screen" className="screen active">
+        <GameScreen id="start-screen" className="active" as="div" screenStyles={superWordScreenStyles}>
           <h1 className="title" aria-label="Super Word">
             <span className="title-bounce">S</span><span className="title-bounce">U</span><span className="title-bounce">P</span><span className="title-bounce">E</span><span className="title-bounce">R</span>
             <br />
@@ -39,10 +50,10 @@ export async function superWordAction() {
           <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Press Ⓐ to Start</p>
           <button data-settings-open="true" className="settings-toggle-btn" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
           <p className="inspiration">Inspired by <a href="https://pbskids.org/superwhy" target="_blank" rel="noopener">Super Why!</a> from PBS Kids</p>
-        </div>
+        </GameScreen>
 
         {/* Game Screen */}
-        <div id="game-screen" className="screen">
+        <GameScreen id="game-screen" as="div" screenStyles={superWordScreenStyles}>
           <div className="game-header">
             <div className="game-header-left">
               <span id="puzzle-counter" className="puzzle-counter" aria-label="Puzzle progress">1 / 5</span>
@@ -66,7 +77,7 @@ export async function superWordAction() {
               <button id="check-btn" className="btn btn-check" disabled>✓ Check Word!</button>
             </div>
           </div>
-        </div>
+        </GameScreen>
 
         {/* Celebration Popup */}
         <div id="celebration-popup" className="celebration-popup" role="dialog" aria-modal="true" aria-labelledby="celebration-heading" aria-live="polite" hidden>
@@ -79,9 +90,7 @@ export async function superWordAction() {
         </div>
 
         {/* Settings Modal */}
-        <div id="settings-modal" className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" tabIndex={-1} hidden>
-          <div className="settings-content">
-            <h2 id="settings-heading" className="settings-heading">Menu</h2>
+        <GameSettingsModal title="Menu" headingClassName="settings-heading" overlayStyles={superWordModalOverlayStyles}>
 
             <div className="settings-section">
               <h3 className="settings-section-title">🎮 Controls</h3>
@@ -171,33 +180,32 @@ export async function superWordAction() {
               <a href={homePath} className="btn settings-close-btn settings-home-link">Home</a>
               <button id="settings-close" className="btn settings-close-btn">Close</button>
             </div>
-          </div>
-        </div>
+        </GameSettingsModal>
 
         {/* Level Complete Screen */}
-        <div id="complete-screen" className="screen">
+        <GameScreen id="complete-screen" as="div" screenStyles={superWordScreenStyles}>
           <div className="complete-stars" aria-hidden="true">⭐⭐⭐</div>
           <h2 className="complete-heading">Amazing!</h2>
           <p className="complete-body">You spelled it correctly! 🎉</p>
           <div id="solved-word"></div>
           <button id="next-btn" className="btn btn-primary">Next Puzzle! →</button>
-        </div>
+        </GameScreen>
 
         {/* Win Screen */}
-        <div id="win-screen" className="screen">
+        <GameScreen id="win-screen" as="div" screenStyles={superWordScreenStyles}>
           <div className="win-trophy" aria-hidden="true">🏆</div>
           <h2 className="win-heading">Super Reader!</h2>
           <p className="win-body">You solved all the puzzles! 🎊</p>
           <div id="final-score"></div>
           <div className="win-stars" aria-hidden="true">⭐⭐⭐⭐⭐</div>
           <button id="replay-btn" className="btn btn-primary">Play Again! 🔄</button>
-        </div>
+        </GameScreen>
 
       </div>
 
       {/* Accessibility: aria-live regions */}
-      <div id="game-status" aria-live="polite" aria-atomic="true" className="sr-only"></div>
-      <div id="game-feedback" aria-live="assertive" aria-atomic="true" className="sr-only"></div>
+      <SrOnly id="game-status" ariaLive="polite" ariaAtomic />
+      <SrOnly id="game-feedback" ariaLive="assertive" ariaAtomic />
 
       <noscript>
         <div className="noscript-message">

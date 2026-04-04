@@ -4,6 +4,14 @@
 
 For project architecture, game quality standards, and testing conventions, load the `review` skill in `.github/skills/review/` before doing substantial repo work.
 
+## Styling Guidance
+
+- This repo uses a hybrid CSS model. Prefer Remix `css()` mixins in `app/` for shared server-rendered UI, page layouts, shared game shell helpers, modal shells, and accessibility utilities.
+- Keep `public/styles/*.css` for global foundation CSS and large game-specific visual systems, especially where client DOM code depends on stable class hooks or art-heavy selector/animation sections.
+- Do not reintroduce duplicated per-game shell rules such as hiding site chrome, full-screen `main` layout, base screen transitions, base settings-modal overlay behavior, or `.sr-only` when `app/ui/game-shell.tsx` or other shared UI modules already own them.
+- When updating a server-rendered component in `app/`, prefer co-located style objects or shared modules in `app/ui/` over adding new page-specific rules to `public/styles/main.css`.
+- Treat `public/styles/main.css` as the global foundation stylesheet for tokens, theme overrides, theme toggle styling, and view-transition/reduced-motion glue.
+
 ## Knowledge Persistence
 
 - Do not use Copilot memory files (`/memories/repo/`) to store project learnings. Memory files are invisible to humans, other tools, and collaborators.
