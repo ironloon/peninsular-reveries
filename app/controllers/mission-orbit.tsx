@@ -4,6 +4,12 @@ import { MISSION_CREW_ROSTER } from '../data/mission-orbit-crew.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
+import { GameScreen, GameSettingsModal, SrOnly } from '../ui/game-shell.js'
+
+const missionOrbitModalOverlayStyles = {
+  zIndex: 100,
+  background: 'rgba(4, 10, 18, 0.7)',
+}
 
 export async function missionOrbitAction() {
   const attribution = getGameAttribution('mission-orbit')
@@ -15,6 +21,7 @@ export async function missionOrbitAction() {
       description="Guide an Artemis II-inspired trip from countdown to Pacific splashdown, one calm mission step at a time."
       path="/mission-orbit/"
       includeNav={false}
+      includeFooter={false}
       stylesheets={['/styles/mission-orbit.css']}
       includeDefaultStyles={false}
       scripts={['/client/mission-orbit/main.js']}
@@ -25,7 +32,7 @@ export async function missionOrbitAction() {
       serviceWorkerScope="/mission-orbit/"
     >
       <div className="scene-track">
-        <section id="start-screen" className="screen active" aria-labelledby="mission-title">
+        <GameScreen id="start-screen" className="active" labelledBy="mission-title" padded>
           <div className="start-shell">
             <p className="mission-kicker">Artemis II-inspired mission</p>
             <h1 id="mission-title" className="mission-title">Mission: Orbit</h1>
@@ -69,9 +76,9 @@ export async function missionOrbitAction() {
 
             <p id="gamepad-start-hint" className="start-hint" hidden>Controller A starts the mission.</p>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="mission-screen" className="screen" aria-labelledby="mission-phase-label">
+        <GameScreen id="mission-screen" labelledBy="mission-phase-label" padded>
           <div className="mission-shell">
             <header className="mission-header">
               <div>
@@ -173,9 +180,9 @@ export async function missionOrbitAction() {
               <button data-settings-open="true" className="mission-btn mission-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Settings</button>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <section id="end-screen" className="screen" aria-labelledby="mission-end-heading">
+        <GameScreen id="end-screen" labelledBy="mission-end-heading" padded>
           <div className="end-shell">
             <p className="mission-kicker">Pacific splashdown</p>
             <h2 id="mission-end-heading" className="mission-title mission-title-end">Welcome home, astronaut!</h2>
@@ -185,11 +192,9 @@ export async function missionOrbitAction() {
               <button data-settings-open="true" className="mission-btn mission-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Settings</button>
             </div>
           </div>
-        </section>
+        </GameScreen>
 
-        <div id="settings-modal" className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" tabIndex={-1} hidden>
-          <div className="settings-content mission-settings-content">
-            <h2 id="settings-heading" className="settings-heading">Menu</h2>
+        <GameSettingsModal title="Menu" headingClassName="settings-heading" contentClassName="settings-content mission-settings-content" overlayStyles={missionOrbitModalOverlayStyles}>
 
             <section className="settings-section">
               <h3 className="settings-section-title">Controls</h3>
@@ -267,13 +272,12 @@ export async function missionOrbitAction() {
               <a href={homePath} className="mission-btn mission-btn-secondary settings-home-link">Home</a>
               <button id="settings-close" className="mission-btn mission-btn-secondary">Close</button>
             </div>
-          </div>
-        </div>
+        </GameSettingsModal>
       </div>
 
-      <div id="game-status" aria-live="polite" aria-atomic="true" className="sr-only"></div>
-      <div id="game-feedback" aria-live="assertive" aria-atomic="true" className="sr-only"></div>
-      <div id="phase-description" aria-live="polite" aria-atomic="true" className="sr-only"></div>
+      <SrOnly id="game-status" ariaLive="polite" ariaAtomic />
+      <SrOnly id="game-feedback" ariaLive="assertive" ariaAtomic />
+      <SrOnly id="phase-description" ariaLive="polite" ariaAtomic />
 
       <noscript>
         <div className="noscript-message">

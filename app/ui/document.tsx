@@ -1,7 +1,9 @@
-import type { RemixNode } from 'remix/component'
+import { css, type RemixNode } from 'remix/component'
 import { getSiteBasePath, getSiteUrl } from '../site-config.js'
 import { resolveSiteUrl, withBasePath } from '../site-paths.js'
+import { gameBodyStyles, gameMainStyles } from './game-shell.js'
 import { Nav } from './nav.js'
+import { siteFooterStyles, siteHeaderStyles, siteMainStyles } from './site-styles.js'
 
 interface DocumentProps {
   title: string
@@ -9,6 +11,7 @@ interface DocumentProps {
   path: string
   stylesheets?: string[]
   includeNav?: boolean
+  includeFooter?: boolean
   includeDefaultStyles?: boolean
   scripts?: string[]
   bodyClass?: string
@@ -28,6 +31,7 @@ export function Document() {
       path,
       stylesheets = [],
       includeNav = true,
+      includeFooter = true,
       includeDefaultStyles = true,
       scripts = [],
       bodyClass,
@@ -86,18 +90,20 @@ export function Document() {
           {allStyles.map(href => <link rel="stylesheet" href={href} />)}
           <script innerHTML={`const theme=localStorage.getItem('theme');if(theme)document.documentElement.setAttribute('data-theme',theme);const reduceMotion=localStorage.getItem('reduce-motion');if(reduceMotion==='reduce'||reduceMotion==='no-preference')document.documentElement.setAttribute('data-reduce-motion',reduceMotion);`} />
         </head>
-        <body className={bodyClass}>
+        <body className={bodyClass} mix={includeDefaultStyles ? [] : [css(gameBodyStyles)]}>
           {includeNav ? (
-            <header id="site-header" className="site-header">
+            <header id="site-header" className="site-header" mix={includeDefaultStyles ? [css(siteHeaderStyles)] : []}>
               <Nav path={path} />
             </header>
           ) : null}
-          <main>
+          <main mix={includeDefaultStyles ? [css(siteMainStyles)] : [css(gameMainStyles)]}>
             {children}
           </main>
-          <footer className="site-footer">
-            <p>A quiet corner of the internet.</p>
-          </footer>
+          {includeFooter ? (
+            <footer className="site-footer" mix={includeDefaultStyles ? [css(siteFooterStyles)] : []}>
+              <p>A quiet corner of the internet.</p>
+            </footer>
+          ) : null}
           {allScripts.map(src => <script type="module" src={src} />)}
         </body>
       </html>
