@@ -22,7 +22,7 @@ test.describe('SITE-07: Mission Orbit', () => {
   test('settings modal opens and exposes the audio controls', async ({ page }) => {
     await page.goto('/mission-orbit/')
 
-    await page.getByRole('button', { name: 'Mission settings' }).click()
+    await page.getByRole('button', { name: 'Menu' }).click()
     await expect(page.locator('#settings-modal')).toBeVisible()
     await expect(page.getByLabel('Space ambience')).toBeVisible()
     await expect(page.getByLabel('Physical sound intensity')).toBeVisible()

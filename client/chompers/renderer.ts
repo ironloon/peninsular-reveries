@@ -1,4 +1,5 @@
 import { isReducedMotion } from './animations.js'
+import { bindReduceMotionToggle } from '../preferences.js'
 import { FRUIT_DEFINITIONS, ZEN_ROUND_ITEMS } from './types.js'
 import type { GameMode, GameState } from './types.js'
 
@@ -233,22 +234,25 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
 export function setupSettingsModal(): SettingsModalController {
   const modal = document.getElementById('settings-modal') as HTMLElement
   const closeButton = document.getElementById('settings-close') as HTMLButtonElement
-  const triggers = [
-    document.getElementById('settings-open'),
-    document.getElementById('game-settings-open'),
-  ].filter((element): element is HTMLButtonElement => element instanceof HTMLButtonElement)
+  const triggers = Array.from(document.querySelectorAll<HTMLElement>('[data-settings-open="true"]'))
+  const reduceMotionToggle = document.getElementById('reduce-motion-toggle') as HTMLInputElement | null
+  const reduceMotionHelp = document.getElementById('reduce-motion-help') as HTMLElement | null
 
   let open = false
   let lastFocused: HTMLElement | null = null
+
+  const setExpanded = (expanded: boolean) => {
+    for (const trigger of triggers) {
+      trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false')
+    }
+  }
 
   const close = () => {
     if (!open) return
     open = false
     modal.hidden = true
     document.body.classList.remove('modal-open')
-    for (const trigger of triggers) {
-      trigger.setAttribute('aria-expanded', 'false')
-    }
+    setExpanded(false)
     lastFocused?.focus()
   }
 
@@ -258,9 +262,7 @@ export function setupSettingsModal(): SettingsModalController {
     lastFocused = trigger ?? (document.activeElement as HTMLElement | null)
     modal.hidden = false
     document.body.classList.add('modal-open')
-    for (const source of triggers) {
-      source.setAttribute('aria-expanded', 'true')
-    }
+    setExpanded(true)
     requestAnimationFrame(() => closeButton.focus())
   }
 
@@ -269,6 +271,8 @@ export function setupSettingsModal(): SettingsModalController {
   }
 
   closeButton.addEventListener('click', close)
+
+  bindReduceMotionToggle(reduceMotionToggle, reduceMotionHelp)
 
   modal.addEventListener('click', (event) => {
     if (event.target === modal) {

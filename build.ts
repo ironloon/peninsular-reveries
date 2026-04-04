@@ -1,5 +1,5 @@
 import * as esbuild from 'esbuild'
-import { cpSync, readFileSync, rmSync, mkdirSync, writeFileSync, statSync } from 'node:fs'
+import { cpSync, readFileSync, readdirSync, rmSync, mkdirSync, writeFileSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { createAppRouter } from './app/router.js'
 
@@ -14,10 +14,26 @@ mkdirSync(join(outputDir, 'client', 'mission-orbit'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'super-word'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'chompers'), { recursive: true })
 
+// ── Minify copied CSS assets ─────────────────────────────
+const stylesheetDir = join(outputDir, 'styles')
+for (const file of readdirSync(stylesheetDir)) {
+  if (!file.endsWith('.css')) continue
+
+  const filePath = join(stylesheetDir, file)
+  const source = readFileSync(filePath, 'utf-8')
+  const result = await esbuild.transform(source, {
+    loader: 'css',
+    minify: true,
+    legalComments: 'none',
+  })
+  writeFileSync(filePath, result.code)
+}
+
 // ── Bundle client code ───────────────────────────────────
 await esbuild.build({
   entryPoints: [
     'client/shell.ts',
+    'client/home.ts',
     'client/404.ts',
     'client/mission-orbit/main.ts',
     'client/super-word/main.ts',
@@ -67,7 +83,7 @@ const resourceBudgetBytes = new Map(
 const BUDGET_BYTES = resourceBudgetBytes.get('total') ?? 200 * 1024
 const strictBudgetEnforcement = process.env.STRICT_BUILD_BUDGETS === '1'
 const pages: Record<string, string[]> = {
-  homepage: ['index.html', 'styles/main.css', 'client/shell.js'],
+  homepage: ['index.html', 'styles/main.css', 'client/shell.js', 'client/home.js'],
   attributions: ['attributions/index.html', 'styles/main.css', 'client/shell.js'],
   'mission-orbit': ['mission-orbit/index.html', 'styles/mission-orbit.css', 'client/shell.js', 'client/mission-orbit/main.js'],
   'super-word': ['super-word/index.html', 'styles/game.css', 'client/shell.js', 'client/super-word/main.js'],

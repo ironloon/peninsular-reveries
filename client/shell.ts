@@ -6,10 +6,6 @@ function withBasePath(path: string): string {
   return basePath ? `${basePath}${path}` : path
 }
 
-function resolveSiteUrl(path: string): string {
-  return new URL(withBasePath(path), window.location.origin).toString()
-}
-
 if (footer) {
   const toggle = document.createElement('button')
   toggle.className = 'theme-toggle'
@@ -37,25 +33,18 @@ if (footer) {
 }
 
 async function syncServiceWorker(): Promise<void> {
-  const legacySiteScope = resolveSiteUrl('/')
+  const siteServiceWorkerPath = document.documentElement.dataset.siteServiceWorkerPath ?? withBasePath('/sw.js')
+  const siteServiceWorkerScope = document.documentElement.dataset.siteServiceWorkerScope ?? withBasePath('/')
   const serviceWorkerPath = document.documentElement.dataset.serviceWorkerPath
   const serviceWorkerScope = document.documentElement.dataset.serviceWorkerScope
 
   try {
-    const registrations = await navigator.serviceWorker.getRegistrations()
+    await navigator.serviceWorker.register(siteServiceWorkerPath, { scope: siteServiceWorkerScope })
 
-    await Promise.all(
-      registrations
-        .filter((registration) => registration.scope === legacySiteScope)
-        .map((registration) => registration.unregister()),
-    )
-
-    if (!serviceWorkerPath) {
-      return
+    if (serviceWorkerPath && serviceWorkerPath !== siteServiceWorkerPath) {
+      const options = serviceWorkerScope ? { scope: serviceWorkerScope } : undefined
+      await navigator.serviceWorker.register(serviceWorkerPath, options)
     }
-
-    const options = serviceWorkerScope ? { scope: serviceWorkerScope } : undefined
-    await navigator.serviceWorker.register(serviceWorkerPath, options)
   } catch {
     // SW sync failed — offline won't work, that's fine
   }

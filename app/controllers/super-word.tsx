@@ -1,14 +1,19 @@
 import { renderToString } from 'remix/component/server'
 import { Document } from '../ui/document.js'
 import { getGameAttribution } from '../data/attributions.js'
+import { getSiteBasePath } from '../site-config.js'
+import { withBasePath } from '../site-paths.js'
 
 export async function superWordAction() {
   const attribution = getGameAttribution('super-word')
+  const siteBasePath = getSiteBasePath()
+  const homePath = withBasePath('/', siteBasePath)
   const html = await renderToString(
     <Document
       title="Super Word"
       description="Find hidden letters and spell the secret word."
       path="/super-word/"
+      includeNav={false}
       stylesheets={['/styles/game.css']}
       includeDefaultStyles={false}
       scripts={['/client/super-word/main.js']}
@@ -31,7 +36,7 @@ export async function superWordAction() {
           <p className="subtitle">Find hidden letters and solve the word puzzle!</p>
           <button id="start-btn" className="btn btn-primary">Let's Go! 🚀</button>
           <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Press Ⓐ to Start</p>
-          <button id="settings-open" className="settings-toggle-btn" aria-label="Settings" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">⚙️ Settings</button>
+          <button data-settings-open="true" className="settings-toggle-btn" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
           <p className="inspiration">Inspired by <a href="https://pbskids.org/superwhy" target="_blank" rel="noopener">Super Why!</a> from PBS Kids</p>
         </div>
 
@@ -43,6 +48,7 @@ export async function superWordAction() {
               <span id="score" className="score" aria-label="Score: 0">⭐ 0</span>
             </div>
             <div className="game-header-right">
+              <button data-settings-open="true" className="settings-toggle-btn settings-toggle-btn-inline" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
               <span id="letters-count" className="letters-count">0 / 3</span>
             </div>
           </div>
@@ -74,7 +80,7 @@ export async function superWordAction() {
         {/* Settings Modal */}
         <div id="settings-modal" className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" tabIndex={-1} hidden>
           <div className="settings-content">
-            <h2 id="settings-heading" className="settings-heading">⚙️ Settings</h2>
+            <h2 id="settings-heading" className="settings-heading">Menu</h2>
 
             <div className="settings-section">
               <h3 className="settings-section-title">🎮 Controls</h3>
@@ -122,6 +128,15 @@ export async function superWordAction() {
             </div>
 
             <div className="settings-section">
+              <h3 className="settings-section-title">Accessibility</h3>
+              <label className="settings-toggle-row" htmlFor="reduce-motion-toggle">
+                <span>Reduce motion</span>
+                <input type="checkbox" id="reduce-motion-toggle" />
+              </label>
+              <p id="reduce-motion-help" className="settings-help">Defaults to your device setting until you change it here.</p>
+            </div>
+
+            <div className="settings-section">
               <h3 className="settings-section-title">© Credits &amp; License</h3>
               <p className="settings-help"><span className="settings-detail-label">Code license:</span> {attribution.codeLicense}</p>
               <p className="settings-help">{attribution.summary}</p>
@@ -151,7 +166,7 @@ export async function superWordAction() {
             </div>
 
             <div className="settings-actions">
-              <button id="settings-play-btn" className="btn btn-primary settings-play-btn">▶️ Play!</button>
+              <a href={homePath} className="btn settings-close-btn settings-home-link">Home</a>
               <button id="settings-close" className="btn settings-close-btn">Close</button>
             </div>
           </div>

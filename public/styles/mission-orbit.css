@@ -217,6 +217,10 @@ body.mission-orbit-game main {
   z-index: 2;
 }
 
+.settings-actions > * {
+  flex: 1 1 0;
+}
+
 .mission-btn {
   appearance: none;
   position: relative;
@@ -1020,6 +1024,13 @@ body.mission-orbit-game main {
   accent-color: var(--mission-signal);
 }
 
+.settings-home-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 .settings-attributions {
   display: grid;
   gap: 0.7rem;
@@ -1339,11 +1350,19 @@ body.mission-orbit-game main {
   }
 }
 
+[data-reduce-motion='reduce'] .screen,
+[data-reduce-motion='reduce'] .mission-btn,
+[data-reduce-motion='reduce'] .countdown-overlay,
+[data-reduce-motion='reduce'] .mission-star {
+  animation: none !important;
+  transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .screen,
-  .mission-btn,
-  .countdown-overlay,
-  .mission-star {
+  :root:not([data-reduce-motion='no-preference']) .screen,
+  :root:not([data-reduce-motion='no-preference']) .mission-btn,
+  :root:not([data-reduce-motion='no-preference']) .countdown-overlay,
+  :root:not([data-reduce-motion='no-preference']) .mission-star {
     animation: none !important;
     transition: none !important;
   }

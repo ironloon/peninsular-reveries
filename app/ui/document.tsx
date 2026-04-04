@@ -8,6 +8,7 @@ interface DocumentProps {
   description: string
   path: string
   stylesheets?: string[]
+  includeNav?: boolean
   includeDefaultStyles?: boolean
   scripts?: string[]
   bodyClass?: string
@@ -26,6 +27,7 @@ export function Document() {
       description,
       path,
       stylesheets = [],
+      includeNav = true,
       includeDefaultStyles = true,
       scripts = [],
       bodyClass,
@@ -48,6 +50,8 @@ export function Document() {
     const allScripts = ['/client/shell.js', ...scripts].map(src => withBasePath(src, siteBasePath))
     const faviconHref = withBasePath(faviconPath, siteBasePath)
     const manifestHref = manifestPath ? withBasePath(manifestPath, siteBasePath) : undefined
+    const siteServiceWorkerHref = withBasePath('/sw.js', siteBasePath)
+    const siteServiceWorkerScopeHref = withBasePath('/', siteBasePath)
     const serviceWorkerHref = serviceWorkerPath ? withBasePath(serviceWorkerPath, siteBasePath) : undefined
     const serviceWorkerScopeHref = serviceWorkerScope ? withBasePath(serviceWorkerScope, siteBasePath) : undefined
     const viewportContent = viewportFitCover
@@ -58,6 +62,8 @@ export function Document() {
       <html
         lang="en"
         data-base-path={siteBasePath}
+        data-site-service-worker-path={siteServiceWorkerHref}
+        data-site-service-worker-scope={siteServiceWorkerScopeHref}
         data-service-worker-path={serviceWorkerHref}
         data-service-worker-scope={serviceWorkerScopeHref}
       >
@@ -78,12 +84,14 @@ export function Document() {
           {manifestHref ? <link rel="manifest" href={manifestHref} /> : null}
           <meta name="theme-color" content="#1a1a2e" />
           {allStyles.map(href => <link rel="stylesheet" href={href} />)}
-          <script innerHTML={`const theme=localStorage.getItem('theme');if(theme)document.documentElement.setAttribute('data-theme',theme);`} />
+          <script innerHTML={`const theme=localStorage.getItem('theme');if(theme)document.documentElement.setAttribute('data-theme',theme);const reduceMotion=localStorage.getItem('reduce-motion');if(reduceMotion==='reduce'||reduceMotion==='no-preference')document.documentElement.setAttribute('data-reduce-motion',reduceMotion);`} />
         </head>
         <body className={bodyClass}>
-          <header id="site-header" className="site-header">
-            <Nav path={path} />
-          </header>
+          {includeNav ? (
+            <header id="site-header" className="site-header">
+              <Nav path={path} />
+            </header>
+          ) : null}
           <main>
             {children}
           </main>

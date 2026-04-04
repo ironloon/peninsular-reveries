@@ -327,7 +327,7 @@ const callbacks: InputCallbacks = {
 
 syncSettingsForm()
 setupInput(getState, setState, currentPuzzle, callbacks)
-setupSettingsModal(onStartGame)
+setupSettingsModal()
 
 const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
 if (musicToggle) {

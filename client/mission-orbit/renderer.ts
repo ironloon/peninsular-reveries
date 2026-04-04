@@ -1,6 +1,7 @@
 import { isReducedMotion } from './animations.js'
 import { getCueSignal, getMissionStepLabel, getMissionTimeLabel } from './state.js'
 import { MISSION_SEQUENCE, getPhaseDefinition, type BurnGrade, type GameState, type MissionPhase } from './types.js'
+import { bindReduceMotionToggle } from '../preferences.js'
 
 declare global {
   interface Window {
@@ -706,6 +707,8 @@ export function setupSettingsModal(): void {
   const modal = document.getElementById('settings-modal') as HTMLElement | null
   const closeBtn = document.getElementById('settings-close') as HTMLButtonElement | null
   const openButtons = Array.from(document.querySelectorAll<HTMLElement>('[data-settings-open="true"]'))
+  const reduceMotionToggle = document.getElementById('reduce-motion-toggle') as HTMLInputElement | null
+  const reduceMotionHelp = document.getElementById('reduce-motion-help') as HTMLElement | null
 
   if (!modal || !closeBtn || openButtons.length === 0) return
 
@@ -751,6 +754,8 @@ export function setupSettingsModal(): void {
   }
 
   closeBtn.addEventListener('click', closeModal)
+
+  bindReduceMotionToggle(reduceMotionToggle, reduceMotionHelp)
 
   modalEl.addEventListener('click', (event) => {
     if (event.target === modalEl) {

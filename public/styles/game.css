@@ -182,6 +182,14 @@ body.super-word-game main {
   opacity: 1;
 }
 
+.settings-toggle-btn-inline {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  opacity: 1;
+  padding: 0.4rem 0.8rem;
+}
+
 .settings-modal {
   position: fixed;
   inset: 0;
@@ -278,15 +286,18 @@ body.super-word-game main {
   margin-top: var(--game-space-xs);
 }
 
-.settings-play-btn {
-  flex: 1;
+.settings-actions > * {
+  flex: 1 1 0;
 }
 
 .settings-close-btn {
   background: rgba(255, 255, 255, 0.15);
   color: var(--game-white);
   font-size: 0.85rem;
-  flex: 1;
+}
+
+.settings-home-link {
+  text-decoration: none;
 }
 
 .puzzle-select {
@@ -878,7 +889,7 @@ body.gamepad-active .gamepad-start-hint {
   animation: sceneSlideIn 400ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
-/* ── Keyframe Animations ──────────────────────────────────── */
+/* ── Keyframe Animations ─────────────────────────────────── */
 
 @keyframes celebrationIn {
   0% { transform: scale(0.5); opacity: 0; }
@@ -942,6 +953,86 @@ body.gamepad-active .gamepad-start-hint {
 @keyframes confettiFall {
   0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
   100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
+/* ── Reduced Motion ───────────────────────────────────────── */
+
+[data-reduce-motion='reduce'] .screen,
+[data-reduce-motion='reduce'] .scene-transitioning .screen {
+  transition: none !important;
+}
+
+[data-reduce-motion='reduce'] .collecting,
+[data-reduce-motion='reduce'] .shaking,
+[data-reduce-motion='reduce'] .appearing,
+[data-reduce-motion='reduce'] .wrong-shake,
+[data-reduce-motion='reduce'] .solved-pop,
+[data-reduce-motion='reduce'] .title-bounce,
+[data-reduce-motion='reduce'] .letter-tile.selected,
+[data-reduce-motion='reduce'] .flying-letter,
+[data-reduce-motion='reduce'] .wow-mode #complete-screen::before,
+[data-reduce-motion='reduce'] .wow-mode #complete-screen::after,
+[data-reduce-motion='reduce'] .celebration-content,
+[data-reduce-motion='reduce'] .celebration-popup.hiding .celebration-content,
+[data-reduce-motion='reduce'] .celebration-word .solved-letter,
+[data-reduce-motion='reduce'] .scene-slide-in #scene,
+[data-reduce-motion='reduce'] .scene-slide-in .prompt-bubble {
+  animation: none !important;
+}
+
+[data-reduce-motion='reduce'] #scene-wrapper::before,
+[data-reduce-motion='reduce'] .btn,
+[data-reduce-motion='reduce'] .item-card,
+[data-reduce-motion='reduce'] .letter-tile,
+[data-reduce-motion='reduce'] .scene-slide-out #scene,
+[data-reduce-motion='reduce'] .scene-slide-out .prompt-bubble {
+  transition: none !important;
+}
+
+[data-reduce-motion='reduce'] .scene-slide-out #scene,
+[data-reduce-motion='reduce'] .scene-slide-out .prompt-bubble {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduce-motion='no-preference']) .screen,
+  :root:not([data-reduce-motion='no-preference']) .scene-transitioning .screen {
+    transition: none !important;
+  }
+
+  :root:not([data-reduce-motion='no-preference']) .collecting,
+  :root:not([data-reduce-motion='no-preference']) .shaking,
+  :root:not([data-reduce-motion='no-preference']) .appearing,
+  :root:not([data-reduce-motion='no-preference']) .wrong-shake,
+  :root:not([data-reduce-motion='no-preference']) .solved-pop,
+  :root:not([data-reduce-motion='no-preference']) .title-bounce,
+  :root:not([data-reduce-motion='no-preference']) .letter-tile.selected,
+  :root:not([data-reduce-motion='no-preference']) .flying-letter,
+  :root:not([data-reduce-motion='no-preference']) .wow-mode #complete-screen::before,
+  :root:not([data-reduce-motion='no-preference']) .wow-mode #complete-screen::after,
+  :root:not([data-reduce-motion='no-preference']) .celebration-content,
+  :root:not([data-reduce-motion='no-preference']) .celebration-popup.hiding .celebration-content,
+  :root:not([data-reduce-motion='no-preference']) .celebration-word .solved-letter,
+  :root:not([data-reduce-motion='no-preference']) .scene-slide-in #scene,
+  :root:not([data-reduce-motion='no-preference']) .scene-slide-in .prompt-bubble {
+    animation: none !important;
+  }
+
+  :root:not([data-reduce-motion='no-preference']) #scene-wrapper::before,
+  :root:not([data-reduce-motion='no-preference']) .btn,
+  :root:not([data-reduce-motion='no-preference']) .item-card,
+  :root:not([data-reduce-motion='no-preference']) .letter-tile,
+  :root:not([data-reduce-motion='no-preference']) .scene-slide-out #scene,
+  :root:not([data-reduce-motion='no-preference']) .scene-slide-out .prompt-bubble {
+    transition: none !important;
+  }
+
+  :root:not([data-reduce-motion='no-preference']) .scene-slide-out #scene,
+  :root:not([data-reduce-motion='no-preference']) .scene-slide-out .prompt-bubble {
+    transform: none !important;
+    opacity: 1 !important;
+  }
 }
 
 .flying-letter {

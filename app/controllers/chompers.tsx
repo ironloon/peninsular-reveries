@@ -1,14 +1,19 @@
 import { renderToString } from 'remix/component/server'
 import { getGameAttribution } from '../data/attributions.js'
+import { getSiteBasePath } from '../site-config.js'
+import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
 
 export async function chompersAction() {
   const attribution = getGameAttribution('chompers')
+  const siteBasePath = getSiteBasePath()
+  const homePath = withBasePath('/', siteBasePath)
   const html = await renderToString(
     <Document
       title="Chompers"
       description="Guide a geometric hippo and chomp falling fruit before it splats."
       path="/chompers/"
+      includeNav={false}
       stylesheets={['/styles/chompers.css']}
       includeDefaultStyles={false}
       scripts={['/client/chompers/main.js']}
@@ -55,7 +60,7 @@ export async function chompersAction() {
 
             <div className="start-actions">
               <button id="start-btn" className="chomp-btn chomp-btn-primary">Start Chomping</button>
-              <button id="settings-open" className="chomp-btn chomp-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">How To Play</button>
+              <button data-settings-open="true" className="chomp-btn chomp-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
             </div>
 
             <ul className="start-notes" aria-label="Quick tips">
@@ -110,7 +115,7 @@ export async function chompersAction() {
 
             <div className="game-toolbar">
               <button id="chomp-btn" className="chomp-btn chomp-btn-primary">Chomp!</button>
-              <button id="game-settings-open" className="chomp-btn chomp-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Settings</button>
+              <button data-settings-open="true" className="chomp-btn chomp-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
             </div>
           </div>
         </section>
@@ -150,7 +155,7 @@ export async function chompersAction() {
 
       <div id="settings-modal" className="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-heading" tabIndex={-1} hidden>
         <div className="settings-content">
-          <h2 id="settings-heading">How To Play</h2>
+          <h2 id="settings-heading">Menu</h2>
 
           <section className="settings-section">
             <h3>Controls</h3>
@@ -164,6 +169,15 @@ export async function chompersAction() {
           <section className="settings-section">
             <h3>Modes</h3>
             <p>Rush is a 60-second score sprint. Survival gives you 3 hearts and ends when you run out. Zen drops 30 slow fruit with no hazards and no speed ramp.</p>
+          </section>
+
+          <section className="settings-section">
+            <h3>Accessibility</h3>
+            <label className="settings-toggle-row" htmlFor="reduce-motion-toggle">
+              <span>Reduce motion</span>
+              <input type="checkbox" id="reduce-motion-toggle" />
+            </label>
+            <p id="reduce-motion-help" className="settings-copy settings-help">Defaults to your device setting until you change it here.</p>
           </section>
 
           <section className="settings-section">
@@ -183,6 +197,7 @@ export async function chompersAction() {
           </section>
 
           <div className="settings-actions">
+            <a href={homePath} className="chomp-btn chomp-btn-secondary settings-home-link">Home</a>
             <button id="settings-close" className="chomp-btn chomp-btn-primary">Close</button>
           </div>
         </div>
