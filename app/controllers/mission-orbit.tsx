@@ -62,8 +62,8 @@ export async function missionOrbitAction() {
             <div id="mission-stage-shell" className="mission-stage-shell">
               <svg id="mission-map" className="mission-map" viewBox="0 0 100 100" aria-hidden="true">
                 <g id="mission-stars"></g>
-                <path id="mission-free-return" d="M 33 69 C 49 49, 60 28, 73 21 S 90 24, 82 36 C 69 53, 56 63, 35 73" />
-                <ellipse id="mission-orbit-path" cx="22" cy="76" rx="23" ry="14" />
+                <path id="mission-free-return" d="M 34 69 C 45 58, 57 44, 70 29 C 76 22, 84 19, 89 23 C 93 27, 92 35, 86 39 C 79 43, 72 41, 71 34 C 70 27, 75 22, 81 22 C 88 21, 92 27, 90 34 C 85 49, 70 63, 38 73" />
+                <path id="mission-orbit-path" d="M 22 59 C 34 59, 42 66, 42 76 C 42 86, 34 93, 22 93 C 10 93, 2 86, 2 76 C 2 66, 10 59, 22 59 Z" />
 
                 <circle id="mission-earth-glow" cx="22" cy="76" r="20" />
                 <circle id="mission-earth" cx="22" cy="76" r="16" />
@@ -81,6 +81,9 @@ export async function missionOrbitAction() {
                 <ellipse id="mission-splash" cx="55" cy="85" rx="7" ry="2" />
 
                 <g id="mission-rocket" transform="translate(22 78)">
+                  <circle id="mission-rocket-hit-area" cx="0" cy="0" r="12" />
+                  <circle id="mission-rocket-glow" cx="0" cy="0" r="9.6" />
+                  <circle id="mission-rocket-cue-ring" cx="0" cy="0" r="7.8" />
                   <g id="mission-service-module">
                     <rect x="-1.9" y="3.8" width="3.8" height="6" rx="1.2" />
                   </g>
@@ -100,6 +103,7 @@ export async function missionOrbitAction() {
                 </g>
               </svg>
 
+              <div id="mission-stage-target" className="mission-stage-target" aria-hidden="true"></div>
               <div id="countdown-overlay" className="countdown-overlay" aria-hidden="true">10</div>
             </div>
 
@@ -146,7 +150,8 @@ export async function missionOrbitAction() {
                 <div>
                   <h4>Touch / mouse</h4>
                   <ul className="controls-list">
-                    <li>Tap or hold the action button.</li>
+                    <li>Tap or hold the spacecraft directly.</li>
+                    <li>The action button stays available as a backup control.</li>
                     <li>Listen for the cue tone and act on the flare.</li>
                     <li>Use the settings buttons any time.</li>
                   </ul>

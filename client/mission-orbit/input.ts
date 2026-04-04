@@ -1,4 +1,4 @@
-import type { GameState } from './types.js'
+import { getPhaseDefinition, type GameState } from './types.js'
 
 declare global {
   interface Window {
@@ -13,45 +13,70 @@ export interface InputCallbacks {
   onReplay: () => void
 }
 
+type PressTarget = HTMLElement | SVGElement
+
 function isModalOpen(): boolean {
   const modal = document.getElementById('settings-modal')
   return modal ? !modal.hasAttribute('hidden') : false
+}
+
+function canUseMissionAction(state: GameState): boolean {
+  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown') {
+    return false
+  }
+
+  const definition = getPhaseDefinition(state.phase)
+  return (definition.mode === 'hold' || definition.mode === 'timing') && !state.phaseResolved
+}
+
+function bindPressTarget(target: PressTarget | null, isDisabled: () => boolean, callbacks: Pick<InputCallbacks, 'onActionStart' | 'onActionEnd'>): void {
+  if (!target) return
+
+  let activePointerId: number | null = null
+
+  const endPress = (event: Event): void => {
+    const pointerEvent = event as PointerEvent
+    if (activePointerId === null || pointerEvent.pointerId !== activePointerId) return
+    pointerEvent.preventDefault()
+    if ('releasePointerCapture' in target) {
+      target.releasePointerCapture(pointerEvent.pointerId)
+    }
+    activePointerId = null
+    callbacks.onActionEnd()
+  }
+
+  target.addEventListener('pointerdown', (event) => {
+    const pointerEvent = event as PointerEvent
+    if (isDisabled()) return
+    pointerEvent.preventDefault()
+    activePointerId = pointerEvent.pointerId
+    if ('setPointerCapture' in target) {
+      target.setPointerCapture(pointerEvent.pointerId)
+    }
+    callbacks.onActionStart()
+  })
+
+  target.addEventListener('pointerup', endPress)
+  target.addEventListener('pointercancel', endPress)
 }
 
 export function setupInput(getState: () => GameState, callbacks: InputCallbacks): void {
   const startBtn = document.getElementById('start-btn') as HTMLButtonElement | null
   const replayBtn = document.getElementById('replay-btn') as HTMLButtonElement | null
   const actionBtn = document.getElementById('mission-action-btn') as HTMLButtonElement | null
+  const rocketHitArea = document.getElementById('mission-rocket-hit-area') as SVGElement | null
 
   startBtn?.addEventListener('click', () => callbacks.onStartGame())
   replayBtn?.addEventListener('click', () => callbacks.onReplay())
 
-  if (actionBtn) {
-    actionBtn.addEventListener('pointerdown', (event) => {
-      if (actionBtn.disabled) return
-      event.preventDefault()
-      actionBtn.setPointerCapture(event.pointerId)
-      callbacks.onActionStart()
-    })
-
-    actionBtn.addEventListener('pointerup', (event) => {
-      if (actionBtn.disabled) return
-      event.preventDefault()
-      callbacks.onActionEnd()
-    })
-
-    actionBtn.addEventListener('pointercancel', () => {
-      if (actionBtn.disabled) return
-      callbacks.onActionEnd()
-    })
-  }
+  bindPressTarget(actionBtn, () => Boolean(actionBtn?.disabled), callbacks)
+  bindPressTarget(rocketHitArea, () => isModalOpen() || !canUseMissionAction(getState()), callbacks)
 
   let keyboardActionActive = false
   document.addEventListener('keydown', (event) => {
     if (isModalOpen()) return
 
     const state = getState()
-    if (state.phase === 'title' || state.phase === 'celebration') return
     if (event.key !== ' ' && event.key !== 'Enter') return
     if (event.repeat || keyboardActionActive) return
 
@@ -61,6 +86,21 @@ export function setupInput(getState: () => GameState, callbacks: InputCallbacks)
     }
 
     event.preventDefault()
+
+    if (state.phase === 'title') {
+      callbacks.onStartGame()
+      return
+    }
+
+    if (state.phase === 'celebration') {
+      callbacks.onReplay()
+      return
+    }
+
+    if (!canUseMissionAction(state)) {
+      return
+    }
+
     keyboardActionActive = true
     callbacks.onActionStart()
   })
@@ -87,7 +127,7 @@ export function setupInput(getState: () => GameState, callbacks: InputCallbacks)
         callbacks.onStartGame()
       } else if (state.phase === 'celebration') {
         callbacks.onReplay()
-      } else if (!isModalOpen()) {
+      } else if (!isModalOpen() && canUseMissionAction(state)) {
         callbacks.onActionStart()
       }
     }

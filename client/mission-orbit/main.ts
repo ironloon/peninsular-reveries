@@ -5,7 +5,7 @@ import {
   announceKeepHolding,
   announceMissionComplete,
   announcePhase,
-  announceSlowMoCue,
+  announceStopMoCue,
   moveFocusAfterTransition,
   updatePhaseDescription,
 } from './accessibility.js'
@@ -21,7 +21,7 @@ import {
   advancePhase,
   autoAssistCurrentPhase,
   createInitialState,
-  enterSlowMo,
+  enterStopMo,
   getCueSignal,
   getMissionTimeLabel,
   resetGame,
@@ -30,7 +30,6 @@ import {
   setActionHeld,
   startMission,
   tickClock,
-  tickSlowMo,
   updateCountdown,
   updateLaunchProgress,
   updateTimingCursor,
@@ -53,7 +52,7 @@ import {
   sfxLiftoff,
   sfxParachute,
   sfxReentry,
-  sfxSlowMo,
+  sfxStopMo,
   sfxSplashdown,
   syncMusicPlayback,
 } from './sounds.js'
@@ -67,9 +66,7 @@ let lastPhase: GameState['phase'] = state.phase
 let enginePulseBudgetMs = 0
 let lastBurnCount = 0
 let lastCueBand: CueSignalBand | null = null
-let lastSlowMoActive = false
-
-const SLOW_MO_DURATION_MS = 1400
+let lastStopMoActive = false
 
 const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
 
@@ -100,7 +97,7 @@ function onPhaseEntered(previousPhase: GameState['phase']): void {
   if (state.phase === previousPhase) return
 
   lastCueBand = null
-  lastSlowMoActive = false
+  lastStopMoActive = false
 
   syncMusicPlayback(state.phase)
 
@@ -193,35 +190,35 @@ function resolveCurrentPhase(assisted: boolean): void {
   }
 }
 
-function buildSlowMoMessage(): string {
+function buildStopMoMessage(): string {
   if (state.phase === 'launch') {
-    return 'Guidance slowed the cutoff moment. Release now.'
+    return 'Guidance froze main engine cutoff. Release when ready.'
   }
 
   const definition = currentPhaseDefinition()
   return definition
-    ? `${definition.label}. Guidance slowed the cue. Act on the flare now.`
-    : 'Guidance slowed the cue. Act now.'
+    ? `${definition.label}. Guidance froze the cue window. Tap when ready.`
+    : 'Guidance froze the cue window. Tap when ready.'
 }
 
-function triggerSlowMoRescue(): void {
-  const message = buildSlowMoMessage()
-  state = enterSlowMo(state, message)
-  announceSlowMoCue(message)
-  sfxSlowMo()
+function triggerStopMoRescue(): void {
+  const message = buildStopMoMessage()
+  state = enterStopMo(state, message)
+  announceStopMoCue(message)
+  sfxStopMo()
 }
 
 function syncCueAudio(): void {
   const cueSignal = getCueSignal(state)
   const nextCueBand = cueSignal?.band ?? null
 
-  if (state.slowMoActive && !lastSlowMoActive) {
-    lastSlowMoActive = true
+  if (state.stopMoActive && !lastStopMoActive) {
+    lastStopMoActive = true
     lastCueBand = nextCueBand
     return
   }
 
-  if (!state.slowMoActive && nextCueBand !== lastCueBand) {
+  if (!state.stopMoActive && nextCueBand !== lastCueBand) {
     if (nextCueBand === 'building') {
       sfxCueApproach()
     } else if (nextCueBand === 'ready') {
@@ -232,7 +229,7 @@ function syncCueAudio(): void {
   }
 
   lastCueBand = nextCueBand
-  lastSlowMoActive = state.slowMoActive
+  lastStopMoActive = state.stopMoActive
 }
 
 function startGame(): void {
@@ -244,7 +241,7 @@ function startGame(): void {
   lastCountdownValue = state.countdownValue
   lastBurnCount = 0
   lastCueBand = null
-  lastSlowMoActive = false
+  lastStopMoActive = false
   showScreen('mission-screen')
   renderMission(state)
   onPhaseEntered('title')
@@ -258,7 +255,7 @@ function replayGame(): void {
   lastCountdownValue = state.countdownValue
   lastBurnCount = 0
   lastCueBand = null
-  lastSlowMoActive = false
+  lastStopMoActive = false
   syncMusicPlayback(state.phase)
   showScreen('start-screen')
   moveFocusAfterTransition('start-btn', 220)
@@ -298,7 +295,7 @@ const callbacks: InputCallbacks = {
 
     state = setActionHeld(state, false)
 
-    if (state.launchProgress < 0.35) {
+    if (!state.stopMoActive && state.launchProgress < 0.35) {
       renderMission(state)
       announceKeepHolding()
       return
@@ -342,7 +339,7 @@ function tick(now: number): void {
     } else if (state.phase === 'launch') {
       state = updateLaunchProgress(state, deltaMs)
 
-      if (state.actionHeld) {
+      if (state.actionHeld && !state.stopMoActive) {
         enginePulseBudgetMs += deltaMs
         if (enginePulseBudgetMs >= 360) {
           sfxBurnPulse()
@@ -353,13 +350,8 @@ function tick(now: number): void {
       }
 
       const definition = getPhaseDefinition('launch')
-      if (!state.phaseResolved && state.slowMoActive) {
-        state = tickSlowMo(state, deltaMs)
-        if (state.slowMoElapsedMs >= SLOW_MO_DURATION_MS) {
-          resolveCurrentPhase(true)
-        }
-      } else if (!state.phaseResolved && ((definition.assistAfterMs && state.phaseElapsedMs >= definition.assistAfterMs) || state.launchProgress >= 1)) {
-        triggerSlowMoRescue()
+      if (!state.phaseResolved && !state.stopMoActive && ((definition.assistAfterMs && state.phaseElapsedMs >= definition.assistAfterMs) || state.launchProgress >= 1)) {
+        triggerStopMoRescue()
       }
     } else {
       const definition = getPhaseDefinition(state.phase as MissionGameplayPhase)
@@ -367,13 +359,8 @@ function tick(now: number): void {
       if (definition.mode === 'timing' && !state.phaseResolved) {
         state = updateTimingCursor(state, deltaMs, definition.meterSpeed ?? 0.00064)
 
-        if (state.slowMoActive) {
-          state = tickSlowMo(state, deltaMs)
-          if (state.slowMoElapsedMs >= SLOW_MO_DURATION_MS) {
-            resolveCurrentPhase(true)
-          }
-        } else if (definition.assistAfterMs && state.phaseElapsedMs >= definition.assistAfterMs) {
-          triggerSlowMoRescue()
+        if (!state.stopMoActive && definition.assistAfterMs && state.phaseElapsedMs >= definition.assistAfterMs) {
+          triggerStopMoRescue()
         }
       }
 

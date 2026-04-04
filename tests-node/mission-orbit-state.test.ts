@@ -3,14 +3,13 @@ import test from 'node:test'
 import {
   advancePhase,
   autoAssistCurrentPhase,
-  enterSlowMo,
+  enterStopMo,
   getCueSignal,
   getMissionStepLabel,
   resolveLaunchRelease,
   resolveTimingAttempt,
   setActionHeld,
   startMission,
-  tickSlowMo,
   tickClock,
   updateCountdown,
   updateLaunchProgress,
@@ -47,7 +46,7 @@ test('launch release and timing windows append scored burn results', () => {
   state = advancePhase(state)
   assert.equal(state.phase, 'orbit-insertion')
 
-  state = updateTimingCursor(state, 700, 0.00058)
+  state = updateTimingCursor(state, 700, 0.00035)
   state = resolveTimingAttempt(state)
 
   assert.equal(state.burnResults.length, 2)
@@ -55,25 +54,27 @@ test('launch release and timing windows append scored burn results', () => {
   assert.equal(state.burnResults[1]?.phase, 'orbit-insertion')
 })
 
-test('slow-mo rescue keeps a manual timing window open after the cue misses its normal deadline', () => {
+test('stop-mo rescue freezes a manual timing window until the player acts', () => {
   let state = startMission()
   state = advancePhase(state)
   state = autoAssistCurrentPhase(state)
   state = advancePhase(state)
 
-  state = enterSlowMo(state, 'Orbit raise burn. Guidance slowed the cue. Act on the flare now.')
-  state = tickSlowMo(state, 420)
+  state = enterStopMo(state, 'Orbit raise burn. Guidance froze the cue window. Tap when ready.')
 
-  assert.equal(state.slowMoActive, true)
-  assert.equal(state.slowMoElapsedMs, 420)
-  assert.equal(getCueSignal(state)?.band, 'idle')
+  assert.equal(state.stopMoActive, true)
+  assert.equal(getCueSignal(state)?.band, 'strike')
 
-  state = updateTimingCursor(state, 2200, 0.00058)
-  assert.notEqual(getCueSignal(state)?.band, 'idle')
+  const frozenState = tickClock(state, 420)
+  assert.equal(frozenState.phaseElapsedMs, state.phaseElapsedMs)
+
+  state = updateTimingCursor(state, 2200, 0.00035)
+  assert.equal(state.stopMoActive, true)
 
   state = resolveTimingAttempt(state)
   assert.equal(state.phaseResolved, true)
-  assert.equal(state.slowMoActive, false)
+  assert.equal(state.stopMoActive, false)
+  assert.equal(state.burnResults[1]?.grade, 'assist')
 })
 
 test('auto assist keeps the mission moving and final phase advances to celebration', () => {

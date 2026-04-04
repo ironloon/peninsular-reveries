@@ -28,7 +28,7 @@ export function announceBurnResult(result: BurnResult): void {
   announce(result.detail, result.grade === 'assist' ? 'assertive' : 'polite')
 }
 
-export function announceSlowMoCue(message: string): void {
+export function announceStopMoCue(message: string): void {
   announce(message, 'assertive')
 }
 

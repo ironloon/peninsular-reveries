@@ -17,8 +17,7 @@ export interface CueSignalState {
 }
 
 const COUNTDOWN_START = 10
-const BASE_SAFE_PADDING = 0.08
-const SLOW_MO_SAFE_PADDING = 0.18
+const SAFE_PADDING = 0.12
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -33,7 +32,7 @@ function burnMessage(label: string, grade: BurnGrade): string {
     case 'perfect': return `${label}: perfect. Right on the flight profile.`
     case 'good': return `${label}: good burn. The mission stays sharp.`
     case 'safe': return `${label}: safe burn. Guidance trimmed the edges and kept the path clean.`
-    case 'assist': return `${label}: assisted. Guidance slowed the moment and nudged the maneuver back onto profile.`
+    case 'assist': return `${label}: assisted. Guidance froze the window and kept the maneuver on profile.`
   }
 }
 
@@ -50,7 +49,7 @@ function evaluateWindow(
   window: TimingWindow,
   phase: MissionGameplayPhase,
   label: string,
-  safePadding: number = BASE_SAFE_PADDING,
+  safePadding: number = SAFE_PADDING,
 ): BurnResult {
   const center = centerOf(window)
   const accuracy = accuracyPercent(position, center)
@@ -117,8 +116,7 @@ function applyBurnResult(state: GameState, result: BurnResult): GameState {
     burnResults: [...state.burnResults, result],
     outcomeText: result.detail,
     outcomeGrade: result.grade,
-    slowMoActive: false,
-    slowMoElapsedMs: 0,
+    stopMoActive: false,
     phaseResolved: true,
     actionHeld: false,
     serviceModuleDetached: state.phase === 'service-module-jettison' ? true : state.serviceModuleDetached,
@@ -140,8 +138,7 @@ export function createInitialState(): GameState {
     burnResults: [],
     outcomeText: '',
     outcomeGrade: null,
-    slowMoActive: false,
-    slowMoElapsedMs: 0,
+    stopMoActive: false,
     phaseResolved: false,
     serviceModuleDetached: false,
     parachuteDeployed: false,
@@ -162,7 +159,7 @@ export function resetGame(): GameState {
 }
 
 export function tickClock(state: GameState, deltaMs: number): GameState {
-  if (state.phase === 'title' || state.phase === 'celebration') {
+  if (state.phase === 'title' || state.phase === 'celebration' || state.stopMoActive) {
     return state
   }
 
@@ -194,12 +191,10 @@ export function setActionHeld(state: GameState, held: boolean): GameState {
 }
 
 export function updateLaunchProgress(state: GameState, deltaMs: number): GameState {
-  if (state.phase !== 'launch' || state.phaseResolved) return state
+  if (state.phase !== 'launch' || state.phaseResolved || state.stopMoActive) return state
 
-  const effectiveDeltaMs = state.slowMoActive ? deltaMs * 0.22 : deltaMs
-
-  const poweredClimb = state.actionHeld ? effectiveDeltaMs / 2300 : -effectiveDeltaMs / 6000
-  const passiveClimb = effectiveDeltaMs / 18000
+  const poweredClimb = state.actionHeld ? deltaMs / 2300 : -deltaMs / 6000
+  const passiveClimb = deltaMs / 18000
   const nextProgress = clamp(state.launchProgress + poweredClimb + passiveClimb, 0, 1)
 
   if (nextProgress === state.launchProgress) return state
@@ -213,11 +208,9 @@ export function updateTimingCursor(state: GameState, deltaMs: number, speed: num
   if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phase === 'launch') {
     return state
   }
-  if (state.phaseResolved) return state
+  if (state.phaseResolved || state.stopMoActive) return state
 
-  const effectiveDeltaMs = state.slowMoActive ? deltaMs * 0.24 : deltaMs
-
-  let nextPosition = state.timingCursor + effectiveDeltaMs * speed * state.timingDirection
+  let nextPosition = state.timingCursor + deltaMs * speed * state.timingDirection
   let nextDirection = state.timingDirection
 
   while (nextPosition > 1 || nextPosition < 0) {
@@ -241,8 +234,11 @@ export function resolveLaunchRelease(state: GameState): GameState {
   if (state.phase !== 'launch' || state.phaseResolved) return state
 
   const definition = getPhaseDefinition('launch')
-  const safePadding = state.slowMoActive ? SLOW_MO_SAFE_PADDING : BASE_SAFE_PADDING
-  const result = evaluateWindow(state.launchProgress, definition.timingWindow!, 'launch', 'Main engine cutoff', safePadding)
+  if (state.stopMoActive) {
+    return applyBurnResult(state, createAssistBurn('launch', 'Main engine cutoff'))
+  }
+
+  const result = evaluateWindow(state.launchProgress, definition.timingWindow!, 'launch', 'Main engine cutoff')
   return applyBurnResult(state, result)
 }
 
@@ -260,8 +256,11 @@ export function resolveTimingAttempt(state: GameState): GameState {
   const definition = getPhaseDefinition(state.phase)
   if (definition.mode !== 'timing' || !definition.timingWindow) return state
 
-  const safePadding = state.slowMoActive ? SLOW_MO_SAFE_PADDING : BASE_SAFE_PADDING
-  const result = evaluateWindow(state.timingCursor, definition.timingWindow, state.phase, definition.label, safePadding)
+  if (state.stopMoActive) {
+    return applyBurnResult(state, createAssistBurn(state.phase, definition.label))
+  }
+
+  const result = evaluateWindow(state.timingCursor, definition.timingWindow, state.phase, definition.label)
   return applyBurnResult(state, result)
 }
 
@@ -292,26 +291,25 @@ export function clearOutcome(state: GameState): GameState {
   }
 }
 
-export function enterSlowMo(state: GameState, message: string): GameState {
-  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phaseResolved || state.slowMoActive) {
+export function enterStopMo(state: GameState, message: string): GameState {
+  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phaseResolved || state.stopMoActive) {
     return state
   }
 
+  const definition = getPhaseDefinition(state.phase)
+  const cueCenter = definition.timingWindow ? centerOf(definition.timingWindow) : null
+
   return {
     ...state,
-    slowMoActive: true,
-    slowMoElapsedMs: 0,
+    stopMoActive: true,
+    launchProgress: state.phase === 'launch' && cueCenter !== null
+      ? Math.max(state.launchProgress, cueCenter)
+      : state.launchProgress,
+    timingCursor: state.phase !== 'launch' && cueCenter !== null
+      ? cueCenter
+      : state.timingCursor,
     outcomeText: message,
     outcomeGrade: null,
-  }
-}
-
-export function tickSlowMo(state: GameState, deltaMs: number): GameState {
-  if (!state.slowMoActive || state.phaseResolved) return state
-
-  return {
-    ...state,
-    slowMoElapsedMs: state.slowMoElapsedMs + deltaMs,
   }
 }
 
@@ -325,9 +323,13 @@ export function getCueSignal(state: GameState): CueSignalState | null {
     return null
   }
 
+  if (state.stopMoActive) {
+    return { band: 'strike', intensity: 1 }
+  }
+
   const position = state.phase === 'launch' ? state.launchProgress : state.timingCursor
   const center = centerOf(definition.timingWindow)
-  const reach = state.slowMoActive ? 0.28 : 0.18
+  const reach = 0.24
   const intensity = clamp(1 - Math.abs(position - center) / reach, 0, 1)
 
   if (position >= definition.timingWindow.perfectStart && position <= definition.timingWindow.perfectEnd) {
@@ -358,8 +360,7 @@ export function advancePhase(state: GameState): GameState {
       actionHeld: false,
       outcomeText: '',
       outcomeGrade: null,
-      slowMoActive: false,
-      slowMoElapsedMs: 0,
+      stopMoActive: false,
       phaseResolved: false,
     }
   }
@@ -376,8 +377,7 @@ export function advancePhase(state: GameState): GameState {
     timingDirection: 1,
     outcomeText: '',
     outcomeGrade: null,
-    slowMoActive: false,
-    slowMoElapsedMs: 0,
+    stopMoActive: false,
     phaseResolved: false,
     parachuteDeployed: nextPhase === 'parachute-deploy' ? false : state.parachuteDeployed,
   }
