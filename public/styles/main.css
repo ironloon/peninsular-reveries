@@ -66,8 +66,11 @@ a:hover {
 
 .site-nav {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-md);
+  row-gap: var(--space-xs);
   align-items: center;
+  justify-content: center;
   max-width: 42rem;
   margin-inline: auto;
 }
@@ -77,6 +80,7 @@ a:hover {
   color: var(--color-text);
   font-size: var(--text-sm);
   padding: var(--space-sm) var(--space-xs);
+  white-space: nowrap;
 }
 
 .site-nav a:hover {

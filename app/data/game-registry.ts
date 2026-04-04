@@ -21,4 +21,11 @@ export const games: GameEntry[] = [
     icon: '✦',
     status: 'live',
   },
+  {
+    slug: 'chompers',
+    name: 'Chompers',
+    description: 'Guide a hungry hippo and chomp falling fruit before it splats.',
+    icon: '🦛',
+    status: 'live',
+  },
 ]

@@ -13,6 +13,20 @@ This file should only capture the repo-specific implementation rules, architectu
 
 Before building or modifying any game, read `README.md` and follow the `Game Principles` section there.
 
+### Session Expectations
+
+- Default to **human-ready completion** for non-trivial feature work. Do not stop at code edits alone when the clear user intent is "ready for me to try it." Continue through generated-file sync, repository validation, and low-risk regression fixes unless the user explicitly scopes the work smaller.
+- Treat **`npm run test:local`** as the preferred end-state check before handoff when the change is large enough to affect app behavior beyond a single isolated file.
+- If a validation run finds an **objective blocker to human testing** that was introduced or exposed by the current work, fix it before stopping when the fix is clear and low-risk. Examples: stale generated files, shared responsive overflow, broken hidden-state CSS, route/build wiring gaps.
+- Ask the user a clarifying question only when the answer would materially change the implementation, or when proceeding would require a destructive, irreversible, or product-direction choice. If a reasonable default exists, use it and keep going.
+- If the user says some version of **"continue until done"**, interpret "done" as **human-ready unless genuinely blocked**.
+- If the user has made it clear that **pushing finished work is welcome**, and the work is validated and human-ready, the agent may stage, commit, and push without asking for one more round of confirmation.
+- Keep the closeout focused on readiness. Do **not** default to optional extra suggestions or "I can also..." follow-ups unless one of these is true:
+  1. the user explicitly asked for options,
+  2. something still blocks human readiness,
+  3. there is a single obvious next required step outside the repo work already completed.
+- When everything needed for human testing is complete, end with what changed and what was verified. Avoid trailing suggestions for unrelated polish or future work.
+
 ### Constraints
 
 - **Stack**: TypeScript + Remix 3 (component, fetch-router, node-fetch-server) + esbuild + vanilla CSS + GitHub Pages
@@ -143,6 +157,8 @@ Game pages should follow these structural rules unless there is a strong reason 
 - `npm install` sets `core.hooksPath` to the repo-owned `.githooks/` directory via `prepare`; commits run the local validation gate automatically without an extra hook dependency
 - Full local verification is `npm run test:local`
 - When adding a new game route, prefer one targeted Playwright spec for the new page rather than expanding unrelated suites first
+- After the targeted checks are green, run the repo's broader validation gate before handoff whenever the user intent is manual testing or release-readiness
+- If a change updates `app/data/attributions.ts`, keep `ATTRIBUTIONS.md` synced before considering the work human-ready
 
 ## Architecture
 

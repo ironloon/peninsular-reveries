@@ -6,5 +6,6 @@ export const routes = route({
   attributions: attributionsPagePath,
   missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
+  chompers: '/chompers/',
   notFound: '/404.html',
 })
