@@ -30,6 +30,7 @@ const ctx = await esbuild.context({
     'client/mission-orbit/main.ts',
     'client/super-word/main.ts',
     'client/chompers/main.ts',
+    'client/pixel-passport/main.ts',
   ],
   bundle: true,
   outdir: esbuildOutdir,

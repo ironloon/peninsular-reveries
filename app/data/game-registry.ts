@@ -28,4 +28,11 @@ export const games: GameEntry[] = [
     icon: '🦛',
     status: 'live',
   },
+  {
+    slug: 'pixel-passport',
+    name: 'Pixel Passport',
+    description: 'Hop on the magic bus, explore the world, and solve gentle clue-based mysteries.',
+    icon: '🌍',
+    status: 'live',
+  },
 ]

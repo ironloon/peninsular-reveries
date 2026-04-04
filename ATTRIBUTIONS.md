@@ -227,3 +227,31 @@
 - Source: Freesound (https://freesound.org/people/jakubp.jp/sounds/554595/)
 - License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
 - Modifications: Trimmed into a small mono OGG plop and reused at a lower playback rate for the game-over drop.
+
+### Pixel Passport
+
+- Slug: pixel-passport
+- Code license: GPL-3.0
+- Summary: Pixel Passport uses original DOM-rendered pixel scenes, original clue writing, and browser-synthesized travel tones. No third-party art, photo, or audio assets are bundled for the game.
+
+#### Entries
+
+##### Pixel Passport globe, destination scenes, Pip sprite, and vehicle sprites
+
+- Type: illustration
+- Used in: Pixel Passport title screen, globe hub, travel scenes, destination scenes, room shelf, and mystery screens
+- Creator: Peninsular Reveries
+- Source: Original DOM-rendered pixel art defined in the repository
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: The globe, landmarks, guide character, and transport forms are rendered as CSS-driven pixel grids in the browser instead of bundled images.
+
+##### Pixel Passport travel tones and clue chimes
+
+- Type: music
+- Used in: Pixel Passport menu taps, travel start cues, travel loops, clue reveals, and memory celebrations
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: All interactive sounds are synthesized at runtime. No external samples or music files are bundled for Pixel Passport.

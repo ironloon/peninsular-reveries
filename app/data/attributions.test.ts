@@ -22,6 +22,15 @@ test('chompers attribution data lists the bundled CC0 audio layers', () => {
   assert.equal(attribution.entries.at(-1)?.title, 'WATRSplsh_Stick Throw Into Water_Jaku5.wav')
 })
 
+test('pixel passport attribution data stays fully in-repo and sample-free', () => {
+  const attribution = getGameAttribution('pixel-passport')
+
+  assert.equal(attribution.codeLicense, repositoryCodeLicense)
+  assert.match(attribution.summary, /no third-party art, photo, or audio assets/i)
+  assert.equal(attribution.entries[0]?.title, 'Pixel Passport globe, destination scenes, Pip sprite, and vehicle sprites')
+  assert.equal(attribution.entries[1]?.title, 'Pixel Passport travel tones and clue chimes')
+})
+
 test('ATTRIBUTIONS.md stays synced with the attribution source data', () => {
   const markdownOnDisk = readFileSync(new URL('../../ATTRIBUTIONS.md', import.meta.url), 'utf-8')
 

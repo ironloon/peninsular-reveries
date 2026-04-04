@@ -1,0 +1,787 @@
+.pixel-passport-game {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --bg-0: #10243f;
+  --bg-1: #1c3f67;
+  --bg-2: #2f678e;
+  --panel: rgba(10, 25, 45, 0.9);
+  --panel-strong: rgba(13, 34, 59, 0.97);
+  --line: rgba(255, 255, 255, 0.14);
+  --ink: #fff9ee;
+  --ink-soft: #ddeaf8;
+  --accent: #ffd166;
+  --accent-strong: #ff8f5a;
+  --accent-cool: #6fd0ff;
+  --accent-green: #8ad36d;
+  --shadow: rgba(0, 0, 0, 0.34);
+  --font: 'Franklin Gothic Medium', 'Trebuchet MS', 'Arial Rounded MT Bold', sans-serif;
+  font-family: var(--font);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 12% 16%, rgba(255, 209, 102, 0.22), transparent 26%),
+    radial-gradient(circle at 84% 18%, rgba(111, 208, 255, 0.2), transparent 28%),
+    linear-gradient(180deg, var(--bg-2) 0%, var(--bg-1) 46%, var(--bg-0) 100%);
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+  height: 100dvh;
+  width: min(100%, 100vw);
+  max-width: 100vw;
+  margin: 0;
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+body.pixel-passport-game .site-header,
+body.pixel-passport-game .site-footer {
+  display: none;
+}
+
+body.pixel-passport-game main {
+  display: flex;
+  flex: 1 1 auto;
+  width: 100%;
+  min-height: 0;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.pixel-passport-game [hidden] {
+  display: none !important;
+}
+
+.pixel-passport-game.modal-open {
+  overflow: hidden;
+}
+
+.scene-track {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: safe center;
+  padding: clamp(0.9rem, 2.5vw, 1.6rem);
+  transform: translateX(100%);
+  transition: transform 520ms cubic-bezier(0.33, 1, 0.68, 1);
+  visibility: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.screen.active {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+.screen.leaving {
+  transform: translateX(-100%);
+  visibility: visible;
+}
+
+#start-screen {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(255, 143, 90, 0.22), transparent 24%),
+    linear-gradient(180deg, rgba(8, 18, 33, 0.1), rgba(8, 18, 33, 0.45));
+}
+
+#globe-screen,
+#mystery-screen {
+  background: linear-gradient(180deg, rgba(8, 20, 38, 0.14), rgba(8, 20, 38, 0.48));
+}
+
+#travel-screen {
+  background: linear-gradient(180deg, rgba(8, 20, 38, 0.18), rgba(8, 20, 38, 0.5));
+}
+
+#explore-screen,
+#memory-screen,
+#room-screen,
+#mystery-result-screen {
+  background: linear-gradient(180deg, rgba(8, 20, 38, 0.12), rgba(8, 20, 38, 0.52));
+}
+
+.passport-panel {
+  position: relative;
+  width: min(100%, 74rem);
+  max-height: 100%;
+  padding: clamp(1rem, 2.4vw, 1.6rem);
+  border: 1px solid var(--line);
+  border-radius: 32px;
+  background:
+    linear-gradient(145deg, rgba(16, 38, 67, 0.96), rgba(10, 24, 43, 0.94)),
+    linear-gradient(180deg, rgba(255, 209, 102, 0.12), transparent 24%);
+  box-shadow: 0 24px 80px var(--shadow);
+  overflow: auto;
+}
+
+.passport-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.24;
+  pointer-events: none;
+}
+
+.start-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.9fr);
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: center;
+}
+
+.start-stage,
+.globe-stage,
+.travel-stage,
+.explore-stage,
+.room-stage,
+.mystery-stage {
+  position: relative;
+  z-index: 1;
+}
+
+.screen-kicker {
+  margin: 0 0 0.7rem;
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+  text-transform: uppercase;
+}
+
+.passport-title,
+.screen-title {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  line-height: 0.93;
+  letter-spacing: -0.05em;
+}
+
+.passport-title {
+  font-size: clamp(3rem, 10vw, 5.6rem);
+}
+
+.screen-title {
+  font-size: clamp(2rem, 7vw, 3.4rem);
+}
+
+.passport-subtitle,
+.screen-copy,
+.settings-help,
+.settings-list,
+.start-notes {
+  position: relative;
+  z-index: 1;
+  color: var(--ink-soft);
+}
+
+.passport-subtitle {
+  margin: 0.9rem 0 0;
+  max-width: 30rem;
+  font-size: clamp(1rem, 2.6vw, 1.14rem);
+  line-height: 1.55;
+}
+
+.title-stats,
+.topbar-pills,
+.screen-actions,
+.start-actions,
+.globe-actions,
+.settings-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.title-stats {
+  margin-top: 1.15rem;
+}
+
+.passport-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.35rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.94rem;
+  font-weight: 700;
+}
+
+.guide-card,
+.mystery-card {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.9rem;
+  align-items: center;
+  margin-top: 1.1rem;
+  padding: 1rem 1.1rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.guide-card-title {
+  max-width: 30rem;
+}
+
+.guide-text {
+  margin: 0;
+  font-size: clamp(1rem, 2.3vw, 1.12rem);
+  line-height: 1.5;
+}
+
+.guide-sprite {
+  width: clamp(3rem, 7vw, 4.2rem);
+  align-self: end;
+}
+
+.passport-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  min-height: 48px;
+  padding: 0.78rem 1.15rem;
+  font: inherit;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.passport-btn:hover,
+.passport-btn:focus-visible {
+  transform: translateY(-1px);
+}
+
+.passport-btn:focus-visible,
+.destination-marker:focus-visible {
+  outline: 3px solid rgba(255, 209, 102, 0.8);
+  outline-offset: 3px;
+}
+
+.passport-btn-primary {
+  background: linear-gradient(180deg, #ffd166, #ffb84d);
+  box-shadow: 0 12px 30px rgba(255, 184, 77, 0.3);
+  color: #382209;
+}
+
+.passport-btn-secondary {
+  background: linear-gradient(180deg, rgba(111, 208, 255, 0.18), rgba(111, 208, 255, 0.1));
+  border-color: rgba(111, 208, 255, 0.35);
+  color: var(--ink);
+}
+
+.passport-btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--ink);
+}
+
+.passport-btn-small {
+  min-height: 44px;
+  padding-inline: 0.9rem;
+}
+
+.start-notes {
+  margin: 1.25rem 0 0;
+  padding-left: 1.2rem;
+  line-height: 1.55;
+}
+
+.passport-topbar {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: start;
+}
+
+.globe-shell,
+.travel-shell,
+.explore-shell,
+.room-shell,
+.mystery-shell,
+.result-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.globe-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.7fr);
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: center;
+}
+
+.world-globe {
+  position: relative;
+  width: min(100%, 29rem);
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.18), transparent 30%),
+    radial-gradient(circle at 68% 72%, rgba(0, 0, 0, 0.16), transparent 36%),
+    linear-gradient(180deg, #6bc8ff 0%, #4d88d6 100%);
+  box-shadow: inset -20px -28px 48px rgba(0, 0, 0, 0.24), 0 18px 50px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.world-globe-start {
+  width: min(100%, 25rem);
+}
+
+.globe-map-shell {
+  position: absolute;
+  inset: 7%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.globe-map-track {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  width: 200%;
+  animation: globe-spin 28s linear infinite;
+}
+
+.globe-map-grid {
+  flex: 0 0 50%;
+  width: 100%;
+  transform: scale(1.42);
+  transform-origin: center center;
+}
+
+.destination-markers {
+  position: absolute;
+  inset: 0;
+}
+
+.destination-marker {
+  position: absolute;
+  display: grid;
+  gap: 0.2rem;
+  justify-items: center;
+  min-width: 3.4rem;
+  transform: translate(-50%, -50%);
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.destination-marker-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--marker-color) 58%, rgba(12, 27, 46, 0.95));
+  box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
+  font-size: 1.3rem;
+}
+
+.destination-marker-label {
+  padding: 0.18rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(8, 18, 33, 0.72);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.destination-marker.is-selected .destination-marker-icon {
+  transform: scale(1.08);
+  border-color: rgba(255, 209, 102, 0.8);
+  box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.16), 0 14px 28px rgba(0, 0, 0, 0.3);
+}
+
+.destination-marker.is-current .destination-marker-label {
+  color: #1a240a;
+  background: rgba(138, 211, 109, 0.95);
+}
+
+.destination-marker.is-visited .destination-marker-icon::after {
+  content: '✓';
+  position: absolute;
+  top: -0.35rem;
+  right: -0.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  border-radius: 999px;
+  background: #8ad36d;
+  color: #16310a;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.globe-side-panel,
+.travel-guide-card,
+.explore-guide-card {
+  display: grid;
+  gap: 1rem;
+  align-content: center;
+}
+
+.travel-stage {
+  min-height: clamp(16rem, 44vh, 24rem);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(14, 32, 53, 0.78), rgba(10, 24, 42, 0.94));
+}
+
+.travel-stage[data-transport='plane'] {
+  background: linear-gradient(180deg, #79b9ff 0%, #d4efff 62%, #86c56e 100%);
+}
+
+.travel-stage[data-transport='boat'] {
+  background: linear-gradient(180deg, #91d9ff 0%, #cfefff 45%, #2d7ac0 46%, #2d7ac0 100%);
+}
+
+.travel-stage[data-transport='train'] {
+  background: linear-gradient(180deg, #9dd4ff 0%, #dceeff 46%, #7cc96b 47%, #547e43 100%);
+}
+
+.travel-stage[data-transport='bus'] {
+  background: linear-gradient(180deg, #9ed6ff 0%, #dcedff 52%, #92cf64 53%, #557d3f 100%);
+}
+
+.travel-background {
+  position: absolute;
+  inset: 0;
+  width: 130%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 8%, transparent 8% 16%),
+    linear-gradient(180deg, transparent 0 60%, rgba(255, 255, 255, 0.08) 60% 100%);
+}
+
+.travel-vehicle {
+  position: absolute;
+  left: 6%;
+  bottom: 16%;
+  width: clamp(5.5rem, 16vw, 8rem);
+  transition: left 80ms linear;
+}
+
+.travel-guide-card {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: min(20rem, calc(100% - 2rem));
+}
+
+.explore-stage {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+
+.scene-art {
+  width: min(100%, 28rem);
+  padding: 0.7rem;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.memory-shell,
+.result-shell {
+  text-align: center;
+}
+
+.memory-stage {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.memory-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(7rem, 20vw, 9rem);
+  aspect-ratio: 1 / 1;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255, 209, 102, 0.2), rgba(255, 143, 90, 0.14));
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+}
+
+#memory-emoji {
+  font-size: clamp(3rem, 9vw, 4.2rem);
+}
+
+.memory-label {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  text-transform: capitalize;
+}
+
+.room-stage {
+  display: grid;
+  gap: 1rem;
+}
+
+.room-pip {
+  margin: 0 auto;
+}
+
+.room-shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.memory-slot {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 0.35rem;
+  justify-items: center;
+  min-height: 6.8rem;
+  padding: 0.8rem;
+  border-radius: 22px;
+  border: 1px dashed rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.memory-slot.is-filled {
+  border-style: solid;
+  border-color: rgba(255, 209, 102, 0.34);
+  background: rgba(255, 209, 102, 0.12);
+}
+
+.memory-slot-emoji {
+  font-size: 2rem;
+}
+
+.memory-slot-label {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.mystery-stage {
+  display: grid;
+  gap: 1rem;
+  justify-items: center;
+}
+
+.mystery-card {
+  width: min(100%, 28rem);
+}
+
+.mystery-globe {
+  width: min(100%, 24rem);
+}
+
+.mystery-selected-copy {
+  margin: 0;
+  text-align: center;
+}
+
+.pixel-art {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--pixel-cols), minmax(0, 1fr));
+  gap: 0;
+}
+
+.pixel-cell {
+  aspect-ratio: 1 / 1;
+}
+
+.settings-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--safe-top) + 1rem) calc(var(--safe-right) + 1rem) calc(var(--safe-bottom) + 1rem) calc(var(--safe-left) + 1rem);
+  background: rgba(4, 10, 20, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.settings-content {
+  width: min(100%, 42rem);
+  max-height: 100%;
+  overflow: auto;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: linear-gradient(180deg, rgba(14, 33, 58, 0.98), rgba(10, 21, 38, 0.98));
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.38);
+}
+
+.settings-section + .settings-section {
+  margin-top: 1rem;
+}
+
+.settings-list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+}
+
+.settings-toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  min-height: 48px;
+}
+
+.settings-label {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.settings-attribution {
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-home-link {
+  text-decoration: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.noscript-message {
+  position: fixed;
+  inset-inline: 1rem;
+  bottom: calc(var(--safe-bottom) + 1rem);
+  z-index: 20;
+  padding: 0.9rem 1rem;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(10, 24, 42, 0.96);
+}
+
+.guide-bubble-pulse {
+  animation: bubble-pulse 420ms ease;
+}
+
+@keyframes globe-spin {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes bubble-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+  100% { transform: scale(1); }
+}
+
+html[data-reduce-motion='reduce'] .globe-map-track,
+html[data-reduce-motion='reduce'] .guide-bubble-pulse {
+  animation: none !important;
+}
+
+@media (max-width: 900px) {
+  .start-shell,
+  .globe-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .travel-guide-card {
+    position: static;
+    width: auto;
+    margin: 1rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .passport-panel {
+    border-radius: 24px;
+  }
+
+  .destination-marker-icon {
+    width: 2.65rem;
+    height: 2.65rem;
+  }
+
+  .room-shelf-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-height: 560px) {
+  .screen {
+    padding: 0.7rem;
+  }
+
+  .passport-panel {
+    padding: 0.8rem;
+  }
+
+  .passport-title {
+    font-size: clamp(2.4rem, 8vw, 4.2rem);
+  }
+
+  .screen-title {
+    font-size: clamp(1.7rem, 6vw, 2.5rem);
+  }
+
+  .travel-stage {
+    min-height: 13rem;
+  }
+
+  .world-globe,
+  .mystery-globe {
+    width: min(100%, 20rem);
+  }
+}

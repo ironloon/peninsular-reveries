@@ -12,6 +12,7 @@
 - Hosting: GitHub Pages with static files in `dist/`
 - Build: `tsx --tsconfig config/tsconfig.json build.ts`
 - Dev: `tsx --tsconfig config/tsconfig.json server.ts`
+- Base path: GitHub Pages deploys under a project subpath; builds use `SITE_BASE_PATH` and `SITE_ORIGIN` env vars for asset URLs, nav links, OG metadata, and service worker registration.
 - Design: clean typography, good spacing, a few intentional personality touches without heavy maintenance cost
 
 ## Technology Stack
@@ -124,6 +125,7 @@ Games use vanilla TypeScript with direct DOM manipulation. This is intentional f
 - Keep per-page payloads within the budget target.
 - Use scoped PWA manifests with `"start_url": "./"` and `"scope": "./"`.
 - Root offline support lives in `public/sw.js`; game workers own game-specific caches.
+- When a game-scoped service worker precaches media files, bump its `CACHE_NAME` whenever bundled audio or art bytes change so clients do not stay stuck on stale assets.
 - `ATTRIBUTIONS.md` is generated from `app/data/attributions.ts`.
 
 ## Build Flow

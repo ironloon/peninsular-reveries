@@ -13,6 +13,7 @@ cpSync('public', outputDir, { recursive: true })
 mkdirSync(join(outputDir, 'client', 'mission-orbit'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'super-word'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'chompers'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'pixel-passport'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -38,6 +39,7 @@ await esbuild.build({
     'client/mission-orbit/main.ts',
     'client/super-word/main.ts',
     'client/chompers/main.ts',
+    'client/pixel-passport/main.ts',
   ],
   bundle: true,
   outdir: join(outputDir, 'client'),
@@ -56,6 +58,7 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/mission-orbit/', outPath: 'mission-orbit/index.html' },
   { url: 'http://localhost/super-word/', outPath: 'super-word/index.html' },
   { url: 'http://localhost/chompers/', outPath: 'chompers/index.html' },
+  { url: 'http://localhost/pixel-passport/', outPath: 'pixel-passport/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -88,6 +91,7 @@ const pages: Record<string, string[]> = {
   'mission-orbit': ['mission-orbit/index.html', 'styles/mission-orbit.css', 'client/shell.js', 'client/mission-orbit/main.js'],
   'super-word': ['super-word/index.html', 'styles/game.css', 'client/shell.js', 'client/super-word/main.js'],
   chompers: ['chompers/index.html', 'styles/chompers.css', 'client/shell.js', 'client/chompers/main.js'],
+  'pixel-passport': ['pixel-passport/index.html', 'styles/pixel-passport.css', 'client/shell.js', 'client/pixel-passport/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 

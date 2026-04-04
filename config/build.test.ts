@@ -26,18 +26,23 @@ test('build script writes the expected static output', () => {
       'index.html',
       'attributions/index.html',
       'super-word/index.html',
+      'pixel-passport/index.html',
       '404.html',
       'styles/main.css',
+      'styles/pixel-passport.css',
       'client/shell.js',
       'client/home.js',
       'client/super-word/main.js',
+      'client/pixel-passport/main.js',
       'client/404.js',
       'favicon.svg',
       'favicon-game-super-word.svg',
       'manifest.json',
       'super-word/manifest.json',
+      'pixel-passport/manifest.json',
       'sw.js',
       'super-word/sw.js',
+      'pixel-passport/sw.js',
     ]) {
       assert.ok(existsSync(join(outputDir, relativePath)), `Expected ${relativePath} to exist in build output`)
     }
@@ -45,6 +50,7 @@ test('build script writes the expected static output', () => {
     const homeHtml = readFileSync(join(outputDir, 'index.html'), 'utf-8')
     const attributionsHtml = readFileSync(join(outputDir, 'attributions/index.html'), 'utf-8')
     const gameHtml = readFileSync(join(outputDir, 'super-word/index.html'), 'utf-8')
+    const passportHtml = readFileSync(join(outputDir, 'pixel-passport/index.html'), 'utf-8')
 
     assert.match(homeHtml, /href="\/manifest\.json"/)
     assert.match(attributionsHtml, /Attributions/)
@@ -52,6 +58,9 @@ test('build script writes the expected static output', () => {
     assert.match(gameHtml, /href="\/favicon-game-super-word\.svg"/)
     assert.doesNotMatch(gameHtml, /href="\/styles\/main\.css"/)
     assert.match(gameHtml, /data-service-worker-path="\/super-word\/sw\.js"/)
+    assert.match(passportHtml, /href="\/pixel-passport\/manifest\.json"/)
+    assert.doesNotMatch(passportHtml, /href="\/styles\/main\.css"/)
+    assert.match(passportHtml, /data-service-worker-path="\/pixel-passport\/sw\.js"/)
   } finally {
     rmSync(outputDir, { recursive: true, force: true })
   }

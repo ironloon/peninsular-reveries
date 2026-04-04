@@ -1,0 +1,23 @@
+{
+  "id": "./",
+  "name": "Pixel Passport",
+  "short_name": "Passport",
+  "description": "Ride a magic bus, visit world landmarks, and solve gentle geography mysteries.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#10314e",
+  "theme_color": "#10314e",
+  "icons": [
+    {
+      "src": "../favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "../apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

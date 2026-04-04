@@ -7,5 +7,6 @@ export const routes = route({
   missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
   chompers: '/chompers/',
+  pixelPassport: '/pixel-passport/',
   notFound: '/404.html',
 })

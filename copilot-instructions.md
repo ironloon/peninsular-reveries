@@ -4,6 +4,16 @@
 
 For project architecture, game quality standards, and testing conventions, load the `review` skill in `.github/skills/review/` before doing substantial repo work.
 
+## Knowledge Persistence
+
+- Do not use Copilot memory files (`/memories/repo/`) to store project learnings. Memory files are invisible to humans, other tools, and collaborators.
+- When you learn something reusable about this project, record it in the appropriate in-repo file instead:
+	- Architecture, conventions, build and deploy patterns → `.github/skills/review/references/architecture.md`
+	- Game quality, layout, pacing, visual rules → `.github/skills/review/references/game-quality.md`
+	- Testing conventions, validation gates, CI behavior → `.github/skills/review/references/testing.md`
+	- Workflow, session expectations, environment → `copilot-instructions.md`
+- Keep additions concise. If the insight is game-specific rather than project-wide, note the game slug inline.
+
 ## Session Expectations
 
 - Default to **human-ready completion** for non-trivial feature work. Do not stop at code edits alone when the clear user intent is "ready for me to try it." Continue through generated-file sync, repository validation, and low-risk regression fixes unless the user explicitly scopes the work smaller.
