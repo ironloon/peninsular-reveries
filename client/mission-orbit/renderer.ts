@@ -61,15 +61,19 @@ let timingHintEl: HTMLElement | null = null
 let timingModeChipEl: HTMLElement | null = null
 let actionBtnEl: HTMLButtonElement | null = null
 let stageShellEl: HTMLElement | null = null
+let stageTargetEl: HTMLElement | null = null
 let starsEl: SVGGElement | null = null
-let orbitPathEl: SVGElement | null = null
-let freeReturnEl: SVGElement | null = null
+let orbitPathEl: SVGPathElement | null = null
+let freeReturnEl: SVGPathElement | null = null
 let moonEl: SVGElement | null = null
 let moonGlowEl: SVGElement | null = null
 let launchPadEl: SVGElement | null = null
 let oceanEl: SVGElement | null = null
 let splashEl: SVGElement | null = null
 let rocketEl: SVGElement | null = null
+let rocketHitAreaEl: SVGElement | null = null
+let rocketCueGlowEl: SVGElement | null = null
+let rocketCueRingEl: SVGElement | null = null
 let flameEl: SVGElement | null = null
 let parachuteEl: SVGElement | null = null
 let serviceModuleEl: SVGElement | null = null
@@ -96,15 +100,19 @@ function getTimingHint(): HTMLElement { return timingHintEl ??= document.getElem
 function getTimingModeChip(): HTMLElement { return timingModeChipEl ??= document.getElementById('timing-mode-chip')! }
 function getActionBtn(): HTMLButtonElement { return actionBtnEl ??= document.getElementById('mission-action-btn') as HTMLButtonElement }
 function getStageShell(): HTMLElement { return stageShellEl ??= document.getElementById('mission-stage-shell')! }
+function getStageTarget(): HTMLElement { return stageTargetEl ??= document.getElementById('mission-stage-target')! }
 function getStars(): SVGGElement { return starsEl ??= requireSvg<SVGGElement>('mission-stars') }
-function getOrbitPath(): SVGElement { return orbitPathEl ??= requireSvg<SVGElement>('mission-orbit-path') }
-function getFreeReturn(): SVGElement { return freeReturnEl ??= requireSvg<SVGElement>('mission-free-return') }
+function getOrbitPath(): SVGPathElement { return orbitPathEl ??= requireSvg<SVGPathElement>('mission-orbit-path') }
+function getFreeReturn(): SVGPathElement { return freeReturnEl ??= requireSvg<SVGPathElement>('mission-free-return') }
 function getMoon(): SVGElement { return moonEl ??= requireSvg<SVGElement>('mission-moon') }
 function getMoonGlow(): SVGElement { return moonGlowEl ??= requireSvg<SVGElement>('mission-moon-glow') }
 function getLaunchPad(): SVGElement { return launchPadEl ??= requireSvg<SVGElement>('mission-launch-pad') }
 function getOcean(): SVGElement { return oceanEl ??= requireSvg<SVGElement>('mission-ocean') }
 function getSplash(): SVGElement { return splashEl ??= requireSvg<SVGElement>('mission-splash') }
 function getRocket(): SVGElement { return rocketEl ??= requireSvg<SVGElement>('mission-rocket') }
+function getRocketHitArea(): SVGElement { return rocketHitAreaEl ??= requireSvg<SVGElement>('mission-rocket-hit-area') }
+function getRocketCueGlow(): SVGElement { return rocketCueGlowEl ??= requireSvg<SVGElement>('mission-rocket-glow') }
+function getRocketCueRing(): SVGElement { return rocketCueRingEl ??= requireSvg<SVGElement>('mission-rocket-cue-ring') }
 function getFlame(): SVGElement { return flameEl ??= requireSvg<SVGElement>('mission-flame') }
 function getParachute(): SVGElement { return parachuteEl ??= requireSvg<SVGElement>('mission-parachute') }
 function getServiceModule(): SVGElement { return serviceModuleEl ??= requireSvg<SVGElement>('mission-service-module') }
@@ -116,6 +124,11 @@ function clamp(value: number, min: number, max: number): number {
 
 function lerp(start: number, end: number, amount: number): number {
   return start + (end - start) * amount
+}
+
+function quadraticBezier(start: number, control: number, end: number, amount: number): number {
+  const inverse = 1 - amount
+  return inverse * inverse * start + 2 * inverse * amount * control + amount * amount * end
 }
 
 function ensureStars(): void {
@@ -133,15 +146,33 @@ function ensureStars(): void {
   }
 }
 
-function progressOnOrbit(progress: number): { x: number; y: number } {
-  const angle = -Math.PI * 0.9 + progress * Math.PI * 1.7
+function sampleGeometryPath(path: SVGGeometryElement, progress: number): { x: number; y: number; angle: number } {
+  const safeProgress = clamp(progress, 0, 1)
+  const totalLength = path.getTotalLength()
+  const epsilon = Math.min(totalLength * 0.015, 1.2)
+  const distance = totalLength * safeProgress
+  const point = path.getPointAtLength(distance)
+  const behind = path.getPointAtLength(Math.max(0, distance - epsilon))
+  const ahead = path.getPointAtLength(Math.min(totalLength, distance + epsilon))
+
   return {
-    x: 22 + Math.cos(angle) * 23,
-    y: 76 + Math.sin(angle) * 14,
+    x: point.x,
+    y: point.y,
+    angle: Math.atan2(ahead.y - behind.y, ahead.x - behind.x) * 180 / Math.PI + 90,
   }
 }
 
+function sampleOrbit(progress: number): { x: number; y: number; angle: number } {
+  return sampleGeometryPath(getOrbitPath(), progress)
+}
+
+function sampleFreeReturn(progress: number): { x: number; y: number; angle: number } {
+  return sampleGeometryPath(getFreeReturn(), progress)
+}
+
 function buildSceneShape(state: GameState): SceneShape {
+  const cueSignal = getCueSignal(state)
+
   switch (state.phase) {
     case 'countdown': {
       return {
@@ -161,13 +192,14 @@ function buildSceneShape(state: GameState): SceneShape {
     }
     case 'launch': {
       const progress = state.launchProgress
+      const orbitEntry = sampleOrbit(0.04)
       return {
-        rocketX: 22 + progress * 1.4,
-        rocketY: 78 - progress * 56,
-        rocketAngle: progress * 4,
+        rocketX: quadraticBezier(22, 18.8, orbitEntry.x, progress),
+        rocketY: quadraticBezier(78, 47, orbitEntry.y, progress),
+        rocketAngle: lerp(0, orbitEntry.angle, clamp(progress * 0.9, 0, 1)),
         flameVisible: state.actionHeld || progress > 0.04,
         parachuteVisible: false,
-        orbitOpacity: progress > 0.56 ? 0.55 : 0,
+        orbitOpacity: progress > 0.42 ? clamp((progress - 0.42) / 0.28, 0, 0.7) : 0,
         freeReturnOpacity: 0,
         moonOpacity: 0.18 + progress * 0.18,
         launchPadOpacity: Math.max(0, 1 - progress * 2.5),
@@ -177,11 +209,11 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'orbit-insertion': {
-      const point = progressOnOrbit((state.phaseElapsedMs % 3800) / 3800)
+      const point = sampleOrbit(0.02 + ((state.phaseElapsedMs % 5200) / 5200) * 0.78)
       return {
         rocketX: point.x,
         rocketY: point.y,
-        rocketAngle: -22,
+        rocketAngle: point.angle,
         flameVisible: false,
         parachuteVisible: false,
         orbitOpacity: 1,
@@ -194,10 +226,11 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'high-earth-orbit': {
+      const point = sampleOrbit(0.14 + Math.sin(state.phaseElapsedMs / 1400) * 0.025)
       return {
-        rocketX: 42,
-        rocketY: 55,
-        rocketAngle: -12,
+        rocketX: point.x,
+        rocketY: point.y,
+        rocketAngle: point.angle,
         flameVisible: false,
         parachuteVisible: false,
         orbitOpacity: 0.85,
@@ -210,11 +243,13 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'trans-lunar-injection': {
+      const progress = clamp(state.phaseElapsedMs / 7600, 0, 1)
+      const point = sampleFreeReturn(0.03 + progress * 0.22)
       return {
-        rocketX: 38,
-        rocketY: 66,
-        rocketAngle: -18,
-        flameVisible: false,
+        rocketX: point.x,
+        rocketY: point.y,
+        rocketAngle: point.angle,
+        flameVisible: cueSignal?.band === 'strike' || state.stopMoActive,
         parachuteVisible: false,
         orbitOpacity: 0.55,
         freeReturnOpacity: 0.75,
@@ -226,18 +261,13 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'lunar-flyby': {
-      const progress = clamp(state.phaseElapsedMs / 3600, 0, 1)
-      const x = progress < 0.62
-        ? lerp(40, 80, progress / 0.62)
-        : lerp(80, 86, (progress - 0.62) / 0.38)
-      const y = progress < 0.62
-        ? lerp(64, 26, progress / 0.62)
-        : 26 + Math.sin(((progress - 0.62) / 0.38) * Math.PI) * 9
+      const progress = clamp(state.phaseElapsedMs / 6200, 0, 1)
+      const point = sampleFreeReturn(0.25 + progress * 0.37)
 
       return {
-        rocketX: x,
-        rocketY: y,
-        rocketAngle: 18,
+        rocketX: point.x,
+        rocketY: point.y,
+        rocketAngle: point.angle,
         flameVisible: false,
         parachuteVisible: false,
         orbitOpacity: 0.16,
@@ -250,11 +280,12 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'return-coast': {
-      const progress = clamp(state.phaseElapsedMs / 3200, 0, 1)
+      const progress = clamp(state.phaseElapsedMs / 5600, 0, 1)
+      const point = sampleFreeReturn(0.62 + progress * 0.33)
       return {
-        rocketX: lerp(82, 48, progress),
-        rocketY: lerp(36, 58, progress),
-        rocketAngle: 30,
+        rocketX: point.x,
+        rocketY: point.y,
+        rocketAngle: point.angle,
         flameVisible: false,
         parachuteVisible: false,
         orbitOpacity: 0.22,
@@ -268,11 +299,12 @@ function buildSceneShape(state: GameState): SceneShape {
     }
     case 'service-module-jettison': {
       const progress = clamp(state.phaseElapsedMs / 2500, 0, 1)
+      const returnEntry = sampleFreeReturn(0.95)
       return {
-        rocketX: lerp(58, 50, progress),
-        rocketY: lerp(30, 64, progress),
-        rocketAngle: 42,
-        flameVisible: true,
+        rocketX: lerp(returnEntry.x, 50, progress),
+        rocketY: lerp(returnEntry.y, 64, progress),
+        rocketAngle: lerp(returnEntry.angle, 38, progress),
+        flameVisible: !state.serviceModuleDetached || state.stopMoActive,
         parachuteVisible: false,
         orbitOpacity: 0,
         freeReturnOpacity: 0.22,
@@ -351,50 +383,82 @@ function renderMeter(state: GameState): void {
   const panel = getTimingPanel()
   const meter = getMeter()
   const stageShell = getStageShell()
+  const stageTarget = getStageTarget()
 
   const showMeter = definition.mode === 'hold' || definition.mode === 'timing'
+  const showStageTarget = showMeter || definition.mode === 'countdown'
   const cueSignal = showMeter ? getCueSignal(state) : null
-  const cueState = state.slowMoActive ? 'slow-mo' : cueSignal?.band ?? 'idle'
-  const cueWord = state.slowMoActive ? 'NOW!' : cueSignal?.band === 'strike' ? 'NOW!' : cueSignal?.band === 'ready' ? 'READY' : ''
-  const cueIntensity = state.slowMoActive
-    ? Math.max(0.82, cueSignal?.intensity ?? 0.82)
+  const cueState = state.stopMoActive ? 'stop-mo' : cueSignal?.band ?? 'idle'
+  const cueWord = state.stopMoActive
+    ? definition.mode === 'hold'
+      ? 'RELEASE'
+      : 'TAP NOW'
+    : cueSignal?.band === 'strike'
+      ? definition.mode === 'hold'
+        ? 'RELEASE'
+        : 'NOW!'
+      : cueSignal?.band === 'ready'
+        ? 'READY'
+        : ''
+  const cueIntensity = state.stopMoActive
+    ? 1
     : cueSignal?.intensity ?? 0
 
   panel.classList.toggle('is-passive', !showMeter)
   panel.dataset.cueState = cueState
-  panel.dataset.slowMo = state.slowMoActive ? 'true' : 'false'
+  panel.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
   meter.classList.toggle('is-hidden', !showMeter)
   meter.dataset.cueState = cueState
-  meter.dataset.slowMo = state.slowMoActive ? 'true' : 'false'
+  meter.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
   meter.style.setProperty('--cue-intensity', cueIntensity.toFixed(3))
   meter.style.setProperty('--cue-scale', (0.82 + cueIntensity * 0.24).toFixed(3))
   meter.style.setProperty('--cue-sweet-scale', (0.76 + cueIntensity * 0.2).toFixed(3))
   meter.style.setProperty('--cue-core-scale', (0.78 + cueIntensity * 0.3).toFixed(3))
 
   stageShell.dataset.cueState = showMeter ? cueState : 'idle'
-  stageShell.dataset.slowMo = state.slowMoActive ? 'true' : 'false'
+  stageShell.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
   stageShell.dataset.cueWord = showMeter ? cueWord : ''
   stageShell.style.setProperty('--cue-intensity', cueIntensity.toFixed(3))
   stageShell.style.setProperty('--cue-stage-scale', (0.76 + cueIntensity * 0.34).toFixed(3))
 
+  stageTarget.classList.toggle('is-visible', showStageTarget && !state.phaseResolved)
+  stageTarget.dataset.mode = definition.mode
+  stageTarget.textContent = definition.mode === 'hold'
+    ? state.stopMoActive
+      ? 'Release the spacecraft'
+      : state.actionHeld
+        ? 'Hold steady'
+        : 'Hold the spacecraft'
+    : definition.mode === 'timing'
+      ? state.stopMoActive
+        ? 'Tap the spacecraft'
+        : cueSignal?.band === 'strike'
+          ? 'Tap now'
+          : 'Tap the spacecraft'
+      : definition.mode === 'countdown'
+        ? 'Watch the clock'
+      : ''
+
   getTimingModeChip().textContent = definition.mode === 'hold'
-    ? state.slowMoActive
-      ? 'Slow-mo rescue'
+    ? state.stopMoActive
+      ? 'Window frozen'
       : cueSignal?.band === 'strike'
         ? 'Release now'
         : 'Listen + release'
     : definition.mode === 'timing'
-      ? state.slowMoActive
-        ? 'Slow-mo rescue'
+      ? state.stopMoActive
+        ? 'Window frozen'
         : cueSignal?.band === 'strike'
           ? 'Strike now'
           : 'Listen + tap'
       : definition.mode === 'countdown'
         ? 'Countdown'
-        : 'Autopilot'
+        : 'Coast phase'
 
-  getTimingHint().textContent = state.slowMoActive
-    ? 'Guidance slowed the moment. Follow the flare and act now.'
+  getTimingHint().textContent = state.stopMoActive
+    ? definition.mode === 'hold'
+      ? 'Guidance froze cutoff. Release the spacecraft when ready.'
+      : 'Guidance froze the cue window. Tap the spacecraft when ready.'
     : definition.timingHint
 
   const disabled = definition.mode === 'countdown' || definition.mode === 'auto' || state.phaseResolved
@@ -403,14 +467,14 @@ function renderMeter(state: GameState): void {
   actionBtn.textContent = state.phaseResolved
     ? 'Maneuver locked'
     : definition.mode === 'hold'
-      ? state.slowMoActive
+      ? state.stopMoActive
         ? 'Release now'
         : state.actionHeld
           ? 'Release for cutoff'
           : definition.actionLabel
       : definition.mode === 'timing'
-        ? state.slowMoActive
-          ? 'Tap now'
+        ? state.stopMoActive
+          ? 'Tap spacecraft'
           : cueSignal?.band === 'strike'
             ? 'Strike now'
             : definition.actionLabel
@@ -425,11 +489,31 @@ function renderMeter(state: GameState): void {
 }
 
 function renderScene(state: GameState): void {
+  if (state.phase === 'title' || state.phase === 'celebration') return
+
   const scene = buildSceneShape(state)
   const stageShell = getStageShell()
+  const definition = getPhaseDefinition(state.phase)
+  const manualPhase = definition.mode === 'hold' || definition.mode === 'timing'
+  const cueSignal = manualPhase ? getCueSignal(state) : null
+  const cueState = manualPhase ? (state.stopMoActive ? 'stop-mo' : cueSignal?.band ?? 'idle') : 'idle'
+  const cueIntensity = manualPhase ? (state.stopMoActive ? 1 : cueSignal?.intensity ?? 0) : 0
+  const rocket = getRocket()
+  const rocketHitArea = getRocketHitArea()
+  const rocketCueGlow = getRocketCueGlow()
+  const rocketCueRing = getRocketCueRing()
 
   stageShell.dataset.phase = state.phase
-  getRocket().setAttribute('transform', `translate(${scene.rocketX} ${scene.rocketY}) rotate(${scene.rocketAngle})`)
+  rocket.setAttribute('transform', `translate(${scene.rocketX} ${scene.rocketY}) rotate(${scene.rocketAngle})`)
+  rocket.dataset.interactive = manualPhase && !state.phaseResolved ? 'true' : 'false'
+  rocket.dataset.cueState = cueState
+  rocket.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
+  rocketHitArea.style.pointerEvents = manualPhase && !state.phaseResolved ? 'all' : 'none'
+  rocketHitArea.style.cursor = manualPhase && !state.phaseResolved ? 'pointer' : 'default'
+  rocketCueGlow.style.opacity = manualPhase ? String(0.08 + cueIntensity * 0.34) : '0'
+  rocketCueRing.style.opacity = manualPhase ? String(0.14 + cueIntensity * 0.72) : '0'
+  rocketCueGlow.setAttribute('transform', `scale(${(1.04 + cueIntensity * 0.2).toFixed(3)})`)
+  rocketCueRing.setAttribute('transform', `scale(${(0.92 + cueIntensity * 0.24).toFixed(3)})`)
 
   getFlame().style.opacity = scene.flameVisible ? '1' : '0'
   getParachute().style.opacity = scene.parachuteVisible ? '1' : '0'
