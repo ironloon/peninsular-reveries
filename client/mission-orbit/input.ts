@@ -21,12 +21,16 @@ function isModalOpen(): boolean {
 }
 
 function canUseMissionAction(state: GameState): boolean {
-  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown') {
+  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || state.phaseResolved) {
     return false
   }
 
+  if (state.briefingActive) {
+    return true
+  }
+
   const definition = getPhaseDefinition(state.phase)
-  return (definition.mode === 'hold' || definition.mode === 'timing') && !state.phaseResolved
+  return definition.mode === 'hold' || definition.mode === 'timing'
 }
 
 function bindPressTarget(target: PressTarget | null, isDisabled: () => boolean, callbacks: Pick<InputCallbacks, 'onActionStart' | 'onActionEnd'>): void {

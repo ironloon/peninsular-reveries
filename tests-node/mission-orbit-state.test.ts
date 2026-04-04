@@ -3,6 +3,7 @@ import test from 'node:test'
 import {
   advancePhase,
   autoAssistCurrentPhase,
+  endBriefing,
   enterStopMo,
   getCueSignal,
   getMissionStepLabel,
@@ -33,6 +34,9 @@ test('mission starts in countdown and reports the correct step label', () => {
 test('launch release and timing windows append scored burn results', () => {
   let state = advancePhase(startMission())
   assert.equal(state.phase, 'launch')
+  assert.equal(state.briefingActive, true)
+
+  state = endBriefing(state)
 
   state = setActionHeld(state, true)
   state = updateLaunchProgress(state, 1800)
@@ -45,6 +49,7 @@ test('launch release and timing windows append scored burn results', () => {
 
   state = advancePhase(state)
   assert.equal(state.phase, 'orbit-insertion')
+  state = endBriefing(state)
 
   state = updateTimingCursor(state, 700, 0.00035)
   state = resolveTimingAttempt(state)
@@ -54,11 +59,34 @@ test('launch release and timing windows append scored burn results', () => {
   assert.equal(state.burnResults[1]?.phase, 'orbit-insertion')
 })
 
+test('briefing pauses launch motion until the phase is activated', () => {
+  let state = advancePhase(startMission())
+  assert.equal(state.phase, 'launch')
+  assert.equal(state.briefingActive, true)
+  assert.equal(getCueSignal(state), null)
+
+  const briefingClock = tickClock(state, 900)
+  assert.equal(briefingClock.phaseElapsedMs, 900)
+
+  const frozenProgress = updateLaunchProgress(briefingClock, 900)
+  assert.equal(frozenProgress.launchProgress, 0)
+
+  state = endBriefing(briefingClock)
+  assert.equal(state.briefingActive, false)
+  assert.equal(state.phaseElapsedMs, 0)
+
+  state = setActionHeld(state, true)
+  state = updateLaunchProgress(state, 900)
+  assert.notEqual(state.launchProgress, 0)
+})
+
 test('stop-mo rescue freezes a manual timing window until the player acts', () => {
   let state = startMission()
   state = advancePhase(state)
+  state = endBriefing(state)
   state = autoAssistCurrentPhase(state)
   state = advancePhase(state)
+  state = endBriefing(state)
 
   state = enterStopMo(state, 'Orbit raise burn. Guidance froze the cue window. Tap when ready.')
 
@@ -80,6 +108,7 @@ test('stop-mo rescue freezes a manual timing window until the player acts', () =
 test('auto assist keeps the mission moving and final phase advances to celebration', () => {
   let state = startMission()
   state = advancePhase(state)
+  state = endBriefing(state)
   state = autoAssistCurrentPhase(state)
 
   assert.equal(state.burnResults[0]?.grade, 'assist')

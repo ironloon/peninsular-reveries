@@ -46,6 +46,61 @@ test.describe('SITE-07: Mission Orbit', () => {
     await page.waitForFunction(() => document.getElementById('mission-phase-label')?.textContent?.includes('Orbit raise burn'))
   })
 
+  test('portrait orbit animation stays on-stage and moves smoothly', async ({ page }) => {
+    await page.setViewportSize({ width: 393, height: 852 })
+    await page.goto('/mission-orbit/')
+
+    await page.getByRole('button', { name: 'Begin countdown' }).click()
+    await page.waitForFunction(() => document.getElementById('mission-phase-label')?.textContent?.includes('Ascent to orbit'))
+
+    const hitArea = page.locator('#mission-rocket-hit-area')
+    await hitArea.dispatchEvent('pointerdown', { pointerId: 1, pointerType: 'touch', isPrimary: true })
+    await page.waitForTimeout(2100)
+    await hitArea.dispatchEvent('pointerup', { pointerId: 1, pointerType: 'touch', isPrimary: true })
+
+    await page.waitForFunction(() => document.getElementById('mission-phase-label')?.textContent?.includes('Orbit raise burn'))
+
+    const motion = await page.evaluate(async () => {
+      const stage = document.getElementById('mission-stage-shell')
+      const rocket = document.getElementById('mission-rocket')
+      if (!(stage instanceof HTMLElement) || !(rocket instanceof SVGGElement)) {
+        return []
+      }
+
+      const samples: Array<{ centerX: number; centerY: number; stageWidth: number; stageHeight: number }> = []
+
+      for (let index = 0; index < 34; index += 1) {
+        const stageRect = stage.getBoundingClientRect()
+        const rocketRect = rocket.getBoundingClientRect()
+        samples.push({
+          centerX: rocketRect.left + rocketRect.width / 2 - stageRect.left,
+          centerY: rocketRect.top + rocketRect.height / 2 - stageRect.top,
+          stageWidth: stageRect.width,
+          stageHeight: stageRect.height,
+        })
+        await new Promise((resolve) => window.setTimeout(resolve, 180))
+      }
+
+      return samples
+    })
+
+    expect(motion.length).toBeGreaterThan(20)
+
+    for (const sample of motion) {
+      expect(sample.centerX).toBeGreaterThanOrEqual(-12)
+      expect(sample.centerX).toBeLessThanOrEqual(sample.stageWidth + 12)
+      expect(sample.centerY).toBeGreaterThanOrEqual(-12)
+      expect(sample.centerY).toBeLessThanOrEqual(sample.stageHeight + 12)
+    }
+
+    for (let index = 1; index < motion.length; index += 1) {
+      const previous = motion[index - 1]
+      const current = motion[index]
+      const jump = Math.hypot(current.centerX - previous.centerX, current.centerY - previous.centerY)
+      expect(jump).toBeLessThan(Math.max(current.stageWidth, current.stageHeight) * 0.22)
+    }
+  })
+
   test('narrow mobile layout keeps the mission controls reachable', async ({ page }) => {
     await page.setViewportSize({ width: 393, height: 740 })
     await page.goto('/mission-orbit/')

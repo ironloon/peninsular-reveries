@@ -12,6 +12,10 @@ export function announcePhase(label: string, prompt: string, dayLabel: string): 
   announce(`${dayLabel}. ${label}. ${prompt}`, 'polite')
 }
 
+export function announcePhaseReady(message: string): void {
+  announce(message, 'polite')
+}
+
 export function announceCountdown(value: number): void {
   if (value > 0) {
     announce(`T minus ${value}.`, 'assertive')

@@ -1,6 +1,6 @@
 import { isReducedMotion } from './animations.js'
 import { getCueSignal, getMissionStepLabel, getMissionTimeLabel } from './state.js'
-import { getPhaseDefinition, type BurnGrade, type GameState } from './types.js'
+import { MISSION_SEQUENCE, getPhaseDefinition, type BurnGrade, type GameState, type MissionPhase } from './types.js'
 
 declare global {
   interface Window {
@@ -44,6 +44,12 @@ type SceneShape = {
   serviceModuleOpacity: number
 }
 
+type ScenePose = {
+  x: number
+  y: number
+  angle: number
+}
+
 let phaseLabelEl: HTMLElement | null = null
 let statusLineEl: HTMLElement | null = null
 let promptEl: HTMLElement | null = null
@@ -71,6 +77,7 @@ let launchPadEl: SVGElement | null = null
 let oceanEl: SVGElement | null = null
 let splashEl: SVGElement | null = null
 let rocketEl: SVGElement | null = null
+let rocketFrameEl: SVGElement | null = null
 let rocketHitAreaEl: SVGElement | null = null
 let rocketCueGlowEl: SVGElement | null = null
 let rocketCueRingEl: SVGElement | null = null
@@ -110,6 +117,7 @@ function getLaunchPad(): SVGElement { return launchPadEl ??= requireSvg<SVGEleme
 function getOcean(): SVGElement { return oceanEl ??= requireSvg<SVGElement>('mission-ocean') }
 function getSplash(): SVGElement { return splashEl ??= requireSvg<SVGElement>('mission-splash') }
 function getRocket(): SVGElement { return rocketEl ??= requireSvg<SVGElement>('mission-rocket') }
+function getRocketFrame(): SVGElement { return rocketFrameEl ??= requireSvg<SVGElement>('mission-rocket-frame') }
 function getRocketHitArea(): SVGElement { return rocketHitAreaEl ??= requireSvg<SVGElement>('mission-rocket-hit-area') }
 function getRocketCueGlow(): SVGElement { return rocketCueGlowEl ??= requireSvg<SVGElement>('mission-rocket-glow') }
 function getRocketCueRing(): SVGElement { return rocketCueRingEl ??= requireSvg<SVGElement>('mission-rocket-cue-ring') }
@@ -129,6 +137,16 @@ function lerp(start: number, end: number, amount: number): number {
 function quadraticBezier(start: number, control: number, end: number, amount: number): number {
   const inverse = 1 - amount
   return inverse * inverse * start + 2 * inverse * amount * control + amount * amount * end
+}
+
+function easeOutCubic(amount: number): number {
+  const inverse = 1 - amount
+  return 1 - inverse * inverse * inverse
+}
+
+function lerpAngle(start: number, end: number, amount: number): number {
+  const delta = ((end - start + 540) % 360) - 180
+  return start + delta * amount
 }
 
 function ensureStars(): void {
@@ -170,8 +188,82 @@ function sampleFreeReturn(progress: number): { x: number; y: number; angle: numb
   return sampleGeometryPath(getFreeReturn(), progress)
 }
 
+function launchPose(progress: number): ScenePose {
+  const orbitEntry = sampleOrbit(0.04)
+  return {
+    x: quadraticBezier(22, 18.8, orbitEntry.x, progress),
+    y: quadraticBezier(78, 47, orbitEntry.y, progress),
+    angle: lerp(0, orbitEntry.angle, clamp(progress * 0.9, 0, 1)),
+  }
+}
+
+function orbitLoopProgress(phaseElapsedMs: number): number {
+  return (0.08 + phaseElapsedMs / 5600) % 1
+}
+
+function getBriefingSourcePhase(state: GameState): MissionPhase {
+  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown') {
+    return 'title'
+  }
+
+  return MISSION_SEQUENCE[state.phaseIndex - 1] ?? 'title'
+}
+
+function getPhaseBoundaryPose(phase: MissionPhase, boundary: 'start' | 'end'): ScenePose {
+  switch (phase) {
+    case 'title':
+    case 'countdown':
+      return { x: 22, y: 78, angle: 0 }
+    case 'launch':
+      return launchPose(boundary === 'start' ? 0 : 0.88)
+    case 'orbit-insertion':
+      return sampleOrbit(boundary === 'start' ? 0.08 : 0.14)
+    case 'high-earth-orbit':
+      return sampleOrbit(boundary === 'start' ? 0.14 : 0.18)
+    case 'trans-lunar-injection':
+      return sampleFreeReturn(boundary === 'start' ? 0.03 : 0.25)
+    case 'lunar-flyby':
+      return sampleFreeReturn(boundary === 'start' ? 0.25 : 0.62)
+    case 'return-coast':
+      return sampleFreeReturn(boundary === 'start' ? 0.62 : 0.95)
+    case 'service-module-jettison':
+      return boundary === 'start'
+        ? sampleFreeReturn(0.95)
+        : { x: 50, y: 64, angle: 38 }
+    case 'parachute-deploy':
+      return boundary === 'start'
+        ? { x: 50, y: 64, angle: 38 }
+        : { x: 55, y: 74, angle: 0 }
+    case 'splashdown':
+    case 'celebration':
+      return boundary === 'start'
+        ? { x: 55, y: 74, angle: 0 }
+        : { x: 55, y: 84, angle: 0 }
+  }
+}
+
+function applyBriefingPose(state: GameState, scene: SceneShape): SceneShape {
+  if (state.phase === 'title' || state.phase === 'celebration' || state.phase === 'countdown' || !state.briefingActive) {
+    return scene
+  }
+
+  const definition = getPhaseDefinition(state.phase)
+  const briefingMs = Math.max(definition.briefingMs ?? 1, 1)
+  const transitionProgress = easeOutCubic(clamp(state.phaseElapsedMs / briefingMs, 0, 1))
+  const fromPose = getPhaseBoundaryPose(getBriefingSourcePhase(state), 'end')
+  const toPose = getPhaseBoundaryPose(state.phase, 'start')
+
+  return {
+    ...scene,
+    rocketX: lerp(fromPose.x, toPose.x, transitionProgress),
+    rocketY: lerp(fromPose.y, toPose.y, transitionProgress),
+    rocketAngle: lerpAngle(fromPose.angle, toPose.angle, transitionProgress),
+  }
+}
+
 function buildSceneShape(state: GameState): SceneShape {
-  const cueSignal = getCueSignal(state)
+  const cueSignal = state.briefingActive ? null : getCueSignal(state)
+  const phaseElapsedMs = state.briefingActive ? 0 : state.phaseElapsedMs
 
   switch (state.phase) {
     case 'countdown': {
@@ -209,7 +301,7 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'orbit-insertion': {
-      const point = sampleOrbit(0.02 + ((state.phaseElapsedMs % 5200) / 5200) * 0.78)
+      const point = sampleOrbit(orbitLoopProgress(phaseElapsedMs))
       return {
         rocketX: point.x,
         rocketY: point.y,
@@ -226,7 +318,7 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'high-earth-orbit': {
-      const point = sampleOrbit(0.14 + Math.sin(state.phaseElapsedMs / 1400) * 0.025)
+      const point = sampleOrbit(0.14 + Math.sin(phaseElapsedMs / 1400) * 0.025)
       return {
         rocketX: point.x,
         rocketY: point.y,
@@ -243,7 +335,7 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'trans-lunar-injection': {
-      const progress = clamp(state.phaseElapsedMs / 7600, 0, 1)
+      const progress = clamp(phaseElapsedMs / 7600, 0, 1)
       const point = sampleFreeReturn(0.03 + progress * 0.22)
       return {
         rocketX: point.x,
@@ -261,7 +353,7 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'lunar-flyby': {
-      const progress = clamp(state.phaseElapsedMs / 6200, 0, 1)
+      const progress = clamp(phaseElapsedMs / 6200, 0, 1)
       const point = sampleFreeReturn(0.25 + progress * 0.37)
 
       return {
@@ -280,7 +372,7 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'return-coast': {
-      const progress = clamp(state.phaseElapsedMs / 5600, 0, 1)
+      const progress = clamp(phaseElapsedMs / 5600, 0, 1)
       const point = sampleFreeReturn(0.62 + progress * 0.33)
       return {
         rocketX: point.x,
@@ -298,7 +390,7 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'service-module-jettison': {
-      const progress = clamp(state.phaseElapsedMs / 2500, 0, 1)
+      const progress = clamp(phaseElapsedMs / 2500, 0, 1)
       const returnEntry = sampleFreeReturn(0.95)
       return {
         rocketX: lerp(returnEntry.x, 50, progress),
@@ -316,11 +408,11 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'parachute-deploy': {
-      const progress = clamp(state.phaseElapsedMs / 2500, 0, 1)
+      const progress = clamp(phaseElapsedMs / 2500, 0, 1)
       return {
-        rocketX: 55,
-        rocketY: lerp(34, 74, progress),
-        rocketAngle: 0,
+        rocketX: lerp(50, 55, progress),
+        rocketY: lerp(64, 74, progress),
+        rocketAngle: lerp(38, 0, clamp(progress * 1.6, 0, 1)),
         flameVisible: !state.parachuteDeployed,
         parachuteVisible: state.parachuteDeployed,
         orbitOpacity: 0,
@@ -333,7 +425,7 @@ function buildSceneShape(state: GameState): SceneShape {
       }
     }
     case 'splashdown': {
-      const progress = clamp(state.phaseElapsedMs / 2200, 0, 1)
+      const progress = clamp(phaseElapsedMs / 2200, 0, 1)
       return {
         rocketX: 55,
         rocketY: lerp(74, 84, progress),
@@ -385,11 +477,17 @@ function renderMeter(state: GameState): void {
   const stageShell = getStageShell()
   const stageTarget = getStageTarget()
 
-  const showMeter = definition.mode === 'hold' || definition.mode === 'timing'
-  const showStageTarget = showMeter || definition.mode === 'countdown'
+  const showMeter = !state.briefingActive && (definition.mode === 'hold' || definition.mode === 'timing')
+  const showStageTarget = state.briefingActive || showMeter || definition.mode === 'countdown'
   const cueSignal = showMeter ? getCueSignal(state) : null
-  const cueState = state.stopMoActive ? 'stop-mo' : cueSignal?.band ?? 'idle'
-  const cueWord = state.stopMoActive
+  const cueState = state.briefingActive
+    ? 'idle'
+    : state.stopMoActive
+      ? 'stop-mo'
+      : cueSignal?.band ?? 'idle'
+  const cueWord = state.briefingActive
+    ? 'STAND BY'
+    : state.stopMoActive
     ? definition.mode === 'hold'
       ? 'RELEASE'
       : 'TAP NOW'
@@ -400,7 +498,9 @@ function renderMeter(state: GameState): void {
       : cueSignal?.band === 'ready'
         ? 'READY'
         : ''
-  const cueIntensity = state.stopMoActive
+  const cueIntensity = state.briefingActive
+    ? 0.2
+    : state.stopMoActive
     ? 1
     : cueSignal?.intensity ?? 0
 
@@ -417,29 +517,38 @@ function renderMeter(state: GameState): void {
 
   stageShell.dataset.cueState = showMeter ? cueState : 'idle'
   stageShell.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
-  stageShell.dataset.cueWord = showMeter ? cueWord : ''
+  stageShell.dataset.briefing = state.briefingActive ? 'true' : 'false'
+  stageShell.dataset.cueWord = state.briefingActive ? cueWord : showMeter ? cueWord : ''
   stageShell.style.setProperty('--cue-intensity', cueIntensity.toFixed(3))
   stageShell.style.setProperty('--cue-stage-scale', (0.76 + cueIntensity * 0.34).toFixed(3))
 
   stageTarget.classList.toggle('is-visible', showStageTarget && !state.phaseResolved)
-  stageTarget.dataset.mode = definition.mode
-  stageTarget.textContent = definition.mode === 'hold'
-    ? state.stopMoActive
-      ? 'Release the spacecraft'
-      : state.actionHeld
-        ? 'Hold steady'
-        : 'Hold the spacecraft'
-    : definition.mode === 'timing'
+  stageTarget.dataset.mode = state.briefingActive ? 'briefing' : definition.mode
+  stageTarget.textContent = state.briefingActive
+    ? definition.mode === 'hold'
+      ? 'Stand by for ascent'
+      : definition.mode === 'timing'
+        ? 'Stand by for burn cue'
+        : 'Watch the flight path'
+    : definition.mode === 'hold'
       ? state.stopMoActive
-        ? 'Tap the spacecraft'
-        : cueSignal?.band === 'strike'
-          ? 'Tap now'
-          : 'Tap the spacecraft'
-      : definition.mode === 'countdown'
-        ? 'Watch the clock'
-      : ''
+        ? 'Release the spacecraft'
+        : state.actionHeld
+          ? 'Hold steady'
+          : 'Hold the spacecraft'
+      : definition.mode === 'timing'
+        ? state.stopMoActive
+          ? 'Tap the spacecraft'
+          : cueSignal?.band === 'strike'
+            ? 'Tap now'
+            : 'Tap the spacecraft'
+        : definition.mode === 'countdown'
+          ? 'Watch the clock'
+          : ''
 
-  getTimingModeChip().textContent = definition.mode === 'hold'
+  getTimingModeChip().textContent = state.briefingActive
+    ? 'Mission brief'
+    : definition.mode === 'hold'
     ? state.stopMoActive
       ? 'Window frozen'
       : cueSignal?.band === 'strike'
@@ -455,16 +564,26 @@ function renderMeter(state: GameState): void {
         ? 'Countdown'
         : 'Coast phase'
 
-  getTimingHint().textContent = state.stopMoActive
+  getTimingHint().textContent = state.briefingActive
+    ? definition.prompt
+    : state.stopMoActive
     ? definition.mode === 'hold'
       ? 'Guidance froze cutoff. Release the spacecraft when ready.'
       : 'Guidance froze the cue window. Tap the spacecraft when ready.'
     : definition.timingHint
 
-  const disabled = definition.mode === 'countdown' || definition.mode === 'auto' || state.phaseResolved
+  const disabled = definition.mode === 'countdown'
+    || state.phaseResolved
+    || (definition.mode === 'auto' && !state.briefingActive)
   actionBtn.disabled = disabled
   actionBtn.classList.toggle('is-held', state.actionHeld)
-  actionBtn.textContent = state.phaseResolved
+  actionBtn.textContent = state.briefingActive
+    ? definition.mode === 'auto'
+      ? 'Continue mission'
+      : definition.mode === 'hold'
+        ? 'Begin ascent'
+        : 'Begin maneuver'
+    : state.phaseResolved
     ? 'Maneuver locked'
     : definition.mode === 'hold'
       ? state.stopMoActive
@@ -491,27 +610,31 @@ function renderMeter(state: GameState): void {
 function renderScene(state: GameState): void {
   if (state.phase === 'title' || state.phase === 'celebration') return
 
-  const scene = buildSceneShape(state)
+  const scene = applyBriefingPose(state, buildSceneShape(state))
   const stageShell = getStageShell()
   const definition = getPhaseDefinition(state.phase)
   const manualPhase = definition.mode === 'hold' || definition.mode === 'timing'
-  const cueSignal = manualPhase ? getCueSignal(state) : null
-  const cueState = manualPhase ? (state.stopMoActive ? 'stop-mo' : cueSignal?.band ?? 'idle') : 'idle'
-  const cueIntensity = manualPhase ? (state.stopMoActive ? 1 : cueSignal?.intensity ?? 0) : 0
+  const interactive = state.briefingActive || (manualPhase && !state.phaseResolved)
+  const cueSignal = manualPhase && !state.briefingActive ? getCueSignal(state) : null
+  const cueState = manualPhase && !state.briefingActive ? (state.stopMoActive ? 'stop-mo' : cueSignal?.band ?? 'idle') : 'idle'
+  const cueIntensity = manualPhase && !state.briefingActive ? (state.stopMoActive ? 1 : cueSignal?.intensity ?? 0) : 0
   const rocket = getRocket()
+  const rocketFrame = getRocketFrame()
   const rocketHitArea = getRocketHitArea()
   const rocketCueGlow = getRocketCueGlow()
   const rocketCueRing = getRocketCueRing()
 
   stageShell.dataset.phase = state.phase
-  rocket.setAttribute('transform', `translate(${scene.rocketX} ${scene.rocketY}) rotate(${scene.rocketAngle})`)
-  rocket.dataset.interactive = manualPhase && !state.phaseResolved ? 'true' : 'false'
+  stageShell.dataset.briefing = state.briefingActive ? 'true' : 'false'
+  rocket.setAttribute('transform', `translate(${scene.rocketX} ${scene.rocketY})`)
+  rocketFrame.setAttribute('transform', `rotate(${scene.rocketAngle})`)
+  rocket.dataset.interactive = interactive ? 'true' : 'false'
   rocket.dataset.cueState = cueState
   rocket.dataset.stopMo = state.stopMoActive ? 'true' : 'false'
-  rocketHitArea.style.pointerEvents = manualPhase && !state.phaseResolved ? 'all' : 'none'
-  rocketHitArea.style.cursor = manualPhase && !state.phaseResolved ? 'pointer' : 'default'
-  rocketCueGlow.style.opacity = manualPhase ? String(0.08 + cueIntensity * 0.34) : '0'
-  rocketCueRing.style.opacity = manualPhase ? String(0.14 + cueIntensity * 0.72) : '0'
+  rocketHitArea.style.pointerEvents = interactive ? 'all' : 'none'
+  rocketHitArea.style.cursor = interactive ? 'pointer' : 'default'
+  rocketCueGlow.style.opacity = state.briefingActive ? '0.18' : manualPhase ? String(0.08 + cueIntensity * 0.34) : '0'
+  rocketCueRing.style.opacity = state.briefingActive ? '0.22' : manualPhase ? String(0.14 + cueIntensity * 0.72) : '0'
   rocketCueGlow.setAttribute('transform', `scale(${(1.04 + cueIntensity * 0.2).toFixed(3)})`)
   rocketCueRing.setAttribute('transform', `scale(${(0.92 + cueIntensity * 0.24).toFixed(3)})`)
 

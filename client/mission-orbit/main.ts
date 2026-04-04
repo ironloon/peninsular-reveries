@@ -5,6 +5,7 @@ import {
   announceKeepHolding,
   announceMissionComplete,
   announcePhase,
+  announcePhaseReady,
   announceStopMoCue,
   moveFocusAfterTransition,
   updatePhaseDescription,
@@ -21,6 +22,7 @@ import {
   advancePhase,
   autoAssistCurrentPhase,
   createInitialState,
+  endBriefing,
   enterStopMo,
   getCueSignal,
   getMissionTimeLabel,
@@ -93,6 +95,52 @@ function clearAdvanceTimer(): void {
   }
 }
 
+function playPhaseActivationAudio(): void {
+  if (state.phase === 'title' || state.phase === 'celebration') return
+
+  const definition = getPhaseDefinition(state.phase)
+
+  if (state.phase === 'launch') {
+    sfxLiftoff()
+  }
+  if (definition.mode === 'timing') {
+    sfxBurnWindow()
+  }
+  if (state.phase === 'service-module-jettison') {
+    sfxReentry()
+  }
+  if (state.phase === 'splashdown') {
+    sfxSplashdown()
+  }
+}
+
+function buildPhaseReadyMessage(): string {
+  const definition = currentPhaseDefinition()
+  if (!definition) return ''
+
+  if (definition.mode === 'hold') {
+    return `${definition.label}. Action live. ${definition.timingHint}`
+  }
+
+  if (definition.mode === 'timing') {
+    return `${definition.label}. Action live. ${definition.timingHint}`
+  }
+
+  return `${definition.label}. Segment under way.`
+}
+
+function finishBriefing(): void {
+  if (!state.briefingActive) return
+
+  state = endBriefing(state)
+  playPhaseActivationAudio()
+
+  const readyMessage = buildPhaseReadyMessage()
+  if (readyMessage) {
+    announcePhaseReady(readyMessage)
+  }
+}
+
 function onPhaseEntered(previousPhase: GameState['phase']): void {
   if (state.phase === previousPhase) return
 
@@ -120,17 +168,8 @@ function onPhaseEntered(previousPhase: GameState['phase']): void {
   announcePhase(definition.label, definition.prompt, definition.dayLabel)
   updatePhaseDescription(`${definition.label}. ${definition.prompt}`)
 
-  if (state.phase === 'launch') {
-    sfxLiftoff()
-  }
-  if (definition.mode === 'timing') {
-    sfxBurnWindow()
-  }
-  if (state.phase === 'service-module-jettison') {
-    sfxReentry()
-  }
-  if (state.phase === 'splashdown') {
-    sfxSplashdown()
+  if (!state.briefingActive) {
+    playPhaseActivationAudio()
   }
 
   renderMission(state)
@@ -169,7 +208,7 @@ function handleBurnResolved(): void {
     getOutcomeElement(),
     latestBurn.grade === 'assist' ? 'outcome-pulse-assist' : 'outcome-pulse-success',
   )
-  scheduleNextPhase(1100)
+  scheduleNextPhase(2200)
 }
 
 function resolveCurrentPhase(assisted: boolean): void {
@@ -279,6 +318,17 @@ const callbacks: InputCallbacks = {
     const definition = currentPhaseDefinition()
     if (!definition || state.phaseResolved) return
 
+    if (state.briefingActive) {
+      finishBriefing()
+
+      if (definition.mode === 'hold') {
+        state = setActionHeld(state, true)
+      }
+
+      renderMission(state)
+      return
+    }
+
     if (definition.mode === 'hold') {
       state = setActionHeld(state, true)
       renderMission(state)
@@ -319,6 +369,11 @@ function tick(now: number): void {
   if (!document.hidden && state.phase !== 'title' && state.phase !== 'celebration') {
     state = tickClock(state, deltaMs)
 
+    const definition = currentPhaseDefinition()
+    if (definition && state.briefingActive && definition.briefingMs && state.phaseElapsedMs >= definition.briefingMs) {
+      finishBriefing()
+    }
+
     if (state.phase === 'countdown') {
       state = updateCountdown(state)
 
@@ -350,13 +405,13 @@ function tick(now: number): void {
       }
 
       const definition = getPhaseDefinition('launch')
-      if (!state.phaseResolved && !state.stopMoActive && ((definition.assistAfterMs && state.phaseElapsedMs >= definition.assistAfterMs) || state.launchProgress >= 1)) {
+      if (!state.briefingActive && !state.phaseResolved && !state.stopMoActive && ((definition.assistAfterMs && state.phaseElapsedMs >= definition.assistAfterMs) || state.launchProgress >= 1)) {
         triggerStopMoRescue()
       }
     } else {
       const definition = getPhaseDefinition(state.phase as MissionGameplayPhase)
 
-      if (definition.mode === 'timing' && !state.phaseResolved) {
+      if (!state.briefingActive && definition.mode === 'timing' && !state.phaseResolved) {
         state = updateTimingCursor(state, deltaMs, definition.meterSpeed ?? 0.00064)
 
         if (!state.stopMoActive && definition.assistAfterMs && state.phaseElapsedMs >= definition.assistAfterMs) {
@@ -364,7 +419,7 @@ function tick(now: number): void {
         }
       }
 
-      if (definition.mode === 'auto' && definition.autoAdvanceMs && state.phaseElapsedMs >= definition.autoAdvanceMs) {
+      if (!state.briefingActive && definition.mode === 'auto' && definition.autoAdvanceMs && state.phaseElapsedMs >= definition.autoAdvanceMs) {
         goToNextPhase()
       }
     }
