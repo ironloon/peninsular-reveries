@@ -38,6 +38,7 @@ For project architecture, game quality standards, and testing conventions, load 
 
 - When producing plans, write extremely detailed step-by-step plans with explicit file paths, function names, exact commands when helpful, contingency steps for likely failure points, and clear verification gates.
 - Include rollback or recovery notes for risky edits.
+- When producing plans intended for orchestrated execution, load the planning skill in `.github/skills/planning/` and output work units in its format. Embed the relevant project constraints (from the review skill references) directly into each work unit's intent so that dispatched sub-agents do not need to load skills independently.
 
 ## Executing Agent Guidance
 
@@ -46,6 +47,7 @@ For project architecture, game quality standards, and testing conventions, load 
 - Before any push-ready handoff, inspect the changed files for accidental secrets or credential-like strings, and if a real secret was already committed, treat rotation plus history cleanup as required work rather than a documentation note.
 - After completing all planned work, run the relevant verification. If it passes, report what changed and what was verified.
 - When dispatched by the orchestrator, respect your `owned_files` boundary strictly. Do not modify files outside your owned set.
+- When dispatched by the orchestrator, do not load repository skills. The dispatch prompt already incorporates project constraints extracted from the relevant skills during plan creation. Loading skills redundantly wastes context budget and slows execution.
 - Run only your unit's verification command. Do not run `npm run test:local` — that is the orchestrator's job.
 - If you need a change to a shared file (package.json, build.ts, router, routes, shared styles), report it as a deferred edit rather than modifying it.
 
