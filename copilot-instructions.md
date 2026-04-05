@@ -15,6 +15,7 @@ For project architecture, game quality standards, and testing conventions, load 
 ## Knowledge Persistence
 
 - Do not use Copilot memory files (`/memories/repo/`) to store project learnings. Memory files are invisible to humans, other tools, and collaborators.
+- **Exception:** Orchestrated workflow plans live in `/memories/repo/plans/` because they are ephemeral dispatch state, not project knowledge.
 - When you learn something reusable about this project, record it in the appropriate in-repo file instead:
 	- Architecture, conventions, build and deploy patterns → `.github/skills/review/references/architecture.md`
 	- Game quality, layout, pacing, visual rules → `.github/skills/review/references/game-quality.md`
@@ -31,35 +32,31 @@ For project architecture, game quality standards, and testing conventions, load 
 - Ask the user a clarifying question only when the answer would materially change the implementation, or when proceeding would require a destructive, irreversible, or product-direction choice. If a reasonable default exists, use it and keep going.
 - If the user says some version of **"continue until done"**, interpret "done" as **human-ready unless genuinely blocked**.
 - If the user says **"wrap it up"** or otherwise makes it clear that **pushing finished work is welcome**, treat that as permission to finish the current task end-to-end. When the work is validated and human-ready, and the commit scope is clear with no ambiguous unrelated changes, the agent may stage the intended files, create a concise commit, and push without asking for one more round of confirmation. If the working tree is mixed or risky, stop short of commit/push and explain the blocker briefly.
-- Keep the closeout focused on readiness. Do **not** default to optional extra suggestions or "I can also..." follow-ups unless the user explicitly asked for options, something still blocks human readiness, or there is a single obvious next required step outside the repo work already completed.
-- When everything needed for human testing is complete, end with what changed and what was verified. Avoid trailing suggestions for unrelated polish or future work.
+- After completing work, report what changed and what was verified.
 
 ## Plan Mode
 
 - When producing plans, write extremely detailed step-by-step plans with explicit file paths, function names, exact commands when helpful, contingency steps for likely failure points, and clear verification gates.
-- Assume the executing agent is less capable and needs unambiguous instructions. Avoid shorthand, omitted steps, or "figure it out" transitions.
 - Include rollback or recovery notes for risky edits.
-- Write plans with calm, supportive framing so the executing agent has enough context and confidence to finish the whole job without extra prompting.
 
 ## Executing Agent Guidance
 
-- You are capable of completing every step in an approved plan. When you finish one step, immediately start the next. Do not stop partway through a plan to ask whether you should continue.
-- Keep momentum through the checkpoints built into the plan. Finish the current phase before pausing unless you hit a real blocker.
+- Complete every step in the approved plan. When you finish one step, immediately start the next. Do not stop partway to ask whether you should continue.
 - If you hit an error, diagnose it and fix it. If you are genuinely stuck, explain the specific blocker. Do not abandon the remaining steps.
 - Before any push-ready handoff, inspect the changed files for accidental secrets or credential-like strings, and if a real secret was already committed, treat rotation plus history cleanup as required work rather than a documentation note.
 - After completing all planned work, run the relevant verification. If it passes, report what changed and what was verified.
-- Do not suggest follow-up work, future ideas, or extra polish unless the user explicitly asks. The goal is completion of the approved scope, not expansion of scope.
+- When dispatched by the orchestrator, respect your `owned_files` boundary strictly. Do not modify files outside your owned set.
+- Run only your unit's verification command. Do not run `npm run test:local` — that is the orchestrator's job.
+- If you need a change to a shared file (package.json, build.ts, router, routes, shared styles), report it as a deferred edit rather than modifying it.
 
-## Task Tracking
+## Orchestrated Workflow
 
-- At the start of each session, check whether `/memories/peninsular-reveries-task.md` exists only when the user's request is clearly about continuing implementation work in this repo. Do not let an active task file hijack unrelated planning, brainstorming, review, or question-answering.
-- Read `/memories/repo/peninsular-reveries-task-detail.md` when starting a phase that needs file paths, exact values, or investigation context.
-- Work one phase at a time. Update the task file as you complete steps by changing `- [ ]` to `- [x]`.
-- Stop at any task-file checkpoint and report findings to the user before continuing past it.
-- After completing a phase's verification step, pause and confirm with the user before starting the next phase unless the user explicitly says to keep going.
-- Treat the memory task files as the source of truth for the remaining approved work. Do not silently re-plan or expand scope beyond them unless the user asks.
-- When the tracked work is complete, delete both task memory files as part of cleanup.
-- For other planning work in the same repo, prefer session-scoped planning or an explicit user request to create a separate plan. Leave the active implementation task untouched unless the user asks to resume or revise it.
+- Plans live in `/memories/repo/plans/` as structured markdown with work units (workspace-persistent, not in git).
+- Plans are written in Plan mode; the `@orchestrator` agent dispatches them via `runSubagent`.
+- The orchestrator reads source code before each dispatch to enrich the plan's intent description into a specific implementation prompt.
+- The orchestrator reviews sub-agent results, resolves fixable issues, and escalates genuine blockers to the user.
+- Each work unit has an explicit `owned_files` set — the executing agent may ONLY modify those files.
+- The orchestrator runs `npm run test:local` once after all units complete as the integration gate.
 
 ## Environment Context
 
