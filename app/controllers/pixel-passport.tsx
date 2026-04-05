@@ -342,7 +342,8 @@ export async function pixelPassportAction() {
           </section>
 
           <div className="settings-actions">
-            <a href={homePath} className="passport-btn passport-btn-secondary settings-home-link">Home</a>
+            <button id="restart-btn" type="button" className="passport-btn passport-btn-secondary settings-restart-btn">Restart</button>
+            <a href={homePath} className="passport-btn passport-btn-secondary settings-quit-link">Quit</a>
             <button id="settings-close" className="passport-btn passport-btn-primary" type="button">Close</button>
           </div>
       </GameSettingsModal>

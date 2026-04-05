@@ -124,7 +124,6 @@ export async function chompersAction() {
 
             <div className="start-actions">
               <button id="start-btn" className="chomp-btn chomp-btn-primary">Start Chomping</button>
-              <button id="start-zoom-reset-btn" className="chomp-btn chomp-btn-icon zoom-reset-btn" aria-label="Reset zoom">🔍</button>
               <button data-settings-open="true" className="chomp-btn chomp-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
             </div>
           </div>
@@ -149,11 +148,6 @@ export async function chompersAction() {
               aria-expanded="false"
               aria-label="Menu"
             >☰</button>
-            <button
-              id="zoom-reset-btn"
-              className="chomp-btn chomp-btn-icon"
-              aria-label="Reset zoom"
-            >🔍</button>
           </div>
 
           <p id="problem-prompt" className="problem-prompt" role="status" aria-live="polite">Loading…</p>
@@ -166,12 +160,12 @@ export async function chompersAction() {
               <div className="hippo-ear hippo-ear-right"></div>
               <div className="hippo-body"></div>
               <div className="hippo-neck">
-                <div className="hippo-head">
-                  <div className="hippo-jaw-upper"></div>
-                  <div className="hippo-jaw-lower"></div>
-                  <div className="hippo-eye"></div>
-                  <div className="hippo-nostril"></div>
-                </div>
+                <img
+                  src={withBasePath('/chompers/hippo-head.svg', siteBasePath)}
+                  className="hippo-head"
+                  alt=""
+                  aria-hidden="true"
+                />
               </div>
             </div>
 
@@ -250,10 +244,11 @@ export async function chompersAction() {
           </ul>
         </section>
 
-        <div className="settings-actions">
-          <a href={homePath} className="chomp-btn chomp-btn-secondary settings-home-link">Home</a>
-          <button id="settings-close" className="chomp-btn chomp-btn-primary">Close</button>
-        </div>
+        <footer className="settings-actions">
+          <button id="restart-btn" type="button" className="chomp-btn chomp-btn-secondary settings-restart-btn">Restart</button>
+          <a href={homePath} className="chomp-btn chomp-btn-secondary settings-quit-link">Quit</a>
+          <button id="settings-close-btn" type="button" className="chomp-btn chomp-btn-primary">Close</button>
+        </footer>
 
       </GameSettingsModal>
 

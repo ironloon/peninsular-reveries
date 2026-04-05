@@ -137,6 +137,15 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('replay-btn')?.addEventListener('click', onReplay)
   document.getElementById('menu-btn')?.addEventListener('click', onReturnToMenu)
 
+  document.getElementById('restart-btn')?.addEventListener('click', () => {
+    settingsModal.close()
+    onReturnToMenu()
+  })
+
+  document.getElementById('settings-close-btn')?.addEventListener('click', () => {
+    settingsModal.close()
+  })
+
   const settingsBtn = document.getElementById('settings-btn')
   settingsBtn?.addEventListener('click', () => settingsModal.open(settingsBtn))
 })

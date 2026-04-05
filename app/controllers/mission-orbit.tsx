@@ -270,7 +270,8 @@ export async function missionOrbitAction() {
             </section>
 
             <div className="settings-actions">
-              <a href={homePath} className="mission-btn mission-btn-secondary settings-home-link">Home</a>
+              <button id="restart-btn" type="button" className="mission-btn mission-btn-secondary settings-restart-btn">Restart</button>
+              <a href={homePath} className="mission-btn mission-btn-secondary settings-quit-link">Quit</a>
               <button id="settings-close" className="mission-btn mission-btn-secondary">Close</button>
             </div>
         </GameSettingsModal>

@@ -125,14 +125,6 @@ test.describe('SITE-08: Chompers', () => {
     await expect(page.locator('.counting-object').first()).toBeVisible({ timeout: 3000 })
   })
 
-  test('zoom reset button is present in game HUD', async ({ page }) => {
-    await page.goto('/chompers/')
-    await page.getByRole('button', { name: 'Start Chomping' }).click()
-    await expect(page.locator('#game-screen')).toBeVisible({ timeout: 5000 })
-    await expect(page.locator('#zoom-reset-btn')).toBeVisible()
-    await expect(page.locator('#zoom-reset-btn')).toHaveAttribute('aria-label', 'Reset zoom')
-  })
-
   test('no scroll on start screen at 390x844', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/chompers/')

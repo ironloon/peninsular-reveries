@@ -1,11 +1,11 @@
 ---
-name: cc0-game-audio-curation
+name: cc0-audio-curation
 description: 'Source, evaluate, fetch, trim, attribute, and integrate CC0 or public-domain audio for any game in Peninsular Reveries. Use when researching Freesound or NASA clips, regenerating bundled OGGs into the correct game folder, tuning light/heavy sample variants, improving speaker-friendly audibility on laptop/phone speakers, layering samples with synth fallback beds, or refreshing cached game audio.'
 argument-hint: 'game slug plus audio task, for example mission-orbit launch-rumble-heavy or chompers bite sfx'
 user-invocable: true
 ---
 
-# CC0 Game Audio Curation
+# CC0 Audio Curation
 
 Use this skill for audio sourcing work across games in the repo.
 
@@ -34,9 +34,9 @@ Use this skill for audio sourcing work across games in the repo.
 
 ## Generic Fetch Tool
 
-- List approved samples for one game: `npx tsx .github/skills/cc0-game-audio-curation/scripts/fetch-game-audio.ts --game <slug> --list`
-- Regenerate one approved sample: `npx tsx .github/skills/cc0-game-audio-curation/scripts/fetch-game-audio.ts --game <slug> --only <sample-id> --yes`
-- Regenerate all approved samples for one game: `npx tsx .github/skills/cc0-game-audio-curation/scripts/fetch-game-audio.ts --game <slug> --yes`
+- List approved samples for one game: `npx tsx .github/skills/cc0-audio-curation/scripts/fetch-game-audio.ts --game <slug> --list`
+- Regenerate one approved sample: `npx tsx .github/skills/cc0-audio-curation/scripts/fetch-game-audio.ts --game <slug> --only <sample-id> --yes`
+- Regenerate all approved samples for one game: `npx tsx .github/skills/cc0-audio-curation/scripts/fetch-game-audio.ts --game <slug> --yes`
 
 Today the generic tool knows how to route Mission: Orbit samples into [public/mission-orbit/audio](../../../../public/mission-orbit/audio). Extend its game map as other games add sample manifests.
 

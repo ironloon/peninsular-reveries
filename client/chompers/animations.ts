@@ -47,7 +47,7 @@ export function animateHippoChomp(
       if (arenaEl) {
         const arenaRect = arenaEl.getBoundingClientRect()
         const reach = (targetX - hippoX) / (arenaRect.right - hippoX)
-        neckExt = Math.min(Math.max(reach * 1.2, 0.2), 1)
+        neckExt = Math.min(Math.max(reach * 1.5, 0.2), 1.8)
       }
     }
 

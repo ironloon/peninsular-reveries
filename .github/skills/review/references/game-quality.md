@@ -71,6 +71,8 @@
 
 - Games must not set `user-scalable=no` or `maximum-scale=1` in the viewport meta (WCAG 1.4.4 requires user zoom).
 - All games use `touch-action: manipulation` on interactive areas to prevent double-tap zoom.
-- Provide a visible "Reset Zoom" button in the game HUD for users who get stuck in pinch-zoom mode. Place it next to the menu button so it remains findable even while zoomed.
-- The reset technique: temporarily set `maximum-scale=1` on the viewport meta element, then restore the original value on the next animation frame. This forces the browser to snap back to 1× without permanently restricting zoom.
-- The button should be visually subtle (icon-only, e.g., 🔍 with aria-label "Reset zoom") but always present.
+- The `setupZoomReset()` helper exists in `renderer.ts` files and may be called if needed, but no visible "Reset Zoom" button in the HUD is required.
+
+## In-Game Menu Standard
+
+Every game's settings modal must include three action buttons in a `<footer>` within the modal children: **Restart** (returns player to the game's own start screen / lobby — no navigation away from the page), **Quit** (navigates to site root via `withBasePath('/', siteBasePath)`), and **Close** (dismisses the modal and resumes the current game session). Use the exact labels "Restart", "Quit", "Close". Restart must be a `<button>` with `id="restart-btn"` wired in the game's `main.ts`. Quit must be an `<a>` element pointed at the site root with `className="...-quit-link"`. Close must be a `<button>` with `id="settings-close-btn"` referencing the existing close handler. The former "Home" link (site root) in existing games must be relabeled "Quit". Restart does not apply on the start screen itself (hide or omit in that context if needed, but consistency across games is more important — keeping it and simply re-showing the same screen is acceptable).

@@ -409,6 +409,19 @@ function bindSettingsModal(): void {
   })
 
   element('settings-close').addEventListener('click', () => closeSettings())
+
+  const restartBtn = document.getElementById('restart-btn')
+  if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+      closeSettings()
+      const previousState = state
+      state = returnToGlobe(state)
+      syncView(previousState)
+      announcePhase('Back on the globe. Pick a place to visit.')
+      focusSelectedMarker('globe')
+    })
+  }
+
   element('settings-modal').addEventListener('click', (event) => {
     if (event.target === event.currentTarget) {
       closeSettings()

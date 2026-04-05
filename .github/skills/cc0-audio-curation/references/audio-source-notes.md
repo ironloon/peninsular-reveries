@@ -34,5 +34,5 @@
 
 ## Generic Fetching
 
-- The generic fetch script stages raw previews under `.github/skills/cc0-game-audio-curation/.sound-staging/<game>/`
+- The generic fetch script stages raw previews under `.github/skills/cc0-audio-curation/.sound-staging/<game>/`
 - The game slug determines the destination folder and which sample manifest is loaded

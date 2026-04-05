@@ -94,6 +94,11 @@ if (sfxIntensitySelect) {
 
 setupSettingsModal()
 
+document.getElementById('restart-btn')?.addEventListener('click', () => {
+  window.__missionOrbitSettingsToggle?.()
+  showScreen('start-screen')
+})
+
 function currentPhaseDefinition(): MissionPhaseDefinition | null {
   if (state.phase === 'title' || state.phase === 'celebration') return null
   return getPhaseDefinition(state.phase)
