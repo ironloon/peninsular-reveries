@@ -11,6 +11,7 @@
     "build": "tsx --tsconfig config/tsconfig.json build.ts",
     "check": "npm run lint && npm run typecheck",
     "lint": "eslint --config config/eslint.config.mjs .",
+    "generate:pixel-art": "tsx --tsconfig config/tsconfig.json scripts/generate-pixel-art.ts",
     "sync:attributions": "tsx --tsconfig config/tsconfig.json scripts/sync-attributions.ts",
     "typecheck": "tsc --noEmit -p config/tsconfig.json",
     "dev": "tsx --tsconfig config/tsconfig.json server.ts",

@@ -7,13 +7,13 @@ export const siteHeaderStyles = {
 export const siteMainStyles = {
   maxWidth: '42rem',
   marginInline: 'auto',
-  padding: 'var(--space-xl) var(--space-md)',
+  padding: 'var(--space-xl) var(--space-lg) var(--space-2xl)',
   viewTransitionName: 'main-content',
 }
 
 export const siteFooterStyles = {
   textAlign: 'center',
-  padding: 'var(--space-xl) var(--space-md)',
+  padding: 'var(--space-2xl) var(--space-lg)',
   color: 'var(--color-muted)',
   fontSize: 'var(--text-sm)',
 }
@@ -21,7 +21,7 @@ export const siteFooterStyles = {
 export const pageStackStyles = {
   display: 'flex',
   flexDirection: 'column',
-  gap: 'var(--space-lg)',
+  gap: 'var(--space-xl)',
 }
 
 export const pageHeroStyles = {

@@ -15,6 +15,13 @@
   --accent-strong: #ff8f5a;
   --accent-cool: #6fd0ff;
   --accent-green: #8ad36d;
+  --destination-sky-top: #77c2ff;
+  --destination-sky-bottom: #dff0ff;
+  --destination-glow: rgba(255, 216, 131, 0.28);
+  --destination-accent: #ffd166;
+  --destination-horizon: #74c96a;
+  --marker-size: clamp(2.3rem, 5vw, 3rem);
+  --marker-label-size: clamp(0.62rem, 1.2vw, 0.72rem);
   --shadow: rgba(0, 0, 0, 0.34);
   --font: 'Franklin Gothic Medium', 'Trebuchet MS', 'Arial Rounded MT Bold', sans-serif;
   font-family: var(--font);
@@ -47,6 +54,30 @@
   overflow: hidden;
 }
 
+.pixel-passport-game .screen {
+  opacity: 0;
+  filter: blur(12px) saturate(0.92);
+  transition:
+    transform 560ms cubic-bezier(0.33, 1, 0.68, 1),
+    opacity 320ms ease,
+    filter 360ms ease;
+  overflow: hidden;
+}
+
+.pixel-passport-game .screen.active {
+  opacity: 1;
+  filter: none;
+}
+
+.pixel-passport-game .screen.leaving {
+  opacity: 0;
+  filter: blur(10px) saturate(0.9);
+}
+
+.pixel-passport-game .screen.active .passport-panel {
+  animation: panel-settle 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 #start-screen {
   background:
     radial-gradient(circle at 85% 20%, rgba(255, 143, 90, 0.22), transparent 24%),
@@ -71,8 +102,12 @@
 
 .passport-panel {
   position: relative;
+  display: grid;
+  gap: clamp(0.85rem, 2vw, 1.15rem);
+  align-content: start;
   width: min(100%, 74rem);
   max-height: 100%;
+  min-height: 0;
   padding: clamp(1rem, 2.4vw, 1.6rem);
   border: 1px solid var(--line);
   border-radius: 32px;
@@ -80,7 +115,8 @@
     linear-gradient(145deg, rgba(16, 38, 67, 0.96), rgba(10, 24, 43, 0.94)),
     linear-gradient(180deg, rgba(255, 209, 102, 0.12), transparent 24%);
   box-shadow: 0 24px 80px var(--shadow);
-  overflow: auto;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .passport-panel::before {
@@ -93,6 +129,7 @@
   background-size: 24px 24px;
   opacity: 0.24;
   pointer-events: none;
+  z-index: 0;
 }
 
 .start-shell {
@@ -100,6 +137,48 @@
   grid-template-columns: minmax(0, 1.1fr) minmax(16rem, 0.9fr);
   gap: clamp(1rem, 3vw, 2rem);
   align-items: center;
+}
+
+.start-copy,
+.globe-side-panel {
+  display: grid;
+  gap: 1rem;
+  align-content: center;
+  min-height: 0;
+}
+
+.globe-shell,
+.travel-shell,
+.explore-shell,
+.room-shell,
+.mystery-shell,
+.result-shell,
+.memory-shell {
+  min-height: 0;
+}
+
+.globe-shell,
+.travel-shell,
+.mystery-shell,
+.result-shell,
+.memory-shell {
+  display: grid;
+}
+
+.globe-shell,
+.travel-shell,
+.mystery-shell {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.explore-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.room-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
 }
 
 .start-stage,
@@ -110,6 +189,7 @@
 .mystery-stage {
   position: relative;
   z-index: 1;
+  min-height: 0;
 }
 
 .screen-kicker {
@@ -198,6 +278,8 @@
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 40px rgba(0, 0, 0, 0.18);
 }
 
 .guide-card-title {
@@ -217,6 +299,7 @@
 
 .passport-btn {
   appearance: none;
+  position: relative;
   border: 1px solid transparent;
   border-radius: 999px;
   min-height: 48px;
@@ -225,12 +308,36 @@
   font-weight: 800;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease, background-color 140ms ease;
+  overflow: hidden;
+  transform: translateY(0);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, background-color 160ms ease, filter 160ms ease;
+}
+
+.passport-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 52%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 160ms ease;
 }
 
 .passport-btn:hover,
 .passport-btn:focus-visible {
   transform: translateY(-1px);
+}
+
+.passport-btn:hover::after,
+.passport-btn:focus-visible::after {
+  opacity: 1;
+}
+
+.passport-btn:active {
+  transform: translateY(1px) scale(0.985);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
 }
 
 .passport-btn:focus-visible,
@@ -345,7 +452,7 @@
   display: grid;
   gap: 0.2rem;
   justify-items: center;
-  min-width: 3.4rem;
+  min-width: calc(var(--marker-size) + 0.7rem);
   transform: translate(-50%, -50%);
   border: 0;
   background: transparent;
@@ -357,28 +464,39 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
+  width: var(--marker-size);
+  height: var(--marker-size);
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: color-mix(in srgb, var(--marker-color) 58%, rgba(12, 27, 46, 0.95));
   box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25);
-  font-size: 1.3rem;
+  font-size: clamp(1rem, 2.6vw, 1.3rem);
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease, filter 160ms ease;
 }
 
 .destination-marker-label {
   padding: 0.18rem 0.45rem;
   border-radius: 999px;
   background: rgba(8, 18, 33, 0.72);
-  font-size: 0.72rem;
+  font-size: var(--marker-label-size);
   font-weight: 700;
   white-space: nowrap;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.destination-marker:hover .destination-marker-icon,
+.destination-marker:focus-visible .destination-marker-icon {
+  transform: translateY(-1px) scale(1.04);
 }
 
 .destination-marker.is-selected .destination-marker-icon {
   transform: scale(1.08);
   border-color: rgba(255, 209, 102, 0.8);
   box-shadow: 0 0 0 4px rgba(255, 209, 102, 0.16), 0 14px 28px rgba(0, 0, 0, 0.3);
+}
+
+.marker-pulse {
+  animation: marker-pulse 320ms ease;
 }
 
 .destination-marker.is-current .destination-marker-label {
@@ -412,44 +530,177 @@
 }
 
 .travel-stage {
+  --travel-progress: 0;
+  --travel-eased-progress: 0;
   min-height: clamp(16rem, 44vh, 24rem);
   border-radius: 28px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   overflow: hidden;
-  background: linear-gradient(180deg, rgba(14, 32, 53, 0.78), rgba(10, 24, 42, 0.94));
+  background: linear-gradient(180deg, var(--destination-sky-top) 0%, var(--destination-sky-bottom) 58%, var(--destination-horizon) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  isolation: isolate;
 }
 
-.travel-stage[data-transport='plane'] {
-  background: linear-gradient(180deg, #79b9ff 0%, #d4efff 62%, #86c56e 100%);
+.travel-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 18% 18%, var(--destination-glow), transparent 24%),
+    radial-gradient(circle at 82% 22%, rgba(255, 255, 255, 0.12), transparent 18%);
+  opacity: 0.9;
+  pointer-events: none;
+  z-index: 0;
 }
 
-.travel-stage[data-transport='boat'] {
-  background: linear-gradient(180deg, #91d9ff 0%, #cfefff 45%, #2d7ac0 46%, #2d7ac0 100%);
-}
-
-.travel-stage[data-transport='train'] {
-  background: linear-gradient(180deg, #9dd4ff 0%, #dceeff 46%, #7cc96b 47%, #547e43 100%);
-}
-
-.travel-stage[data-transport='bus'] {
-  background: linear-gradient(180deg, #9ed6ff 0%, #dcedff 52%, #92cf64 53%, #557d3f 100%);
+.travel-background,
+.travel-layer {
+  position: absolute;
+  pointer-events: none;
 }
 
 .travel-background {
-  position: absolute;
   inset: 0;
-  width: 130%;
+  left: -10%;
+  width: 138%;
   background:
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 8%, transparent 8% 16%),
-    linear-gradient(180deg, transparent 0 60%, rgba(255, 255, 255, 0.08) 60% 100%);
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0 5%, transparent 5% 12%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.01));
+  opacity: 0.42;
+  transition: transform 120ms linear;
+  z-index: 1;
+}
+
+.travel-clouds {
+  inset: 0 -8% 38% -8%;
+  background:
+    radial-gradient(circle at 14% 48%, rgba(255, 255, 255, 0.32) 0 8%, transparent 9%),
+    radial-gradient(circle at 38% 28%, rgba(255, 255, 255, 0.28) 0 7%, transparent 8%),
+    radial-gradient(circle at 62% 52%, rgba(255, 255, 255, 0.24) 0 8%, transparent 9%),
+    radial-gradient(circle at 84% 30%, rgba(255, 255, 255, 0.28) 0 7%, transparent 8%);
+  opacity: 0.72;
+  transform: translate3d(calc(var(--travel-eased-progress) * -8%), 0, 0);
+  transition: transform 120ms linear, opacity 180ms ease;
+  z-index: 2;
+}
+
+.travel-midground {
+  inset: auto -12% 18% -12%;
+  height: 32%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 7%, transparent 7% 15%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), color-mix(in srgb, var(--destination-horizon) 70%, rgba(19, 34, 18, 0.56)));
+  transform: translate3d(calc(var(--travel-eased-progress) * -14%), 0, 0);
+  transition: transform 120ms linear;
+  z-index: 2;
+}
+
+.travel-foreground {
+  position: absolute;
+  inset: auto -15% 0 -15%;
+  height: 24%;
+  background:
+    linear-gradient(180deg, rgba(13, 29, 49, 0.08), rgba(13, 29, 49, 0.18) 12%, rgba(13, 29, 49, 0.35) 100%),
+    linear-gradient(90deg, transparent 0 46%, rgba(255, 209, 102, 0.9) 46% 54%, transparent 54% 100%);
+  transform: translate3d(calc(var(--travel-eased-progress) * -24%), 0, 0);
+  transition: transform 120ms linear;
+  z-index: 2;
+}
+
+.travel-stage[data-transport='plane'] .travel-clouds {
+  inset: 8% -8% 42% -8%;
+  opacity: 0.88;
+}
+
+.travel-stage[data-transport='plane'] .travel-midground {
+  inset: auto -12% 28% -12%;
+  height: 18%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 10%, transparent 10% 22%),
+    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.28) 0 16%, transparent 18%),
+    radial-gradient(circle at 62% 35%, rgba(255, 255, 255, 0.22) 0 14%, transparent 16%);
+}
+
+.travel-stage[data-transport='plane'] .travel-foreground {
+  inset: auto -16% 10% -16%;
+  height: 16%;
+  background:
+    radial-gradient(circle at 18% 45%, rgba(255, 255, 255, 0.38) 0 16%, transparent 18%),
+    radial-gradient(circle at 50% 55%, rgba(255, 255, 255, 0.22) 0 14%, transparent 16%),
+    radial-gradient(circle at 80% 42%, rgba(255, 255, 255, 0.3) 0 16%, transparent 18%);
+  opacity: 0.78;
+}
+
+.travel-stage[data-transport='boat'] .travel-midground {
+  inset: auto -12% 22% -12%;
+  height: 14%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0 6%, transparent 6% 14%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+}
+
+.travel-stage[data-transport='boat'] .travel-foreground {
+  height: 28%;
+  background:
+    repeating-radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.14) 0 4%, transparent 4% 9%),
+    linear-gradient(180deg, rgba(32, 116, 188, 0.36), rgba(18, 74, 134, 0.72));
+}
+
+.travel-stage[data-transport='train'] .travel-midground {
+  inset: auto -14% 16% -14%;
+  height: 28%;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 6%, transparent 6% 15%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), color-mix(in srgb, var(--destination-horizon) 65%, rgba(31, 48, 22, 0.66)));
+}
+
+.travel-stage[data-transport='train'] .travel-foreground {
+  height: 22%;
+  background:
+    linear-gradient(180deg, transparent 0 28%, rgba(66, 42, 18, 0.42) 28% 40%, rgba(130, 97, 53, 0.55) 40% 48%, rgba(55, 34, 14, 0.78) 48% 62%, rgba(23, 20, 18, 0.88) 62% 100%),
+    repeating-linear-gradient(90deg, transparent 0 7%, rgba(214, 205, 180, 0.55) 7% 9%, transparent 9% 18%);
+}
+
+.travel-vehicle-shadow {
+  position: absolute;
+  left: 8%;
+  bottom: 12%;
+  width: clamp(4.4rem, 13vw, 6rem);
+  height: clamp(0.7rem, 2vw, 1rem);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.42), transparent 72%);
+  filter: blur(5px);
+  transform: translate3d(-50%, 0, 0);
+  opacity: 0.3;
+  transition: left 110ms linear, transform 110ms ease-out, opacity 110ms linear;
+  z-index: 3;
 }
 
 .travel-vehicle {
   position: absolute;
-  left: 6%;
+  left: 8%;
   bottom: 16%;
   width: clamp(5.5rem, 16vw, 8rem);
-  transition: left 80ms linear;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.18));
+  transition: left 110ms linear, transform 110ms ease-out, filter 110ms ease-out;
+  z-index: 4;
+}
+
+.travel-stage[data-transport='boat'] .travel-vehicle {
+  bottom: 20%;
+}
+
+.travel-stage[data-transport='plane'] .travel-vehicle {
+  bottom: 42%;
+}
+
+.travel-stage[data-transport='plane'] .travel-vehicle-shadow {
+  bottom: 18%;
+  width: clamp(3.2rem, 10vw, 4.8rem);
+}
+
+.travel-stage[data-transport='train'] .travel-vehicle {
+  bottom: 18%;
 }
 
 .travel-guide-card {
@@ -457,26 +708,32 @@
   top: 1rem;
   right: 1rem;
   width: min(20rem, calc(100% - 2rem));
+  z-index: 5;
 }
 
 .explore-stage {
   display: grid;
   gap: 1rem;
   justify-items: center;
+  align-items: center;
 }
 
 .scene-art {
-  width: min(100%, 28rem);
-  padding: 0.7rem;
+  width: min(100%, 31rem);
+  padding: 0.85rem;
   border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    radial-gradient(circle at 50% 14%, var(--destination-glow), transparent 56%),
+    linear-gradient(180deg, var(--destination-sky-top) 0%, var(--destination-sky-bottom) 72%, rgba(8, 16, 28, 0.95) 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06), 0 18px 44px rgba(0, 0, 0, 0.24);
 }
 
 .memory-shell,
 .result-shell {
   text-align: center;
+  justify-items: center;
+  align-content: center;
 }
 
 .memory-stage {
@@ -495,8 +752,10 @@
   width: clamp(7rem, 20vw, 9rem);
   aspect-ratio: 1 / 1;
   border-radius: 24px;
-  background: linear-gradient(180deg, rgba(255, 209, 102, 0.2), rgba(255, 143, 90, 0.14));
-  border: 1px solid rgba(255, 209, 102, 0.3);
+  background:
+    radial-gradient(circle at 50% 28%, var(--destination-glow), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26), rgba(255, 255, 255, 0.08));
+  border: 1px solid var(--destination-accent);
   box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
 }
 
@@ -514,6 +773,7 @@
 .room-stage {
   display: grid;
   gap: 1rem;
+  align-content: start;
 }
 
 .room-pip {
@@ -537,6 +797,7 @@
   border-radius: 22px;
   border: 1px dashed rgba(255, 255, 255, 0.16);
   background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
 }
 
 .memory-slot.is-filled {
@@ -646,6 +907,34 @@
   animation: bubble-pulse 420ms ease;
 }
 
+.copy-reveal {
+  animation: copy-reveal 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.scene-reveal {
+  animation: scene-reveal 620ms cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.memory-stage-reveal {
+  animation: memory-stage-reveal 680ms cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.result-reveal {
+  animation: result-reveal 520ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pill-reveal {
+  animation: pill-reveal 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.card-settle {
+  animation: card-settle 560ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.travel-stage-reveal {
+  animation: travel-stage-reveal 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @keyframes globe-spin {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
@@ -657,9 +946,131 @@
   100% { transform: scale(1); }
 }
 
+@keyframes panel-settle {
+  0% {
+    transform: translateY(14px) scale(0.98);
+    opacity: 0.72;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes copy-reveal {
+  0% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scene-reveal {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.3;
+  }
+  60% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes memory-stage-reveal {
+  0% {
+    transform: translateY(16px) scale(0.92);
+    opacity: 0;
+  }
+  60% {
+    transform: translateY(-4px) scale(1.03);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes result-reveal {
+  0% {
+    transform: translateY(12px) rotate(-1deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pill-reveal {
+  0% {
+    transform: translateY(6px) scale(0.94);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes marker-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+  100% { transform: scale(1.08); }
+}
+
+@keyframes card-settle {
+  0% {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes travel-stage-reveal {
+  0% {
+    transform: scale(0.98);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 html[data-reduce-motion='reduce'] .globe-map-track,
-html[data-reduce-motion='reduce'] .guide-bubble-pulse {
+html[data-reduce-motion='reduce'] .guide-bubble-pulse,
+html[data-reduce-motion='reduce'] .copy-reveal,
+html[data-reduce-motion='reduce'] .scene-reveal,
+html[data-reduce-motion='reduce'] .memory-stage-reveal,
+html[data-reduce-motion='reduce'] .result-reveal,
+html[data-reduce-motion='reduce'] .pill-reveal,
+html[data-reduce-motion='reduce'] .card-settle,
+html[data-reduce-motion='reduce'] .travel-stage-reveal,
+html[data-reduce-motion='reduce'] .pixel-passport-game .screen.active .passport-panel {
   animation: none !important;
+}
+
+html[data-reduce-motion='reduce'] .pixel-passport-game .screen {
+  filter: none;
+  transition: none;
+}
+
+html[data-reduce-motion='reduce'] .travel-background,
+html[data-reduce-motion='reduce'] .travel-layer,
+html[data-reduce-motion='reduce'] .travel-vehicle,
+html[data-reduce-motion='reduce'] .travel-vehicle-shadow {
+  transition: none !important;
 }
 
 @media (max-width: 900px) {
@@ -681,8 +1092,8 @@ html[data-reduce-motion='reduce'] .guide-bubble-pulse {
   }
 
   .destination-marker-icon {
-    width: 2.65rem;
-    height: 2.65rem;
+    width: clamp(2.35rem, 8vw, 2.65rem);
+    height: clamp(2.35rem, 8vw, 2.65rem);
   }
 
   .room-shelf-grid {
@@ -697,6 +1108,12 @@ html[data-reduce-motion='reduce'] .guide-bubble-pulse {
 
   .passport-panel {
     padding: 0.8rem;
+  }
+
+   .guide-card,
+   .mystery-card {
+    margin-top: 0.8rem;
+    padding: 0.85rem 0.95rem;
   }
 
   .passport-title {
@@ -714,5 +1131,164 @@ html[data-reduce-motion='reduce'] .guide-bubble-pulse {
   .world-globe,
   .mystery-globe {
     width: min(100%, 20rem);
+  }
+
+  .memory-slot {
+    min-height: 5.4rem;
+    padding: 0.65rem;
+  }
+}
+
+@media (max-height: 520px) and (orientation: landscape) {
+  .pixel-passport-game {
+    --marker-size: clamp(2rem, 4.4vw, 2.45rem);
+  }
+
+  .screen {
+    padding: 0.55rem;
+  }
+
+  .passport-panel {
+    padding: 0.85rem;
+    border-radius: 24px;
+  }
+
+  .passport-title {
+    font-size: clamp(2.2rem, 7vw, 3.8rem);
+  }
+
+  .screen-title {
+    font-size: clamp(1.55rem, 4.6vw, 2.2rem);
+  }
+
+  .passport-subtitle {
+    max-width: 24rem;
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .screen-kicker {
+    margin-bottom: 0.45rem;
+    font-size: 0.7rem;
+  }
+
+  .guide-card,
+  .mystery-card {
+    margin-top: 0;
+    padding: 0.8rem 0.95rem;
+    gap: 0.75rem;
+  }
+
+  .guide-text {
+    font-size: 0.95rem;
+    line-height: 1.4;
+  }
+
+  .passport-btn {
+    min-height: 42px;
+    padding: 0.62rem 0.95rem;
+  }
+
+  .start-shell,
+  .globe-stage {
+    grid-template-columns: minmax(0, 1.05fr) minmax(13rem, 0.82fr);
+    align-items: stretch;
+  }
+
+  .start-notes {
+    margin-top: 0.75rem;
+    font-size: 0.82rem;
+    line-height: 1.35;
+  }
+
+  .world-globe {
+    width: min(100%, 17.5rem);
+  }
+
+  .world-globe-start,
+  .mystery-globe {
+    width: min(100%, 15.8rem);
+  }
+
+  .destination-marker-label {
+    display: none;
+  }
+
+  .destination-marker.is-selected .destination-marker-label,
+  .destination-marker.is-current .destination-marker-label {
+    display: inline-flex;
+    position: absolute;
+    top: calc(100% + 0.18rem);
+  }
+
+  .explore-stage {
+    grid-template-columns: minmax(0, 1fr) minmax(14rem, 0.78fr);
+  }
+
+  .scene-art,
+  .mystery-card {
+    width: min(100%, 21.5rem);
+  }
+
+  .room-stage {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    gap: 0.6rem;
+  }
+
+  .room-pip,
+  #room-screen .guide-sprite {
+    display: none;
+  }
+
+  .room-shelf-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.45rem;
+  }
+
+  #room-screen .guide-card {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+
+  #room-screen .guide-text {
+    font-size: 0.74rem;
+    line-height: 1.2;
+    color: var(--ink-soft);
+  }
+
+  .memory-slot {
+    min-height: 4.3rem;
+    padding: 0.45rem;
+    border-radius: 16px;
+  }
+
+  .memory-slot-emoji {
+    font-size: 1.45rem;
+  }
+
+  .memory-slot-label {
+    font-size: 0.66rem;
+  }
+
+  .mystery-stage {
+    grid-template-columns: minmax(15rem, 0.8fr) minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .travel-stage {
+    min-height: clamp(11rem, 52vh, 15rem);
+  }
+
+  .travel-guide-card {
+    top: auto;
+    right: 0.85rem;
+    bottom: 0.85rem;
+    width: min(16rem, calc(100% - 1.7rem));
   }
 }

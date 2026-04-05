@@ -151,5 +151,3 @@ export const HIPPO_START_X = 50
 export const HIPPO_Y = 90
 export const ARENA_MIN_X = 10
 export const ARENA_MAX_X = 90
-export const CHOMP_REACH = 62
-export const CHOMP_HALF_WIDTH = 10

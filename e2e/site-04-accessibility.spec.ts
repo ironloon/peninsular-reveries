@@ -57,6 +57,22 @@ test.describe('SITE-04: Accessibility', () => {
     await expect(settingsButton).toBeFocused()
   })
 
+  test('visible music toggle is discoverable and stays synced with settings', async ({ page }) => {
+    await page.goto('/super-word/')
+
+    const quickToggle = page.locator('#start-music-toggle')
+    await expect(quickToggle).toBeVisible()
+    await expect(quickToggle).toContainText('Music Off')
+
+    await quickToggle.click()
+
+    await expect(quickToggle).toHaveAttribute('aria-pressed', 'true')
+    await expect(quickToggle).toContainText('Music On')
+
+    await page.getByRole('button', { name: 'Menu' }).click()
+    await expect(page.locator('#music-enabled-toggle')).toBeChecked()
+  })
+
   test('starting the game moves focus into the custom-rendered puzzle scene', async ({ page }) => {
     await startGame(page)
   })

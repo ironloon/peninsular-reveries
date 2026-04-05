@@ -29,8 +29,12 @@ test.describe('SITE-07: Mission Orbit', () => {
     await page.getByRole('button', { name: 'Menu' }).click()
     await expect(page.locator('#settings-modal')).toBeVisible()
     await expect(page.getByLabel('Space ambience')).toBeVisible()
-    await expect(page.getByLabel('Physical sound intensity')).toBeVisible()
+    await expect(page.getByLabel('Physical sound effects')).toBeVisible()
     await expect(page.locator('#sound-intensity-select')).toHaveValue('heavy')
+    await expect(page.locator('#sound-intensity-select option')).toHaveCount(3)
+    await page.locator('#sound-intensity-select').selectOption('off')
+    await expect(page.locator('#sound-intensity-select')).toHaveValue('off')
+    await expect(page.getByText(/Off mutes menu, countdown, launch, burn, reentry, parachute, splashdown, and celebration sound effects\./)).toBeVisible()
     await expect(page.getByText(/Source details \(\d+\)/)).toBeVisible()
     await expect(page.locator('.settings-attribution-card').first()).toBeHidden()
 
@@ -39,6 +43,10 @@ test.describe('SITE-07: Mission Orbit', () => {
 
     await page.getByRole('button', { name: 'Close' }).click()
     await expect(page.locator('#settings-modal')).toBeHidden()
+
+    await page.reload()
+    await page.getByRole('button', { name: 'Menu' }).click()
+    await expect(page.locator('#sound-intensity-select')).toHaveValue('off')
   })
 
   test('spacecraft hit area can drive the launch phase directly', async ({ page }) => {

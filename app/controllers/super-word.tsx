@@ -46,7 +46,25 @@ export async function superWordAction() {
             <span className="title-bounce">W</span><span className="title-bounce">O</span><span className="title-bounce">R</span><span className="title-bounce">D</span><span className="title-bounce">!</span>
           </h1>
           <p className="subtitle">Find hidden letters and solve the word puzzle!</p>
-          <button id="start-btn" className="btn btn-primary">Let's Go! 🚀</button>
+          <div className="start-actions">
+            <button id="start-btn" className="btn btn-primary">Let's Go! 🚀</button>
+            <div className="start-music-panel">
+              <button
+                id="start-music-toggle"
+                type="button"
+                className="music-toggle-btn music-toggle-btn-hero"
+                data-music-toggle="true"
+                data-music-on-label="Music On"
+                data-music-off-label="Music Off"
+                aria-pressed="false"
+                aria-label="Turn chill music on"
+              >
+                <span className="music-toggle-glyph" aria-hidden="true">♪</span>
+                <span data-music-toggle-label="true">Music Off</span>
+              </button>
+              <p className="start-music-note">Soft chill music. Tap to try it before you start.</p>
+            </div>
+          </div>
           <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Press Ⓐ to Start</p>
           <button data-settings-open="true" className="settings-toggle-btn" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
           <p className="inspiration">Inspired by <a href="https://pbskids.org/superwhy" target="_blank" rel="noopener">Super Why!</a> from PBS Kids</p>
@@ -60,6 +78,19 @@ export async function superWordAction() {
               <span id="score" className="score" aria-label="Score: 0">⭐ 0</span>
             </div>
             <div className="game-header-right">
+              <button
+                id="hud-music-toggle"
+                type="button"
+                className="music-toggle-btn music-toggle-btn-inline"
+                data-music-toggle="true"
+                data-music-on-label="On"
+                data-music-off-label="Off"
+                aria-pressed="false"
+                aria-label="Turn chill music on"
+              >
+                <span className="music-toggle-glyph" aria-hidden="true">♪</span>
+                <span data-music-toggle-label="true">Off</span>
+              </button>
               <button data-settings-open="true" className="settings-toggle-btn settings-toggle-btn-inline" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">☰</button>
               <span id="letters-count" className="letters-count" aria-label="Letters found: 0 of 3">0 / 3</span>
             </div>

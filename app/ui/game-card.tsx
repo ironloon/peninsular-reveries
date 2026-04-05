@@ -28,9 +28,9 @@ const cardRaisedStyles = {
 const gameCardBaseStyles = {
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 1fr) auto',
-  gap: 'var(--space-sm)',
+  gap: 'var(--space-md)',
   background: 'var(--color-surface)',
-  padding: 'var(--space-sm)',
+  padding: 'var(--space-md)',
   borderRadius: '12px',
   transition: 'transform 0.2s ease-out, box-shadow 0.2s ease-out',
   color: 'inherit',
@@ -56,7 +56,7 @@ const gameCardBodyStyles = {
   alignItems: 'flex-start',
   gap: 'var(--space-md)',
   minWidth: 0,
-  padding: 'calc(var(--space-lg) - var(--space-sm))',
+  padding: 'var(--space-lg)',
   borderRadius: '10px',
   '@media (max-width: 560px)': {
     gap: 'var(--space-sm)',
@@ -100,7 +100,7 @@ const gameCardInfoButtonStyles = {
   alignItems: 'center',
   justifyContent: 'center',
   minHeight: '100%',
-  minWidth: '2.85rem',
+  minWidth: '2.4rem',
   padding: 'var(--space-sm) 0.2rem',
   borderRadius: '10px',
   textDecoration: 'none',
@@ -118,13 +118,14 @@ const gameCardInfoButtonStyles = {
   },
   '&:focus-visible': cardFocusRingStyles,
   '@media (max-width: 560px)': {
-    minWidth: '2.5rem',
+    minWidth: '2rem',
   },
 }
 
 const gameCardInfoTextStyles = {
   display: 'inline-block',
   transform: 'rotate(90deg)',
+  lineHeight: 1,
   whiteSpace: 'nowrap',
   '@media (max-width: 560px)': {
     fontSize: '0.6rem',
@@ -147,7 +148,7 @@ const comingSoonCardStyles = {
 const comingSoonBadgeStyles = {
   display: 'inline-block',
   marginTop: 'var(--space-sm)',
-  marginLeft: 'calc(var(--space-lg) - var(--space-sm))',
+  marginLeft: 'var(--space-lg)',
   padding: 'var(--space-xs) var(--space-sm)',
   fontSize: 'var(--text-sm)',
   fontWeight: 600,
@@ -166,8 +167,8 @@ export function GameCard() {
           <p>{description}</p>
         </div>
       </a>
-      <a href={attributionPath} className="game-card-info-btn" aria-label={`View attributions for ${name}`} title={`Attributions for ${name}`} mix={[css(gameCardInfoButtonStyles)]}>
-        <span className="game-card-info-text" mix={[css(gameCardInfoTextStyles)]}>ATTRIBUTION</span>
+      <a href={attributionPath} className="game-card-info-btn" aria-label={`View info for ${name}`} title={`Info for ${name}`} mix={[css(gameCardInfoButtonStyles)]}>
+        <span className="game-card-info-text" mix={[css(gameCardInfoTextStyles)]}>INFO</span>
       </a>
     </article>
   )

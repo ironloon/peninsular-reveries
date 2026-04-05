@@ -6,6 +6,7 @@ import {
   type MissionOrbitPhysicalSampleId,
   type MissionOrbitSampleDefinition,
   type MissionOrbitSampleId,
+  type MissionOrbitSampleIntensity,
 } from './sample-manifest.js'
 
 let ctx: AudioContext | null = null
@@ -15,22 +16,49 @@ let musicPreferenceLoaded = false
 let sfxIntensity: SoundIntensityMode = 'heavy'
 let sfxIntensityPreferenceLoaded = false
 let ambientInterval: number | null = null
+let musicBus: GainNode | null = null
 let outputBus: GainNode | null = null
 let compressor: DynamicsCompressorNode | null = null
 let noiseBuffer: AudioBuffer | null = null
 let sampleLoadPromise: Promise<void> | null = null
+let ambientMeasureIndex = 0
+let countdownRumble: CountdownRumbleHandle | null = null
 
 const decodedSamples = new Map<MissionOrbitSampleId, AudioBuffer>()
 const failedSamples = new Set<MissionOrbitSampleId>()
 
 const MUSIC_STORAGE_KEY = 'mission-orbit-music-enabled'
 const SFX_INTENSITY_STORAGE_KEY = 'mission-orbit-sfx-intensity'
+const AMBIENT_MEASURE_MS = 4800
+const COUNTDOWN_RUMBLE_DURATION = 7.2
 const SPACE_MUSIC_PHASES = new Set<MissionPhase>([
   'high-earth-orbit',
   'trans-lunar-injection',
   'lunar-flyby',
   'return-coast',
 ])
+const AMBIENT_PROGRESSIONS = [
+  {
+    chord: [130.81, 196, 293.66],
+    drone: 98,
+    sparkles: [329.63, 392],
+  },
+  {
+    chord: [146.83, 220, 293.66],
+    drone: 110,
+    sparkles: [349.23, 440],
+  },
+  {
+    chord: [123.47, 185, 277.18],
+    drone: 92.5,
+    sparkles: [311.13, 369.99],
+  },
+  {
+    chord: [130.81, 196, 261.63],
+    drone: 98,
+    sparkles: [329.63, 392],
+  },
+] as const
 
 interface ToneOptions {
   readonly frequency: number
@@ -69,7 +97,15 @@ interface SamplePlaybackOptions {
   readonly release?: number
 }
 
-export type SoundIntensityMode = 'light' | 'heavy'
+interface CountdownRumbleHandle {
+  readonly mode: Exclude<SoundIntensityMode, 'off'>
+  readonly audio: AudioContext
+  readonly sources: readonly AudioScheduledSourceNode[]
+  readonly gainNodes: readonly GainNode[]
+  readonly timeoutId: number
+}
+
+export type SoundIntensityMode = 'off' | 'light' | 'heavy'
 
 function getCtx(): AudioContext | null {
   if (!ctx) {
@@ -104,6 +140,34 @@ function getOutput(audio: AudioContext): AudioNode {
   }
 
   return compressor
+}
+
+function getMusicBus(audio: AudioContext): GainNode {
+  if (!musicBus) {
+    musicBus = audio.createGain()
+    musicBus.gain.value = 0.0001
+    musicBus.connect(getOutput(audio))
+  }
+
+  return musicBus
+}
+
+function fadeMusicBus(target: number, duration: number): void {
+  const audio = getCtx()
+  if (!audio) return
+
+  const bus = getMusicBus(audio)
+  const safeTarget = Math.max(target, 0.0001)
+  const currentValue = Math.max(bus.gain.value, 0.0001)
+
+  bus.gain.cancelScheduledValues(audio.currentTime)
+  bus.gain.setValueAtTime(currentValue, audio.currentTime)
+
+  if (safeTarget > currentValue) {
+    bus.gain.linearRampToValueAtTime(safeTarget, audio.currentTime + duration)
+  } else {
+    bus.gain.exponentialRampToValueAtTime(safeTarget, audio.currentTime + duration)
+  }
 }
 
 function getNoiseBuffer(audio: AudioContext): AudioBuffer {
@@ -294,10 +358,24 @@ function loadSfxIntensityPreference(): void {
   sfxIntensityPreferenceLoaded = true
   try {
     const stored = window.localStorage.getItem(SFX_INTENSITY_STORAGE_KEY)
-    sfxIntensity = stored === 'light' ? 'light' : 'heavy'
+    sfxIntensity = stored === 'off' || stored === 'light' || stored === 'heavy' ? stored : 'heavy'
   } catch {
     sfxIntensity = 'heavy'
   }
+}
+
+function isSfxEnabled(): boolean {
+  loadSfxIntensityPreference()
+  return sfxIntensity !== 'off'
+}
+
+function getPhysicalSampleIntensity(): MissionOrbitSampleIntensity | null {
+  loadSfxIntensityPreference()
+  if (sfxIntensity === 'off') {
+    return null
+  }
+
+  return sfxIntensity
 }
 
 function getHeavySoundMode(): boolean {
@@ -306,10 +384,13 @@ function getHeavySoundMode(): boolean {
 }
 
 function playPhysicalSample(sampleId: MissionOrbitPhysicalSampleId, options: SamplePlaybackOptions = {}): boolean {
-  loadSfxIntensityPreference()
+  const preferredIntensity = getPhysicalSampleIntensity()
+  if (!preferredIntensity) {
+    return false
+  }
 
-  const preferredId = getMissionOrbitSampleVariantId(sampleId, sfxIntensity)
-  const fallbackId = getMissionOrbitSampleVariantId(sampleId, sfxIntensity === 'heavy' ? 'light' : 'heavy')
+  const preferredId = getMissionOrbitSampleVariantId(sampleId, preferredIntensity)
+  const fallbackId = getMissionOrbitSampleVariantId(sampleId, preferredIntensity === 'heavy' ? 'light' : 'heavy')
 
   return playSample(preferredId, options) || playSample(fallbackId, options)
 }
@@ -331,79 +412,285 @@ function chord(notes: readonly number[], duration: number, volume: number): void
   }
 }
 
+function playAmbientPad(audio: AudioContext, frequency: number, startTime: number, duration: number, volume: number): void {
+  const destination = getMusicBus(audio)
+  const filter = audio.createBiquadFilter()
+  const gain = audio.createGain()
+  const oscA = audio.createOscillator()
+  const oscB = audio.createOscillator()
+
+  filter.type = 'lowpass'
+  filter.frequency.setValueAtTime(860, startTime)
+  filter.frequency.linearRampToValueAtTime(1120, startTime + duration * 0.72)
+  filter.Q.value = 0.42
+
+  oscA.type = 'triangle'
+  oscB.type = 'sine'
+  oscA.frequency.setValueAtTime(frequency, startTime)
+  oscB.frequency.setValueAtTime(frequency * 0.5, startTime)
+  oscB.detune.setValueAtTime(6, startTime)
+
+  gain.gain.setValueAtTime(0.0001, startTime)
+  gain.gain.linearRampToValueAtTime(volume, startTime + 1.1)
+  gain.gain.linearRampToValueAtTime(volume * 0.74, startTime + Math.max(duration - 1.5, 1.4))
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
+
+  oscA.connect(filter)
+  oscB.connect(filter)
+  filter.connect(gain)
+  gain.connect(destination)
+
+  oscA.start(startTime)
+  oscB.start(startTime)
+  oscA.stop(startTime + duration)
+  oscB.stop(startTime + duration)
+}
+
+function playAmbientBell(audio: AudioContext, frequency: number, startTime: number, duration: number, volume: number): void {
+  const destination = getMusicBus(audio)
+  const filter = audio.createBiquadFilter()
+  const gain = audio.createGain()
+  const osc = audio.createOscillator()
+
+  filter.type = 'lowpass'
+  filter.frequency.setValueAtTime(1560, startTime)
+  filter.frequency.exponentialRampToValueAtTime(1040, startTime + duration)
+  filter.Q.value = 0.34
+
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(frequency, startTime)
+
+  gain.gain.setValueAtTime(volume, startTime)
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
+
+  osc.connect(filter)
+  filter.connect(gain)
+  gain.connect(destination)
+
+  osc.start(startTime)
+  osc.stop(startTime + duration)
+}
+
 function playAmbientMeasure(): void {
   const audio = getCtx()
   if (!audio || audio.state === 'suspended') return
 
-  playPhysicalSample('space-ambience', {
-    duration: 2.6,
-    volumeScale: 1,
-    attack: 0.18,
-    release: 0.42,
-  })
+  const measure = AMBIENT_PROGRESSIONS[ambientMeasureIndex % AMBIENT_PROGRESSIONS.length]
+  const startTime = audio.currentTime + 0.05
+  const measureDuration = 5.2
+  const physicalIntensity = getPhysicalSampleIntensity()
 
-  chord([174.61, 261.63, 392], 2.8, 0.008)
-  tone({
-    frequency: 233.08,
-    duration: 2.5,
-    type: 'sine',
-    volume: 0.004,
-    whenOffset: 0.16,
-    detune: [-7, 0, 7],
-    filterType: 'lowpass',
-    filterFrequency: 780,
-    filterTargetFrequency: 1180,
-    attack: 0.3,
-    release: 0.55,
-  })
-  tone({
-    frequency: 523.25,
-    duration: 0.82,
-    type: 'triangle',
-    volume: 0.006,
-    whenOffset: 0.58,
-    filterType: 'lowpass',
-    filterFrequency: 1700,
-    filterTargetFrequency: 1200,
-    attack: 0.05,
-    release: 0.2,
-  })
-  tone({
-    frequency: 659.25,
-    duration: 0.72,
-    type: 'triangle',
-    volume: 0.005,
-    whenOffset: 1.46,
-    filterType: 'lowpass',
-    filterFrequency: 1600,
-    filterTargetFrequency: 1100,
-    attack: 0.04,
-    release: 0.18,
-  })
-  noise({
-    duration: 2.3,
-    volume: 0.0018,
-    whenOffset: 0.08,
-    filterType: 'bandpass',
-    filterFrequency: 680,
-    filterTargetFrequency: 420,
-    q: 0.6,
-    attack: 0.28,
-    release: 0.5,
-    playbackRate: 0.86,
-  })
+  if (physicalIntensity) {
+    playPhysicalSample('space-ambience', {
+      duration: 2.7,
+      volumeScale: physicalIntensity === 'heavy' ? 0.24 : 0.12,
+      playbackRate: physicalIntensity === 'heavy' ? 0.76 : 0.7,
+      attack: 0.48,
+      release: 0.78,
+    })
+  }
+
+  playAmbientPad(audio, measure.drone, startTime, measureDuration, 0.0064)
+
+  for (const frequency of measure.chord) {
+    playAmbientPad(audio, frequency, startTime, measureDuration, 0.0094)
+  }
+
+  playAmbientBell(audio, measure.sparkles[0], startTime + 1.18, 1.8, 0.0046)
+  playAmbientBell(audio, measure.sparkles[1], startTime + 3.12, 1.55, 0.0039)
+  ambientMeasureIndex += 1
 }
 
 function startAmbientLoop(): void {
-  if (ambientInterval !== null) return
+  if (ambientInterval !== null || document.hidden) return
+
+  ambientMeasureIndex = 0
+  fadeMusicBus(0.068, 1.4)
   playAmbientMeasure()
-  ambientInterval = window.setInterval(playAmbientMeasure, 2600)
+  ambientInterval = window.setInterval(playAmbientMeasure, AMBIENT_MEASURE_MS)
 }
 
 function stopAmbientLoop(): void {
   if (ambientInterval !== null) {
     window.clearInterval(ambientInterval)
     ambientInterval = null
+  }
+
+  fadeMusicBus(0.0001, 0.9)
+}
+
+function restartAmbientLoop(): void {
+  if (ambientInterval === null || !musicEnabled || document.hidden) {
+    return
+  }
+
+  stopAmbientLoop()
+  startAmbientLoop()
+}
+
+function stopCountdownRumble(): void {
+  if (!countdownRumble) {
+    return
+  }
+
+  window.clearTimeout(countdownRumble.timeoutId)
+
+  const fadeStart = countdownRumble.audio.currentTime
+  const stopTime = fadeStart + 0.08
+
+  for (const gain of countdownRumble.gainNodes) {
+    const currentValue = Math.max(gain.gain.value, 0.0001)
+    gain.gain.cancelScheduledValues(fadeStart)
+    gain.gain.setValueAtTime(currentValue, fadeStart)
+    gain.gain.exponentialRampToValueAtTime(0.0001, stopTime)
+  }
+
+  for (const source of countdownRumble.sources) {
+    try {
+      source.stop(stopTime + 0.02)
+    } catch {
+      // Ignore nodes that already stopped.
+    }
+  }
+
+  countdownRumble = null
+}
+
+function startCountdownRumble(mode: Exclude<SoundIntensityMode, 'off'>): void {
+  const audio = getCtx()
+  if (!audio || audio.state === 'suspended') return
+
+  stopCountdownRumble()
+
+  const startTime = audio.currentTime + 0.01
+  const stopTime = startTime + COUNTDOWN_RUMBLE_DURATION
+  const sources: AudioScheduledSourceNode[] = []
+  const gainNodes: GainNode[] = []
+
+  const bodyNoise = audio.createBufferSource()
+  const bodyFilter = audio.createBiquadFilter()
+  const bodyGain = audio.createGain()
+
+  bodyNoise.buffer = getNoiseBuffer(audio)
+  bodyNoise.loop = true
+  bodyNoise.playbackRate.setValueAtTime(mode === 'heavy' ? 0.42 : 0.5, startTime)
+
+  bodyFilter.type = 'lowpass'
+  bodyFilter.Q.value = 0.92
+  bodyFilter.frequency.setValueAtTime(mode === 'heavy' ? 160 : 190, startTime)
+  bodyFilter.frequency.exponentialRampToValueAtTime(mode === 'heavy' ? 380 : 310, stopTime)
+
+  bodyGain.gain.setValueAtTime(0.0001, startTime)
+  bodyGain.gain.linearRampToValueAtTime(mode === 'heavy' ? 0.028 : 0.014, startTime + 1.6)
+  bodyGain.gain.linearRampToValueAtTime(mode === 'heavy' ? 0.046 : 0.024, stopTime - 0.08)
+  bodyGain.gain.exponentialRampToValueAtTime(0.0001, stopTime)
+
+  bodyNoise.connect(bodyFilter)
+  bodyFilter.connect(bodyGain)
+  bodyGain.connect(getOutput(audio))
+  bodyNoise.start(startTime)
+  bodyNoise.stop(stopTime)
+  sources.push(bodyNoise)
+  gainNodes.push(bodyGain)
+
+  const subFilter = audio.createBiquadFilter()
+  const subGain = audio.createGain()
+  const subOscA = audio.createOscillator()
+  const subOscB = audio.createOscillator()
+
+  subFilter.type = 'lowpass'
+  subFilter.Q.value = 0.55
+  subFilter.frequency.setValueAtTime(mode === 'heavy' ? 210 : 260, startTime)
+  subFilter.frequency.exponentialRampToValueAtTime(mode === 'heavy' ? 140 : 170, stopTime)
+
+  subGain.gain.setValueAtTime(0.0001, startTime)
+  subGain.gain.linearRampToValueAtTime(mode === 'heavy' ? 0.013 : 0.008, startTime + 2.2)
+  subGain.gain.linearRampToValueAtTime(mode === 'heavy' ? 0.022 : 0.012, stopTime - 0.04)
+  subGain.gain.exponentialRampToValueAtTime(0.0001, stopTime)
+
+  subOscA.type = 'sawtooth'
+  subOscA.frequency.setValueAtTime(mode === 'heavy' ? 38 : 46, startTime)
+  subOscA.detune.setValueAtTime(-5, startTime)
+  subOscB.type = 'triangle'
+  subOscB.frequency.setValueAtTime(mode === 'heavy' ? 56 : 68, startTime)
+  subOscB.detune.setValueAtTime(4, startTime)
+
+  subOscA.connect(subFilter)
+  subOscB.connect(subFilter)
+  subFilter.connect(subGain)
+  subGain.connect(getOutput(audio))
+  subOscA.start(startTime)
+  subOscB.start(startTime)
+  subOscA.stop(stopTime)
+  subOscB.stop(stopTime)
+  sources.push(subOscA, subOscB)
+  gainNodes.push(subGain)
+
+  if (mode === 'heavy') {
+    const textureNoise = audio.createBufferSource()
+    const textureFilter = audio.createBiquadFilter()
+    const textureGain = audio.createGain()
+    const growlFilter = audio.createBiquadFilter()
+    const growlGain = audio.createGain()
+    const growl = audio.createOscillator()
+
+    textureNoise.buffer = getNoiseBuffer(audio)
+    textureNoise.loop = true
+    textureNoise.playbackRate.setValueAtTime(0.84, startTime)
+
+    textureFilter.type = 'bandpass'
+    textureFilter.Q.value = 0.62
+    textureFilter.frequency.setValueAtTime(620, startTime)
+    textureFilter.frequency.exponentialRampToValueAtTime(980, stopTime)
+
+    textureGain.gain.setValueAtTime(0.0001, startTime)
+    textureGain.gain.linearRampToValueAtTime(0.006, startTime + 1.2)
+    textureGain.gain.linearRampToValueAtTime(0.011, stopTime - 0.04)
+    textureGain.gain.exponentialRampToValueAtTime(0.0001, stopTime)
+
+    textureNoise.connect(textureFilter)
+    textureFilter.connect(textureGain)
+    textureGain.connect(getOutput(audio))
+    textureNoise.start(startTime)
+    textureNoise.stop(stopTime)
+    sources.push(textureNoise)
+    gainNodes.push(textureGain)
+
+    growlFilter.type = 'lowpass'
+    growlFilter.Q.value = 0.48
+    growlFilter.frequency.setValueAtTime(420, startTime)
+    growlFilter.frequency.exponentialRampToValueAtTime(260, stopTime)
+
+    growlGain.gain.setValueAtTime(0.0001, startTime)
+    growlGain.gain.linearRampToValueAtTime(0.01, startTime + 2.5)
+    growlGain.gain.linearRampToValueAtTime(0.017, stopTime - 0.04)
+    growlGain.gain.exponentialRampToValueAtTime(0.0001, stopTime)
+
+    growl.type = 'triangle'
+    growl.frequency.setValueAtTime(84, startTime)
+    growl.detune.setValueAtTime(7, startTime)
+
+    growl.connect(growlFilter)
+    growlFilter.connect(growlGain)
+    growlGain.connect(getOutput(audio))
+    growl.start(startTime)
+    growl.stop(stopTime)
+    sources.push(growl)
+    gainNodes.push(growlGain)
+  }
+
+  const timeoutId = window.setTimeout(() => {
+    if (countdownRumble?.audio === audio && countdownRumble.mode === mode) {
+      countdownRumble = null
+    }
+  }, Math.ceil((COUNTDOWN_RUMBLE_DURATION + 0.3) * 1000))
+
+  countdownRumble = {
+    mode,
+    audio,
+    sources,
+    gainNodes,
+    timeoutId,
   }
 }
 
@@ -433,6 +720,9 @@ export function getSfxIntensityMode(): SoundIntensityMode {
 
 export function setMusicEnabled(enabled: boolean): void {
   loadMusicPreference()
+  if (musicEnabled !== enabled) {
+    ambientMeasureIndex = 0
+  }
   musicEnabled = enabled
   try {
     window.localStorage.setItem(MUSIC_STORAGE_KEY, String(enabled))
@@ -443,7 +733,14 @@ export function setMusicEnabled(enabled: boolean): void {
 
 export function setSfxIntensityMode(mode: SoundIntensityMode): void {
   loadSfxIntensityPreference()
-  sfxIntensity = mode === 'light' ? 'light' : 'heavy'
+  const nextMode = mode === 'off' || mode === 'light' || mode === 'heavy' ? mode : 'heavy'
+  if (sfxIntensity === nextMode) {
+    return
+  }
+
+  sfxIntensity = nextMode
+  stopCountdownRumble()
+  restartAmbientLoop()
   try {
     window.localStorage.setItem(SFX_INTENSITY_STORAGE_KEY, sfxIntensity)
   } catch {
@@ -461,7 +758,25 @@ export function syncMusicPlayback(phase: MissionPhase): void {
   startAmbientLoop()
 }
 
+export function syncCountdownRumble(phase: MissionPhase, countdownValue: number): void {
+  const intensity = getPhysicalSampleIntensity()
+  if (phase !== 'countdown' || countdownValue > 7 || countdownValue <= 0 || document.hidden || !intensity) {
+    stopCountdownRumble()
+    return
+  }
+
+  if (countdownRumble?.mode === intensity) {
+    return
+  }
+
+  startCountdownRumble(intensity)
+}
+
 export function sfxButton(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   tone({
     frequency: 620,
     duration: 0.09,
@@ -477,6 +792,10 @@ export function sfxButton(): void {
 }
 
 export function sfxCountdownBeep(value: number): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   const frequency = value <= 3 ? 920 : 680
   tone({
     frequency,
@@ -493,6 +812,10 @@ export function sfxCountdownBeep(value: number): void {
 }
 
 export function sfxEngineIgnition(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   const samplePlayed = playPhysicalSample('launch-rumble', { playbackRate: 0.9, duration: 0.52 })
   const heavyMode = getHeavySoundMode()
 
@@ -522,6 +845,11 @@ export function sfxEngineIgnition(): void {
 }
 
 export function sfxLiftoff(): void {
+  stopCountdownRumble()
+  if (!isSfxEnabled()) {
+    return
+  }
+
   const samplePlayed = playPhysicalSample('launch-rumble', { playbackRate: 1, duration: 0.78 })
   const heavyMode = getHeavySoundMode()
 
@@ -562,6 +890,10 @@ export function sfxLiftoff(): void {
 }
 
 export function sfxBurnPulse(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   if (playPhysicalSample('burn-thrust-pulse')) {
     return
   }
@@ -592,6 +924,10 @@ export function sfxBurnPulse(): void {
 }
 
 export function sfxBurnWindow(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   tone({
     frequency: 460,
     duration: 0.1,
@@ -620,6 +956,10 @@ export function sfxBurnWindow(): void {
 }
 
 export function sfxCueApproach(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   tone({
     frequency: 520,
     duration: 0.07,
@@ -635,6 +975,10 @@ export function sfxCueApproach(): void {
 }
 
 export function sfxCueReady(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   tone({
     frequency: 660,
     duration: 0.08,
@@ -663,6 +1007,10 @@ export function sfxCueReady(): void {
 }
 
 export function sfxCueStrike(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   chord([659.25, 987.77], 0.16, 0.015)
   tone({
     frequency: 1318.51,
@@ -680,6 +1028,10 @@ export function sfxCueStrike(): void {
 }
 
 export function sfxStopMo(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   tone({
     frequency: 740,
     duration: 0.08,
@@ -720,6 +1072,10 @@ export function sfxStopMo(): void {
 }
 
 export function sfxBurnResult(grade: BurnGrade): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   if (grade === 'assist') {
     tone({
       frequency: 200,
@@ -774,6 +1130,10 @@ export function sfxBurnResult(grade: BurnGrade): void {
 }
 
 export function sfxReentry(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   if (playPhysicalSample('reentry-texture')) {
     return
   }
@@ -804,6 +1164,10 @@ export function sfxReentry(): void {
 }
 
 export function sfxParachute(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   if (playPhysicalSample('parachute-deploy')) {
     return
   }
@@ -834,6 +1198,10 @@ export function sfxParachute(): void {
 }
 
 export function sfxSplashdown(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   const heavyMode = getHeavySoundMode()
   if (playPhysicalSample('splashdown', { playbackRate: heavyMode ? 0.96 : 1, attack: 0.008, release: heavyMode ? 0.16 : 0.1 })) {
     return
@@ -881,6 +1249,10 @@ export function sfxSplashdown(): void {
 }
 
 export function sfxCelebration(): void {
+  if (!isSfxEnabled()) {
+    return
+  }
+
   if (playPhysicalSample('celebration-accent', { attack: 0.01, release: 0.18 })) {
     return
   }
