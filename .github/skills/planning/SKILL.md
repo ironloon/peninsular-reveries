@@ -10,7 +10,10 @@ Use this skill when producing plans that will be dispatched by the `@orchestrato
 
 ## Plan File Location
 
-Plans live in `/memories/repo/plans/active-plan.md` (Copilot memory, workspace-persistent, not in git). Overwrite the existing file when a new plan is approved.
+Plans live in `/memories/repo/plans/active-plan.md` (Copilot memory, workspace-persistent, not in git). There must be exactly one active plan file — the orchestrator reads only this path.
+
+- When a new plan is approved, **delete** the existing `active-plan.md` first, then create the new one. Do not create separate named plan files — the orchestrator will not discover them.
+- When all WUs in a plan are `done` and the orchestrator has completed integration, delete the plan file so a stale completed plan is not mistaken for active work.
 
 ## Plan Structure
 
