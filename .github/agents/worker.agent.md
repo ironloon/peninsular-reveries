@@ -1,6 +1,6 @@
 ---
 description: "Implementation worker that executes a single work unit: reads code, makes changes, runs verification. Use for all dispatched game-polish work units."
-model: "GPT-5.4"
+model: "Claude Sonnet 4.6"
 user-invocable: false
 agents: []
 ---
