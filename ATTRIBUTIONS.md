@@ -1,6 +1,6 @@
 # Attributions
 
-> This file is generated from `app/data/attributions.ts`. Update that file, then run `npm run sync:attributions`.
+> This file is generated from `app/data/attributions/`. Update the per-game files there, then run `npm run sync:attributions`.
 
 ## Repository
 

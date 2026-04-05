@@ -1,7 +1,7 @@
 import { renderToString } from 'remix/component/server'
 import { Document } from '../ui/document.js'
 import { GameScreen, GameSettingsModal, SrOnly } from '../ui/game-shell.js'
-import { attributionsPagePath, getGameAttribution } from '../data/attributions.js'
+import { attributionsPagePath, getGameAttribution } from '../data/attributions/index.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 

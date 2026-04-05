@@ -1,6 +1,6 @@
 import { css } from 'remix/component'
 import { renderToString } from 'remix/component/server'
-import { attributionsPagePath, gameAttributions, repositoryCodeLicense } from '../data/attributions.js'
+import { attributionsPagePath, gameAttributions, repositoryCodeLicense } from '../data/attributions/index.js'
 import { Document } from '../ui/document.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'

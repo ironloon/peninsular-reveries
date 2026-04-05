@@ -1,5 +1,5 @@
 import { renderToString } from 'remix/component/server'
-import { getGameAttribution } from '../data/attributions.js'
+import { getGameAttribution } from '../data/attributions/index.js'
 import { MISSION_CREW_ROSTER } from '../data/mission-orbit-crew.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'

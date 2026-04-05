@@ -77,7 +77,7 @@ server.ts                dev server with live reload
 8. Add scoped PWA assets in `public/[game-slug]/manifest.json` and `public/[game-slug]/sw.js`.
 9. Pass `includeNav={false}` and `includeFooter={false}` from the game controller.
 10. Add a `Menu` overlay with Home, controls help, settings, reduce-motion, and credits when needed.
-11. If media attributions change, update `app/data/attributions.ts` and run `npm run sync:attributions`.
+11. If media attributions change, update the relevant file in `app/data/attributions/` and run `npm run sync:attributions`.
 12. Add both unit and e2e tests for new logic and UI behavior.
 
 ## Game Module Contract
@@ -140,7 +140,7 @@ This repo uses a hybrid CSS model.
 - Use scoped PWA manifests with `"start_url": "./"` and `"scope": "./"`.
 - Root offline support lives in `public/sw.js`; game workers own game-specific caches.
 - When a game-scoped service worker precaches media files, bump its `CACHE_NAME` whenever bundled audio or art bytes change so clients do not stay stuck on stale assets.
-- `ATTRIBUTIONS.md` is generated from `app/data/attributions.ts`.
+- `ATTRIBUTIONS.md` is generated from `app/data/attributions/`.
 
 ## Build Flow
 

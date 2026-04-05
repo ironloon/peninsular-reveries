@@ -24,7 +24,7 @@
 
 - When referencing real missions, people, or events, use verified public sources.
 - Prefer NASA, ESA, CSA, or other primary public-domain or official sources.
-- Add attribution entries in `app/data/attributions.ts` and sync `ATTRIBUTIONS.md` afterward.
+- Add attribution entries in the relevant file under `app/data/attributions/` and sync `ATTRIBUTIONS.md` afterward.
 
 ## Visual and Logical Consistency
 

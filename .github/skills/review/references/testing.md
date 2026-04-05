@@ -20,4 +20,4 @@
 
 ## Attribution Sync
 
-- If a change updates `app/data/attributions.ts`, run `npm run sync:attributions` before considering the work human-ready.
+- If a change updates files in `app/data/attributions/`, run `npm run sync:attributions` before considering the work human-ready.

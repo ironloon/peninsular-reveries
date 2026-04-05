@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { getGameAttribution, renderAttributionsMarkdown, repositoryCodeLicense } from './attributions'
+import { getGameAttribution, renderAttributionsMarkdown, repositoryCodeLicense } from './attributions/index'
 
 test('super word attribution data is available for deployed UI', () => {
   const attribution = getGameAttribution('super-word')
