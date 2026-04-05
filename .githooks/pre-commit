@@ -1,3 +1,12 @@
 #!/usr/bin/env sh
 
+# Skip the full test suite when only non-code files are staged.
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+CODE_FILES=$(echo "$STAGED" | grep -vE '^\.(github/agents|github/skills)/|^README\.md$|^ATTRIBUTIONS\.md$|^LICENSE$|^copilot-instructions\.md$|^\.instructions\.md$|^\.prompt\.md$')
+
+if [ -z "$CODE_FILES" ]; then
+  echo "pre-commit: only docs/agent files staged — skipping test:local"
+  exit 0
+fi
+
 npm run test:local
