@@ -25,6 +25,14 @@ export interface PixelArt {
   readonly pixels: readonly number[]
 }
 
+export interface DestinationVisualTheme {
+  readonly skyTop: string
+  readonly skyBottom: string
+  readonly glow: string
+  readonly accent: string
+  readonly horizon: string
+}
+
 export interface Destination {
   readonly id: DestinationId
   readonly name: string
@@ -38,6 +46,7 @@ export interface Destination {
   }
   readonly coastal: boolean
   readonly scene: PixelArt
+  readonly visualTheme: DestinationVisualTheme
   readonly facts: readonly string[]
   readonly clues: readonly [string, string, string]
   readonly memoryEmoji: string

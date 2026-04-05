@@ -47,6 +47,7 @@ import {
   sfxParachute,
   sfxReentry,
   sfxSplashdown,
+  syncCountdownRumble,
   syncMusicPlayback,
 } from './sounds.js'
 import { getPhaseDefinition, type GameState, type MissionGameplayPhase, type MissionPhaseDefinition } from './types.js'
@@ -79,7 +80,15 @@ if (sfxIntensitySelect) {
   sfxIntensitySelect.value = getSfxIntensityMode()
   sfxIntensitySelect.addEventListener('change', () => {
     primeMissionAudio()
-    setSfxIntensityMode(sfxIntensitySelect.value === 'light' ? 'light' : 'heavy')
+    const nextIntensity = sfxIntensitySelect.value === 'off'
+      ? 'off'
+      : sfxIntensitySelect.value === 'light'
+        ? 'light'
+        : 'heavy'
+
+    setSfxIntensityMode(nextIntensity)
+    syncMusicPlayback(state.phase)
+    syncCountdownRumble(state.phase, state.countdownValue)
   })
 }
 
@@ -136,6 +145,7 @@ function onPhaseEntered(previousPhase: GameState['phase']): void {
   if (state.phase === previousPhase) return
 
   syncMusicPlayback(state.phase)
+  syncCountdownRumble(state.phase, state.countdownValue)
 
   if (state.phase === 'celebration') {
     renderEndScreen(state)
@@ -231,6 +241,7 @@ function startGame(): void {
   lastCountdownValue = state.countdownValue
   enginePulseBudgetMs = 0
   showScreen('mission-screen')
+  syncCountdownRumble(state.phase, state.countdownValue)
   renderMission(state)
   onPhaseEntered('title')
 }
@@ -243,6 +254,7 @@ function replayGame(): void {
   lastCountdownValue = state.countdownValue
   enginePulseBudgetMs = 0
   syncMusicPlayback(state.phase)
+  syncCountdownRumble(state.phase, state.countdownValue)
   showScreen('start-screen')
   moveFocusAfterTransition('start-btn', 220)
 }
@@ -313,6 +325,7 @@ setupInput(() => state, callbacks)
 
 document.addEventListener('visibilitychange', () => {
   syncMusicPlayback(state.phase)
+  syncCountdownRumble(state.phase, state.countdownValue)
 })
 
 function tick(now: number): void {
@@ -371,6 +384,8 @@ function tick(now: number): void {
         goToNextPhase()
       }
     }
+
+    syncCountdownRumble(state.phase, state.countdownValue)
 
     if (state.phase !== 'celebration') {
       renderMission(state)

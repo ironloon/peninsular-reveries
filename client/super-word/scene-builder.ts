@@ -93,12 +93,25 @@ function mapYToZone(baseY: number, zone: SceneItem['zone']): number {
   return minY + normalized * (maxY - minY)
 }
 
+function getVerticalPlacementOffset(item: Pick<SceneItem, 'zone' | 'scale' | 'yOffset'>): number {
+  if (item.zone !== 'ground') {
+    return item.yOffset ?? 0
+  }
+
+  return Math.max(0, (item.scale ?? 1) - 1) * 10 + (item.yOffset ?? 0)
+}
+
+export function positionItemY(baseY: number, item: Pick<SceneItem, 'zone' | 'scale' | 'yOffset'>): number {
+  const { minY, maxY } = getZoneBounds(item.zone)
+  return clamp(mapYToZone(baseY, item.zone) + getVerticalPlacementOffset(item), minY, maxY)
+}
+
 function assignBasePositions(items: readonly Omit<SceneItem, 'x' | 'y'>[]): SceneItem[] {
   const layout = BASE_LAYOUTS[items.length] ?? BASE_LAYOUTS[9]
   return items.map((item, index) => ({
     ...item,
     x: layout[index]?.x ?? 50,
-    y: mapYToZone(layout[index]?.y ?? 50, item.zone),
+    y: positionItemY(layout[index]?.y ?? 50, item),
   }))
 }
 
@@ -146,7 +159,7 @@ function randomizeLayout(items: readonly SceneItem[]): SceneItem[] {
     return {
       ...item,
       x: clamp(slot.x + (Math.random() * (xJitter * 2) - xJitter), 12, 88),
-      y: clamp(mapYToZone(slot.y, item.zone) + (Math.random() * (yJitter * 2) - yJitter), minY, maxY),
+      y: clamp(positionItemY(slot.y, item) + (Math.random() * (yJitter * 2) - yJitter), minY, maxY),
     }
   })
 }
@@ -176,6 +189,7 @@ export function buildPuzzle(spec: WordSpec): Puzzle {
     emoji: art.emoji,
     label: art.label,
     scale: art.scale ?? 1,
+    yOffset: art.yOffset,
   }))
 
   return {

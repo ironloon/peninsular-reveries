@@ -9,7 +9,7 @@ import { ComingSoonGameCard, GameCard } from '../ui/game-card.js'
 
 const heroStyles = {
   textAlign: 'center',
-  padding: 'var(--space-3xl) 0 var(--space-2xl)',
+  padding: 'calc(var(--space-3xl) + var(--space-md)) 0 var(--space-3xl)',
   '& h1': {
     fontSize: 'var(--text-xl)',
   },
@@ -27,7 +27,7 @@ const homeGamepadHintStyles = {
 const gamesListStyles = {
   display: 'flex',
   flexDirection: 'column',
-  gap: 'var(--space-md)',
+  gap: 'var(--space-xl)',
 }
 
 const noscriptMessageStyles = {

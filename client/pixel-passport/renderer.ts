@@ -1,7 +1,16 @@
-import { DESTINATIONS, GLOBE_ART, PIP_SPRITES, VEHICLE_SPRITES, getDestination, pickNextMysteryTarget } from './destinations.js'
-import type { Destination, GamePhase, GameState, PixelArt, PipPose, VehiclePose } from './types.js'
+import { GLOBE_ART, PIP_SPRITES, VEHICLE_SPRITES } from './art.js'
+import { DESTINATIONS, getDestination, pickNextMysteryTarget } from './destinations.js'
+import type { Destination, DestinationVisualTheme, GamePhase, GameState, PixelArt, PipPose, VehiclePose } from './types.js'
 
 let activeScreenId = 'start-screen'
+
+const DEFAULT_VISUAL_THEME: DestinationVisualTheme = {
+  skyTop: '#77c2ff',
+  skyBottom: '#dff0ff',
+  glow: 'rgba(255, 216, 131, 0.28)',
+  accent: '#ffd166',
+  horizon: '#74c96a',
+}
 
 function element<T extends HTMLElement>(id: string): T {
   return document.getElementById(id) as T
@@ -68,6 +77,32 @@ function renderVehicle(containerId: string, pose: VehiclePose): void {
   renderPixelArt(VEHICLE_SPRITES[pose], container, `vehicle-${pose}`)
 }
 
+function applyVisualTheme(target: HTMLElement, theme: DestinationVisualTheme, destinationId: string | null): void {
+  target.style.setProperty('--destination-sky-top', theme.skyTop)
+  target.style.setProperty('--destination-sky-bottom', theme.skyBottom)
+  target.style.setProperty('--destination-glow', theme.glow)
+  target.style.setProperty('--destination-accent', theme.accent)
+  target.style.setProperty('--destination-horizon', theme.horizon)
+  target.dataset.destination = destinationId ?? 'none'
+}
+
+function syncDestinationTheme(destination: Destination | null): void {
+  const theme = destination?.visualTheme ?? DEFAULT_VISUAL_THEME
+  const destinationId = destination?.id ?? null
+
+  applyVisualTheme(element('travel-stage'), theme, destinationId)
+  applyVisualTheme(element('explore-screen'), theme, destinationId)
+  applyVisualTheme(element('memory-screen'), theme, destinationId)
+}
+
+function easeInOutSine(value: number): number {
+  return -(Math.cos(Math.PI * value) - 1) / 2
+}
+
+function waveOffset(progress: number, amplitude: number, cycles: number): number {
+  return Math.sin(progress * Math.PI * cycles) * amplitude
+}
+
 function markerId(group: 'globe' | 'mystery', destinationId: string): string {
   return `${group}-marker-${destinationId}`
 }
@@ -127,36 +162,77 @@ function renderTravel(state: GameState): void {
   const destination = getDestination(state.targetDestination)
   if (!destination || !state.transportType) return
 
+  syncDestinationTheme(destination)
+
   const originName = getDestination(state.currentLocation)?.name ?? 'Home'
   const vehiclePose: VehiclePose = state.transportType !== 'bus' && state.travelProgress < 0.16
     ? 'bus'
     : state.transportType
+  const easedProgress = easeInOutSine(state.travelProgress)
+  const vehicleBob = state.transportType === 'plane'
+    ? waveOffset(state.travelProgress, -8, 2.4)
+    : state.transportType === 'boat'
+      ? waveOffset(state.travelProgress, -5, 4.2)
+      : state.transportType === 'train'
+        ? waveOffset(state.travelProgress, -2.2, 11)
+        : waveOffset(state.travelProgress, -3.2, 7)
+  const vehicleTilt = state.transportType === 'plane'
+    ? waveOffset(state.travelProgress, -3, 2.4)
+    : state.transportType === 'boat'
+      ? waveOffset(state.travelProgress, 2.2, 4.2)
+      : state.transportType === 'train'
+        ? waveOffset(state.travelProgress, 0.65, 11)
+        : waveOffset(state.travelProgress, 1.1, 7)
+  const shadowScale = state.transportType === 'plane'
+    ? 0.68
+    : state.transportType === 'boat'
+      ? 0.84
+      : 0.92
+  const shadowOpacity = state.transportType === 'plane'
+    ? 0.18
+    : state.transportType === 'boat'
+      ? 0.24
+      : 0.32
+  const vehicleLeft = 8 + easedProgress * 68
 
   renderVehicle('travel-vehicle', vehiclePose)
   renderPip('travel-pip', state.travelProgress < 0.5 ? 'wave' : 'guide')
 
   const travelStage = element<HTMLElement>('travel-stage')
   const travelBackground = element<HTMLElement>('travel-background')
+  const travelShadow = element<HTMLElement>('travel-vehicle-shadow')
   const travelVehicle = element<HTMLElement>('travel-vehicle')
   const travelCopy = element<HTMLElement>('travel-copy')
 
   travelStage.dataset.transport = state.transportType
+  travelStage.style.setProperty('--travel-progress', state.travelProgress.toFixed(4))
+  travelStage.style.setProperty('--travel-eased-progress', easedProgress.toFixed(4))
   element('travel-from').textContent = originName
   element('travel-to').textContent = destination.name
   element('travel-mode-pill').textContent = `By ${state.transportType}`
-  travelBackground.style.transform = `translateX(${-state.travelProgress * 28}%)`
-  travelVehicle.style.left = `${(6 + state.travelProgress * 74).toFixed(2)}%`
+  travelBackground.style.transform = `translate3d(${(-5 - easedProgress * 16).toFixed(2)}%, 0, 0)`
+  travelVehicle.style.left = `${vehicleLeft.toFixed(2)}%`
+  travelVehicle.style.transform = `translate3d(-50%, ${vehicleBob.toFixed(2)}px, 0) rotate(${vehicleTilt.toFixed(2)}deg)`
+  travelShadow.style.left = `${vehicleLeft.toFixed(2)}%`
+  travelShadow.style.transform = `translate3d(-50%, 0, 0) scale(${shadowScale.toFixed(3)})`
+  travelShadow.style.opacity = shadowOpacity.toFixed(2)
 
   if (vehiclePose === 'bus' && state.transportType !== 'bus') {
     travelCopy.textContent = `The magic bus is changing into a ${state.transportType}!`
+  } else if (state.travelProgress < 0.35) {
+    travelCopy.textContent = `${originName} is fading behind us.`
+  } else if (state.travelProgress < 0.72) {
+    travelCopy.textContent = `Pip spots ${destination.name} on the horizon.`
   } else {
-    travelCopy.textContent = `Zooming toward ${destination.name}.`
+    travelCopy.textContent = `Almost there in ${destination.name}.`
   }
 }
 
 function renderExplore(state: GameState): void {
   const destination = getDestination(state.targetDestination)
   if (!destination) return
+
+  syncDestinationTheme(destination)
 
   renderPixelArt(destination.scene, element('explore-scene'), `scene-${destination.id}`)
   renderPip('explore-pip', 'guide')
@@ -171,6 +247,8 @@ function renderExplore(state: GameState): void {
 function renderMemory(state: GameState): void {
   const destination = getDestination(state.targetDestination)
   if (!destination) return
+
+  syncDestinationTheme(destination)
 
   renderPip('memory-pip', 'cheer')
   element('memory-emoji').textContent = destination.memoryEmoji

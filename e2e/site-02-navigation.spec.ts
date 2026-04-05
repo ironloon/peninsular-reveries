@@ -7,9 +7,9 @@ test.describe('SITE-02: Navigation', () => {
     await expect(gameLink).toBeVisible();
   });
 
-  test('homepage has link to attributions page', async ({ page }) => {
+  test('homepage has link to the game info page', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByRole('link', { name: 'View attributions for Super Word' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View info for Super Word' })).toBeVisible();
   });
 
   test('clicking game link navigates to /super-word/', async ({ page }) => {

@@ -50,6 +50,17 @@ For project architecture, game quality standards, and testing conventions, load 
 - After completing all planned work, run the relevant verification. If it passes, report what changed and what was verified.
 - Do not suggest follow-up work, future ideas, or extra polish unless the user explicitly asks. The goal is completion of the approved scope, not expansion of scope.
 
+## Task Tracking
+
+- At the start of each session, check whether `/memories/peninsular-reveries-task.md` exists only when the user's request is clearly about continuing implementation work in this repo. Do not let an active task file hijack unrelated planning, brainstorming, review, or question-answering.
+- Read `/memories/repo/peninsular-reveries-task-detail.md` when starting a phase that needs file paths, exact values, or investigation context.
+- Work one phase at a time. Update the task file as you complete steps by changing `- [ ]` to `- [x]`.
+- Stop at any task-file checkpoint and report findings to the user before continuing past it.
+- After completing a phase's verification step, pause and confirm with the user before starting the next phase unless the user explicitly says to keep going.
+- Treat the memory task files as the source of truth for the remaining approved work. Do not silently re-plan or expand scope beyond them unless the user asks.
+- When the tracked work is complete, delete both task memory files as part of cleanup.
+- For other planning work in the same repo, prefer session-scoped planning or an explicit user request to create a separate plan. Leave the active implementation task untouched unless the user asks to resume or revise it.
+
 ## Environment Context
 
 - Dev OS: Windows

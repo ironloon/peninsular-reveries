@@ -143,6 +143,10 @@ export async function pixelPassportAction() {
 
             <div id="travel-stage" className="travel-stage" data-transport="bus">
               <div id="travel-background" className="travel-background" aria-hidden="true"></div>
+              <div className="travel-clouds travel-layer" aria-hidden="true"></div>
+              <div className="travel-midground travel-layer" aria-hidden="true"></div>
+              <div className="travel-foreground travel-layer" aria-hidden="true"></div>
+              <div id="travel-vehicle-shadow" className="travel-vehicle-shadow" aria-hidden="true"></div>
               <div id="travel-vehicle" className="travel-vehicle pixel-art" aria-hidden="true"></div>
               <div className="travel-guide-card guide-card">
                 <div id="travel-pip" className="guide-sprite" aria-hidden="true"></div>

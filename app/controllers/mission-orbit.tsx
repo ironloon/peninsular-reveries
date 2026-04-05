@@ -227,14 +227,15 @@ export async function missionOrbitAction() {
                 <input type="checkbox" id="music-enabled-toggle" />
               </label>
               <label className="settings-select-row" htmlFor="sound-intensity-select">
-                <span>Physical sound intensity</span>
+                <span>Physical sound effects</span>
                 <select id="sound-intensity-select" defaultValue="heavy">
                   <option value="heavy">Heavy</option>
                   <option value="light">Light</option>
+                  <option value="off">Off</option>
                 </select>
               </label>
-              <p className="settings-help">Sound effects stay on. Ambient pads only play when you turn them on.</p>
-              <p className="settings-help">Heavy is the default mix and swaps in fuller light/heavy sample variants across launch, burns, reentry, parachute, splashdown, ambience, and celebration. Light keeps every physical sound gentler.</p>
+              <p className="settings-help">Space ambience stays separate. Turn it on when you want the calm synth bed during coast phases.</p>
+              <p className="settings-help">Heavy is the default mix with the full t-7 launch rumble bed and fuller physical textures. Light keeps the same cues gentler. Off mutes menu, countdown, launch, burn, reentry, parachute, splashdown, and celebration sound effects.</p>
             </section>
 
             <section className="settings-section">

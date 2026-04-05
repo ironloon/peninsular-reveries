@@ -1,3 +1,7 @@
+@layer base, rmx;
+
+@layer base {
+
 :root {
   /* Colors — warm, earthy (UI-SPEC Color table, CONTEXT D-07) */
   --color-bg: #FFF8F0;
@@ -149,4 +153,6 @@ body {
   :root:not([data-reduce-motion='no-preference']) body {
     animation: none;
   }
+}
+
 }

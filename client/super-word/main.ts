@@ -78,6 +78,7 @@ function currentPuzzle(): Puzzle { return activePuzzles[gameState.currentPuzzleI
 const sceneEl = document.getElementById('scene')!
 const slotsEl = document.getElementById('letter-slots')!
 const pendingFlightIndices = new Set<number>()
+const musicToggleButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-music-toggle="true"]'))
 
 function renderCollectedLetters(): void {
   renderLetterSlots(getState(), currentPuzzle(), slotsEl, { pendingIndices: pendingFlightIndices })
@@ -90,12 +91,35 @@ function updateCheckButtonState(): void {
   )
 }
 
+function syncMusicControls(): void {
+  const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
+  const musicEnabled = getMusicEnabled()
+
+  if (musicToggle) musicToggle.checked = musicEnabled
+
+  for (const button of musicToggleButtons) {
+    const label = button.querySelector<HTMLElement>('[data-music-toggle-label="true"]')
+    const onLabel = button.dataset.musicOnLabel ?? 'Music On'
+    const offLabel = button.dataset.musicOffLabel ?? 'Music Off'
+
+    button.dataset.musicState = musicEnabled ? 'on' : 'off'
+    button.setAttribute('aria-pressed', String(musicEnabled))
+    button.setAttribute('aria-label', musicEnabled ? 'Turn chill music off' : 'Turn chill music on')
+    if (label) label.textContent = musicEnabled ? onLabel : offLabel
+  }
+}
+
+function setMusicEnabledFromUi(enabled: boolean): void {
+  if (enabled) ensureAudioUnlocked()
+  setMusicEnabled(enabled)
+  syncMusicControls()
+}
+
 function syncSettingsForm(): void {
   const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
-  const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
 
   if (difficultySelect) difficultySelect.value = activeDifficulty
-  if (musicToggle) musicToggle.checked = getMusicEnabled()
+  syncMusicControls()
 }
 
 // ── Helper: Refresh Game Screen ───────────────────────────
@@ -332,8 +356,13 @@ setupSettingsModal()
 const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
 if (musicToggle) {
   musicToggle.addEventListener('change', () => {
-    if (musicToggle.checked) ensureAudioUnlocked()
-    setMusicEnabled(musicToggle.checked)
+    setMusicEnabledFromUi(musicToggle.checked)
+  })
+}
+
+for (const button of musicToggleButtons) {
+  button.addEventListener('click', () => {
+    setMusicEnabledFromUi(!getMusicEnabled())
   })
 }
 

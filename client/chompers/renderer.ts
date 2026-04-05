@@ -1,5 +1,6 @@
 import { isReducedMotion } from './animations.js'
 import { bindReduceMotionToggle } from '../preferences.js'
+import { percentToPixels, resolveHippoReachMetrics } from './reach.js'
 import { FRUIT_DEFINITIONS, ZEN_ROUND_ITEMS } from './types.js'
 import type { GameMode, GameState } from './types.js'
 
@@ -40,28 +41,6 @@ function getFinalChomped(): HTMLElement { return finalChompedEl ??= document.get
 function getFinalMissed(): HTMLElement { return finalMissedEl ??= document.getElementById('final-missed')! }
 function getFinalCombo(): HTMLElement { return finalComboEl ??= document.getElementById('final-combo')! }
 function getEndSummary(): HTMLElement { return endSummaryEl ??= document.getElementById('end-summary')! }
-
-function percentToPixels(percent: number, size: number): number {
-  return (percent / 100) * size
-}
-
-function resolveHippoReachMetrics(neckExtension: number, arenaHeight: number): {
-  neckHeightPx: number
-  headShiftPx: number
-  chompColumnHeightPercent: number
-} {
-  const chompColumnHeightPercent = 12 + neckExtension * 50
-  const chompColumnHeightPx = percentToPixels(chompColumnHeightPercent, arenaHeight)
-  const baseNeckHeightPx = Math.max(56, arenaHeight * 0.14)
-  const neckHeightPx = baseNeckHeightPx + neckExtension * (chompColumnHeightPx * 0.84 + arenaHeight * 0.06)
-  const headShiftPx = -neckExtension * Math.max(24, arenaHeight * 0.08)
-
-  return {
-    neckHeightPx,
-    headShiftPx,
-    chompColumnHeightPercent,
-  }
-}
 
 function modeLabel(mode: GameMode): string {
   if (mode === 'survival') {
@@ -149,7 +128,10 @@ function renderHippo(state: GameState, arenaWidth: number, arenaHeight: number):
   const hippo = getHippo()
   const chompColumn = getChompColumn()
   const hippoX = percentToPixels(state.hippo.x, arenaWidth)
-  const reachMetrics = resolveHippoReachMetrics(state.hippo.neckExtension, arenaHeight)
+  const reachMetrics = resolveHippoReachMetrics(state.hippo.neckExtension, {
+    width: arenaWidth,
+    height: arenaHeight,
+  })
 
   hippo.style.transform = `translate3d(${hippoX.toFixed(1)}px, 0, 0) translate3d(-50%, 0, 0)`
   hippo.style.setProperty('--neck-height', `${reachMetrics.neckHeightPx.toFixed(1)}px`)

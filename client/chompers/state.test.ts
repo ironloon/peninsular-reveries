@@ -63,6 +63,40 @@ test('landscape hit testing matches the visible chomp lane instead of a fixed ar
   assert.equal(centeredHit.hitItem?.id, 101)
 })
 
+test('short-landscape upper reach follows the visible full chomp lane', () => {
+  const state = createInitialState('rush')
+
+  const upperLaneHit = attemptChomp({
+    ...state,
+    items: [{
+      id: 102,
+      kind: 'apple',
+      x: 50,
+      y: 26,
+      speed: 12,
+      rotation: 0,
+      rotationSpeed: 0,
+    }],
+  }, { width: 932, height: 430 })
+
+  assert.equal(upperLaneHit.hitItem?.id, 102)
+
+  const aboveLaneMiss = attemptChomp({
+    ...state,
+    items: [{
+      id: 103,
+      kind: 'apple',
+      x: 50,
+      y: 22,
+      speed: 12,
+      rotation: 0,
+      rotationSpeed: 0,
+    }],
+  }, { width: 932, height: 430 })
+
+  assert.equal(aboveLaneMiss.hitItem, null)
+})
+
 test('survival misses cost lives and bombs cost a life on chomp', () => {
   const survivalState = createInitialState('survival')
   const missed = tickState({

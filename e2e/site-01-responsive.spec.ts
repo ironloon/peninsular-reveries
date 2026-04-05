@@ -54,7 +54,7 @@ test.describe('SITE-01: Responsive layout', () => {
     expect(controlsFit).toBe(true);
   });
 
-  test('super word header stays inside a tablet landscape viewport', async ({ page }) => {
+  test('super word header keeps menu and music controls inside a tablet landscape viewport', async ({ page }) => {
     await page.setViewportSize({ width: 1024, height: 600 });
     await page.goto('/super-word/');
 
@@ -63,17 +63,21 @@ test.describe('SITE-01: Responsive layout', () => {
     const headerFits = await page.evaluate(() => {
       const header = document.querySelector('.game-header');
       const right = document.querySelector('.game-header-right');
+      const music = document.querySelector('.music-toggle-btn-inline');
       const menu = document.querySelector('.settings-toggle-btn-inline');
       const letters = document.getElementById('letters-count');
       if (!(header instanceof HTMLElement) || !(right instanceof HTMLElement)) return false;
-      if (!(menu instanceof HTMLElement) || !(letters instanceof HTMLElement)) return false;
+      if (!(music instanceof HTMLElement) || !(menu instanceof HTMLElement) || !(letters instanceof HTMLElement)) return false;
 
       const headerRect = header.getBoundingClientRect();
       const rightRect = right.getBoundingClientRect();
+      const musicRect = music.getBoundingClientRect();
       const menuRect = menu.getBoundingClientRect();
       const lettersRect = letters.getBoundingClientRect();
       return rightRect.right <= headerRect.right + 1
         && lettersRect.right <= headerRect.right + 1
+        && musicRect.height >= 44
+        && musicRect.width >= 44
         && menuRect.height >= 44
         && menuRect.width >= 44;
     });
