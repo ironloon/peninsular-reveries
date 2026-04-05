@@ -53,7 +53,7 @@ For project architecture, game quality standards, and testing conventions, load 
 
 ## Orchestrated Workflow
 
-- When the user says **"impl"** or **"implement"** with reference to an active plan, route execution to the `@orchestrator` agent. Do not begin plan execution directly — the orchestrator owns dispatch, sub-agent coordination, integration gating, and commit/push.
+- When the user says **"impl"** or **"implement"** referencing an active plan, tell the user to start a **new chat session** with the `@orchestrator` agent. Do not begin plan execution directly, do not invoke the orchestrator mid-session, and do not attempt to execute work units yourself. The orchestrator must start with a fresh context — it owns dispatch, sub-agent coordination, integration gating, and commit/push.
 - Plans live in `/memories/repo/plans/active-plan.md` as structured markdown with work units (workspace-persistent, not in git). There is exactly one active plan file.
 - Plans are written in Plan mode; the `@orchestrator` agent dispatches them via `runSubagent`.
 - The orchestrator reads source code before each dispatch to enrich the plan's intent description into a specific implementation prompt.
