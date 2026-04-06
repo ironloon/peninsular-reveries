@@ -234,7 +234,7 @@ export function setupSettingsModal(): SettingsModalController {
 
 // ── Frenzy render helpers ──────────────────────────────────────────────────────
 
-export function renderNpcHippos(npcs: NpcHippo[], _scene: HTMLElement): void {
+export function renderNpcHippos(npcs: NpcHippo[]): void {
   for (let i = 0; i < 5; i++) {
     const el = document.getElementById(`npc-hippo-${i}`)
     if (!el) continue

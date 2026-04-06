@@ -1,4 +1,5 @@
 import * as esbuild from 'esbuild'
+import { execSync } from 'node:child_process'
 import { cpSync, readFileSync, readdirSync, rmSync, mkdirSync, writeFileSync, statSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { createAppRouter } from './app/router.js'
@@ -10,6 +11,27 @@ rmSync(outputDir, { recursive: true, force: true })
 
 // ── Copy static assets ───────────────────────────────────
 cpSync('public', outputDir, { recursive: true })
+
+// ── Stamp service workers with git SHA ──────────────────
+const sha = execSync('git rev-parse --short HEAD').toString().trim()
+const swFiles = [
+  'sw.js',
+  'chompers/sw.js',
+  'mission-orbit/sw.js',
+  'super-word/sw.js',
+  'pixel-passport/sw.js',
+]
+for (const swFile of swFiles) {
+  const swPath = join(outputDir, swFile)
+  const content = readFileSync(swPath, 'utf-8')
+  const updated = content.replace(/const CACHE_NAME = '[^']+'/g, (match) => {
+    const prefixMatch = match.match(/const CACHE_NAME = '(.*)-v\d+'/)
+    const prefix = prefixMatch ? prefixMatch[1] : 'site'
+    return `const CACHE_NAME = '${prefix}-${sha}'`
+  })
+  writeFileSync(swPath, updated)
+}
+
 mkdirSync(join(outputDir, 'client', 'mission-orbit'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'super-word'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'chompers'), { recursive: true })

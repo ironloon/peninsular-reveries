@@ -1,12 +1,12 @@
 import { renderToString } from 'remix/component/server'
-import { getGameAttribution } from '../data/attributions/index.js'
+import { attributionsPagePath, getGameAttribution } from '../data/attributions/index.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
 import { GameHeader, GameHeaderPill, GameSettingsModal, SettingsActions, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
 
 const chompersModalOverlayStyles = {
-  zIndex: 200,
+  zIndex: 100,
   background: 'rgba(5, 16, 14, 0.82)',
 }
 
@@ -291,13 +291,9 @@ export async function chompersAction() {
         </SettingsSection>
 
         <SettingsSection title="Credits & License">
-          <p className="settings-copy"><span className="settings-label">Code license:</span> {attribution.codeLicense}</p>
-          <p className="settings-copy">{attribution.summary}</p>
-          <ul className="settings-list">
-            {attribution.entries.map((entry) => (
-              <li>Audio: {entry.title} by {entry.creator} ({entry.license})</li>
-            ))}
-          </ul>
+          <p>Code license: {attribution.codeLicense}</p>
+          <p>{attribution.summary}</p>
+          <a href={withBasePath(`${attributionsPagePath}#${attribution.slug}`, siteBasePath)}>View full credits</a>
         </SettingsSection>
 
         <SettingsActions quitHref={homePath} quitClassName="chomp-btn chomp-btn-secondary" showRestart={true} />

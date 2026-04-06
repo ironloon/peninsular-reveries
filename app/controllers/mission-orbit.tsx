@@ -1,5 +1,5 @@
 ﻿import { renderToString } from 'remix/component/server'
-import { getGameAttribution } from '../data/attributions/index.js'
+import { attributionsPagePath, getGameAttribution } from '../data/attributions/index.js'
 import { MISSION_CREW_ROSTER } from '../data/mission-orbit-data.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
@@ -57,7 +57,7 @@ export async function missionOrbitAction() {
                   aria-controls="settings-modal"
                   aria-expanded="false"
                 >
-                  Settings
+                  Menu
                 </button>
               }
             />
@@ -110,7 +110,7 @@ export async function missionOrbitAction() {
                   aria-controls="settings-modal"
                   aria-expanded="false"
                 >
-                  Settings
+                  Menu
                 </button>
               }
             />
@@ -203,40 +203,9 @@ export async function missionOrbitAction() {
           </SettingsSection>
 
           <SettingsSection title="Credits">
-            <p className="settings-help">
-              <span className="settings-detail-label">Code license:</span> {attribution.codeLicense}
-            </p>
-            <p className="settings-help">{attribution.summary}</p>
-            <details className="settings-disclosure settings-attributions-disclosure">
-              <summary className="settings-disclosure-summary">
-                Source details ({attribution.entries.length})
-              </summary>
-              <div className="settings-attributions">
-                {attribution.entries.map((entry) => (
-                  <article className="settings-attribution-card" aria-label={`${entry.title} credit`}>
-                    <h4 className="settings-attribution-title">{entry.title}</h4>
-                    <p className="settings-attribution-meta">{entry.type} · {entry.creator}</p>
-                    <p className="settings-attribution-copy">
-                      <span className="settings-detail-label">Used in:</span> {entry.usedIn}
-                    </p>
-                    <p className="settings-attribution-copy">
-                      <span className="settings-detail-label">Source:</span> {entry.source}
-                    </p>
-                    <p className="settings-attribution-copy">
-                      <span className="settings-detail-label">License:</span> {entry.license}
-                    </p>
-                    <p className="settings-attribution-copy">
-                      <span className="settings-detail-label">Modifications:</span> {entry.modifications}
-                    </p>
-                    {entry.notes ? (
-                      <p className="settings-attribution-copy">
-                        <span className="settings-detail-label">Notes:</span> {entry.notes}
-                      </p>
-                    ) : null}
-                  </article>
-                ))}
-              </div>
-            </details>
+            <p>Code license: {attribution.codeLicense}</p>
+            <p>{attribution.summary}</p>
+            <a href={withBasePath(`${attributionsPagePath}#${attribution.slug}`, siteBasePath)}>View full credits</a>
           </SettingsSection>
 
           <SettingsActions quitHref={homePath} />

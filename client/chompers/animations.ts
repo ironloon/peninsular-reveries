@@ -1,8 +1,7 @@
+import { isReducedMotionEnabled } from '../preferences.js'
+
 export function isReducedMotion(): boolean {
-  const override = document.documentElement.dataset.reduceMotion
-  if (override === 'reduce') return true
-  if (override === 'no-preference') return false
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  return isReducedMotionEnabled()
 }
 
 export function animateHippoChomp(
@@ -167,38 +166,6 @@ export function spawnPointsPopup(
   window.setTimeout(cleanup, 1000)
 }
 
-// Legacy helper kept for compatibility — not used by new animations
-const pulseTimeouts = new WeakMap<HTMLElement, number>()
-const pulseFrames = new WeakMap<HTMLElement, number>()
-
-export function pulseElement(element: HTMLElement, className: string, durationMs: number = 320): void {
-  const pendingFrame = pulseFrames.get(element)
-  if (pendingFrame !== undefined) {
-    window.cancelAnimationFrame(pendingFrame)
-  }
-
-  const pendingTimeout = pulseTimeouts.get(element)
-  if (pendingTimeout !== undefined) {
-    window.clearTimeout(pendingTimeout)
-  }
-
-  element.classList.remove(className)
-
-  const frame = window.requestAnimationFrame(() => {
-    element.classList.add(className)
-
-    const timeout = window.setTimeout(() => {
-      element.classList.remove(className)
-      pulseTimeouts.delete(element)
-    }, durationMs)
-
-    pulseTimeouts.set(element, timeout)
-    pulseFrames.delete(element)
-  })
-
-  pulseFrames.set(element, frame)
-}
-
 // ── Frenzy NPC animations ─────────────────────────────────────────────────────
 
 export function animateNpcChomp(npcId: string, targetEl: HTMLElement | null): void {
@@ -218,11 +185,4 @@ export function animateNpcChomp(npcId: string, targetEl: HTMLElement | null): vo
   }
 }
 
-export function animateNpcDisappointed(npcId: string): void {
-  const npcEl = document.getElementById(npcId)
-  if (!npcEl) return
-  npcEl.classList.remove('disappointed')
-  void npcEl.offsetWidth
-  npcEl.classList.add('disappointed')
-  window.setTimeout(() => npcEl.classList.remove('disappointed'), 600)
-}
+

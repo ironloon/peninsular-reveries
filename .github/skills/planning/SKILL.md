@@ -22,7 +22,7 @@ Discovery → Alignment → Draft → Workshop → Refinement
 Explore the codebase to understand scope: read relevant files, run searches, identify affected modules. Do not start writing WUs yet.
 
 ### Phase 2 — Alignment
-Confirm the goal with the user if anything is ambiguous. Ask only what is genuinely unclear — do not ask about things you can infer from the code. One round of questions maximum.
+Always run one alignment round after Discovery. Present a brief summary of what you found, then ask scope/approach questions via `vscode_askQuestions`. At minimum, surface: (a) what's in scope vs. out of scope, (b) any non-obvious tradeoffs or alternatives the research revealed, and (c) anything genuinely ambiguous. Do not ask about things you can infer from the code. One round maximum. Skip Alignment only when the task maps to a single, unambiguous WU with no design choices.
 
 ### Phase 3 — Draft
 Produce a **plan outline** and present it to the user. The outline contains:
@@ -37,19 +37,20 @@ After the draft is shown, automatically enter workshop. Walk through each WU for
 
 **Workshop loop:**
 1. Present WUs one at a time. Group tightly coupled WUs (e.g., two WUs that depend on each other's outputs) and present them together at the planner's discretion.
-2. For each WU (or group), show a **quick summary**:
+2. For each WU (or group), show a **brief summary as regular Markdown in chat** — not inside the `vscode_askQuestions` tool:
    - Title and ID
-   - 2–3 bullet points of key intent
+   - 2–3 concise bullet points of key intent (what changes and why)
    - Owned files list
-3. Ask via `vscode_askQuestions` with three options: **Approve as-is**, **Request changes** (freeform), **Remove**.
-4. When you propose an approach, always offer at least one alternative. Don't just accept the first idea — push back on weak designs with a better option if one exists.
-5. Apply feedback immediately (update that WU's design) before moving to the next WU.
-6. When approved, mark the WU `Confirmed: yes` in the plan file.
+   - One alternative approach or tradeoff, if one exists. If the WU is purely mechanical, state that.
+   Keep the summary scannable — no prose paragraphs.
+3. After showing the summary, call `vscode_askQuestions`. Options: **Approve as-is** (recommended), one option per concrete alternative from the summary (e.g., "Alternative: [short label]"), and **Remove**. Do not add a "Request changes" option — freeform text input is always available. The question text should be a one-line WU reference — all detail lives in the Markdown above.
+4. Apply feedback immediately (update that WU's design) before moving to the next WU.
+5. When approved, mark the WU `Confirmed: yes` in the plan file.
 
 Do not advance past workshop until all WUs are either confirmed or removed.
 
 ### Phase 5 — Refinement
-After workshop is complete, write the full plan file with all fields populated for confirmed WUs. Then output a brief post-workshop summary (see Plan Output Rules below). Do not output the full plan document to the user.
+After workshop is complete, write the full plan file with all fields populated for confirmed WUs. Begin the plan with the **User Intent** section — a concise summary of the user's goal and motivation, distilled from the conversation. This section is the reference point for evaluating whether each WU serves the plan and for post-mortem analysis. Then output a brief post-workshop summary (see Plan Output Rules below). Do not output the full plan document to the user.
 
 ---
 
@@ -91,6 +92,13 @@ The plan file is for orchestrator consumption and persistence, not for showing t
 
 ```markdown
 # Plan: [Short Title]
+
+## User Intent
+
+[2–4 sentence summary of what the user wants to achieve and why. Written
+during Refinement; updated during workshop if scope shifts. The orchestrator
+and post-mortem both reference this section to evaluate whether finished
+work aligns with original goals.]
 
 ## Work Units
 
@@ -134,10 +142,12 @@ One of: `not-started`, `in-progress`, `done`, `blocked`. Only the orchestrator u
 `none` or a WU ID like `WU-3`. WUs with no dependencies can be dispatched in any order. The Dispatch Order section makes the actual sequence explicit.
 
 ### Thinking effort
-Guides the orchestrator's sub-agent configuration:
-- **low** — Rename, config change, mechanical transformation. Sub-agent can work quickly.
-- **medium** — Feature in a known pattern, moderate judgment needed.
-- **high** — Novel design, multi-concern coordination, or creative work requiring deep context.
+Guides the orchestrator's sub-agent configuration and **model selection**:
+- **low** — Rename, config change, mechanical transformation. Dispatched with **Claude Haiku 4.5**.
+- **medium** — Feature in a known pattern, moderate judgment needed. Dispatched with **Claude Sonnet 4.6**.
+- **high** — Reserved for research/exploration WUs (e.g., an `Explore` sub-agent gathering context for later WUs). Dispatched with **Claude Opus 4.6**.
+
+**Default to medium or low.** If a WU requires high thinking effort for *implementation*, that complexity should be resolved during planning — break it into smaller WUs, add more specificity to the Intent, or move the hard reasoning into a preceding research WU. A well-written plan should rarely produce high-effort implementation WUs.
 
 ### Owned files
 The exhaustive list of files the sub-agent is allowed to modify. Use globs sparingly and only for asset directories (e.g., `public/game/audio/*`). Never split a single file across multiple WUs — exactly one WU owns each file.

@@ -19,10 +19,10 @@ test.describe('SITE-07: Mission Orbit', () => {
   test('settings modal opens and exposes controls', async ({ page }) => {
     await page.goto('/mission-orbit/')
 
-    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.getByRole('button', { name: 'Menu' }).click()
     await expect(page.locator('#settings-modal')).toBeVisible()
     await expect(page.getByLabel('Reduce motion')).toBeVisible()
-    await expect(page.getByText(/Source details/)).toBeVisible()
+    await expect(page.getByText(/View full credits/)).toBeVisible()
 
     await page.getByRole('button', { name: 'Close' }).click()
     await expect(page.locator('#settings-modal')).toBeHidden()
@@ -80,7 +80,7 @@ test.describe('SITE-07: Mission Orbit', () => {
   test('settings Quit link navigates home', async ({ page }) => {
     await page.goto('/mission-orbit/')
 
-    await page.getByRole('button', { name: 'Settings' }).click()
+    await page.getByRole('button', { name: 'Menu' }).click()
     await expect(page.locator('#settings-modal')).toBeVisible()
     await expect(page.getByRole('link', { name: 'Quit' })).toBeVisible()
   })

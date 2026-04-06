@@ -85,7 +85,7 @@ function startFrenzyTick(): void {
 
     // Render frenzy UI
     const arenaEl = document.getElementById('game-arena')
-    if (arenaEl) renderNpcHippos(updatedNpcs, arenaEl)
+    if (arenaEl) renderNpcHippos(updatedNpcs)
     renderRoundTimer(updatedFrenzy.roundTimer, updatedFrenzy.roundTimerMax)
     renderFrenzyScoreboard(updatedFrenzy, frenzyPlayerScore)
 

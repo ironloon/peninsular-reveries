@@ -349,10 +349,6 @@ export function getDestination(destinationId: DestinationId | null): Destination
   return DESTINATIONS.find((destination) => destination.id === destinationId) ?? null
 }
 
-export function getDestinationIndex(destinationId: DestinationId): number {
-  return DESTINATIONS.findIndex((destination) => destination.id === destinationId)
-}
-
 export function pickNextMysteryTarget(completed: readonly DestinationId[]): DestinationId | null {
   return DESTINATIONS.find((destination) => !completed.includes(destination.id))?.id ?? null
 }

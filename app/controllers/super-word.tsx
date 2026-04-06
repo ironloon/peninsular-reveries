@@ -10,7 +10,7 @@ const superWordScreenStyles = {
 }
 
 const superWordModalOverlayStyles = {
-  zIndex: 150,
+  zIndex: 100,
   background: 'rgba(0, 0, 0, 0.6)',
 }
 
@@ -177,31 +177,9 @@ export async function superWordAction() {
             </SettingsSection>
 
             <SettingsSection title="© Credits &amp; License">
-              <p className="settings-help"><span className="settings-detail-label">Code license:</span> {attribution.codeLicense}</p>
-              <p className="settings-help">{attribution.summary}</p>
-              <div className="settings-attributions">
-                {attribution.entries.map((entry) => (
-                  <article className="settings-attribution-card" aria-label={`${entry.title} credit`}>
-                    <h4 className="settings-attribution-title">{entry.title}</h4>
-                    <p className="settings-attribution-meta">{entry.type} · {entry.creator}</p>
-                    <p className="settings-attribution-copy"><span className="settings-detail-label">Used in:</span> {entry.usedIn}</p>
-                    <p className="settings-attribution-copy">
-                      <span className="settings-detail-label">Source:</span>{' '}
-                      {entry.sourceUrl
-                        ? <a href={entry.sourceUrl} target="_blank" rel="noopener">{entry.source}</a>
-                        : entry.source}
-                    </p>
-                    <p className="settings-attribution-copy">
-                      <span className="settings-detail-label">License:</span>{' '}
-                      {entry.licenseUrl
-                        ? <a href={entry.licenseUrl} target="_blank" rel="noopener">{entry.license}</a>
-                        : entry.license}
-                    </p>
-                    <p className="settings-attribution-copy"><span className="settings-detail-label">Modifications:</span> {entry.modifications}</p>
-                    {entry.notes ? <p className="settings-attribution-copy"><span className="settings-detail-label">Notes:</span> {entry.notes}</p> : null}
-                  </article>
-                ))}
-              </div>
+              <p>Code license: {attribution.codeLicense}</p>
+              <p>{attribution.summary}</p>
+              <a href={superWordAttributionsPath}>View full credits</a>
             </SettingsSection>
 
             <SettingsActions quitHref={homePath} showRestart={true} />

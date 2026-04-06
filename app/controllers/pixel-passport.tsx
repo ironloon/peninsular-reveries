@@ -1,13 +1,13 @@
 import { renderToString } from 'remix/component/server'
 import { DESTINATIONS } from '../../client/pixel-passport/destinations.js'
-import { getGameAttribution } from '../data/attributions/index.js'
+import { attributionsPagePath, getGameAttribution } from '../data/attributions/index.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
 import { GameHeader, GameHeaderPill, GameScreen, GameSettingsModal, SettingsActions, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
 
 const pixelPassportModalOverlayStyles = {
-  zIndex: 30,
+  zIndex: 100,
   background: 'rgba(4, 10, 20, 0.72)',
   backdropFilter: 'blur(8px)',
 }
@@ -325,18 +325,9 @@ export async function pixelPassportAction() {
           </SettingsSection>
 
           <SettingsSection title="© Credits &amp; License">
-            <p className="settings-help"><span className="settings-label">Code license:</span> {attribution.codeLicense}</p>
-            <p className="settings-help">{attribution.summary}</p>
-            {attribution.entries.map((entry) => (
-              <article className="settings-attribution" aria-label={`${entry.title} credit`}>
-                <h4>{entry.title}</h4>
-                <p className="settings-help"><span className="settings-label">Type:</span> {entry.type}</p>
-                <p className="settings-help"><span className="settings-label">Creator:</span> {entry.creator}</p>
-                <p className="settings-help"><span className="settings-label">Used in:</span> {entry.usedIn}</p>
-                <p className="settings-help"><span className="settings-label">Source:</span> {entry.source}</p>
-                <p className="settings-help"><span className="settings-label">License:</span> {entry.license}</p>
-              </article>
-            ))}
+            <p>Code license: {attribution.codeLicense}</p>
+            <p>{attribution.summary}</p>
+            <a href={withBasePath(`${attributionsPagePath}#${attribution.slug}`, siteBasePath)}>View full credits</a>
           </SettingsSection>
 
           <SettingsActions quitHref={homePath} showRestart={true} />

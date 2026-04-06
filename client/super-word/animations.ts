@@ -92,14 +92,6 @@ export function animateSolvedLetters(container: HTMLElement): void {
   }
 }
 
-export function setWowMode(container: HTMLElement, enabled: boolean): void {
-  if (enabled) {
-    container.classList.add('wow-mode')
-  } else {
-    container.classList.remove('wow-mode')
-  }
-}
-
 export function animateFlyToNotepad(
   sceneItem: HTMLElement,
   targetSlot: HTMLElement,
@@ -159,7 +151,4 @@ export function animateFlyToNotepad(
   })
 }
 
-export function animateScenePan(_track: HTMLElement): void {
-  // Pan is CSS-driven — this function exists for discoverability
-  // The actual pan is triggered by showScreen adding/removing CSS classes
-}
+// Pan is CSS-driven; triggered by showScreen adding/removing CSS classes

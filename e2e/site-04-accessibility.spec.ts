@@ -49,7 +49,7 @@ test.describe('SITE-04: Accessibility', () => {
     await expect(page.locator('#music-enabled-toggle')).not.toBeChecked()
     await expect(dialog).toContainText('Credits & License')
     await expect(dialog).toContainText('GPL-3.0')
-    await expect(dialog).toContainText('Generated in-browser with the Web Audio API')
+    await expect(dialog).toContainText('View full credits')
 
     await page.keyboard.press('Escape')
 
