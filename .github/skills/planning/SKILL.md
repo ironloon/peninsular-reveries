@@ -8,6 +8,73 @@ user-invocable: true
 
 Use this skill when producing plans that will be dispatched by the `@orchestrator` agent. Plans must be written as structured work units, not prose narratives.
 
+---
+
+## Default Workflow
+
+Every plan follows five phases in order. Do not skip phases or collapse them.
+
+```
+Discovery → Alignment → Draft → Workshop → Refinement
+```
+
+### Phase 1 — Discovery
+Explore the codebase to understand scope: read relevant files, run searches, identify affected modules. Do not start writing WUs yet.
+
+### Phase 2 — Alignment
+Confirm the goal with the user if anything is ambiguous. Ask only what is genuinely unclear — do not ask about things you can infer from the code. One round of questions maximum.
+
+### Phase 3 — Draft
+Produce a **plan outline** and present it to the user. The outline contains:
+- Plan title
+- WU list with ID, short label, and a one-line description of intent
+- Proposed dispatch order
+
+Show this outline explicitly so the user sees the overall shape. State clearly: "This is the skeleton — we'll confirm each WU in the next step." Do NOT write full Intent fields or owned-file lists yet. The draft is a skeleton, not the final plan.
+
+### Phase 4 — Workshop (default, no trigger required)
+After the draft is shown, automatically enter workshop. Walk through each WU for user confirmation before the plan is finalized.
+
+**Workshop loop:**
+1. Present WUs one at a time. Group tightly coupled WUs (e.g., two WUs that depend on each other's outputs) and present them together at the planner's discretion.
+2. For each WU (or group), show a **quick summary**:
+   - Title and ID
+   - 2–3 bullet points of key intent
+   - Owned files list
+3. Ask via `vscode_askQuestions` with three options: **Approve as-is**, **Request changes** (freeform), **Remove**.
+4. When you propose an approach, always offer at least one alternative. Don't just accept the first idea — push back on weak designs with a better option if one exists.
+5. Apply feedback immediately (update that WU's design) before moving to the next WU.
+6. When approved, mark the WU `Confirmed: yes` in the plan file.
+
+Do not advance past workshop until all WUs are either confirmed or removed.
+
+### Phase 5 — Refinement
+After workshop is complete, write the full plan file with all fields populated for confirmed WUs. Then output a brief post-workshop summary (see Plan Output Rules below). Do not output the full plan document to the user.
+
+---
+
+## Plan Output Rules
+
+After workshop, do **not** paste the full plan into the chat. Instead output only:
+
+1. **What changed during workshop** — a brief list of any WUs that were modified or removed based on user feedback.
+2. **Unconfirmed WUs** — list any WUs that are still `Confirmed: no` (should be empty if workshop completed, but name them if not).
+3. **Dispatch order** — the final ordered list of WUs with their IDs and labels.
+
+The plan file is the source of truth. The user has already seen every WU individually during workshop, so re-dumping the file is noise.
+
+---
+
+## Re-entry Trigger Phrases
+
+If the user says **"review"** or **"walk me through it"**:
+- If there are unconfirmed WUs, re-enter the workshop loop starting from the first unconfirmed WU.
+- If all WUs are confirmed, ask which WU they want to revisit and re-open workshop for that specific WU.
+
+Confirmed WUs are **not** re-presented automatically in subsequent workshop rounds. If the planner reworks the plan based on feedback and a confirmed WU is materially affected by the change, use judgment on whether to re-workshop it — default to not re-asking unless the change significantly alters that WU's scope, owned files, or approach.
+
+---
+
 ## Plan File Location
 
 Plans live in `/memories/repo/plans/active-plan.md` (Copilot memory, workspace-persistent, not in git). There must be exactly one active plan file — the orchestrator reads only this path.
@@ -16,7 +83,11 @@ Plans live in `/memories/repo/plans/active-plan.md` (Copilot memory, workspace-p
 - When a new plan is approved, **delete** the existing `active-plan.md` first, then create the new one. Do not create separate named plan files — the orchestrator will not discover them.
 - When all WUs in a plan are `done` and the orchestrator has completed integration, delete the plan file so a stale completed plan is not mistaken for active work.
 
+---
+
 ## Plan Structure
+
+The plan file is for orchestrator consumption and persistence, not for showing the user in bulk. Write it after workshop is complete.
 
 ```markdown
 # Plan: [Short Title]
@@ -25,6 +96,7 @@ Plans live in `/memories/repo/plans/active-plan.md` (Copilot memory, workspace-p
 
 ### WU-1: [Game/Area] — [Short description]
 - Status: not-started
+- Confirmed: yes | no
 - Depends on: none | WU-N
 - Thinking effort: low | medium | high
 - Owned files:
@@ -48,10 +120,15 @@ Sequential via runSubagent (orchestrator reviews between each):
 After all complete: [integration steps] → npm run test:local → commit → push.
 ```
 
+---
+
 ## Field Definitions
 
 ### Status
 One of: `not-started`, `in-progress`, `done`, `blocked`. Only the orchestrator updates status during dispatch.
+
+### Confirmed
+`yes` or `no`. Set to `yes` when the user approves the WU during workshop. Defaults to `no` in the draft. The orchestrator will not dispatch a WU with `Confirmed: no`.
 
 ### Depends on
 `none` or a WU ID like `WU-3`. WUs with no dependencies can be dispatched in any order. The Dispatch Order section makes the actual sequence explicit.
@@ -82,6 +159,8 @@ The most critical field. This is what the orchestrator enriches into the sub-age
 - **Outcome-oriented** — Describe what the code should do when the WU is complete, not just what to change.
 - **Bounded** — If the WU has sub-tasks, number them (e.g., "(1) Replace types. (2) Add problem generator. (3) Rewrite state machine."). This helps the sub-agent track its own progress.
 
+---
+
 ## Scoping Guidelines
 
 ### How to draw WU boundaries
@@ -95,6 +174,8 @@ A refactor where types → state → renderer all depend on each other should be
 
 ### Shared files
 Files used by multiple games or the build system (`package.json`, `build.ts`, `app/routes.ts`, `app/router.ts`, `app/ui/document.tsx`, `public/styles/main.css`) should NOT appear in any WU's owned set. Changes to shared files go in `Deferred shared edits` and are applied by the orchestrator.
+
+---
 
 ## Embedding Project Constraints
 
@@ -112,6 +193,8 @@ The plan's Intent fields must embed the relevant project constraints from the re
 - **Motion**: Respect `isReducedMotion()`, CSS-first animation with JS promise wrappers
 
 Don't dump all constraints into every WU. Include only those relevant to the WU's scope.
+
+---
 
 ## Dispatch Order Section
 

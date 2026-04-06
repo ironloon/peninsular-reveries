@@ -98,7 +98,7 @@ function getVerticalPlacementOffset(item: Pick<SceneItem, 'zone' | 'scale' | 'yO
     return item.yOffset ?? 0
   }
 
-  return Math.max(0, (item.scale ?? 1) - 1) * 10 + (item.yOffset ?? 0)
+  return Math.max(0, (item.scale ?? 1) - 1) * 15 + (item.yOffset ?? 0)
 }
 
 export function positionItemY(baseY: number, item: Pick<SceneItem, 'zone' | 'scale' | 'yOffset'>): number {

@@ -125,17 +125,26 @@ test.describe('SITE-01: Responsive layout', () => {
 
     expect(startFits).toBe(true);
 
-    await page.getByRole('button', { name: /begin countdown/i }).click();
-    await expect(page.locator('#mission-screen')).toHaveClass(/active/);
+    await page.getByRole('button', { name: /begin mission/i }).click();
+    await expect(page.locator('#game-screen')).toHaveClass(/active/);
+
+    // Wait for the interaction phase so tap-btn becomes visible
+    await page.waitForFunction(
+      () => {
+        const btn = document.getElementById('tap-btn');
+        return btn && !btn.hasAttribute('hidden');
+      },
+      { timeout: 8000 }
+    );
 
     const controlsFit = await page.evaluate(() => {
-      const stage = document.getElementById('mission-stage-shell');
-      const actionButton = document.getElementById('mission-action-btn');
-      if (!stage || !actionButton) return false;
+      const narrativePane = document.getElementById('narrative-pane');
+      const tapBtn = document.getElementById('tap-btn');
+      if (!narrativePane || !tapBtn) return false;
 
-      const stageRect = stage.getBoundingClientRect();
-      const actionRect = actionButton.getBoundingClientRect();
-      return stageRect.height >= 140 && actionRect.bottom <= window.innerHeight;
+      const narrativeRect = narrativePane.getBoundingClientRect();
+      const tapRect = tapBtn.getBoundingClientRect();
+      return narrativeRect.height >= 80 && tapRect.bottom <= window.innerHeight;
     });
 
     expect(controlsFit).toBe(true);

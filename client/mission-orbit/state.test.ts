@@ -1,136 +1,213 @@
-import assert from 'node:assert/strict'
-import test from 'node:test'
+import { strictEqual, ok } from 'node:assert/strict'
+import { describe, test } from 'node:test'
 import {
-  advancePhase,
-  endBriefing,
-  getMissionStepLabel,
-  isRecoveryActionReady,
-  resolveHoldRelease,
-  resolveNarrativePhase,
-  setActionHeld,
-  startMission,
-  tickClock,
-  updateCountdown,
-  updateHoldProgress,
-} from './state'
+  advanceScenePhase,
+  advanceToNextScene,
+  createInitialState,
+  handleHoldEnd,
+  handleHoldStart,
+  handleTap,
+  isMissionComplete,
+  isSceneComplete,
+  tickState,
+} from './state.js'
+import { SCENES } from './types.js'
+import type { MissionState } from './types.js'
 
-test('mission starts in countdown with the Artemis II crew and correct step label', () => {
-  let state = startMission()
-  assert.equal(state.phase, 'countdown')
-  assert.equal(getMissionStepLabel(state), 'Step 1 / 10')
-  assert.deepEqual(
-    state.crew.map((crew) => crew.name),
-    ['Reid Wiseman', 'Victor Glover', 'Christina Koch', 'Jeremy Hansen'],
-  )
-
-  state = tickClock(state, 1000)
-  state = updateCountdown(state)
-  assert.equal(state.countdownValue, 9)
-
-  state = advancePhase(state)
-  assert.equal(state.phase, 'launch')
-  assert.equal(getMissionStepLabel(state), 'Step 2 / 10')
+describe('createInitialState', () => {
+  test('returns correct initial values', () => {
+    const s = createInitialState()
+    strictEqual(s.sceneIndex, 0)
+    strictEqual(s.scenePhase, 'briefing')
+    strictEqual(s.tapCount, 0)
+    strictEqual(s.tapTarget, SCENES[0].tapTarget ?? 1)
+    strictEqual(s.holdProgress, 0)
+    strictEqual(s.holdActive, false)
+    strictEqual(s.interactionComplete, false)
+    strictEqual(s.elapsedMs, 0)
+    strictEqual(s.transitionMs, 0)
+  })
 })
 
-test('launch progress stays frozen during briefing and resolves after a full hold', () => {
-  let state = advancePhase(startMission())
-  assert.equal(state.phase, 'launch')
-  assert.equal(state.briefingActive, true)
+describe('handleTap', () => {
+  test('tap-fast increments tapCount', () => {
+    // scene 0 is tap-fast with tapTarget 20
+    let s = createInitialState()
+    s = { ...s, scenePhase: 'interaction' }
+    s = handleTap(s)
+    strictEqual(s.tapCount, 1)
+    strictEqual(s.interactionComplete, false)
+  })
 
-  const briefingClock = tickClock(state, 900)
-  const frozenProgress = updateHoldProgress(briefingClock, 900)
-  assert.equal(frozenProgress.holdProgress, 0)
+  test('tap-fast completes at tapTarget', () => {
+    let s = createInitialState()
+    s = { ...s, scenePhase: 'interaction', tapCount: 19 }
+    s = handleTap(s)
+    strictEqual(s.tapCount, 20)
+    strictEqual(s.interactionComplete, true)
+  })
 
-  state = endBriefing(briefingClock)
-  assert.equal(state.briefingActive, false)
-  assert.equal(state.phaseElapsedMs, 0)
+  test('tap-single completes immediately', () => {
+    // scene 2 (orbit-insertion) is tap-single
+    let s = createInitialState()
+    s = { ...s, sceneIndex: 2, scenePhase: 'interaction', tapTarget: 1 }
+    s = handleTap(s)
+    strictEqual(s.interactionComplete, true)
+  })
 
-  state = setActionHeld(state, true)
-  state = updateHoldProgress(state, 2600)
-  assert.equal(state.holdProgress, 1)
-
-  state = resolveHoldRelease(state)
-  assert.equal(state.phaseResolved, true)
-  assert.equal(state.burnResults.length, 0)
-  assert.match(state.outcomeText, /Orbit reached/)
+  test('tap is ignored outside interaction phase', () => {
+    const s = createInitialState()
+    // scenePhase is 'briefing' by default
+    const after = handleTap(s)
+    strictEqual(after.tapCount, 0)
+    strictEqual(after.interactionComplete, false)
+  })
 })
 
-test('narrative phases resolve with mission-log outcomes instead of timing scores', () => {
-  let state = startMission()
-  state = advancePhase(state)
-  state = endBriefing(state)
-  state = setActionHeld(state, true)
-  state = updateHoldProgress(state, 2600)
-  state = resolveHoldRelease(state)
+describe('handleHoldStart / handleHoldEnd', () => {
+  test('holdActive becomes true on holdStart', () => {
+    let s = createInitialState()
+    s = { ...s, sceneIndex: 1, scenePhase: 'interaction' }
+    s = handleHoldStart(s)
+    strictEqual(s.holdActive, true)
+  })
 
-  state = advancePhase(state)
-  assert.equal(state.phase, 'orbit-insertion')
-  assert.equal(state.briefingActive, true)
+  test('holdActive becomes false on holdEnd', () => {
+    let s = createInitialState()
+    s = { ...s, sceneIndex: 1, scenePhase: 'interaction', holdActive: true }
+    s = handleHoldEnd(s)
+    strictEqual(s.holdActive, false)
+  })
 
-  state = endBriefing(state)
-  state = resolveNarrativePhase(state)
-
-  assert.equal(state.phaseResolved, true)
-  assert.equal(state.burnResults.length, 0)
-  assert.match(state.outcomeText, /Orbit set/)
+  test('holdStart is ignored outside interaction phase', () => {
+    let s = createInitialState()
+    // scenePhase is 'briefing'
+    s = handleHoldStart(s)
+    strictEqual(s.holdActive, false)
+  })
 })
 
-test('mid-mission hold phases resolve and set their completion flags', () => {
-  let state = startMission()
+describe('tickState — hold progress', () => {
+  test('holdProgress increases while holdActive', () => {
+    // scene 1 (ascent) is hold, holdDurationMs: 3000
+    let s = createInitialState()
+    s = { ...s, sceneIndex: 1, scenePhase: 'interaction', holdActive: true }
+    s = tickState(s, 1500)
+    ok(s.holdProgress > 0, 'holdProgress should be > 0')
+    ok(s.holdProgress <= 0.5 + 0.01, 'holdProgress should be ~0.5')
+    strictEqual(s.interactionComplete, false)
+  })
 
-  while (state.phase !== 'trans-lunar-injection') {
-    state = advancePhase(state)
-  }
+  test('holdProgress reaches 1 and marks interactionComplete', () => {
+    let s = createInitialState()
+    s = { ...s, sceneIndex: 1, scenePhase: 'interaction', holdActive: true }
+    s = tickState(s, 3000)
+    strictEqual(s.holdProgress, 1)
+    strictEqual(s.interactionComplete, true)
+    strictEqual(s.holdActive, false)
+  })
 
-  state = endBriefing(state)
-  state = setActionHeld(state, true)
-  state = updateHoldProgress(state, 2200)
-  state = resolveHoldRelease(state)
-  assert.match(state.outcomeText, /Transfer burn complete/)
-
-  state = advancePhase(state)
-  while (state.phase !== 'service-module-jettison') {
-    state = advancePhase(state)
-  }
-
-  state = endBriefing(state)
-  state = setActionHeld(state, true)
-  state = updateHoldProgress(state, 1700)
-  state = resolveHoldRelease(state)
-  assert.equal(state.serviceModuleDetached, true)
-
-  state = advancePhase(state)
-  assert.equal(state.phase, 'parachute-deploy')
-  state = endBriefing(state)
-  state = setActionHeld(state, true)
-  state = updateHoldProgress(state, 1800)
-  state = resolveHoldRelease(state)
-  assert.equal(state.parachuteDeployed, true)
+  test('holdProgress decays when not holding', () => {
+    let s = createInitialState()
+    s = { ...s, sceneIndex: 1, scenePhase: 'interaction', holdProgress: 0.5, holdActive: false }
+    s = tickState(s, 100)
+    ok(s.holdProgress < 0.5, 'holdProgress should decay when not holding')
+  })
 })
 
-test('recovery phase becomes manually completable only after the boat reaches the capsule', () => {
-  let state = startMission()
+describe('tickState — briefing auto-advance', () => {
+  test('briefing advances to cinematic after 2500ms', () => {
+    let s = createInitialState()
+    strictEqual(s.scenePhase, 'briefing')
+    s = tickState(s, 2500)
+    strictEqual(s.scenePhase, 'cinematic')
+    strictEqual(s.elapsedMs, 0)
+  })
 
-  while (state.phase !== 'splashdown') {
-    state = advancePhase(state)
-  }
-
-  state = endBriefing(state)
-  assert.equal(isRecoveryActionReady(state), false)
-
-  state = tickClock(state, 6499)
-  assert.equal(isRecoveryActionReady(state), false)
-
-  state = tickClock(state, 1)
-  assert.equal(isRecoveryActionReady(state), true)
+  test('briefing does not advance before 2500ms', () => {
+    let s = createInitialState()
+    s = tickState(s, 2499)
+    strictEqual(s.scenePhase, 'briefing')
+  })
 })
 
-test('phase advancement can still reach the celebration screen', () => {
-  let state = startMission()
+describe('isSceneComplete / isMissionComplete', () => {
+  test('isSceneComplete returns false initially', () => {
+    const s = createInitialState()
+    strictEqual(isSceneComplete(s), false)
+  })
 
-  while (state.phase !== 'celebration') {
-    state = advancePhase(state)
-  }
+  test('isSceneComplete returns true when interactionComplete', () => {
+    const s = { ...createInitialState(), interactionComplete: true }
+    strictEqual(isSceneComplete(s), true)
+  })
 
-  assert.equal(state.missionComplete, true)
+  test('isMissionComplete returns false on first scene', () => {
+    const s = { ...createInitialState(), interactionComplete: true }
+    strictEqual(isMissionComplete(s), false)
+  })
+
+  test('isMissionComplete returns true on last scene with interactionComplete', () => {
+    const s = { ...createInitialState(), sceneIndex: SCENES.length - 1, interactionComplete: true }
+    strictEqual(isMissionComplete(s), true)
+  })
+})
+
+describe('advanceToNextScene', () => {
+  test('increments sceneIndex and resets tap/progress fields', () => {
+    let s = createInitialState()
+    s = { ...s, tapCount: 5, holdProgress: 0.3, interactionComplete: true }
+    s = advanceToNextScene(s)
+    strictEqual(s.sceneIndex, 1)
+    strictEqual(s.scenePhase, 'briefing')
+    strictEqual(s.tapCount, 0)
+    strictEqual(s.holdProgress, 0)
+    strictEqual(s.interactionComplete, false)
+    strictEqual(s.elapsedMs, 0)
+    strictEqual(s.transitionMs, 0)
+  })
+
+  test('tapTarget is set to next scene tapTarget', () => {
+    let s = createInitialState()
+    s = advanceToNextScene(s)
+    const expectedTarget = SCENES[1].tapTarget ?? 1
+    strictEqual(s.tapTarget, expectedTarget)
+  })
+
+  test('stays on last scene and marks complete when past end', () => {
+    let s = createInitialState()
+    s = { ...s, sceneIndex: SCENES.length - 1 }
+    s = advanceToNextScene(s)
+    strictEqual(s.sceneIndex, SCENES.length - 1)
+    strictEqual(s.interactionComplete, true)
+    strictEqual(s.scenePhase, 'transition')
+  })
+})
+
+describe('advanceScenePhase', () => {
+  test('briefing → cinematic', () => {
+    let s = createInitialState()
+    s = advanceScenePhase(s)
+    strictEqual(s.scenePhase, 'cinematic')
+    strictEqual(s.elapsedMs, 0)
+  })
+
+  test('cinematic → interaction', () => {
+    let s: MissionState = { ...createInitialState(), scenePhase: 'cinematic' as const }
+    s = advanceScenePhase(s)
+    strictEqual(s.scenePhase, 'interaction')
+  })
+
+  test('interaction → transition', () => {
+    let s: MissionState = { ...createInitialState(), scenePhase: 'interaction' as const }
+    s = advanceScenePhase(s)
+    strictEqual(s.scenePhase, 'transition')
+  })
+
+  test('transition → next scene briefing', () => {
+    let s: MissionState = { ...createInitialState(), scenePhase: 'transition' as const }
+    s = advanceScenePhase(s)
+    strictEqual(s.scenePhase, 'briefing')
+    strictEqual(s.sceneIndex, 1)
+  })
 })

@@ -79,24 +79,37 @@ export function animateHippoChomp(
   })
 }
 
-export function animateCorrectFeedback(itemEl: HTMLElement): Promise<void> {
-  if (isReducedMotion()) return Promise.resolve()
+export function animateCorrectFeedback(el: HTMLElement): void {
+  if (isReducedMotion()) return
 
-  return new Promise<void>((resolve) => {
-    itemEl.classList.add('item-correct')
+  const rect = el.getBoundingClientRect()
+  const cx = rect.left + rect.width / 2
+  const cy = rect.top + rect.height / 2
 
-    const sparkle = document.createElement('span')
-    sparkle.textContent = '✨'
-    sparkle.setAttribute('aria-hidden', 'true')
-    sparkle.className = 'item-sparkle'
-    itemEl.appendChild(sparkle)
+  const colors = ['#FFD54F', '#8BC34A', '#F06292', '#4FC3F7', '#FF8A65', '#CE93D8']
+  const count = 6
+  const particles: HTMLDivElement[] = []
 
-    window.setTimeout(() => {
-      itemEl.classList.remove('item-correct')
-      sparkle.remove()
-      resolve()
-    }, 500)
-  })
+  for (let i = 0; i < count; i++) {
+    const angle = (i / count) * Math.PI * 2
+    const dist = 36 + Math.random() * 20
+    const dx = Math.round(Math.cos(angle) * dist)
+    const dy = Math.round(Math.sin(angle) * dist)
+
+    const p = document.createElement('div')
+    p.className = 'confetti-particle'
+    p.style.left = `${cx - 4}px`
+    p.style.top = `${cy - 4}px`
+    p.style.backgroundColor = colors[i % colors.length]
+    p.style.setProperty('--dx', `${dx}px`)
+    p.style.setProperty('--dy', `${dy}px`)
+    document.body.appendChild(p)
+    particles.push(p)
+  }
+
+  window.setTimeout(() => {
+    for (const p of particles) p.remove()
+  }, 600)
 }
 
 export function animateWrongFeedback(itemEl: HTMLElement): Promise<void> {
@@ -184,4 +197,32 @@ export function pulseElement(element: HTMLElement, className: string, durationMs
   })
 
   pulseFrames.set(element, frame)
+}
+
+// ── Frenzy NPC animations ─────────────────────────────────────────────────────
+
+export function animateNpcChomp(npcId: string, targetEl: HTMLElement | null): void {
+  const npcEl = document.getElementById(npcId)
+  if (npcEl) {
+    npcEl.classList.remove('chomping')
+    void npcEl.offsetWidth // force reflow to restart animation
+    npcEl.classList.add('chomping')
+    window.setTimeout(() => npcEl.classList.remove('chomping'), 400)
+  }
+
+  if (targetEl) {
+    targetEl.classList.remove('shrink-claimed')
+    void targetEl.offsetWidth
+    targetEl.classList.add('shrink-claimed')
+    window.setTimeout(() => targetEl.classList.remove('shrink-claimed'), 300)
+  }
+}
+
+export function animateNpcDisappointed(npcId: string): void {
+  const npcEl = document.getElementById(npcId)
+  if (!npcEl) return
+  npcEl.classList.remove('disappointed')
+  void npcEl.offsetWidth
+  npcEl.classList.add('disappointed')
+  window.setTimeout(() => npcEl.classList.remove('disappointed'), 600)
 }

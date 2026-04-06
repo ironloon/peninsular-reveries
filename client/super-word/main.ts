@@ -367,5 +367,6 @@ for (const button of musicToggleButtons) {
 }
 
 document.addEventListener('visibilitychange', syncMusicPlayback)
+document.addEventListener('restart', () => { onPlayAgain() })
 
 showScreen('start-screen')

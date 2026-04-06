@@ -380,7 +380,7 @@
   z-index: 1;
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
+  gap: clamp(0.4rem, 1.5vw, 1rem);
   align-items: start;
 }
 

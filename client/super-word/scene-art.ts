@@ -178,7 +178,7 @@ export const LETTER_ART: Partial<Record<string, readonly ItemArt[]>> = {
 export const DISTRACTOR_ART: readonly ItemArt[] = [
   { emoji: '🦋', label: 'Butterfly', zone: 'sky', scale: 0.74, themes: ['animals', 'nature'] },
   { emoji: '🌷', label: 'Tulip', zone: 'ground', scale: 0.84, themes: ['nature'] },
-  { emoji: '🏰', label: 'Castle', zone: 'ground', scale: 1.38, yOffset: 1.5, themes: ['play', 'travel'] },
+  { emoji: '🏰', label: 'Castle', zone: 'ground', scale: 2.2, yOffset: 4.0, themes: ['play', 'travel'] },
   { emoji: '🏔️', label: 'Mountain', zone: 'ground', scale: 1.48, yOffset: 2.5, themes: ['nature', 'travel'] },
   { emoji: '🐢', label: 'Turtle', zone: 'ground', scale: 0.9, themes: ['animals', 'water'] },
   { emoji: '🎆', label: 'Fireworks', zone: 'sky', scale: 0.88, themes: ['play', 'sky'] },

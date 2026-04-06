@@ -1,8 +1,20 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { createInitialState, selectAnswer, resolveChomp, advanceRound, resetGame } from './state'
+import {
+  createInitialState,
+  selectAnswer,
+  resolveChomp,
+  advanceRound,
+  resetGame,
+  createNpcHippos,
+  npcSelectTarget,
+  tickNpcProgress,
+  updateAdaptiveDifficulty,
+  tickRoundTimer,
+  resolveFrenzyRound,
+} from './state'
 import { POINTS_FOR_AREA, SCENE_ITEM_COUNTS, START_LIVES, TOTAL_ROUNDS } from './types'
-import type { Area, AreaLevel } from './types'
+import type { Area, AreaLevel, FrenzyConfig, FrenzyState } from './types'
 
 const SEED = 0xc0ffee
 
@@ -19,7 +31,8 @@ test('createInitialState produces valid initial state', () => {
   assert.equal(state.correctCount, 0)
   assert.equal(state.area, 'addition')
   assert.equal(state.level, 1)
-  assert.ok(!('mode' in state), 'state should not have mode')
+  assert.equal(state.mode, 'normal')
+  assert.equal(state.frenzy, null)
   assert.ok(!('difficulty' in state), 'state should not have difficulty')
   assert.equal(state.sceneItems.length, SCENE_ITEM_COUNTS['addition'])
   assert.ok(state.sceneItems.some((item) => item.isCorrect), 'Expected at least one correct item')
@@ -159,5 +172,180 @@ test('area: matching initial state has a find-N prompt and no countingObjects', 
   assert.equal(state.area, 'matching')
   assert.match(state.currentProblem.prompt, /^Find \d+$/)
   assert.equal(state.currentProblem.countingObjects, undefined)
+})
+
+// ── Frenzy tests ──────────────────────────────────────────────────────────────
+
+const ffaConfig: FrenzyConfig = {
+  npcCount: 1,
+  teamMode: 'ffa',
+  playerColor: '#FF6B6B',
+  npcColors: ['#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD'],
+}
+
+const teamConfig: FrenzyConfig = {
+  npcCount: 3,
+  teamMode: 'team',
+  playerColor: '#FF6B6B',
+  npcColors: ['#4ECDC4', '#45B7D1', '#96CEB4'],
+}
+
+function makeFrenzyState(overrides?: Partial<FrenzyState>): FrenzyState {
+  const npcs = createNpcHippos(ffaConfig)
+  return {
+    config: ffaConfig,
+    npcs,
+    roundTimer: 8000,
+    roundTimerMax: 8000,
+    adaptiveDifficulty: 1.0,
+    playerAnswerTimes: [],
+    playerWins: [],
+    teamScores: { a: 0, b: 0 },
+    ...overrides,
+  }
+}
+
+test('createNpcHippos: count=1 creates 1 NPC at correct position', () => {
+  const npcs = createNpcHippos(ffaConfig)
+  assert.equal(npcs.length, 1)
+  assert.equal(npcs[0].position.x, 80)
+  assert.equal(npcs[0].position.y, 85)
+  assert.equal(npcs[0].accuracy, 0.75)
+  assert.equal(npcs[0].startDelayMs, 200)
+  assert.equal(npcs[0].score, 0)
+  assert.equal(npcs[0].chompProgress, 0)
+  assert.equal(npcs[0].targetFruitIndex, null)
+})
+
+test('createNpcHippos: count=5 creates 5 NPCs', () => {
+  const config5: FrenzyConfig = { ...ffaConfig, npcCount: 5, npcColors: ['#a', '#b', '#c', '#d', '#e'] }
+  const npcs = createNpcHippos(config5)
+  assert.equal(npcs.length, 5)
+  assert.equal(npcs[0].position.x, 20)
+  assert.equal(npcs[4].position.x, 50)
+  assert.equal(npcs[4].startDelayMs, 1000)
+})
+
+test('createNpcHippos: FFA mode — all teamIds are null', () => {
+  const npcs = createNpcHippos(ffaConfig)
+  for (const npc of npcs) {
+    assert.equal(npc.teamId, null)
+  }
+})
+
+test('createNpcHippos: team mode — teamIds alternate starting with b', () => {
+  const npcs = createNpcHippos(teamConfig)
+  assert.equal(npcs.length, 3)
+  assert.equal(npcs[0].teamId, 'b')
+  assert.equal(npcs[1].teamId, 'a')
+  assert.equal(npcs[2].teamId, 'b')
+})
+
+test('npcSelectTarget: rng=0 (accurate) returns correct index', () => {
+  const npc = createNpcHippos(ffaConfig)[0]
+  const result = npcSelectTarget(npc, 6, 2, () => 0)
+  assert.equal(result.fruitIndex, 2)
+  assert.equal(result.isCorrect, true)
+})
+
+test('npcSelectTarget: rng=1 (inaccurate) returns non-correct index', () => {
+  const npc = createNpcHippos(ffaConfig)[0]
+  const result = npcSelectTarget(npc, 6, 2, () => 1)
+  assert.notEqual(result.fruitIndex, 2)
+  assert.equal(result.isCorrect, false)
+})
+
+test('tickNpcProgress: advances chompProgress when startDelay=0', () => {
+  const npc = { ...createNpcHippos(ffaConfig)[0], targetFruitIndex: 2, chompProgress: 0, startDelayMs: 0 }
+  const updated = tickNpcProgress(npc, 1000, 1.0)
+  // speed = 0.0004 / 1.0 = 0.0004; delta=1000 → progress = 0.4
+  assert.ok(Math.abs(updated.chompProgress - 0.4) < 1e-9)
+  assert.equal(updated.startDelayMs, 0)
+})
+
+test('tickNpcProgress: no movement while startDelay > 0', () => {
+  const npc = { ...createNpcHippos(ffaConfig)[0], targetFruitIndex: 2, chompProgress: 0, startDelayMs: 500 }
+  const updated = tickNpcProgress(npc, 200, 1.0)
+  assert.equal(updated.chompProgress, 0)
+  assert.equal(updated.startDelayMs, 300)
+})
+
+test('updateAdaptiveDifficulty: >70% wins decreases difficulty', () => {
+  const base = makeFrenzyState({ adaptiveDifficulty: 1.0, playerWins: [1, 1, 1, 1, 1, 1, 1, 1, 0, 0] })
+  const newDiff = updateAdaptiveDifficulty(base)
+  assert.ok(Math.abs(newDiff - 0.95) < 1e-9, `Expected ~0.95, got ${newDiff}`)
+})
+
+test('updateAdaptiveDifficulty: <40% wins increases difficulty', () => {
+  const base = makeFrenzyState({ adaptiveDifficulty: 1.0, playerWins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1] })
+  const newDiff = updateAdaptiveDifficulty(base)
+  assert.ok(Math.abs(newDiff - 1.05) < 1e-9, `Expected ~1.05, got ${newDiff}`)
+})
+
+test('updateAdaptiveDifficulty: clamps at 1.5', () => {
+  const base = makeFrenzyState({ adaptiveDifficulty: 1.5, playerWins: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] })
+  const newDiff = updateAdaptiveDifficulty(base)
+  assert.equal(newDiff, 1.5)
+})
+
+test('tickRoundTimer: subtracts deltaMs', () => {
+  const frenzy = makeFrenzyState({ roundTimer: 5000 })
+  const updated = tickRoundTimer(frenzy, 1000)
+  assert.equal(updated.roundTimer, 4000)
+})
+
+test('tickRoundTimer: floors at 0', () => {
+  const frenzy = makeFrenzyState({ roundTimer: 200 })
+  const updated = tickRoundTimer(frenzy, 500)
+  assert.equal(updated.roundTimer, 0)
+})
+
+test('resolveFrenzyRound: player scores when correct and no NPC', () => {
+  const frenzy = makeFrenzyState()
+  const result = resolveFrenzyRound(frenzy, { fruitIndex: 1, isCorrect: true }, null)
+  assert.equal(result.playerScored, true)
+  assert.equal(result.npcScoredId, null)
+  assert.equal(result.penaltyLives, 0)
+  assert.equal(result.updatedFrenzy.playerWins[0], 1)
+})
+
+test('resolveFrenzyRound: NPC scores when NPC first', () => {
+  const npcs = createNpcHippos(ffaConfig)
+  const frenzy = makeFrenzyState({ npcs })
+  const result = resolveFrenzyRound(frenzy, null, 'npc-0')
+  assert.equal(result.playerScored, false)
+  assert.equal(result.npcScoredId, 'npc-0')
+  assert.equal(result.penaltyLives, 0)
+  const npc0 = result.updatedFrenzy.npcs.find((n) => n.id === 'npc-0')
+  assert.equal(npc0?.score, 1)
+  assert.equal(result.updatedFrenzy.playerWins[0], 0)
+})
+
+test('resolveFrenzyRound: timeout — no score, push 0 to playerWins', () => {
+  const frenzy = makeFrenzyState()
+  const result = resolveFrenzyRound(frenzy, null, null)
+  assert.equal(result.playerScored, false)
+  assert.equal(result.npcScoredId, null)
+  assert.equal(result.penaltyLives, 0)
+  assert.equal(result.updatedFrenzy.playerWins.length, 1)
+  assert.equal(result.updatedFrenzy.playerWins[0], 0)
+})
+
+test('resolveFrenzyRound: wrong answer gives penaltyLives=1', () => {
+  const frenzy = makeFrenzyState()
+  const result = resolveFrenzyRound(frenzy, { fruitIndex: 0, isCorrect: false }, null)
+  assert.equal(result.playerScored, false)
+  assert.equal(result.penaltyLives, 1)
+  assert.equal(result.updatedFrenzy.playerWins[0], 0)
+})
+
+test('resolveFrenzyRound: resets NPCs after round', () => {
+  const npcs = createNpcHippos(ffaConfig).map((n) => ({ ...n, chompProgress: 0.8, targetFruitIndex: 3 }))
+  const frenzy = makeFrenzyState({ npcs })
+  const result = resolveFrenzyRound(frenzy, { fruitIndex: 1, isCorrect: true }, null)
+  for (const npc of result.updatedFrenzy.npcs) {
+    assert.equal(npc.chompProgress, 0)
+    assert.equal(npc.targetFruitIndex, null)
+  }
 })
 

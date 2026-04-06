@@ -151,3 +151,69 @@ export const fourOhFourLinkStyles = {
   display: 'inline-block',
   marginTop: 'var(--space-lg)',
 }
+
+export const gameHeaderStyles = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: 'clamp(0.3rem, 1vw, 0.6rem)',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  '& > *': {
+    flexShrink: 1,
+    minWidth: 0,
+  },
+  '@media (max-width: 420px)': {
+    gap: '0.2rem 0.3rem',
+  },
+}
+
+export const gameHeaderPillStyles = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '0.25rem',
+  fontSize: '0.78rem',
+  lineHeight: 1.2,
+  padding: '0.18rem 0.5rem',
+  borderRadius: '9999px',
+  background: 'rgba(255, 255, 255, 0.07)',
+  minWidth: 0,
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  '@media (max-width: 420px)': {
+    fontSize: '0.7rem',
+    padding: '0.14rem 0.38rem',
+  },
+}
+
+export const settingsSectionStyles = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.5rem',
+}
+
+export const settingsToggleStyles = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '0.5rem',
+  flexWrap: 'wrap',
+  minWidth: 0,
+  cursor: 'pointer',
+  '@media (max-width: 420px)': {
+    gap: '0.25rem',
+  },
+}
+
+export const settingsActionsStyles = {
+  display: 'flex',
+  gap: '0.5rem',
+  flexWrap: 'wrap',
+  alignItems: 'center',
+  '@media (max-width: 420px)': {
+    flexDirection: 'column',
+    alignItems: 'stretch' as const,
+    gap: '0.4rem',
+  },
+}

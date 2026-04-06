@@ -6,6 +6,32 @@
 - Pixel Passport vehicles in [client/pixel-passport/art.ts](../../../../client/pixel-passport/art.ts) use `10x6` rows.
 - Small reusable sprites usually stay readable between `8x8` and `12x12`.
 
+## Per-Size Example Commands
+
+```sh
+# 20×14 (Pixel Passport destination)
+npm run generate:pixel-art -- --emoji 🗼 --name eiffel-tower --width 20 --height 14
+
+# 10×6 (compact icon)
+npm run generate:pixel-art -- --emoji 🚀 --name rocket --width 10 --height 6
+
+# 12×12 (square sprite)
+npm run generate:pixel-art -- --emoji 🌍 --name earth --width 12 --height 12 --max-colors 4
+```
+
+## Problematic Emoji Categories
+
+These categories reliably produce poor results and should be avoided or require extra cleanup:
+
+| Category | Problem |
+|---|---|
+| Flags | Rectangular, no silhouette — auto-crop fails |
+| Faces at 16×16 | Fine gradients collapse into dominant skin tone, loses expression |
+| Skin-tone ZWJ sequences | Unexpected alpha blending muddles k-means |
+| Text / keycap sequences | Downsampling destroys legibility |
+
+**Tip:** For soft-edged emoji with feathered outlines, add `--alpha-threshold 0.30` to reduce edge noise.
+
 ## Tuning Levers
 
 - Raise `--alpha-threshold` when anti-aliased fringe pixels look muddy.

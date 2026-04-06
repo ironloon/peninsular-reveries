@@ -4,20 +4,42 @@ export function isReducedMotion(): boolean {
   return isReducedMotionEnabled()
 }
 
-export function pulseElement(element: HTMLElement, className: string, durationMs: number = 420): Promise<void> {
+export function triggerFadeIn(el: HTMLElement): void {
+  if (isReducedMotion()) return
+  el.classList.remove('fade-in', 'fade-out')
+  void el.offsetWidth
+  el.classList.add('fade-in')
+}
+
+export function triggerFadeOut(el: HTMLElement, onDone?: () => void): void {
   if (isReducedMotion()) {
-    element.classList.remove(className)
-    return Promise.resolve()
+    onDone?.()
+    return
   }
+  el.classList.remove('fade-in', 'fade-out')
+  void el.offsetWidth
+  el.classList.add('fade-out')
+  if (onDone) {
+    el.addEventListener('animationend', () => onDone(), { once: true })
+  }
+}
 
-  element.classList.remove(className)
-  void element.offsetWidth
-  element.classList.add(className)
+export function triggerTapPulse(el: HTMLElement): void {
+  if (isReducedMotion()) return
+  el.classList.remove('tap-pulse')
+  void el.offsetWidth
+  el.classList.add('tap-pulse')
+  el.addEventListener('animationend', () => el.classList.remove('tap-pulse'), { once: true })
+}
 
-  return new Promise((resolve) => {
-    window.setTimeout(() => {
-      element.classList.remove(className)
-      resolve()
-    }, durationMs)
-  })
+export function triggerHoldGlow(el: HTMLElement, active: boolean): void {
+  el.classList.toggle('hold-glow', active)
+}
+
+export function triggerCompletionFlash(el: HTMLElement): void {
+  if (isReducedMotion()) return
+  el.classList.remove('completion-flash')
+  void el.offsetWidth
+  el.classList.add('completion-flash')
+  el.addEventListener('animationend', () => el.classList.remove('completion-flash'), { once: true })
 }

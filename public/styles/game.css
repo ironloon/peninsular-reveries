@@ -423,15 +423,10 @@ body.gamepad-active .music-toggle-btn:focus {
 }
 
 .game-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   padding: var(--game-space-sm) var(--game-space-md);
   background: var(--game-purple-dark);
   color: var(--game-white);
   width: 100%;
-  flex-wrap: wrap;
-  gap: var(--game-space-xs) var(--game-space-sm);
 }
 
 .game-header-left,
@@ -451,11 +446,6 @@ body.gamepad-active .music-toggle-btn:focus {
   flex: 0 0 auto;
   flex-wrap: nowrap;
   min-width: 0;
-}
-
-.game-header-left > *,
-.game-header-right > * {
-  white-space: nowrap;
 }
 
 .puzzle-counter {

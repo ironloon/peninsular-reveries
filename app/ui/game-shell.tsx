@@ -1,4 +1,5 @@
 import { css, type RemixNode } from 'remix/component'
+import { gameHeaderStyles, gameHeaderPillStyles, settingsSectionStyles, settingsToggleStyles, settingsActionsStyles } from './site-styles.js'
 
 type StyleObject = Parameters<typeof css>[0]
 
@@ -171,6 +172,119 @@ export function SrOnly() {
       >
         {children}
       </Tag>
+    )
+  }
+}
+
+const gameHeaderSlotStyles = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 'clamp(0.3rem, 1vw, 0.6rem)',
+  flexShrink: 1,
+  minWidth: 0,
+  flexWrap: 'wrap',
+}
+
+interface GameHeaderProps {
+  leftContent: RemixNode
+  rightContent: RemixNode
+  className?: string
+  headingId?: string
+}
+
+export function GameHeader() {
+  return (props: GameHeaderProps) => {
+    const { leftContent, rightContent, className, headingId } = props
+    return (
+      <header
+        className={className}
+        aria-labelledby={headingId}
+        mix={[css(gameHeaderStyles)]}
+      >
+        <div mix={[css(gameHeaderSlotStyles)]}>{leftContent}</div>
+        <div mix={[css(gameHeaderSlotStyles)]}>{rightContent}</div>
+      </header>
+    )
+  }
+}
+
+interface GameHeaderPillProps {
+  icon?: RemixNode
+  label?: string
+  value: RemixNode
+  className?: string
+}
+
+export function GameHeaderPill() {
+  return (props: GameHeaderPillProps) => {
+    const { icon, label, value, className } = props
+    return (
+      <span className={className} mix={[css(gameHeaderPillStyles)]}>
+        {label ? <span mix={[css(srOnlyStyles)]}>{label}: </span> : null}
+        {icon ? <span aria-hidden="true">{icon}</span> : null}
+        <span>{value}</span>
+      </span>
+    )
+  }
+}
+
+interface SettingsSectionProps {
+  title: string
+  children: RemixNode
+}
+
+export function SettingsSection() {
+  return (props: SettingsSectionProps) => {
+    const { title, children } = props
+    return (
+      <section className="settings-section" mix={[css(settingsSectionStyles)]}>
+        <h3 className="settings-section-title">{title}</h3>
+        {children}
+      </section>
+    )
+  }
+}
+
+interface SettingsToggleProps {
+  id: string
+  label: string
+  helpText?: string
+  helpId?: string
+  defaultChecked?: boolean
+}
+
+export function SettingsToggle() {
+  return (props: SettingsToggleProps) => {
+    const { id, label, helpText, helpId, defaultChecked } = props
+    return (
+      <div className="settings-toggle-group">
+        <label className="settings-toggle-row" htmlFor={id} mix={[css(settingsToggleStyles)]}>
+          <span>{label}</span>
+          <input type="checkbox" id={id} checked={defaultChecked} aria-describedby={helpId} />
+        </label>
+        {helpText ? <p id={helpId} className="settings-help">{helpText}</p> : null}
+      </div>
+    )
+  }
+}
+
+interface SettingsActionsProps {
+  quitHref: string
+  showRestart?: boolean
+  quitClassName?: string
+}
+
+export function SettingsActions() {
+  return (props: SettingsActionsProps) => {
+    const { quitHref, showRestart = true, quitClassName } = props
+    return (
+      <div className="settings-actions" mix={[css(settingsActionsStyles)]}>
+        {showRestart ? (
+          <button id="restart-btn" type="button" className="settings-restart-btn">Restart</button>
+        ) : null}
+        <a href={quitHref} className={['settings-quit-link', quitClassName].filter(Boolean).join(' ')}>Quit</a>
+        <button id="settings-close-btn" type="button" className="settings-close-btn">Close</button>
+      </div>
     )
   }
 }

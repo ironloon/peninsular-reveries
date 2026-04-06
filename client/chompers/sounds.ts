@@ -233,3 +233,155 @@ export function sfxGameOver(): void {
   playTone(165, 0.22, 'triangle', layered ? 0.035 : 0.07, 0.08)
   playTone(131, 0.3, 'triangle', layered ? 0.03 : 0.06, 0.18)
 }
+
+// ── Frenzy sounds ──────────────────────────────────────────────────────────────
+
+function getMusicEnabled(): boolean {
+  return true // no music toggle in Chompers yet; wired for future use
+}
+
+const PENTATONIC_FREQS = [261, 294, 329, 392, 440] as const
+const FRENZY_MELODY = [0, 2, 3, 4, 3, 2, 1, 2, 0, 2, 4, 3, 4, 3, 2, 1] as const
+const BEAT_DUR = 0.25 // 8th note at 120 BPM
+const SCHEDULE_AHEAD = 0.1 // schedule this many seconds ahead
+const SCHEDULE_INTERVAL = 25 // ms between scheduler checks
+
+let frenzyMusicActive = false
+let frenzyMusicScheduler: number | null = null
+let frenzyNextNoteTime = 0
+let frenzyNoteIndex = 0
+
+function scheduleFrenzyNote(context: AudioContext): void {
+  const freq = PENTATONIC_FREQS[FRENZY_MELODY[frenzyNoteIndex % FRENZY_MELODY.length]]
+  const noteTime = frenzyNextNoteTime
+
+  const osc = context.createOscillator()
+  const gain = context.createGain()
+  osc.type = 'sine'
+  osc.frequency.setValueAtTime(freq, noteTime)
+  gain.gain.setValueAtTime(0.0001, noteTime)
+  gain.gain.linearRampToValueAtTime(0.08, noteTime + 0.01)
+  gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + BEAT_DUR * 0.85)
+  osc.connect(gain)
+  gain.connect(getOutput(context))
+  osc.start(noteTime)
+  osc.stop(noteTime + BEAT_DUR)
+
+  // Triangle bass on every 4th note (beat)
+  if (frenzyNoteIndex % 4 === 0) {
+    const bassOsc = context.createOscillator()
+    const bassGain = context.createGain()
+    bassOsc.type = 'triangle'
+    bassOsc.frequency.setValueAtTime(freq / 2, noteTime)
+    bassGain.gain.setValueAtTime(0.0001, noteTime)
+    bassGain.gain.linearRampToValueAtTime(0.05, noteTime + 0.01)
+    bassGain.gain.exponentialRampToValueAtTime(0.0001, noteTime + BEAT_DUR * 4 * 0.9)
+    bassOsc.connect(bassGain)
+    bassGain.connect(getOutput(context))
+    bassOsc.start(noteTime)
+    bassOsc.stop(noteTime + BEAT_DUR * 4)
+  }
+
+  frenzyNoteIndex++
+  frenzyNextNoteTime += BEAT_DUR
+}
+
+function frenzySchedulerLoop(): void {
+  const context = getAudioContext()
+  if (!context || !frenzyMusicActive) return
+
+  while (frenzyNextNoteTime < context.currentTime + SCHEDULE_AHEAD) {
+    scheduleFrenzyNote(context)
+  }
+
+  frenzyMusicScheduler = window.setTimeout(frenzySchedulerLoop, SCHEDULE_INTERVAL)
+}
+
+export function playFrenzyMusic(): void {
+  if (frenzyMusicActive) return
+  if (!getMusicEnabled()) return
+  const context = getAudioContext()
+  if (!context) return
+
+  frenzyMusicActive = true
+  frenzyNoteIndex = 0
+  frenzyNextNoteTime = context.currentTime + 0.05
+  frenzySchedulerLoop()
+}
+
+export function stopFrenzyMusic(): void {
+  frenzyMusicActive = false
+  if (frenzyMusicScheduler !== null) {
+    window.clearTimeout(frenzyMusicScheduler)
+    frenzyMusicScheduler = null
+  }
+}
+
+export function playFrenzyCountdown(): void {
+  // 3-2-1 beeps, increasing pitch, 500ms apart
+  playTone(440, 0.15, 'sine', 0.1, 0)
+  playTone(550, 0.15, 'sine', 0.1, 0.5)
+  playTone(660, 0.2, 'sine', 0.12, 1.0)
+}
+
+export function playNpcChomp(): void {
+  // Lower pitch chomp for NPC
+  playTone(120, 0.07, 'triangle', 0.08)
+  playTone(90, 0.1, 'square', 0.04, 0.03)
+}
+
+export function playNpcScore(): void {
+  // Short boop
+  playTone(440, 0.08, 'sine', 0.06)
+  playTone(550, 0.08, 'sine', 0.05, 0.06)
+}
+
+export function playTimerWarning(): void {
+  // 4 rapid ticks
+  for (let i = 0; i < 4; i++) {
+    playTone(880, 0.05, 'square', 0.06, i * 0.15)
+  }
+}
+
+export function playFrenzyWin(): void {
+  // Ascending arpeggio: C E G C' E'
+  const freqs = [261, 329, 392, 523, 659]
+  for (let i = 0; i < freqs.length; i++) {
+    playTone(freqs[i], 0.2, 'sine', 0.1, i * 0.1)
+  }
+}
+
+export function playFrenzyLose(): void {
+  // Descending wah-wah (two overlapping sweeps)
+  const context = getAudioContext()
+  if (!context) return
+
+  const startTime = context.currentTime
+
+  const osc1 = context.createOscillator()
+  const gain1 = context.createGain()
+  osc1.type = 'sine'
+  osc1.frequency.setValueAtTime(440, startTime)
+  osc1.frequency.exponentialRampToValueAtTime(110, startTime + 0.8)
+  gain1.gain.setValueAtTime(0.0001, startTime)
+  gain1.gain.linearRampToValueAtTime(0.1, startTime + 0.05)
+  gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.8)
+  osc1.connect(gain1)
+  gain1.connect(getOutput(context))
+  osc1.start(startTime)
+  osc1.stop(startTime + 0.8)
+
+  const delay2 = 0.2
+  const osc2 = context.createOscillator()
+  const gain2 = context.createGain()
+  osc2.type = 'sine'
+  osc2.frequency.setValueAtTime(330, startTime + delay2)
+  osc2.frequency.exponentialRampToValueAtTime(82, startTime + delay2 + 0.8)
+  gain2.gain.setValueAtTime(0.0001, startTime + delay2)
+  gain2.gain.linearRampToValueAtTime(0.07, startTime + delay2 + 0.05)
+  gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + delay2 + 0.8)
+  osc2.connect(gain2)
+  gain2.connect(getOutput(context))
+  osc2.start(startTime + delay2)
+  osc2.stop(startTime + delay2 + 0.8)
+}

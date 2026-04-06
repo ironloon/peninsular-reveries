@@ -100,7 +100,7 @@ function openSettings(): void {
   for (const button of document.querySelectorAll<HTMLElement>('[data-settings-open="true"]')) {
     button.setAttribute('aria-expanded', 'true')
   }
-  requestAnimationFrame(() => element('settings-close').focus())
+  requestAnimationFrame(() => element('settings-close-btn').focus())
 }
 
 function closeSettings(): void {
@@ -403,12 +403,12 @@ const callbacks: InputCallbacks = {
   onMysteryResultContinue: continueMysteryResult,
 }
 
-function bindSettingsModal(): void {
+function setupSettingsModal(): void {
   document.querySelectorAll<HTMLElement>('[data-settings-open="true"]').forEach((button) => {
     button.addEventListener('click', () => openSettings())
   })
 
-  element('settings-close').addEventListener('click', () => closeSettings())
+  element('settings-close-btn').addEventListener('click', () => closeSettings())
 
   const restartBtn = document.getElementById('restart-btn')
   if (restartBtn) {
@@ -484,7 +484,7 @@ function tick(now: number): void {
   requestAnimationFrame(tick)
 }
 
-bindSettingsModal()
+setupSettingsModal()
 bindSettingsControls()
 setupInput(getState, callbacks)
 syncView()

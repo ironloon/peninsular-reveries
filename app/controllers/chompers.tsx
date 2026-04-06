@@ -3,7 +3,7 @@ import { getGameAttribution } from '../data/attributions/index.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
-import { GameSettingsModal, SrOnly } from '../ui/game-shell.js'
+import { GameHeader, GameHeaderPill, GameSettingsModal, SettingsActions, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
 
 const chompersModalOverlayStyles = {
   zIndex: 200,
@@ -122,6 +122,44 @@ export async function chompersAction() {
               </div>
             </fieldset>
 
+            {/* Mode selector */}
+            <div className="mode-selector" role="group" aria-label="Game mode">
+              <button id="mode-normal-btn" className="mode-toggle-btn" aria-pressed="true" type="button">Normal</button>
+              <button id="mode-frenzy-btn" className="mode-toggle-btn" aria-pressed="false" type="button">Frenzy ⚡</button>
+            </div>
+
+            {/* Frenzy config — hidden until Frenzy mode selected */}
+            <div id="frenzy-config" hidden>
+              <fieldset className="frenzy-fieldset">
+                <legend>Opponents</legend>
+                <div className="mode-radio-group">
+                  <label><input type="radio" name="npc-count" value="1" checked /><span>1</span></label>
+                  <label><input type="radio" name="npc-count" value="3" /><span>3</span></label>
+                  <label><input type="radio" name="npc-count" value="5" /><span>5</span></label>
+                </div>
+              </fieldset>
+              <fieldset className="frenzy-fieldset">
+                <legend>Match type</legend>
+                <div className="mode-radio-group">
+                  <label><input type="radio" name="team-mode" value="ffa" checked /><span>Free-for-all</span></label>
+                  <label><input type="radio" name="team-mode" value="team" /><span>Teams</span></label>
+                </div>
+              </fieldset>
+              <div className="frenzy-field">
+                <p className="frenzy-field-label">Your color</p>
+                <div id="player-color-picker">
+                  <button className="color-swatch active" data-color="#FF6B6B" style={{ background: '#FF6B6B' }} aria-label="Select color 1" type="button"></button>
+                  <button className="color-swatch" data-color="#4ECDC4" style={{ background: '#4ECDC4' }} aria-label="Select color 2" type="button"></button>
+                  <button className="color-swatch" data-color="#45B7D1" style={{ background: '#45B7D1' }} aria-label="Select color 3" type="button"></button>
+                  <button className="color-swatch" data-color="#96CEB4" style={{ background: '#96CEB4' }} aria-label="Select color 4" type="button"></button>
+                  <button className="color-swatch" data-color="#FFEAA7" style={{ background: '#FFEAA7' }} aria-label="Select color 5" type="button"></button>
+                  <button className="color-swatch" data-color="#DDA0DD" style={{ background: '#DDA0DD' }} aria-label="Select color 6" type="button"></button>
+                  <button className="color-swatch" data-color="#98D8C8" style={{ background: '#98D8C8' }} aria-label="Select color 7" type="button"></button>
+                  <button className="color-swatch" data-color="#F7DC6F" style={{ background: '#F7DC6F' }} aria-label="Select color 8" type="button"></button>
+                </div>
+              </div>
+            </div>
+
             <div className="start-actions">
               <button id="start-btn" className="chomp-btn chomp-btn-primary">Start Chomping</button>
               <button data-settings-open="true" className="chomp-btn chomp-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
@@ -133,27 +171,45 @@ export async function chompersAction() {
         <section id="game-screen" className="game-screen game-screen-play" aria-labelledby="game-screen-label" hidden aria-hidden="true">
           <h2 id="game-screen-label" className="sr-only">Chompers</h2>
 
-          <div id="game-hud" className="game-hud" aria-label="Game status">
-            <span id="score" className="hud-score" aria-label="Score: 0">0</span>
-            <span id="round-progress" className="hud-pill">1 / 10</span>
-            <span id="lives" className="hud-lives" aria-label="Lives: 3">♥♥♥</span>
-            <span id="streak" className="hud-streak" hidden>🔥0</span>
-            <span id="area-chip" className="hud-chip">matching · L1</span>
-            <button
-              id="settings-btn"
-              className="chomp-btn chomp-btn-icon"
-              data-settings-open="true"
-              aria-haspopup="dialog"
-              aria-controls="settings-modal"
-              aria-expanded="false"
-              aria-label="Menu"
-            >☰</button>
-          </div>
+          <GameHeader
+            className="game-hud"
+            leftContent={<>
+              <GameHeaderPill label="Score" className="hud-score" value={<span id="score">0</span>} />
+              <GameHeaderPill className="hud-pill" value={<span id="round-progress">1 / 10</span>} />
+              <GameHeaderPill label="Lives" className="hud-lives" value={<span id="lives">♥♥♥</span>} />
+              <span id="streak" className="hud-streak" hidden>🔥0</span>
+              <GameHeaderPill className="hud-chip" value={<span id="area-chip">matching · L1</span>} />
+            </>}
+            rightContent={
+              <button
+                id="settings-btn"
+                className="chomp-btn chomp-btn-icon"
+                data-settings-open="true"
+                aria-haspopup="dialog"
+                aria-controls="settings-modal"
+                aria-expanded="false"
+                aria-label="Menu"
+              >☰</button>
+            }
+          />
 
           <p id="problem-prompt" className="problem-prompt" role="status" aria-live="polite">Loading…</p>
 
+          {/* Frenzy round timer bar */}
+          <div id="round-timer-bar" hidden><div id="round-timer-fill"></div></div>
+
           <div id="game-arena" className="game-arena" role="group" aria-label="Answer choices">
             <div id="scene-items" className="scene-items"></div>
+
+            {/* Frenzy NPC hippos (hidden until frenzy mode active) */}
+            <div className="hippo npc-hippo" id="npc-hippo-0" hidden aria-hidden="true"></div>
+            <div className="hippo npc-hippo" id="npc-hippo-1" hidden aria-hidden="true"></div>
+            <div className="hippo npc-hippo" id="npc-hippo-2" hidden aria-hidden="true"></div>
+            <div className="hippo npc-hippo" id="npc-hippo-3" hidden aria-hidden="true"></div>
+            <div className="hippo npc-hippo" id="npc-hippo-4" hidden aria-hidden="true"></div>
+
+            {/* Frenzy scoreboard */}
+            <div id="frenzy-scoreboard" hidden aria-hidden="true"></div>
 
             <div id="hippo" aria-hidden="true">
               <div className="hippo-ear hippo-ear-left"></div>
@@ -197,6 +253,9 @@ export async function chompersAction() {
               </div>
             </dl>
 
+            {/* Frenzy end results (populated by JS in frenzy mode) */}
+            <div id="frenzy-result" hidden></div>
+
             <div className="start-actions">
               <button id="replay-btn" className="chomp-btn chomp-btn-primary">Play Again</button>
               <button id="menu-btn" className="chomp-btn chomp-btn-secondary">Change Level</button>
@@ -207,13 +266,11 @@ export async function chompersAction() {
 
       <GameSettingsModal title="Menu" overlayStyles={chompersModalOverlayStyles}>
 
-        <section className="settings-section">
-          <h3>Controls</h3>
+        <SettingsSection title="Controls">
           <p className="settings-copy">Tap or click a fruit to choose your answer. Use arrow keys or D-pad to navigate, Enter/Space to select.</p>
-        </section>
+        </SettingsSection>
 
-        <section className="settings-section">
-          <h3>Math areas</h3>
+        <SettingsSection title="Math areas">
           <ul className="settings-list">
             <li><strong>Matching ⭐</strong> — Find the displayed number among tiles</li>
             <li><strong>Counting 🔢</strong> — Count objects and tap the matching number</li>
@@ -222,19 +279,18 @@ export async function chompersAction() {
             <li><strong>Multiplication ✖️</strong> — Times tables</li>
             <li><strong>Division ➗</strong> — Split numbers up</li>
           </ul>
-        </section>
+        </SettingsSection>
 
-        <section className="settings-section">
-          <h3>Accessibility</h3>
-          <label className="settings-toggle-row" htmlFor="reduce-motion-toggle">
-            <span>Reduce motion</span>
-            <input type="checkbox" id="reduce-motion-toggle" />
-          </label>
-          <p id="reduce-motion-help" className="settings-copy settings-help">Defaults to your device setting until you change it here.</p>
-        </section>
+        <SettingsSection title="Accessibility">
+          <SettingsToggle
+            id="reduce-motion-toggle"
+            label="Reduce motion"
+            helpText="Defaults to your device setting until you change it here."
+            helpId="reduce-motion-help"
+          />
+        </SettingsSection>
 
-        <section className="settings-section">
-          <h3>Credits &amp; License</h3>
+        <SettingsSection title="Credits & License">
           <p className="settings-copy"><span className="settings-label">Code license:</span> {attribution.codeLicense}</p>
           <p className="settings-copy">{attribution.summary}</p>
           <ul className="settings-list">
@@ -242,13 +298,9 @@ export async function chompersAction() {
               <li>Audio: {entry.title} by {entry.creator} ({entry.license})</li>
             ))}
           </ul>
-        </section>
+        </SettingsSection>
 
-        <footer className="settings-actions">
-          <button id="restart-btn" type="button" className="chomp-btn chomp-btn-secondary settings-restart-btn">Restart</button>
-          <a href={homePath} className="chomp-btn chomp-btn-secondary settings-quit-link">Quit</a>
-          <button id="settings-close-btn" type="button" className="chomp-btn chomp-btn-primary">Close</button>
-        </footer>
+        <SettingsActions quitHref={homePath} quitClassName="chomp-btn chomp-btn-secondary" showRestart={true} />
 
       </GameSettingsModal>
 

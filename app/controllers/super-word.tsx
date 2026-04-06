@@ -1,6 +1,6 @@
 import { renderToString } from 'remix/component/server'
 import { Document } from '../ui/document.js'
-import { GameScreen, GameSettingsModal, SrOnly } from '../ui/game-shell.js'
+import { GameHeader, GameHeaderPill, GameScreen, GameSettingsModal, SettingsActions, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
 import { attributionsPagePath, getGameAttribution } from '../data/attributions/index.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
@@ -72,12 +72,13 @@ export async function superWordAction() {
 
         {/* Game Screen */}
         <GameScreen id="game-screen" as="div" screenStyles={superWordScreenStyles}>
-          <div className="game-header">
-            <div className="game-header-left">
-              <span id="puzzle-counter" className="puzzle-counter" aria-label="Puzzle progress">1 / 5</span>
-              <span id="score" className="score" aria-label="Score: 0">⭐ 0</span>
-            </div>
-            <div className="game-header-right">
+          <GameHeader
+            className="game-header"
+            leftContent={<>
+              <GameHeaderPill value={<span id="puzzle-counter" className="puzzle-counter" aria-label="Puzzle progress: 1 of 5">1 / 5</span>} />
+              <GameHeaderPill icon="⭐" value={<span id="score" aria-label="Score: 0">0</span>} />
+            </>}
+            rightContent={<div className="game-header-right">
               <button
                 id="hud-music-toggle"
                 type="button"
@@ -92,9 +93,9 @@ export async function superWordAction() {
                 <span data-music-toggle-label="true">Off</span>
               </button>
               <button data-settings-open="true" className="settings-toggle-btn settings-toggle-btn-inline" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">☰</button>
-              <span id="letters-count" className="letters-count" aria-label="Letters found: 0 of 3">0 / 3</span>
-            </div>
-          </div>
+              <GameHeaderPill value={<span id="letters-count" className="letters-count" aria-label="Letters found: 0 of 3">0 / 3</span>} />
+            </div>}
+          />
           <div className="prompt-bubble">
             <span id="prompt-text" role="status">Find the letters!</span>
           </div>
@@ -123,8 +124,7 @@ export async function superWordAction() {
         {/* Settings Modal */}
         <GameSettingsModal title="Menu" headingClassName="settings-heading" overlayStyles={superWordModalOverlayStyles}>
 
-            <div className="settings-section">
-              <h3 className="settings-section-title">🎮 Controls</h3>
+            <SettingsSection title="🎮 Controls">
               <div className="controls-grid">
                 <div className="controls-column">
                   <h4>Keyboard / Touch</h4>
@@ -143,10 +143,9 @@ export async function superWordAction() {
                   </ul>
                 </div>
               </div>
-            </div>
+            </SettingsSection>
 
-            <div className="settings-section">
-              <h3 className="settings-section-title">🧩 Game</h3>
+            <SettingsSection title="🧩 Game">
               <label htmlFor="puzzle-difficulty-select">Difficulty:</label>
               <select id="puzzle-difficulty-select" className="puzzle-select">
                 <option value="starter">Starter · 2 letters</option>
@@ -157,29 +156,27 @@ export async function superWordAction() {
               </select>
               <p className="settings-help">Each round randomly picks 5 words from the selected difficulty, from high-frequency starter words to longer concrete words for fluent early readers.</p>
               <p className="settings-help">The tiers draw on Dolch and Fry high-frequency words, systematic phonics progressions, and Common Core K–3 reading patterns. <a href={superWordAttributionsPath}>See reading notes</a>.</p>
-            </div>
+            </SettingsSection>
 
-            <div className="settings-section">
-              <h3 className="settings-section-title">🎵 Audio</h3>
-              <label className="settings-toggle-row" htmlFor="music-enabled-toggle">
-                <span>Chill music</span>
-                <input type="checkbox" id="music-enabled-toggle" />
-              </label>
-              <p className="settings-help">Soft ambient synth music. It stays off until you turn it on.</p>
+            <SettingsSection title="🎵 Audio">
+              <SettingsToggle
+                id="music-enabled-toggle"
+                label="Chill music"
+                helpText="Soft ambient synth music. It stays off until you turn it on."
+              />
               <p className="settings-help">Sound effects stay on by default.</p>
-            </div>
+            </SettingsSection>
 
-            <div className="settings-section">
-              <h3 className="settings-section-title">Accessibility</h3>
-              <label className="settings-toggle-row" htmlFor="reduce-motion-toggle">
-                <span>Reduce motion</span>
-                <input type="checkbox" id="reduce-motion-toggle" />
-              </label>
-              <p id="reduce-motion-help" className="settings-help">Defaults to your device setting until you change it here.</p>
-            </div>
+            <SettingsSection title="Accessibility">
+              <SettingsToggle
+                id="reduce-motion-toggle"
+                label="Reduce motion"
+                helpText="Defaults to your device setting until you change it here."
+                helpId="reduce-motion-help"
+              />
+            </SettingsSection>
 
-            <div className="settings-section">
-              <h3 className="settings-section-title">© Credits &amp; License</h3>
+            <SettingsSection title="© Credits &amp; License">
               <p className="settings-help"><span className="settings-detail-label">Code license:</span> {attribution.codeLicense}</p>
               <p className="settings-help">{attribution.summary}</p>
               <div className="settings-attributions">
@@ -205,12 +202,9 @@ export async function superWordAction() {
                   </article>
                 ))}
               </div>
-            </div>
+            </SettingsSection>
 
-            <div className="settings-actions">
-              <a href={homePath} className="btn settings-close-btn settings-home-link">Home</a>
-              <button id="settings-close" className="btn settings-close-btn">Close</button>
-            </div>
+            <SettingsActions quitHref={homePath} showRestart={true} />
         </GameSettingsModal>
 
         {/* Level Complete Screen */}

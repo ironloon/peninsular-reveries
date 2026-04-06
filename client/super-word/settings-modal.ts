@@ -2,7 +2,7 @@ import { bindReduceMotionToggle } from '../preferences.js'
 
 export function setupSettingsModal(): void {
   const modal = document.getElementById('settings-modal')
-  const closeBtn = document.getElementById('settings-close')
+  const closeBtn = document.getElementById('settings-close-btn')
   const openButtons = Array.from(document.querySelectorAll<HTMLElement>('[data-settings-open="true"]'))
   const reduceMotionToggle = document.getElementById('reduce-motion-toggle') as HTMLInputElement | null
   const reduceMotionHelp = document.getElementById('reduce-motion-help') as HTMLElement | null
@@ -50,6 +50,15 @@ export function setupSettingsModal(): void {
   }
 
   closeBtn.addEventListener('click', closeModal)
+
+  const restartBtn = document.getElementById('restart-btn')
+  if (restartBtn) {
+    restartBtn.addEventListener('click', () => {
+      closeModal()
+      document.dispatchEvent(new CustomEvent('restart'))
+    })
+  }
+
   bindReduceMotionToggle(reduceMotionToggle, reduceMotionHelp)
 
   modalEl.addEventListener('click', (event) => {

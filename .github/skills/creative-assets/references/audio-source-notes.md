@@ -1,5 +1,15 @@
 # Audio Source Notes
 
+## Prerequisites
+
+Before running the audio fetch script, ensure:
+- `FREESOUND_API_KEY=<your_key>` is set in `.env` (register at https://freesound.org/apiv2/apply/)
+- `ffmpeg` is installed and available on `PATH` (verify: `ffmpeg -version`)
+
+If either is missing, the script will fail. There is no in-script diagnostic for missing prerequisites.
+
+---
+
 ## Good Defaults
 
 - Mono OGG
@@ -34,5 +44,5 @@
 
 ## Generic Fetching
 
-- The generic fetch script stages raw previews under `.github/skills/cc0-audio-curation/.sound-staging/<game>/`
+- The generic fetch script stages raw previews under `.github/skills/creative-assets/.sound-staging/<game>/`
 - The game slug determines the destination folder and which sample manifest is loaded

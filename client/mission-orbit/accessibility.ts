@@ -1,64 +1,25 @@
-import type { BurnResult } from './types.js'
-
-function announce(message: string, priority: 'polite' | 'assertive'): void {
-  const targetId = priority === 'assertive' ? 'game-feedback' : 'game-status'
-  const element = document.getElementById(targetId)
-  if (element) {
-    element.textContent = message
+function announce(message: string): void {
+  const el = document.getElementById('sr-announcer')
+  if (el) {
+    el.textContent = ''
+    requestAnimationFrame(() => {
+      el.textContent = message
+    })
   }
 }
 
-export function announcePhase(label: string, prompt: string, dayLabel: string): void {
-  announce(`${dayLabel}. ${label}. ${prompt}`, 'polite')
+export function announcePhase(sceneIndex: number, phase: string): void {
+  announce(`Scene ${sceneIndex + 1}, ${phase} phase.`)
 }
 
-export function announcePhaseReady(message: string): void {
-  announce(message, 'polite')
+export function announceInteractionResult(message: string): void {
+  announce(message)
 }
 
-export function announceCountdown(value: number): void {
-  if (value === 7) {
-    announce('T minus 7. Main engines start.', 'assertive')
-    return
-  }
-
-  if (value > 0) {
-    const suffix = value <= 3 ? ' Booster ignition is next.' : ''
-    announce(`T minus ${value}.${suffix}`, 'assertive')
-    return
-  }
-
-  announce('Booster ignition. Liftoff.', 'assertive')
+export function announceSceneComplete(sceneName: string): void {
+  announce(`${sceneName} complete.`)
 }
 
-export function announceContinueHolding(label: string): void {
-  announce(`${label} is still in motion. Hold a little longer.`, 'polite')
-}
-
-export function announceBurnResult(result: BurnResult): void {
-  announce(result.detail, result.grade === 'assist' ? 'assertive' : 'polite')
-}
-
-export function announceStopMoCue(message: string): void {
-  announce(message, 'assertive')
-}
-
-export function announceMissionComplete(missionTime: string): void {
-  announce(`Mission complete. Splashdown successful. Welcome home, astronaut. Mission time: ${missionTime}.`, 'assertive')
-}
-
-export function updatePhaseDescription(text: string): void {
-  const description = document.getElementById('phase-description')
-  if (description) {
-    description.textContent = text
-  }
-}
-
-export function moveFocusAfterTransition(elementId: string, delayMs: number = 260): void {
-  window.setTimeout(() => {
-    const element = document.getElementById(elementId)
-    if (element) {
-      requestAnimationFrame(() => element.focus())
-    }
-  }, delayMs)
+export function announceMissionComplete(): void {
+  announce('Mission complete! The crew has returned safely.')
 }

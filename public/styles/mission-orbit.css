@@ -77,7 +77,6 @@
 
 .start-shell::before,
 .end-shell::before,
-.mission-shell::before,
 .mission-settings-content::before {
   content: '';
   position: absolute;
@@ -122,47 +121,7 @@
   line-height: 1.55;
 }
 
-.mission-outline {
-  position: relative;
-  margin: 1.5rem 0 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 0.9rem;
-}
-
-.mission-outline li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.75rem;
-  align-items: start;
-  color: var(--mission-copy);
-  line-height: 1.45;
-}
-
-.mission-outline li::before {
-  content: attr(data-step);
-}
-
-.mission-outline li:nth-child(1)::before,
-.mission-outline li:nth-child(2)::before,
-.mission-outline li:nth-child(3)::before {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.9rem;
-  height: 1.9rem;
-  border-radius: 999px;
-  background: rgba(255, 209, 102, 0.12);
-  border: 1px solid rgba(255, 209, 102, 0.26);
-  color: var(--mission-signal);
-  font-size: 0.82rem;
-  font-weight: 700;
-}
-
-.mission-outline li:nth-child(1)::before { content: '1'; }
-.mission-outline li:nth-child(2)::before { content: '2'; }
-.mission-outline li:nth-child(3)::before { content: '3'; }
+/* Crew display ================================================ */
 
 .crew-picker-panel {
   position: relative;
@@ -215,23 +174,6 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
   background: rgba(255, 255, 255, 0.04);
   transition: transform 140ms ease, border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
-  cursor: pointer;
-}
-
-.crew-option:hover .crew-option-body,
-.crew-option input:focus-visible + .crew-option-body {
-  transform: translateY(-1px);
-  border-color: rgba(255, 209, 102, 0.26);
-}
-
-.crew-option input:checked + .crew-option-body {
-  background: rgba(255, 209, 102, 0.1);
-  border-color: rgba(255, 209, 102, 0.34);
-  box-shadow: 0 12px 26px rgba(255, 209, 102, 0.08);
-}
-
-.crew-option input:disabled + .crew-option-body {
-  opacity: 0.58;
 }
 
 .crew-option-badge {
@@ -266,6 +208,8 @@
   line-height: 1.35;
 }
 
+/* Buttons ===================================================== */
+
 .start-actions,
 .mission-toolbar,
 .settings-actions {
@@ -294,6 +238,10 @@
   letter-spacing: 0.01em;
   cursor: pointer;
   transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease, border-color 140ms ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .mission-btn:hover:not(:disabled),
@@ -317,12 +265,6 @@
   box-shadow: 0 10px 26px rgba(255, 90, 42, 0.32);
 }
 
-.mission-btn-primary.is-held,
-.mission-action-btn.is-held {
-  background: linear-gradient(135deg, #fff0b1, #ff8a4a);
-  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.18), 0 12px 30px rgba(255, 90, 42, 0.4);
-}
-
 .mission-btn-secondary {
   color: var(--mission-copy);
   background: rgba(255, 255, 255, 0.06);
@@ -336,759 +278,239 @@
   font-size: 0.9rem;
 }
 
-.mission-shell {
-  position: relative;
-  width: min(100%, 72rem);
-  max-width: 100%;
-  max-height: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(16rem, 0.7fr);
-  grid-template-areas:
-    'header header'
-    'stage panel'
-    'toolbar panel';
-  gap: 1rem;
-  padding: clamp(1rem, 2vw, 1.4rem);
-  border: 1px solid var(--mission-line);
-  border-radius: 28px;
-  background: linear-gradient(160deg, rgba(8, 22, 40, 0.95), rgba(3, 10, 22, 0.9));
-  box-shadow: 0 20px 72px rgba(0, 0, 0, 0.42);
-  align-content: start;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  -webkit-user-select: none;
-  user-select: none;
-}
+/* Progress pill in game header ================================ */
 
-.mission-header {
-  grid-area: header;
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
-  position: relative;
-}
-
-.mission-phase-label {
-  margin: 0;
-  font-size: clamp(1.45rem, 3vw, 2rem);
-  line-height: 1.05;
-}
-
-.mission-header-stats {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.6rem;
-}
-
-.mission-pill {
+.mission-progress-pill {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  padding: 0.45rem 0.8rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 0.35rem 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--mission-muted);
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   font-weight: 700;
 }
 
-.mission-copy {
-  position: relative;
+/* Game screen layout ========================================== */
+
+#game-screen .game-screen-inner {
   display: grid;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.mission-log-copy {
-  padding: 0.85rem 0.95rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.mission-status-line {
-  margin: 0;
-  color: var(--mission-signal);
-  font-size: 0.9rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.mission-prompt {
-  margin: 0;
-  max-width: 42rem;
-  color: var(--mission-copy);
-  font-size: clamp(1rem, 2.2vw, 1.18rem);
-  line-height: 1.55;
-  overflow-wrap: anywhere;
-}
-
-.mission-stage-shell {
-  --cue-intensity: 0;
-  --cue-stage-scale: 0.76;
-  grid-area: stage;
-  position: relative;
-  min-height: clamp(13rem, 38dvh, 21rem);
-  border-radius: 24px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background:
-    radial-gradient(circle at 50% 0%, rgba(166, 205, 255, 0.18), transparent 35%),
-    linear-gradient(180deg, #0b1d37 0%, #071220 52%, #040a12 100%);
-}
-
-.mission-stage-shell::before,
-.mission-stage-shell::after {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  pointer-events: none;
-  transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease;
-}
-
-.mission-stage-shell::before {
-  content: '';
-  width: min(72%, 20rem);
-  aspect-ratio: 1;
-  border-radius: 999px;
-  z-index: 1;
-  opacity: 0;
-  filter: blur(6px);
-  transform: translate(-50%, -50%) scale(var(--cue-stage-scale));
-  background:
-    radial-gradient(circle, rgba(255, 248, 224, 0.18) 0%, rgba(255, 209, 102, 0.28) 18%, rgba(255, 122, 79, 0.22) 34%, transparent 68%);
-}
-
-.mission-stage-shell::after {
-  content: attr(data-cue-word);
-  z-index: 2;
-  color: rgba(255, 248, 232, 0.96);
-  font-size: clamp(1rem, 3vw, 1.7rem);
-  font-weight: 800;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-shadow: 0 0 24px rgba(255, 209, 102, 0.42);
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.86);
-}
-
-.mission-stage-shell[data-cue-state='building']::before {
-  opacity: 0.28;
-}
-
-.mission-stage-shell[data-cue-state='ready']::before {
-  opacity: 0.52;
-  filter: blur(3px);
-}
-
-.mission-stage-shell[data-cue-state='ready']::after {
-  opacity: 0.72;
-  transform: translate(-50%, -50%) scale(0.98);
-}
-
-.mission-stage-shell[data-cue-state='strike']::before {
-  opacity: 0.84;
-  filter: blur(1px);
-  transform: translate(-50%, -50%) scale(calc(var(--cue-stage-scale) + 0.12));
-}
-
-.mission-stage-shell[data-cue-state='strike']::after {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.08);
-}
-
-.mission-stage-shell[data-stop-mo='true']::before {
-  opacity: 0.9;
-  animation: missionCueSlowMo 640ms ease-in-out infinite;
-}
-
-.mission-stage-shell[data-stop-mo='true']::after {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1.12);
-}
-
-.mission-stage-shell[data-briefing='true']::before {
-  opacity: 0.36;
-  filter: blur(4px);
-}
-
-.mission-stage-shell[data-briefing='true']::after {
-  opacity: 0.9;
-  transform: translate(-50%, -50%) scale(1);
-}
-
-.mission-stage-shell[data-phase='countdown'],
-.mission-stage-shell[data-phase='launch'] {
-  background:
-    radial-gradient(circle at 50% 100%, rgba(255, 185, 118, 0.24), transparent 38%),
-    linear-gradient(180deg, #274f77 0%, #12263f 52%, #071321 100%);
-}
-
-.mission-stage-shell[data-phase='service-module-jettison'],
-.mission-stage-shell[data-phase='parachute-deploy'],
-.mission-stage-shell[data-phase='splashdown'] {
-  background:
-    radial-gradient(circle at 50% 20%, rgba(255, 122, 79, 0.18), transparent 26%),
-    linear-gradient(180deg, #071a2f 0%, #0a1727 44%, #071b26 100%);
-}
-
-.mission-map {
-  width: 100%;
   height: 100%;
-  display: block;
-  position: relative;
-  z-index: 0;
-  touch-action: none;
-  user-select: none;
-}
-
-#mission-orbit-path,
-#mission-free-return,
-#mission-moon,
-#mission-moon-glow,
-#mission-launch-pad,
-#mission-ocean,
-#mission-splash,
-#mission-rocket-glow,
-#mission-rocket-cue-ring,
-#mission-flame,
-#mission-parachute,
-#mission-service-module,
-#mission-rocket {
-  transition: opacity 220ms ease;
-}
-
-#mission-orbit-path,
-#mission-free-return {
-  fill: none;
-  stroke-linecap: round;
-}
-
-#mission-orbit-path {
-  stroke: rgba(143, 216, 255, 0.55);
-  stroke-width: 0.6;
-  stroke-dasharray: 2.4 1.4;
-  opacity: 0;
-}
-
-#mission-free-return {
-  stroke: rgba(255, 209, 102, 0.55);
-  stroke-width: 0.7;
-  stroke-dasharray: 2.6 1.6;
-  opacity: 0;
-}
-
-#mission-earth-glow {
-  fill: rgba(101, 182, 247, 0.16);
-}
-
-#mission-earth {
-  fill: #2f8dc4;
-}
-
-#mission-earth-continent-a,
-#mission-earth-continent-b {
-  fill: #78d38b;
-}
-
-#mission-moon-glow {
-  fill: rgba(255, 243, 220, 0.14);
-}
-
-#mission-moon {
-  fill: #d4d0ca;
-}
-
-.mission-moon-crater {
-  fill: #b4b0aa;
-}
-
-#mission-launch-pad {
-  fill: #7e8aa1;
-}
-
-#mission-ocean {
-  fill: var(--mission-ocean);
-  opacity: 0;
-}
-
-#mission-splash {
-  fill: none;
-  stroke: var(--mission-foam);
-  stroke-width: 1.2;
-  opacity: 0;
-}
-
-#mission-capsule {
-  fill: #f3f0eb;
-  stroke: #d4c3b5;
-  stroke-width: 0.4;
-}
-
-#mission-rocket-hit-area {
-  fill: transparent;
-  pointer-events: none;
-}
-
-#mission-rocket-glow,
-#mission-rocket-cue-ring {
-  fill: none;
-  opacity: 0;
-  transform-origin: center;
-  transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease, stroke 140ms ease;
-}
-
-#mission-rocket-glow {
-  stroke: rgba(255, 209, 102, 0.18);
-  stroke-width: 3.6;
-  filter: blur(3px);
-}
-
-#mission-rocket-cue-ring {
-  stroke: rgba(255, 240, 209, 0.72);
-  stroke-width: 1.15;
-  stroke-dasharray: 1.6 1.2;
-}
-
-#mission-window {
-  fill: #80d6ff;
-}
-
-#mission-fin-left,
-#mission-fin-right,
-#mission-service-module {
-  fill: #ff6a3d;
-}
-
-#mission-parachute {
-  fill: none;
-  stroke: #fff3cb;
-  stroke-width: 1;
-  opacity: 0;
-}
-
-#mission-flame path {
-  fill: url('#');
-}
-
-#mission-flame path,
-#mission-flame {
-  fill: var(--mission-signal);
-  opacity: 0;
-}
-
-#mission-rocket {
-  transform-origin: center;
-}
-
-#mission-rocket[data-interactive='true'] #mission-capsule,
-#mission-rocket[data-interactive='true'] #mission-fin-left,
-#mission-rocket[data-interactive='true'] #mission-fin-right,
-#mission-rocket[data-interactive='true'] #mission-window {
-  filter: drop-shadow(0 0 8px rgba(255, 209, 102, 0.18));
-}
-
-#mission-rocket[data-cue-state='building'] #mission-rocket-cue-ring {
-  animation: missionRocketPulse 1200ms ease-in-out infinite;
-}
-
-#mission-rocket[data-cue-state='strike'] #mission-rocket-cue-ring,
-#mission-rocket[data-stop-mo='true'] #mission-rocket-cue-ring {
-  stroke: rgba(255, 248, 232, 0.94);
-  filter: drop-shadow(0 0 10px rgba(255, 122, 79, 0.34));
-}
-
-.mission-star {
-  fill: rgba(255, 255, 255, 0.86);
-  animation: missionTwinkle 2.6s ease-in-out infinite;
-}
-
-.countdown-overlay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  font-size: clamp(5rem, 16vw, 10rem);
-  font-weight: 800;
-  letter-spacing: -0.06em;
-  color: rgba(255, 247, 234, 0.95);
-  opacity: 0;
-  transform: scale(0.88);
-  transition: opacity 200ms ease, transform 200ms ease;
-  text-shadow: 0 0 28px rgba(255, 209, 102, 0.28);
-  pointer-events: none;
-  z-index: 3;
-}
-
-.mission-countdown-callout {
-  position: absolute;
-  left: 50%;
-  top: 1rem;
-  z-index: 4;
-  transform: translateX(-50%);
-  padding: 0.45rem 0.85rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 209, 102, 0.22);
-  background: rgba(7, 18, 34, 0.78);
-  color: rgba(255, 248, 232, 0.96);
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  text-align: center;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.18);
-}
-
-.mission-recovery-boat {
-  position: absolute;
-  z-index: 4;
-  width: clamp(5rem, 18vw, 8rem);
-  transform: translate(-50%, -50%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 180ms ease, left 220ms ease, top 220ms ease;
-}
-
-.mission-recovery-boat[data-visible='ready'] {
-  opacity: 1;
-}
-
-.mission-recovery-boat-svg {
-  display: block;
   width: 100%;
-  height: auto;
+  grid-template-rows: auto 1fr;
+  padding: clamp(0.5rem, 1.5vw, 0.875rem);
+  gap: 0.5rem;
+  box-sizing: border-box;
 }
 
-.mission-boat-wake {
-  fill: none;
-  stroke: rgba(191, 233, 248, 0.8);
-  stroke-width: 3;
-  stroke-linecap: round;
-}
-
-.mission-boat-hull {
-  fill: #f7fbff;
-  stroke: #9bb5c9;
-  stroke-width: 2;
-}
-
-.mission-boat-cabin {
-  fill: #ff8a65;
-}
-
-.mission-boat-cabin-top {
-  fill: #ffd166;
-}
-
-.mission-boat-light {
-  fill: #ffe9a8;
-}
-
-.mission-stage-target {
-  position: absolute;
-  left: 0.85rem;
-  bottom: 0.85rem;
-  z-index: 2;
-  max-width: min(70%, 16rem);
-  padding: 0.4rem 0.72rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(6, 17, 32, 0.74);
-  color: rgba(255, 248, 232, 0.92);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 140ms ease, transform 140ms ease, border-color 140ms ease;
-  pointer-events: none;
-}
-
-.mission-stage-target.is-visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.mission-stage-target[data-mode='hold'] {
-  border-color: rgba(255, 122, 79, 0.3);
-}
-
-.mission-stage-target[data-mode='timing'] {
-  border-color: rgba(255, 209, 102, 0.28);
-}
-
-.mission-stage-target[data-mode='briefing'] {
-  border-color: rgba(166, 205, 255, 0.28);
-}
-
-.countdown-overlay.is-visible {
-  opacity: 1;
-  transform: scale(1);
-}
-
-.countdown-overlay[data-beat='final'] {
-  animation: missionCountdownPulse 1000ms ease-in-out infinite;
-}
-
-.countdown-overlay[data-beat='liftoff'] {
-  color: #fff5d7;
-  text-shadow: 0 0 34px rgba(255, 209, 102, 0.42);
-  animation: missionCountdownPulse 640ms ease-in-out infinite;
-}
-
-.mission-countdown-callout[data-beat='engines'] {
-  border-color: rgba(255, 122, 79, 0.3);
-  color: #ffe9d6;
-}
-
-.mission-countdown-callout[data-beat='final'],
-.mission-countdown-callout[data-beat='liftoff'] {
-  border-color: rgba(255, 209, 102, 0.38);
-  box-shadow: 0 0 0 1px rgba(255, 209, 102, 0.18), 0 14px 30px rgba(255, 122, 79, 0.2);
-}
-
-.mission-recovery-boat[data-visible='ready'] {
-  animation: missionBoatBob 2.2s ease-in-out infinite;
-}
-
-.timing-panel {
-  grid-area: panel;
-  position: relative;
+.mission-content {
   display: grid;
-  align-content: start;
-  gap: 0.8rem;
-  padding: 0.85rem;
-  border-radius: 22px;
-  background: linear-gradient(180deg, rgba(15, 36, 64, 0.88), rgba(6, 16, 31, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: border-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  grid-template-columns: 3fr 2fr;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
 }
 
-.timing-panel.is-passive .timing-meter {
-  opacity: 0.35;
+@media (max-width: 600px), (orientation: portrait) {
+  .mission-content {
+    grid-template-columns: 1fr;
+    grid-template-rows: 3fr 2fr;
+  }
 }
 
-.timing-panel[data-cue-state='building'] {
-  border-color: rgba(255, 209, 102, 0.22);
-  box-shadow: 0 14px 34px rgba(255, 209, 102, 0.08);
-}
+/* Cinematic pane ============================================== */
 
-.timing-panel[data-cue-state='ready'] {
-  border-color: rgba(255, 209, 102, 0.34);
-  box-shadow: 0 16px 40px rgba(255, 209, 102, 0.12);
-}
-
-.timing-panel[data-cue-state='strike'],
-.timing-panel[data-stop-mo='true'] {
-  border-color: rgba(255, 122, 79, 0.38);
-  box-shadow: 0 18px 44px rgba(255, 122, 79, 0.18);
-}
-
-.timing-header {
+#cinematic-pane {
+  background: #0a1628;
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
+  justify-content: center;
+  border-radius: 12px 0 0 12px;
 }
 
-.timing-activity {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 0.8rem;
-  align-items: start;
-  min-width: 0;
+@media (max-width: 600px), (orientation: portrait) {
+  #cinematic-pane {
+    border-radius: 12px 12px 0 0;
+  }
 }
 
-.timing-activity-copy {
-  display: grid;
-  gap: 0.65rem;
-  align-content: start;
-  min-width: 0;
+#cinematic-pane[data-cinematic="launch-pad"] {
+  background: linear-gradient(180deg, #1a0a2e 0%, #0a1628 100%);
 }
 
-.timing-header h3 {
-  margin: 0;
-  font-size: 1rem;
+#cinematic-pane[data-cinematic="ascent"] {
+  background: linear-gradient(180deg, #0a1628 0%, #1a3a6e 100%);
 }
 
-.timing-mode-chip {
-  display: inline-flex;
-  align-items: center;
-  border-radius: 999px;
-  padding: 0.28rem 0.6rem;
-  color: var(--mission-signal);
-  background: rgba(255, 209, 102, 0.08);
-  border: 1px solid rgba(255, 209, 102, 0.18);
-  font-size: 0.8rem;
+#cinematic-pane[data-cinematic="orbit-insertion"] {
+  background: linear-gradient(180deg, #0f0f30 0%, #0a1628 100%);
+}
+
+#cinematic-pane[data-cinematic="trans-lunar-injection"] {
+  background: linear-gradient(180deg, #050510 0%, #0a1628 100%);
+}
+
+#cinematic-pane[data-cinematic="lunar-approach"] {
+  background: linear-gradient(180deg, #080818 0%, #1a1a3a 100%);
+}
+
+#cinematic-pane[data-cinematic="lunar-flyby"] {
+  background: radial-gradient(ellipse at 30% 50%, #2a2a4a 0%, #050510 60%);
+}
+
+#cinematic-pane[data-cinematic="return"] {
+  background: linear-gradient(180deg, #050510 0%, #0a2a5a 100%);
+}
+
+#cinematic-pane[data-cinematic="reentry-splashdown"] {
+  background: linear-gradient(180deg, #1a3a6e 0%, #0a3a6a 100%);
+}
+
+/* Narrative pane ============================================== */
+
+#narrative-pane {
+  background: #0d1f3a;
+  padding: clamp(1rem, 2.5vw, 1.8rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  color: #e8f0ff;
+  border-radius: 0 12px 12px 0;
+}
+
+@media (max-width: 600px), (orientation: portrait) {
+  #narrative-pane {
+    border-radius: 0 0 12px 12px;
+  }
+}
+
+.scene-title {
+  font-size: clamp(1rem, 2.5vw, 1.4rem);
   font-weight: 700;
+  color: #7ec8f0;
+  margin: 0;
 }
 
-.timing-meter {
-  --cue-intensity: 0;
-  --cue-scale: 0.82;
-  --cue-sweet-scale: 0.76;
-  --cue-core-scale: 0.78;
-  position: relative;
-  width: min(100%, 6.6rem);
-  aspect-ratio: 1;
-  margin-inline: auto;
-  display: grid;
-  place-items: center;
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at center, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02) 58%, rgba(4, 12, 24, 0.36) 72%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+.briefing-text {
+  font-size: clamp(0.875rem, 1.8vw, 1rem);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.interaction-prompt {
+  font-size: clamp(0.85rem, 1.8vw, 1rem);
+  color: #f0c040;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Interaction controls ======================================== */
+
+.interaction-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: auto;
+}
+
+.tap-btn {
+  background: #f0c040;
+  color: #0a1628;
+  border: none;
+  border-radius: 0.75rem;
+  padding: clamp(0.75rem, 2vw, 1.25rem) clamp(1rem, 3vw, 2rem);
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-weight: 700;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s, background 0.1s;
+}
+
+.tap-btn:active {
+  transform: scale(0.95);
+}
+
+.tap-btn:focus-visible {
+  outline: 3px solid rgba(240, 192, 64, 0.8);
+  outline-offset: 3px;
+}
+
+.tap-count-display {
+  text-align: center;
+  font-size: 1.1rem;
+  color: #7ec8f0;
+}
+
+.hold-progress {
+  width: 100%;
+  height: 1.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
   overflow: hidden;
-  isolation: isolate;
 }
 
-.timing-meter.is-hidden {
-  opacity: 0.28;
+.hold-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #f0c040, #e07800);
+  transition: width 0.05s linear;
+  border-radius: 0.5rem;
 }
 
-.timing-good-zone,
-.timing-sweet-zone,
-.timing-cursor {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  border-radius: 999px;
-  transform: translate(-50%, -50%);
-  transition: opacity 120ms ease, transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+.observe-display {
+  color: #a0b8d8;
+  text-align: center;
+  padding: 1rem;
+  font-style: italic;
 }
 
-.timing-good-zone {
-  width: 5.8rem;
-  height: 5.8rem;
-  border: 1px solid rgba(143, 216, 255, 0.2);
-  background: radial-gradient(circle, rgba(143, 216, 255, 0.12), rgba(143, 216, 255, 0.02) 62%, transparent 70%);
-  opacity: 0.14;
-  transform: translate(-50%, -50%) scale(var(--cue-scale));
+/* Animation classes =========================================== */
+
+.fade-in {
+  animation: moFadeIn 0.4s ease forwards;
 }
 
-.timing-sweet-zone {
-  width: 4.3rem;
-  height: 4.3rem;
-  border: 1px solid rgba(255, 209, 102, 0.22);
-  background: radial-gradient(circle, rgba(255, 209, 102, 0.18), rgba(255, 122, 79, 0.12) 54%, transparent 68%);
-  opacity: 0.18;
-  transform: translate(-50%, -50%) scale(var(--cue-sweet-scale));
+.fade-out {
+  animation: moFadeOut 0.4s ease forwards;
 }
 
-.timing-cursor {
-  width: 1.75rem;
-  height: 1.75rem;
-  background: radial-gradient(circle, #fff9ea 0%, #ffd8a6 38%, #ff8b61 76%, #ff5a2a 100%);
-  box-shadow: 0 0 16px rgba(255, 122, 79, 0.28);
-  opacity: 0.62;
-  transform: translate(-50%, -50%) scale(var(--cue-core-scale));
+.tap-pulse {
+  animation: moTapPulse 0.2s ease;
 }
 
-.timing-meter[data-cue-state='building'] .timing-good-zone {
-  opacity: 0.3;
+.hold-glow {
+  box-shadow: 0 0 20px rgba(240, 192, 64, 0.6);
 }
 
-.timing-meter[data-cue-state='building'] .timing-cursor {
-  opacity: 0.78;
+.completion-flash {
+  animation: moFlash 0.5s ease;
 }
 
-.timing-meter[data-cue-state='ready'] .timing-good-zone,
-.timing-meter[data-cue-state='ready'] .timing-sweet-zone {
-  opacity: 0.52;
+@keyframes moFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.timing-meter[data-cue-state='ready'] .timing-cursor {
-  opacity: 0.92;
-  box-shadow: 0 0 24px rgba(255, 209, 102, 0.32);
+@keyframes moFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }
 
-.timing-meter[data-cue-state='strike'] .timing-good-zone,
-.timing-meter[data-cue-state='strike'] .timing-sweet-zone,
-.timing-meter[data-stop-mo='true'] .timing-good-zone,
-.timing-meter[data-stop-mo='true'] .timing-sweet-zone {
-  opacity: 0.72;
+@keyframes moTapPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 
-.timing-meter[data-cue-state='strike'] .timing-cursor,
-.timing-meter[data-stop-mo='true'] .timing-cursor {
-  opacity: 1;
-  filter: saturate(1.18);
-  box-shadow: 0 0 28px rgba(255, 122, 79, 0.4), 0 0 44px rgba(255, 209, 102, 0.26);
+@keyframes moFlash {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(2); }
 }
 
-.timing-meter[data-cue-state='building'] .timing-good-zone,
-.timing-meter[data-cue-state='building'] .timing-sweet-zone {
-  animation: missionCueBreath 1800ms ease-in-out infinite;
-}
-
-.timing-hint,
-.mission-outcome,
-.settings-help,
-.settings-attribution-copy,
-.settings-attribution-meta {
-  margin: 0;
-  color: var(--mission-muted);
-  line-height: 1.45;
-}
-
-.timing-hint,
-.mission-outcome {
-  overflow-wrap: anywhere;
-}
-
-.mission-outcome {
-  min-height: 2.8rem;
-  color: var(--mission-copy);
-  font-weight: 700;
-}
-
-.mission-outcome.is-perfect { color: var(--mission-signal); }
-.mission-outcome.is-good { color: var(--mission-good); }
-.mission-outcome.is-safe { color: var(--mission-safe); }
-.mission-outcome.is-assist { color: var(--mission-assist); }
-
-.outcome-pulse-success {
-  animation: missionPulseSuccess 420ms ease;
-}
-
-.outcome-pulse-assist {
-  animation: missionPulseAssist 420ms ease;
-}
-
-.mission-toolbar {
-  grid-area: toolbar;
-  margin-top: 0;
-}
-
-.mission-action-btn {
-  min-width: min(20rem, 100%);
-}
-
-.settings-attribution-card {
-  position: relative;
-  padding: 0.9rem;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.settings-attribution-title,
-.controls-grid h4,
-.settings-section-title,
-.settings-heading {
-  margin: 0 0 0.4rem;
-}
-
-.settings-attribution-copy {
-  margin: 0;
-  line-height: 1.45;
-}
+/* Settings modal ============================================== */
 
 .mission-settings-content {
   position: relative;
@@ -1141,39 +563,33 @@
   gap: 1rem;
 }
 
-.settings-select-row {
-  display: grid;
-  gap: 0.45rem;
-  margin-top: 0.9rem;
-}
-
-.settings-select-row select {
-  width: fit-content;
-  min-width: 10rem;
-  padding: 0.55rem 0.8rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--mission-copy);
-  font: inherit;
-}
-
-.settings-select-row select:focus-visible {
-  outline: 3px solid rgba(255, 209, 102, 0.8);
-  outline-offset: 2px;
-}
-
 .settings-toggle-row input[type='checkbox'] {
   width: 1.1rem;
   height: 1.1rem;
   accent-color: var(--mission-signal);
 }
 
-.settings-home-link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-decoration: none;
+.settings-attribution-card {
+  position: relative;
+  padding: 0.9rem;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-attribution-title,
+.controls-grid h4,
+.settings-section-title,
+.settings-heading {
+  margin: 0 0 0.4rem;
+}
+
+.settings-attribution-copy,
+.settings-attribution-meta,
+.settings-help {
+  margin: 0;
+  color: var(--mission-muted);
+  line-height: 1.45;
 }
 
 .settings-attributions {
@@ -1224,6 +640,45 @@
   font-weight: 700;
 }
 
+/* Settings action buttons ===================================== */
+
+.mission-settings-content .settings-restart-btn,
+.mission-settings-content .settings-quit-link,
+.mission-settings-content .settings-close-btn {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0.75rem 1.2rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--mission-copy);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transition: transform 140ms ease, background-color 140ms ease;
+}
+
+.mission-settings-content .settings-restart-btn:hover,
+.mission-settings-content .settings-quit-link:hover,
+.mission-settings-content .settings-close-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mission-settings-content .settings-restart-btn:focus-visible,
+.mission-settings-content .settings-quit-link:focus-visible,
+.mission-settings-content .settings-close-btn:focus-visible {
+  outline: 3px solid rgba(255, 209, 102, 0.8);
+  outline-offset: 3px;
+}
+
+/* Noscript ==================================================== */
+
 .noscript-message {
   position: fixed;
   inset: auto max(1rem, var(--mission-safe-right)) max(1rem, var(--mission-safe-bottom)) max(1rem, var(--mission-safe-left));
@@ -1235,64 +690,65 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-@keyframes missionTwinkle {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
-}
+/* Reduced motion ============================================== */
 
-@keyframes missionPulseSuccess {
-  0% { transform: scale(1); }
-  45% { transform: scale(1.03); }
-  100% { transform: scale(1); }
-}
-
-@keyframes missionPulseAssist {
-  0% { transform: scale(1); }
-  45% { transform: scale(1.02); }
-  100% { transform: scale(1); }
-}
-
-@keyframes missionCountdownPulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); }
-}
-
-@keyframes missionCueBreath {
-  0%, 100% { filter: saturate(1); }
-  50% { filter: saturate(1.16); }
-}
-
-@keyframes missionCueSlowMo {
-  0%, 100% { transform: translate(-50%, -50%) scale(var(--cue-stage-scale)); }
-  50% { transform: translate(-50%, -50%) scale(calc(var(--cue-stage-scale) + 0.08)); }
-}
-
-@keyframes missionRocketPulse {
-  0%, 100% { opacity: 0.72; filter: drop-shadow(0 0 0 rgba(255, 209, 102, 0)); }
-  50% { opacity: 1; filter: drop-shadow(0 0 12px rgba(255, 209, 102, 0.28)); }
-}
-
-@keyframes missionBoatBob {
-  0%, 100% { transform: translate(-50%, -50%) translateY(0); }
-  50% { transform: translate(-50%, -50%) translateY(-4px); }
-}
-
-@media (max-width: 960px) {
-  .mission-shell {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      'header'
-      'stage'
-      'panel'
-      'toolbar';
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduce-motion='no-preference']) .fade-in,
+  :root:not([data-reduce-motion='no-preference']) .fade-out,
+  :root:not([data-reduce-motion='no-preference']) .tap-pulse,
+  :root:not([data-reduce-motion='no-preference']) .completion-flash {
+    animation: none;
   }
 
-  .mission-header {
-    flex-direction: column;
+  :root:not([data-reduce-motion='no-preference']) .hold-glow {
+    box-shadow: none;
   }
 
-  .mission-header-stats {
-    justify-content: flex-start;
+  :root:not([data-reduce-motion='no-preference']) .hold-progress-bar {
+    transition: none;
+  }
+}
+
+[data-reduce-motion='reduce'] .fade-in,
+[data-reduce-motion='reduce'] .fade-out,
+[data-reduce-motion='reduce'] .tap-pulse,
+[data-reduce-motion='reduce'] .completion-flash {
+  animation: none !important;
+}
+
+[data-reduce-motion='reduce'] .hold-glow {
+  box-shadow: none !important;
+}
+
+[data-reduce-motion='reduce'] .hold-progress-bar {
+  transition: none !important;
+}
+
+[data-reduce-motion='reduce'] .screen,
+[data-reduce-motion='reduce'] .mission-btn {
+  animation: none !important;
+  transition: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-reduce-motion='no-preference']) .screen,
+  :root:not([data-reduce-motion='no-preference']) .mission-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Small viewport ============================================== */
+
+@media (max-width: 420px) {
+  #narrative-pane {
+    padding: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .tap-btn {
+    font-size: 0.95rem;
+    padding: 0.6rem 1rem;
   }
 }
 
@@ -1303,79 +759,15 @@
     padding: 0.75rem;
   }
 
-  .mission-shell,
-  .start-shell,
-  .end-shell,
-  .mission-settings-content {
-    border-radius: 22px;
-  }
-
-  .mission-shell,
   .start-shell,
   .end-shell {
+    border-radius: 22px;
     max-height: none;
     overflow: visible;
   }
 
-  .mission-shell {
-    width: 100%;
-    min-height: 100%;
-    gap: 0.75rem;
-    padding: 0.85rem;
-  }
-
-  .mission-stage-shell {
-    min-height: clamp(15.5rem, 40dvh, 22rem);
-  }
-
   .crew-picker-grid {
     grid-template-columns: 1fr;
-  }
-
-  .mission-countdown-callout {
-    left: 0.7rem;
-    right: 0.7rem;
-    top: 0.7rem;
-    transform: none;
-    font-size: 0.72rem;
-  }
-
-  .mission-recovery-boat {
-    width: clamp(4.4rem, 26vw, 6.2rem);
-  }
-
-  .mission-stage-target {
-    left: 0.7rem;
-    right: 0.7rem;
-    bottom: 0.7rem;
-    max-width: none;
-    text-align: center;
-    font-size: 0.75rem;
-  }
-
-  .timing-panel {
-    gap: 0.7rem;
-    padding: 0.85rem;
-  }
-
-  .timing-activity {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .timing-meter {
-    width: min(100%, 5.6rem);
-  }
-
-  .mission-log-copy {
-    padding: 0.75rem 0.8rem;
-  }
-
-  .timing-hint {
-    font-size: 0.92rem;
-  }
-
-  .mission-outcome {
-    min-height: 0;
   }
 
   .mission-toolbar,
@@ -1384,8 +776,7 @@
     flex-direction: column;
   }
 
-  .mission-btn,
-  .mission-action-btn {
+  .mission-btn {
     width: 100%;
   }
 }
@@ -1394,15 +785,6 @@
   .start-shell,
   .end-shell {
     padding: clamp(1rem, 3vw, 2rem);
-  }
-
-  .mission-shell {
-    gap: 0.85rem;
-    padding: 0.95rem;
-  }
-
-  .mission-stage-shell {
-    min-height: clamp(11rem, 28dvh, 14rem);
   }
 }
 
@@ -1423,96 +805,6 @@
     font-size: clamp(1.9rem, 5.2vw, 3.4rem);
   }
 
-  #start-screen .start-shell {
-    display: grid;
-    width: min(100%, 58rem);
-    max-width: 100%;
-    grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.16fr);
-    grid-template-areas:
-      'kicker crew'
-      'title crew'
-      'subtitle crew'
-      'outline crew'
-      'actions actions'
-      'hint hint';
-    align-content: start;
-    column-gap: 0.75rem;
-    row-gap: 0.35rem;
-    padding: 0.8rem 0.9rem;
-  }
-
-  #start-screen .mission-kicker {
-    grid-area: kicker;
-  }
-
-  #start-screen .mission-title {
-    grid-area: title;
-  }
-
-  #start-screen .mission-subtitle {
-    grid-area: subtitle;
-    margin-top: 0;
-    font-size: 0.84rem;
-    line-height: 1.25;
-  }
-
-  #start-screen .mission-outline {
-    grid-area: outline;
-    margin-top: 0.35rem;
-    gap: 0.4rem;
-  }
-
-  #start-screen .mission-outline li {
-    font-size: 0.8rem;
-    line-height: 1.25;
-  }
-
-  #start-screen .crew-picker-panel {
-    grid-area: crew;
-    margin-top: 0;
-    min-width: 0;
-    padding: 0.6rem;
-  }
-
-  #start-screen .crew-picker-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0.4rem;
-    margin-top: 0.6rem;
-  }
-
-  #start-screen .crew-option-body {
-    min-height: 2.85rem;
-    padding: 0.45rem 0.55rem;
-    gap: 0.45rem;
-  }
-
-  #start-screen .crew-option-badge {
-    width: 1.9rem;
-    height: 1.9rem;
-    font-size: 0.68rem;
-  }
-
-  #start-screen .crew-option-copy strong {
-    font-size: 0.74rem;
-  }
-
-  #start-screen .crew-option-copy span {
-    font-size: 0.6rem;
-    line-height: 1.2;
-  }
-
-  #start-screen .start-actions {
-    grid-area: actions;
-    margin-top: 0.45rem;
-    justify-content: flex-start;
-  }
-
-  #start-screen #gamepad-start-hint {
-    grid-area: hint;
-    margin-top: 0;
-    font-size: 0.72rem;
-  }
-
   .mission-subtitle,
   .end-summary {
     margin-top: 0.65rem;
@@ -1520,37 +812,18 @@
     line-height: 1.4;
   }
 
-  .mission-outline {
-    margin-top: 0.9rem;
-    gap: 0.55rem;
-  }
-
-  .mission-outline li {
-    gap: 0.55rem;
-    line-height: 1.35;
-  }
-
-  .mission-outline li:nth-child(1)::before,
-  .mission-outline li:nth-child(2)::before,
-  .mission-outline li:nth-child(3)::before {
-    width: 1.65rem;
-    height: 1.65rem;
-    font-size: 0.75rem;
-  }
-
   .crew-picker-panel {
     margin-top: 0.9rem;
     padding: 0.75rem;
   }
 
-  .crew-picker-copy,
-  #crew-picker-help {
+  .crew-picker-copy {
     font-size: 0.76rem;
     line-height: 1.35;
   }
 
   .crew-picker-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 0.55rem;
   }
 
@@ -1566,7 +839,6 @@
   }
 
   .start-actions,
-  .mission-toolbar,
   .settings-actions {
     margin-top: 1rem;
   }
@@ -1581,112 +853,5 @@
     align-self: stretch;
     width: 100%;
     padding: 1rem 1.1rem;
-  }
-
-  .mission-shell {
-    align-self: stretch;
-    width: 100%;
-    grid-template-columns: minmax(0, 1.3fr) minmax(14rem, 0.9fr);
-    grid-template-areas:
-      'header header'
-      'stage panel'
-      'toolbar panel';
-    gap: 0.75rem;
-    padding: 0.85rem;
-  }
-
-  .mission-header {
-    flex-direction: row;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 0.5rem;
-  }
-
-  .mission-header-stats {
-    justify-content: flex-end;
-    gap: 0.45rem;
-  }
-
-  .mission-pill {
-    padding: 0.35rem 0.65rem;
-    font-size: 0.8rem;
-  }
-
-  .mission-status-line {
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
-  }
-
-  .mission-prompt {
-    font-size: 0.95rem;
-    line-height: 1.35;
-  }
-
-  .mission-stage-shell {
-    min-height: 9rem;
-  }
-
-  .mission-countdown-callout {
-    top: 0.55rem;
-    padding: 0.35rem 0.7rem;
-    font-size: 0.68rem;
-  }
-
-  .timing-panel {
-    gap: 0.6rem;
-    padding: 0.75rem;
-  }
-
-  .mission-log-copy {
-    padding: 0.65rem 0.72rem;
-  }
-
-  .timing-activity {
-    grid-template-columns: 1fr;
-    gap: 0.55rem;
-  }
-
-  .timing-header {
-    gap: 0.4rem;
-  }
-
-  .timing-header h3 {
-    font-size: 0.92rem;
-  }
-
-  .timing-meter {
-    width: min(100%, 4.8rem);
-  }
-
-  .timing-hint,
-  .mission-outcome {
-    font-size: 0.86rem;
-    line-height: 1.35;
-  }
-
-  .mission-outcome {
-    min-height: 0;
-  }
-}
-
-[data-reduce-motion='reduce'] .screen,
-[data-reduce-motion='reduce'] .mission-btn,
-[data-reduce-motion='reduce'] .mission-countdown-callout,
-[data-reduce-motion='reduce'] .countdown-overlay,
-[data-reduce-motion='reduce'] .mission-recovery-boat,
-[data-reduce-motion='reduce'] .mission-star {
-  animation: none !important;
-  transition: none !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  :root:not([data-reduce-motion='no-preference']) .screen,
-  :root:not([data-reduce-motion='no-preference']) .mission-btn,
-  :root:not([data-reduce-motion='no-preference']) .mission-countdown-callout,
-  :root:not([data-reduce-motion='no-preference']) .countdown-overlay,
-  :root:not([data-reduce-motion='no-preference']) .mission-recovery-boat,
-  :root:not([data-reduce-motion='no-preference']) .mission-star {
-    animation: none !important;
-    transition: none !important;
   }
 }

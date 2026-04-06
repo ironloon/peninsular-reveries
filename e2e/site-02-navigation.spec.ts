@@ -26,10 +26,10 @@ test.describe('SITE-02: Navigation', () => {
     expect(page.url()).toContain('super-word');
   });
 
-  test('game page exposes Home inside the Menu', async ({ page }) => {
+  test('game page exposes Quit inside the Menu', async ({ page }) => {
     await page.goto('/super-word/');
     await page.getByRole('button', { name: 'Menu' }).click();
-    await expect(page.getByRole('link', { name: 'Home' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Quit' })).toBeVisible();
   });
 
   test('back button returns to previous page', async ({ page }) => {

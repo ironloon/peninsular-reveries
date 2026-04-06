@@ -4,7 +4,7 @@ import { getGameAttribution } from '../data/attributions/index.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
-import { GameScreen, GameSettingsModal, SrOnly } from '../ui/game-shell.js'
+import { GameHeader, GameHeaderPill, GameScreen, GameSettingsModal, SettingsActions, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
 
 const pixelPassportModalOverlayStyles = {
   zIndex: 30,
@@ -92,17 +92,19 @@ export async function pixelPassportAction() {
 
         <GameScreen id="globe-screen" labelledBy="globe-heading" padded>
           <div className="globe-shell passport-panel">
-            <header className="screen-header passport-topbar">
-              <div>
+            <GameHeader
+              className="passport-topbar"
+              headingId="globe-heading"
+              leftContent={<>
                 <p className="screen-kicker">Explore Mode</p>
                 <h2 id="globe-heading" className="screen-title">Choose a place</h2>
                 <p id="globe-location-copy" className="screen-copy">Home base</p>
-              </div>
-              <div className="topbar-pills">
-                <span id="globe-memory-pill" className="passport-pill">0 memories</span>
-                <span id="globe-mystery-pill" className="passport-pill">0 mysteries</span>
-              </div>
-            </header>
+              </>}
+              rightContent={<>
+                <GameHeaderPill value={<span id="globe-memory-pill">0 memories</span>} />
+                <GameHeaderPill value={<span id="globe-mystery-pill">0 mysteries</span>} />
+              </>}
+            />
 
             <div className="globe-stage">
               <div className="world-globe" role="group" aria-label="Destination globe">
@@ -130,16 +132,16 @@ export async function pixelPassportAction() {
 
         <GameScreen id="travel-screen" labelledBy="travel-heading" padded>
           <div className="travel-shell passport-panel">
-            <header className="screen-header passport-topbar">
-              <div>
+            <GameHeader
+              className="passport-topbar"
+              headingId="travel-heading"
+              leftContent={<>
                 <p className="screen-kicker">Travel time</p>
                 <h2 id="travel-heading" className="screen-title">Magic ride</h2>
                 <p className="screen-copy"><span id="travel-from">Home</span> → <span id="travel-to">Somewhere new</span></p>
-              </div>
-              <div className="topbar-pills">
-                <span id="travel-mode-pill" className="passport-pill">By plane</span>
-              </div>
-            </header>
+              </>}
+              rightContent={<GameHeaderPill value={<span id="travel-mode-pill">By plane</span>} />}
+            />
 
             <div id="travel-stage" className="travel-stage" data-transport="bus">
               <div id="travel-background" className="travel-background" aria-hidden="true"></div>
@@ -158,16 +160,16 @@ export async function pixelPassportAction() {
 
         <GameScreen id="explore-screen" labelledBy="explore-heading" padded>
           <div className="explore-shell passport-panel">
-            <header className="screen-header passport-topbar">
-              <div>
+            <GameHeader
+              className="passport-topbar"
+              headingId="explore-heading"
+              leftContent={<>
                 <p className="screen-kicker">Destination</p>
                 <h2 id="explore-heading" className="screen-title">World stop</h2>
                 <p id="explore-progress" className="screen-copy">1 / 3 facts</p>
-              </div>
-              <div className="topbar-pills">
-                <button data-settings-open="true" className="passport-btn passport-btn-ghost passport-btn-small" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
-              </div>
-            </header>
+              </>}
+              rightContent={<button data-settings-open="true" className="passport-btn passport-btn-ghost passport-btn-small" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>}
+            />
 
             <div className="explore-stage">
               <div id="explore-scene" className="pixel-art scene-art" aria-hidden="true"></div>
@@ -210,16 +212,16 @@ export async function pixelPassportAction() {
 
         <GameScreen id="room-screen" labelledBy="room-heading" padded>
           <div className="room-shell passport-panel">
-            <header className="screen-header passport-topbar">
-              <div>
+            <GameHeader
+              className="passport-topbar"
+              headingId="room-heading"
+              leftContent={<>
                 <p className="screen-kicker">Your cozy room</p>
                 <h2 id="room-heading" className="screen-title">Memory shelf</h2>
                 <p id="room-count" className="screen-copy">0 memories</p>
-              </div>
-              <div className="topbar-pills">
-                <button data-settings-open="true" className="passport-btn passport-btn-ghost passport-btn-small" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
-              </div>
-            </header>
+              </>}
+              rightContent={<button data-settings-open="true" className="passport-btn passport-btn-ghost passport-btn-small" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>}
+            />
 
             <div className="room-stage">
               <div id="room-pip" className="guide-sprite room-pip" aria-hidden="true"></div>
@@ -245,16 +247,16 @@ export async function pixelPassportAction() {
 
         <GameScreen id="mystery-screen" labelledBy="mystery-heading" padded>
           <div className="mystery-shell passport-panel">
-            <header className="screen-header passport-topbar">
-              <div>
+            <GameHeader
+              className="passport-topbar"
+              headingId="mystery-heading"
+              leftContent={<>
                 <p className="screen-kicker">Mystery Mode</p>
                 <h2 id="mystery-heading" className="screen-title">Where on Earth?</h2>
                 <p id="mystery-attempt-pill" className="screen-copy">Clue 1 of 3</p>
-              </div>
-              <div className="topbar-pills">
-                <button data-settings-open="true" className="passport-btn passport-btn-ghost passport-btn-small" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
-              </div>
-            </header>
+              </>}
+              rightContent={<button data-settings-open="true" className="passport-btn passport-btn-ghost passport-btn-small" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>}
+            />
 
             <div className="mystery-stage">
               <div className="mystery-card">
@@ -293,40 +295,36 @@ export async function pixelPassportAction() {
 
       <GameSettingsModal title="Menu" overlayStyles={pixelPassportModalOverlayStyles}>
 
-          <section className="settings-section">
-            <h3>Controls</h3>
+          <SettingsSection title="🗺️ Controls">
             <ul className="settings-list">
               <li>Tap a place on the globe to ride there.</li>
               <li>Arrow keys or D-pad move between places.</li>
               <li>Enter, Space, or A picks the highlighted place.</li>
             </ul>
-          </section>
+          </SettingsSection>
 
-          <section className="settings-section">
-            <h3>Modes</h3>
+          <SettingsSection title="🌍 Modes">
             <p>Explore Mode lets you roam the world. Mystery Mode gives you three clues and asks you to guess the place.</p>
-          </section>
+          </SettingsSection>
 
-          <section className="settings-section">
-            <h3>Audio</h3>
-            <label className="settings-toggle-row" htmlFor="sound-enabled-toggle">
-              <span>Sound</span>
-              <input type="checkbox" id="sound-enabled-toggle" />
-            </label>
-            <p className="settings-help">Pip and the magic bus use tiny browser-made sounds.</p>
-          </section>
+          <SettingsSection title="🔊 Audio">
+            <SettingsToggle
+              id="sound-enabled-toggle"
+              label="Sound"
+              helpText="Pip and the magic bus use tiny browser-made sounds."
+            />
+          </SettingsSection>
 
-          <section className="settings-section">
-            <h3>Accessibility</h3>
-            <label className="settings-toggle-row" htmlFor="reduce-motion-toggle">
-              <span>Reduce motion</span>
-              <input type="checkbox" id="reduce-motion-toggle" />
-            </label>
-            <p id="reduce-motion-help" className="settings-help">Defaults to your device setting until you change it here.</p>
-          </section>
+          <SettingsSection title="Accessibility">
+            <SettingsToggle
+              id="reduce-motion-toggle"
+              label="Reduce motion"
+              helpText="Defaults to your device setting until you change it here."
+              helpId="reduce-motion-help"
+            />
+          </SettingsSection>
 
-          <section className="settings-section">
-            <h3>Credits &amp; License</h3>
+          <SettingsSection title="© Credits &amp; License">
             <p className="settings-help"><span className="settings-label">Code license:</span> {attribution.codeLicense}</p>
             <p className="settings-help">{attribution.summary}</p>
             {attribution.entries.map((entry) => (
@@ -339,13 +337,9 @@ export async function pixelPassportAction() {
                 <p className="settings-help"><span className="settings-label">License:</span> {entry.license}</p>
               </article>
             ))}
-          </section>
+          </SettingsSection>
 
-          <div className="settings-actions">
-            <button id="restart-btn" type="button" className="passport-btn passport-btn-secondary settings-restart-btn">Restart</button>
-            <a href={homePath} className="passport-btn passport-btn-secondary settings-quit-link">Quit</a>
-            <button id="settings-close" className="passport-btn passport-btn-primary" type="button">Close</button>
-          </div>
+          <SettingsActions quitHref={homePath} showRestart={true} />
       </GameSettingsModal>
 
       <SrOnly id="game-status" ariaLive="polite" ariaAtomic />

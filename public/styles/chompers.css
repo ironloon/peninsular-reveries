@@ -314,16 +314,12 @@
 
 /* ===== HUD ===== */
 
-#game-hud {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
+.game-hud {
   padding: 0.45rem 0.9rem;
   background: rgba(13, 40, 34, 0.88);
   border-bottom: 1px solid var(--line);
   flex-shrink: 0;
   min-height: 2.5rem;
-  flex-wrap: wrap;
 }
 
 #score {
@@ -723,12 +719,6 @@
     padding: 0.45rem 0.7rem;
   }
 
-  #game-hud {
-    gap: 0.38rem;
-    padding: 0.35rem 0.65rem;
-    min-height: 2.2rem;
-  }
-
   .area-picker-grid {
     grid-template-columns: 1fr;
   }
@@ -742,10 +732,19 @@
   }
 }
 
+/* ===== RESPONSIVE: portrait phone (~420px) ===== */
+
+@media (max-width: 420px) {
+  .game-hud {
+    padding: 0.35rem 0.65rem;
+    min-height: 2.2rem;
+  }
+}
+
 /* ===== RESPONSIVE: landscape phone (~844x390) ===== */
 
 @media (max-height: 500px) and (orientation: landscape) {
-  #game-hud {
+  .game-hud {
     min-height: 1.9rem;
     padding: 0.28rem 0.7rem;
   }
@@ -806,4 +805,244 @@
   .end-shell {
     max-width: 54rem;
   }
+}
+
+/* ── Frenzy ──────────────────────────────────────────────────────────────── */
+
+/* Mode selector toggle */
+.mode-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.mode-toggle-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 0.4rem;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font-family: var(--font);
+  font-size: 0.9rem;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.mode-toggle-btn[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--bg-0);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+/* Frenzy config panel */
+#frenzy-config {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.frenzy-fieldset {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0.3rem;
+  padding: 0.4rem 0.6rem;
+  margin: 0;
+}
+
+.frenzy-fieldset legend {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  padding: 0 0.25rem;
+}
+
+.mode-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-top: 0.3rem;
+}
+
+.mode-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.frenzy-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.frenzy-field-label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+/* Color picker swatches */
+#player-color-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.color-swatch {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.color-swatch.active,
+.color-swatch:focus {
+  border-color: #fff;
+  transform: scale(1.15);
+}
+
+/* NPC hippo positioning */
+.npc-hippo {
+  position: absolute;
+  left: var(--hippo-x, 0%);
+  top: var(--hippo-y, 0%);
+  transform: translate(-50%, -50%);
+  z-index: 5;
+  pointer-events: none;
+  width: clamp(3rem, 8vw, 5rem);
+  height: clamp(3rem, 8vw, 5rem);
+  background: var(--hippo-color, #4ecdc4);
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* NPC animations */
+.npc-hippo.chomping {
+  animation: npcChomp 0.4s ease;
+}
+
+.npc-hippo.disappointed {
+  animation: npcWobble 0.6s ease;
+}
+
+@keyframes npcChomp {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.3); }
+}
+
+@keyframes npcWobble {
+  0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+  25% { transform: translate(-50%, -50%) rotate(-10deg); }
+  75% { transform: translate(-50%, -50%) rotate(10deg); }
+}
+
+/* Timer bar */
+#round-timer-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  position: relative;
+  flex-shrink: 0;
+}
+
+#round-timer-fill {
+  height: 100%;
+  width: 100%;
+  background: #4caf50;
+  transition: width 0.1s linear, background 0.3s;
+}
+
+/* Frenzy scoreboard */
+#frenzy-scoreboard {
+  position: absolute;
+  top: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.78rem;
+  color: #fff;
+  display: flex;
+  gap: 0.75rem;
+  white-space: nowrap;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Shrink claimed fruit (NPC chomps) */
+.shrink-claimed {
+  animation: fruitClaim 0.3s ease forwards;
+}
+
+@keyframes fruitClaim {
+  to {
+    transform: scale(0.1) translate(-50%, -50%);
+    opacity: 0;
+  }
+}
+
+/* Frenzy end-screen result rows */
+.frenzy-score-row {
+  text-align: center;
+  font-size: 1rem;
+  color: var(--ink);
+  padding: 0.15rem 0;
+}
+
+/* ===== FRUIT INTERACTIVITY ===== */
+
+.chomper-fruit {
+  animation: fruitBounce 0.3s ease forwards;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.3), transparent 60%),
+              var(--fruit-bg, #fff);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.12s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.12s;
+  cursor: pointer;
+}
+
+.chomper-fruit:not(:disabled):hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.chomper-fruit:not(:disabled):active {
+  transform: scale(0.95);
+}
+
+@keyframes fruitBounce {
+  0% { transform: scale(0.7); opacity: 0.4; }
+  60% { transform: scale(1.12); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ===== CONFETTI PARTICLES ===== */
+
+.confetti-particle {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1000;
+  animation: confettiFly 0.6s ease-out forwards;
+}
+
+@keyframes confettiFly {
+  to { transform: translate(var(--dx, 0px), var(--dy, -40px)) scale(0); opacity: 0; }
 }

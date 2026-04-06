@@ -50,6 +50,7 @@ export function renderScene(puzzle: Puzzle, state: GameState, sceneEl: HTMLEleme
     }
     btn.style.left = `${item.x}%`
     btn.style.top = `${item.y}%`
+    if ((item.scale ?? 1) > 2.0) btn.style.zIndex = '1'
 
     if (item.type === 'letter' && item.char) {
       btn.setAttribute('aria-label', `${item.emoji} ${item.label} — contains letter ${item.char}`)
