@@ -43,8 +43,15 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
     - Run `npm run sync:attributions` if any attribution files changed.
     - Run `npm run test:local` as the full integration gate.
 11. **Commit and push.** If integration passes: stage changed files, commit with a summary message, push.
-12. **Handle failures.** If integration fails: diagnose, fix, re-run. Escalate to the user only if genuinely stuck.
-13. **Resumption.** On re-invocation after a session interruption: read the plan, skip units already marked `done`, resume from the first `pending` unit.
+12. **Record the implementation commit.** After a successful push, get the commit SHA (`git rev-parse --short HEAD`) and append an `## Implementation` section to the active plan:
+    ```markdown
+    ## Implementation
+    Commit: <short-sha>
+    Pushed: <date>
+    ```
+    Use `memory str_replace` or `memory insert` to add this section after the `## Dispatch Order` section. This gives the postmortem skill a concrete SHA to verify against production.
+13. **Handle failures.** If integration fails: diagnose, fix, re-run. Escalate to the user only if genuinely stuck.
+14. **Resumption.** On re-invocation after a session interruption: read the plan, skip units already marked `done`, resume from the first `pending` unit.
 
 ## Plan Format
 

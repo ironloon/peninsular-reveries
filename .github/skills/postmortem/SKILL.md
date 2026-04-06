@@ -23,10 +23,11 @@ Gather Context → User Input → Analysis → Findings → Apply
 
 Collect everything needed for evaluation before engaging the user:
 
-1. **Read the active plan.** Use `memory` to view `/memories/repo/plans/active-plan.md`. Parse all WUs, their intents, owned files, dispatch order, and status.
-2. **Read the implementation commit(s).** Run `git log --oneline -5` to find the commit(s) that landed the plan. Then run `git show <sha> --stat` for a file-level summary and `git diff <sha>~1 <sha> -- <specific files>` for targeted diffs when evaluating individual WUs.
-3. **Fetch production pages.** Use `fetch_webpage` to load the relevant game/site pages at `https://jwgeller.github.io/peninsular-reveries/` and note any obvious issues (broken layout, missing content, error states).
-4. **Read process files.** Skim the current versions of:
+1. **Read the active plan.** Use `memory` to view `/memories/repo/plans/active-plan.md`. Parse all WUs, their intents, owned files, dispatch order, and status. Look for the `## Implementation` section — it contains the commit SHA the orchestrator recorded after pushing.
+2. **Read the implementation commit(s).** If the plan has an `## Implementation` section, use that SHA directly. Otherwise, run `git log --oneline -5` to find the commit(s) that landed the plan. Then run `git show <sha> --stat` for a file-level summary and `git diff <sha>~1 <sha> -- <specific files>` for targeted diffs when evaluating individual WUs.
+3. **Verify deployment.** Fetch the production root service worker at `https://jwgeller.github.io/peninsular-reveries/sw.js` using `fetch_webpage`. Extract the SHA from the `CACHE_NAME` value (format: `<prefix>-<sha>`). Compare it against the plan's implementation commit SHA. If they match, deployment is confirmed. If they don't match, warn the user that production may still be running an older build — the postmortem can still proceed but production observations may not reflect the plan's changes. If GitHub Pages is still deploying (404 or stale SHA), note this and suggest re-checking later.
+4. **Fetch production pages.** Use `fetch_webpage` to load the relevant game/site pages at `https://jwgeller.github.io/peninsular-reveries/` and note any obvious issues (broken layout, missing content, error states).
+5. **Read process files.** Skim the current versions of:
    - `.github/skills/planning/SKILL.md`
    - `.github/agents/orchestrator.agent.md`
    - `.github/agents/worker.agent.md`
@@ -36,7 +37,9 @@ Do not read every file end-to-end. Targeted reads for sections relevant to obser
 
 ### Phase 2 — User Input
 
-Accept the user's observations through both channels:
+**Auto mode.** If the user invokes the postmortem with "--auto", "auto", or "no questions" (e.g. "postmortem --auto"), skip the structured walkthrough. Process any free-form observations the user included in their invocation message, then proceed directly to Phase 3 with the agent's own analysis. The agent still presents full findings in Phase 4 for review — auto mode only skips the questions, not the output.
+
+**Interactive mode (default).** Accept the user's observations through both channels:
 
 **Free-form first.** If the user provides observations when invoking the skill, process those immediately — don't ignore them in favor of the structured flow.
 
