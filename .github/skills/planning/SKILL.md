@@ -81,6 +81,7 @@ Confirmed WUs are **not** re-presented automatically in subsequent workshop roun
 Plans live in `/memories/repo/plans/active-plan.md` (Copilot memory, workspace-persistent, not in git). There must be exactly one active plan file — the orchestrator reads only this path.
 
 - At the start of a new planning session, check whether `/memories/repo/plans/active-plan.md` already exists. If it does (e.g., the postmortem was skipped or the session was interrupted), delete it before creating the new one. Corrections from post-mortems are applied to process files during the postmortem itself — the planner does not need to read old plans.
+- Archived plans with post-mortem sections live in `/memories/repo/plans/archive/`. During Discovery, if the current task resembles a past plan (similar game, similar scope shape), list the archive directory and skim relevant plans for lessons. This is optional — don't block on it.
 - Do not silently create plans in a different location. Do not create separate named plan files — the orchestrator will not discover them.
 - After the orchestrator completes integration and pushes, **leave the plan file in place** — the user may run the `postmortem` skill to evaluate the result and append findings. The plan is replaced only when the next planning session starts.
 
