@@ -31,11 +31,12 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
 7. **Post-dispatch review.** After the sub-agent returns:
    a. Read every file the sub-agent reports as modified.
    b. Verify changes match the intent — no unrelated additions, no skipped requirements, no odd workarounds.
-   c. Run the unit's `verification` command in the terminal.
-   d. If changes need small corrections: fix them directly (this is the ONLY time you may edit files). For larger problems, re-dispatch with specific fix instructions.
-   e. If there are genuine blockers that require product-direction decisions: escalate to the user.
-   f. Only mark the unit as `done` after both review and verification pass.
-   g. If any files were modified outside a WU's owned-file list (by the orchestrator's own corrections or by earlier sub-agents), note which files and why in the plan under a `## Boundary Notes` section so the critique can trace them.
+   c. **Check numeric targets.** If the intent specifies a quantity (e.g., "expand pool to ~60 entries", "50+ words per tier"), verify the actual count. Flag shortfalls and either re-dispatch with specific instructions or document the gap with a rationale.
+   d. Run the unit's `verification` command in the terminal.
+   e. If changes need small corrections: fix them directly (this is the ONLY time you may edit files). For larger problems, re-dispatch with specific fix instructions.
+   f. If there are genuine blockers that require product-direction decisions: escalate to the user.
+   g. Only mark the unit as `done` after both review and verification pass.
+   h. If any files were modified outside a WU's owned-file list (by the orchestrator's own corrections or by earlier sub-agents), note which files and why in the plan under a `## Boundary Notes` section so the critique can trace them.
 8. **Update status.** Use `memory str_replace`: `in-progress` → `done` after review passes, or `in-progress` → `failed` if stuck.
 9. **Loop (MANDATORY).** You are NOT done. Check for newly dispatchable units (dependencies now met) and repeat from step 2. Do NOT stop after a single unit. Continue until every unit is `done` or `failed`.
 10. **Integration gate.** When all units are `done`:
@@ -43,19 +44,20 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
     - Kill any orphaned processes on ports 3000 and 4173.
     - Run `npm run sync:attributions` if any attribution files changed.
     - Run `npm run test:local` as the full integration gate.
-11. **Commit and push.** If integration passes:
+11. **Finalize WU statuses.** Before committing, update every WU status in the score to its final state (`done` or `failed`). Do not leave any WU as `in-progress`, `pending`, or `not-started`.
+12. **Commit and push.** If integration passes:
     - Run `git status` and compare the changed-file list against the union of all WU owned-file lists and deferred-edit files.
     - If there are files changed outside the plan's scope (e.g., user edits made before or during dispatch), list them and ask the user whether to include them in this commit or leave them unstaged.
     - Stage the approved files, commit with a summary message, push.
-12. **Record the implementation commit.** After a successful push, get the commit SHA (`git rev-parse --short HEAD`) and append an `## Implementation` section to the active score:
+13. **Record the implementation commit.** After a successful push, get the commit SHA (`git rev-parse --short HEAD`) and append an `## Implementation` section to the active score:
     ```markdown
     ## Implementation
     Commit: <short-sha>
     Pushed: <date>
     ```
     Use `memory str_replace` or `memory insert` to add this section after the `## Dispatch Order` section. This gives the critique skill a concrete SHA to verify against production.
-13. **Handle failures.** If integration fails: diagnose, fix, re-run. Escalate to the user only if genuinely stuck.
-14. **Resumption.** On re-invocation after a session interruption: read the plan, skip units already marked `done`, resume from the first `pending` unit.
+14. **Handle failures.** If integration fails: diagnose, fix, re-run. Escalate to the user only if genuinely stuck.
+15. **Resumption.** On re-invocation after a session interruption: read the plan, skip units already marked `done`, resume from the first `pending` unit.
 
 ## Plan Format
 

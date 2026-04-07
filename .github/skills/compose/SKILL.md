@@ -165,6 +165,8 @@ Changes needed in files that are shared across WUs or owned by the orchestrator 
 ### Verification
 A single shell command the sub-agent runs to validate its work. Must cover only the files in this WU's owned set. Never `npm run test:local` — that is the orchestrator's integration gate.
 
+**For verification/testing WUs:** The intent must list explicit per-file expected assertions, not vague directives like "fill E2E gaps." For each owned test file, name the specific checks: e.g., "in `site-08-chompers.spec.ts`, assert two `role=tab` elements exist, tab switching shows/hides panels, X close button dismisses modal." This gives the sub-agent concrete acceptance criteria.
+
 ### Intent
 The most critical field. This is what the orchestrator enriches into the sub-agent dispatch prompt. It should be:
 
@@ -195,7 +197,7 @@ Files used by multiple games or the build system (`package.json`, `build.ts`, `a
 
 The plan's Intent fields must embed the relevant project constraints from the review skill references so sub-agents don't need to load them. Key constraints to include when relevant:
 
-- **Budget**: ≤ 50KB JS, ≤ 30KB CSS, ≤ 200KB total per game page
+- **Budget**: ≤ 150KB JS, ≤ 60KB CSS, ≤ 400KB total per game page
 - **Layout**: Full-screen, no document scroll on game screens, `100dvh`, safe-area padding, 4 viewport checkpoints (390×844, 844×390, 1024×768, 1280×800)
 - **Pacing**: Calm, user-controlled, no timing-based failure unless user requests it
 - **Reading level**: In-game copy at ~level-1 reading level, short sentences
