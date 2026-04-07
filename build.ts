@@ -78,9 +78,13 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/', outPath: 'index.html' },
   { url: 'http://localhost/attributions/', outPath: 'attributions/index.html' },
   { url: 'http://localhost/mission-orbit/', outPath: 'mission-orbit/index.html' },
+  { url: 'http://localhost/mission-orbit/info/', outPath: 'mission-orbit/info/index.html' },
   { url: 'http://localhost/super-word/', outPath: 'super-word/index.html' },
+  { url: 'http://localhost/super-word/info/', outPath: 'super-word/info/index.html' },
   { url: 'http://localhost/chompers/', outPath: 'chompers/index.html' },
+  { url: 'http://localhost/chompers/info/', outPath: 'chompers/info/index.html' },
   { url: 'http://localhost/pixel-passport/', outPath: 'pixel-passport/index.html' },
+  { url: 'http://localhost/pixel-passport/info/', outPath: 'pixel-passport/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 

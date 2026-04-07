@@ -210,7 +210,7 @@ export const settingsActionsStyles = {
   display: 'flex',
   flexDirection: 'row',
   gap: '0.5rem',
-  alignItems: 'center',
+  alignItems: 'stretch',
 }
 
 export const tabBarStyles = {
@@ -260,7 +260,7 @@ export const tabButtonStyles = {
 
 export const tabPanelStyles = {
   overflowY: 'auto',
-  maxHeight: 'clamp(240px, 65dvh, 540px)',
+  height: 'clamp(240px, 55dvh, 480px)',
   paddingRight: '0.25rem',
   paddingBottom: '0.5rem',
   position: 'relative',

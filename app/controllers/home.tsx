@@ -1,6 +1,5 @@
 import { css } from '@remix-run/component'
 import { renderToString } from '@remix-run/component/server'
-import { attributionsPagePath } from '../data/attributions/index.js'
 import { Document } from '../ui/document.js'
 import { games } from '../data/game-registry.js'
 import { getSiteBasePath } from '../site-config.js'
@@ -63,7 +62,7 @@ export async function homeAction() {
         </noscript>
         {liveGames.map(game => {
           const gamePath = withBasePath(`/${game.slug}/`, siteBasePath)
-          const attributionPath = withBasePath(`${attributionsPagePath}#${game.slug}`, siteBasePath)
+          const attributionPath = withBasePath(`/${game.slug}/info/`, siteBasePath)
 
           return (
             <GameCard

@@ -4,7 +4,6 @@ import { GameHeader, GameHeaderPill, GameScreen, GameTabbedModal, InfoSection, S
 
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
-import { attributionsPagePath } from '../data/attributions/index.js'
 
 const superWordScreenStyles = {
   transition: 'transform 500ms cubic-bezier(0.4, 0, 0.2, 1)',
@@ -18,7 +17,7 @@ const superWordModalOverlayStyles = {
 export async function superWordAction() {
   const siteBasePath = getSiteBasePath()
   const homePath = withBasePath('/', siteBasePath)
-  const infoPagePath = withBasePath(attributionsPagePath, siteBasePath)
+  const infoPagePath = withBasePath('/super-word/info/', siteBasePath)
   const html = await renderToString(
     <Document
       title="Super Word"
@@ -135,10 +134,10 @@ export async function superWordAction() {
           </>}
           infoContent={<>
             <InfoSection title="About Super Word">
-              <p>Find the letters hidden in the scene to spell each word. Words are organized by phonemic complexity — from simple words like CAT to multi-syllable words like GARDEN.</p>
+              <p>Find hidden letters in the scene to spell each word. The word bank groups concrete, imageable vocabulary into a research-backed reading progression — from simple CVC words like CAT through consonant blends, long-vowel patterns, and multi-syllable words like GARDEN.</p>
               <p>Inspired by <a href="https://pbskids.org/superwhy" target="_blank" rel="noopener">Super Why!</a> from PBS Kids.</p>
             </InfoSection>
-            <p className="info-more-link"><a href={`${infoPagePath}#super-word`}>More info, credits &amp; attributions →</a></p>
+            <p className="info-more-link"><a href={infoPagePath}>More info, credits &amp; attributions →</a></p>
           </>}
         />
 

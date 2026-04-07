@@ -224,11 +224,12 @@ body.gamepad-active .music-toggle-btn:focus {
 
 .settings-toggle-btn-inline {
   border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
+  border-radius: 8px;
   font-size: 1rem;
   opacity: 1;
-  padding: 0.5rem 0.8rem;
+  padding: 0.5rem 0.7rem;
   min-width: 44px;
+  min-height: 44px;
 }
 
 .settings-content {
@@ -279,12 +280,6 @@ body.gamepad-active .music-toggle-btn:focus {
   gap: var(--game-space-xs);
 }
 
-@media (max-width: 420px) {
-  .controls-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
 .controls-column h4 {
   font-size: 0.75rem;
   margin: 0 0 2px;
@@ -314,11 +309,13 @@ body.gamepad-active .music-toggle-btn:focus {
   flex-direction: row;
   gap: var(--game-space-sm);
   margin-top: var(--game-space-sm);
+  align-items: stretch;
 }
 
 .settings-actions > * {
   flex: 1 1 0;
   min-width: 0;
+  box-sizing: border-box;
 }
 
 .settings-restart-btn,
@@ -515,6 +512,7 @@ body.gamepad-active .music-toggle-btn:focus {
   text-align: center;
   color: var(--game-white);
   width: 100%;
+  box-sizing: border-box;
   overflow-wrap: anywhere;
   word-break: break-word;
   min-height: 0;

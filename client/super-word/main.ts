@@ -119,27 +119,26 @@ function onStartGame(): void {
   pendingFlightIndices.clear()
   gameState = createInitialState(activePuzzles.length, false)
 
-  // Show the game screen first, then render the scene once the screen
-  // transition is fully settled and the canvas has real dimensions.
-  // iOS Safari needs the transition to finish before clientWidth/Height
-  // report non-zero, so we wait for transitionend (with a 650ms fallback).
+  // Show the game screen first, then render the scene once the browser
+  // has committed layout and the canvas has real dimensions.
+  // Double-rAF ensures post-layout; the follow-up re-render handles iOS
+  // Safari's canvas emoji warm-up (first fillText with emoji fonts may
+  // produce invisible glyphs until the font is primed).
   showScreen('game-screen')
-  const gameScreen = document.getElementById('game-screen')!
-  let rendered = false
-  const renderOnce = () => {
-    if (rendered) return
-    rendered = true
-    refreshGameScreen()
-    syncMusicPlayback()
-    announceNextPuzzle(
-      getState().currentPuzzleIndex + 1,
-      activePuzzles.length,
-      currentPuzzle().prompt,
-    )
-    moveFocusToFirstSceneItem(300)
-  }
-  gameScreen.addEventListener('transitionend', renderOnce, { once: true })
-  setTimeout(renderOnce, 650)
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      refreshGameScreen()
+      syncMusicPlayback()
+      announceNextPuzzle(
+        getState().currentPuzzleIndex + 1,
+        activePuzzles.length,
+        currentPuzzle().prompt,
+      )
+      moveFocusToFirstSceneItem(300)
+      // Re-render after one more frame to catch emoji font warm-up on iOS
+      requestAnimationFrame(() => refreshGameScreen())
+    })
+  })
 }
 
 function onLetterCollected(item: SceneItem): void {
