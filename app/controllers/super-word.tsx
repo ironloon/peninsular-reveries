@@ -104,8 +104,7 @@ export async function superWordAction() {
               <SettingsToggle id="reduce-motion-toggle" label="Reduce Motion" helpId="reduce-motion-help" />
             </SettingsSection>
             <SettingsSection title="Level">
-              <label htmlFor="difficulty-select" className="settings-label">Level</label>
-              <select id="difficulty-select" className="puzzle-select" defaultValue="hero">
+              <select id="difficulty-select" className="puzzle-select" defaultValue="hero" aria-label="Level">
                 <option value="sidekick">⭐ Sidekick</option>
                 <option value="hero">🦸 Hero</option>
                 <option value="super">💫 Super</option>

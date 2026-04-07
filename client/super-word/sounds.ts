@@ -104,14 +104,24 @@ function scheduleAmbientMeasure(startTime: number): void {
 
 function startAmbientMusic(): void {
   const c = getAudioContext()
-  if (c.state === 'suspended' || musicLoopHandle !== null || document.hidden) return
+  if (musicLoopHandle !== null || document.hidden) return
 
-  scheduleAmbientMeasure(c.currentTime + 0.05)
-  musicLoopHandle = window.setInterval(() => {
-    const currentCtx = getAudioContext()
-    if (currentCtx.state === 'suspended' || document.hidden) return
-    scheduleAmbientMeasure(currentCtx.currentTime + 0.05)
-  }, AMBIENT_MEASURE_MS)
+  const begin = () => {
+    if (musicLoopHandle !== null) return
+    scheduleAmbientMeasure(c.currentTime + 0.05)
+    musicLoopHandle = window.setInterval(() => {
+      const currentCtx = getAudioContext()
+      if (currentCtx.state === 'suspended' || document.hidden) return
+      scheduleAmbientMeasure(currentCtx.currentTime + 0.05)
+    }, AMBIENT_MEASURE_MS)
+  }
+
+  if (c.state === 'running') {
+    begin()
+  } else {
+    // iOS keeps AudioContext suspended until resume() resolves
+    void c.resume().then(() => { if (!document.hidden) begin() })
+  }
 }
 
 function stopAmbientMusic(): void {

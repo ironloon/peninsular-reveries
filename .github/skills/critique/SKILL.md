@@ -83,12 +83,15 @@ After presenting findings, proceed to implement fixes (bugs and UX issues). Desi
 
 Run tests after each fix. If tests break, diagnose and resolve before moving on.
 
-### FR Phase 5 — Archive & Push
+### FR Phase 5 — Deploy & Re-verify
 
-1. **Archive findings.** Create `/memories/repo/plans/archive/<YYYY-MM-DD>-field-review-<slug>.md` with the findings + what was implemented. Same archive directory as plan critiques.
-2. **Update process files** if findings reveal a process gap.
-3. **Run full validation.** `npm run test:local` + `npm run build`.
-4. **Commit and push** with a descriptive message summarizing the field review fixes.
+1. **Run full validation.** `npm run test:local` + `npm run build`.
+2. **Commit and push** with a descriptive message summarizing the field review fixes.
+3. **Confirm deployment.** Wait for the Actions run to succeed (`gh run list --limit 1`). Then fetch the production `sw.js` and confirm the deployed SHA matches the commit just pushed.
+4. **Instruct user to hard-refresh.** Service workers cache aggressively. Tell the user: "Force-close your browser, reopen, and reload the page. If issues persist, go to Settings → Safari → Clear Website Data (or equivalent)." Do not declare the field review complete until the user confirms they see the new version.
+5. **User re-verifies on device.** The user tests the same observations from Phase 2 on the same device. Any findings that persist or new findings that appear trigger a new round of Phase 4 fixes. This loop continues until the user confirms the issues are resolved.
+6. **Only then: archive.** Create `/memories/repo/plans/archive/<YYYY-MM-DD>-field-review-<slug>.md` with the findings + what was implemented + what was re-verified. Same archive directory as plan critiques.
+7. **Update process files** if findings reveal a process gap.
 
 ---
 

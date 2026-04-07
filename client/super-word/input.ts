@@ -45,7 +45,7 @@ export function setupInput(
   // ── Scene item interaction (Pointer Events) ─────────────
   sceneEl.addEventListener('pointerdown', (e: PointerEvent) => {
     const target = (e.target as HTMLElement).closest('[data-item-id]') as HTMLElement | null
-    if (!target) return
+    if (!target || target.classList.contains('collected')) return
     e.preventDefault()
 
     const itemId = target.dataset.itemId
@@ -53,6 +53,10 @@ export function setupInput(
     const puzzle = getPuzzle()
     const item = puzzle.items.find(it => it.id === itemId)
     if (!item) return
+
+    // Verify this item hasn't already been collected via state
+    const collected = getState().collectedLetters.some(l => l.sourceId === item.id)
+    if (collected) return
 
     if (itemType === 'letter') {
       callbacks.onLetterCollected(item)

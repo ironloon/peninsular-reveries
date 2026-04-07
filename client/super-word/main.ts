@@ -109,7 +109,6 @@ function refreshGameScreen(): void {
 
 function onStartGame(): void {
   ensureAudioUnlocked()
-  syncMusicPlayback()
   sfxButton()
   const difficultySelect = document.getElementById('difficulty-select') as HTMLSelectElement | null
 
@@ -120,14 +119,19 @@ function onStartGame(): void {
   pendingFlightIndices.clear()
   gameState = createInitialState(activePuzzles.length, false)
 
-  refreshGameScreen()
+  // Show the game screen first so the canvas has non-zero dimensions,
+  // then render the scene after the layout completes.
   showScreen('game-screen')
-  announceNextPuzzle(
-    getState().currentPuzzleIndex + 1,
-    activePuzzles.length,
-    currentPuzzle().prompt,
-  )
-  moveFocusToFirstSceneItem(300)
+  requestAnimationFrame(() => {
+    refreshGameScreen()
+    syncMusicPlayback()
+    announceNextPuzzle(
+      getState().currentPuzzleIndex + 1,
+      activePuzzles.length,
+      currentPuzzle().prompt,
+    )
+    moveFocusToFirstSceneItem(300)
+  })
 }
 
 function onLetterCollected(item: SceneItem): void {
@@ -182,18 +186,9 @@ function onLetterCollected(item: SceneItem): void {
   updateCheckButtonState()
   renderGameHeader(getState(), currentPuzzle(), getState().currentPuzzleIndex, activePuzzles.length)
 
-  // Keep focus on current position — don't auto-advance
-  // The collected item becomes pointer-events:none, so update tabindex on remaining items
-  if (sceneItem) {
-    sceneItem.tabIndex = -1
-    // Focus nearest uncollected item without auto-advancing
-    const uncollected = Array.from(sceneEl.querySelectorAll('.sr-overlay-btn:not(.collected)')) as HTMLElement[]
-    if (uncollected.length > 0) {
-      for (const el of uncollected) el.tabIndex = -1
-      const nextLetter = uncollected.find((el) => el.dataset.itemType === 'letter') ?? uncollected[0]
-      nextLetter.tabIndex = 0
-    }
-  }
+  // Re-render the canvas so collected items are visually dimmed and their
+  // a11y overlay buttons are removed (prevents duplicate taps).
+  renderScene(currentPuzzle(), getState(), sceneEl)
 }
 
 function onDistractorClicked(item: SceneItem): void {

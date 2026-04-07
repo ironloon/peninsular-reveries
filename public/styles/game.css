@@ -331,26 +331,14 @@ body.gamepad-active .music-toggle-btn:focus {
   text-decoration: none;
   text-align: center;
   transition: background-color 150ms ease;
-}
-
-.settings-restart-btn {
   background: rgba(255, 255, 255, 0.12);
   color: var(--game-white);
   border: 2px solid rgba(255, 255, 255, 0.25);
 }
 
-.settings-restart-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.settings-quit-link {
-  background: rgba(255, 80, 80, 0.18);
-  color: var(--game-white);
-  border: 2px solid rgba(255, 80, 80, 0.35);
-}
-
+.settings-restart-btn:hover,
 .settings-quit-link:hover {
-  background: rgba(255, 80, 80, 0.3);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .settings-restart-btn:focus-visible,
@@ -505,7 +493,6 @@ body.gamepad-active .music-toggle-btn:focus {
   flex: 0 1 auto;
   flex-wrap: nowrap;
   min-width: 0;
-  overflow: hidden;
   gap: 0.25rem;
 }
 
@@ -637,6 +624,10 @@ body.gamepad-active .music-toggle-btn:focus {
   border: none;
   padding: 0;
   border-radius: 50%;
+}
+
+.sr-overlay-btn.collected {
+  pointer-events: none;
 }
 
 .sr-overlay-btn:focus-visible {
