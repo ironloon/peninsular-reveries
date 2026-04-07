@@ -1,15 +1,14 @@
 ---
-name: postmortem
+name: critique
 description: "Evaluate a completed plan's implementation against its intent, production behavior, and process quality. Use after the orchestrator has pushed and the user has tested in production. Produces findings that feed forward into the next planning cycle."
-user-invocable: true
-disable-model-invocation: true
+user-invocable: false
 ---
 
-# Post-Mortem
+# Critique
 
 Use this skill after an orchestrated plan has been implemented, pushed, and tested in production. The user invokes this directly — it is never auto-loaded.
 
-The post-mortem evaluates what worked, what didn't, and feeds corrections forward into both the active plan (for the next planner to read) and the process files themselves (planning skill, orchestrator agent, copilot instructions, review references).
+The critique evaluates what worked, what didn't, and feeds corrections forward into both the active score (for the next composer to read) and the process files themselves (compose skill, orchestrator agent, copilot instructions, review references).
 
 ---
 
@@ -23,21 +22,21 @@ Gather Context → User Input → Analysis → Findings → Apply
 
 Collect everything needed for evaluation before engaging the user:
 
-1. **Read the active plan.** Use `memory` to view `/memories/repo/plans/active-plan.md`. Parse all WUs, their intents, owned files, dispatch order, and status. Look for the `## Implementation` section — it contains the commit SHA the orchestrator recorded after pushing.
+1. **Read the active score.** Use `memory` to view `/memories/repo/plans/active-score.md`. Parse all WUs, their intents, owned files, dispatch order, and status. Look for the `## Implementation` section — it contains the commit SHA the orchestrator recorded after pushing.
 2. **Read the implementation commit(s).** If the plan has an `## Implementation` section, use that SHA directly. Otherwise, run `git log --oneline -5` to find the commit(s) that landed the plan. Then run `git show <sha> --stat` for a file-level summary and `git diff <sha>~1 <sha> -- <specific files>` for targeted diffs when evaluating individual WUs.
-3. **Verify deployment.** Fetch the production root service worker at `https://jwgeller.github.io/peninsular-reveries/sw.js` using `fetch_webpage`. Extract the SHA from the `CACHE_NAME` value (format: `<prefix>-<sha>`). Compare it against the plan's implementation commit SHA. If they match, deployment is confirmed. If they don't match, warn the user that production may still be running an older build — the postmortem can still proceed but production observations may not reflect the plan's changes. If GitHub Pages is still deploying (404 or stale SHA), note this and suggest re-checking later.
+3. **Verify deployment.** Fetch the production root service worker at `https://jwgeller.github.io/peninsular-reveries/sw.js` using `fetch_webpage`. Extract the SHA from the `CACHE_NAME` value (format: `<prefix>-<sha>`). Compare it against the plan's implementation commit SHA. If they match, deployment is confirmed. If they don't match, warn the user that production may still be running an older build — the critique can still proceed but production observations may not reflect the plan's changes. If GitHub Pages is still deploying (404 or stale SHA), note this and suggest re-checking later.
 4. **Fetch production pages.** Use `fetch_webpage` to load the relevant game/site pages at `https://jwgeller.github.io/peninsular-reveries/` and note any obvious issues (broken layout, missing content, error states).
 5. **Read process files.** Skim the current versions of:
-   - `.github/skills/planning/SKILL.md`
+   - `.github/skills/compose/SKILL.md`
    - `.github/agents/orchestrator.agent.md`
-   - `.github/agents/worker.agent.md`
+   - `.github/agents/performer.agent.md`
    - `copilot-instructions.md`
 
 Do not read every file end-to-end. Targeted reads for sections relevant to observed issues.
 
 ### Phase 2 — User Input
 
-**Auto mode.** If the user invokes the postmortem with "--auto", "auto", or "no questions" (e.g. "postmortem --auto"), skip the structured walkthrough. Process any free-form observations the user included in their invocation message, then proceed directly to Phase 3 with the agent's own analysis. The agent still presents full findings in Phase 4 for review — auto mode only skips the questions, not the output.
+**Auto mode.** If the user invokes the critique with "--auto", "auto", or "no questions" (e.g. "critique --auto"), skip the structured walkthrough. Process any free-form observations the user included in their invocation message, then proceed directly to Phase 3 with the agent's own analysis. The agent still presents full findings in Phase 4 for review — auto mode only skips the questions, not the output.
 
 **Interactive mode (default).** Accept the user's observations through both channels:
 
@@ -92,7 +91,7 @@ Cross-reference the three data sources (plan, code, user observations) to identi
 Produce a structured findings summary. Present it to the user in chat before applying anything.
 
 ```
-## Post-Mortem Findings: [Plan Title]
+## Critique Findings: [Plan Title]
 
 ### What Worked
 - [Specific things that went well, with evidence]
@@ -104,7 +103,7 @@ Produce a structured findings summary. Present it to the user in chat before app
 - [Concrete, actionable changes — not vague aspirations]
   - Plan-level: e.g. "Split UI+logic WUs even when files are coupled"
   - Process-level: e.g. "Orchestrator should read renderer output before dispatching animation WU"
-  - Skill-level: e.g. "Planning skill should require viewport checkpoint list in visual WU intents"
+  - Skill-level: e.g. "Compose skill should require viewport checkpoint list in visual WU intents"
 
 ### Process File Updates
 - [List each file that will be updated and what changes]
@@ -116,10 +115,10 @@ Get user approval before applying changes.
 
 After user approval:
 
-1. **Append to active plan.** Add a `## Post-Mortem` section to `/memories/repo/plans/active-plan.md` with the findings. Structure:
+1. **Append to active score.** Add a `## Critique` section to `/memories/repo/plans/active-score.md` with the findings. Structure:
 
 ```markdown
-## Post-Mortem
+## Critique
 
 Completed: [date]
 Evaluated by: user + agent
@@ -135,15 +134,15 @@ Evaluated by: user + agent
 ```
 
 2. **Update process files.** Apply approved changes to the relevant files:
-   - `.github/skills/planning/SKILL.md` — WU structure rules, intent requirements, scoping guidelines
+   - `.github/skills/compose/SKILL.md` — WU structure rules, intent requirements, scoping guidelines
    - `.github/agents/orchestrator.agent.md` — dispatch protocol, review steps, staleness checks
-   - `.github/agents/worker.agent.md` — constraints, output format
+   - `.github/agents/performer.agent.md` — constraints, output format
    - `copilot-instructions.md` — session expectations, workflow rules
    - `.github/skills/review/references/*.md` — architecture, game quality, testing conventions
 
    Only update files where the findings warrant a change. Don't make drive-by improvements.
 
-3. **Archive the plan.** Rename `/memories/repo/plans/active-plan.md` to `/memories/repo/plans/archive/<YYYY-MM-DD>-<slug>.md` where `<slug>` is the plan title slugified (e.g., `2026-04-06-project-cleanup-consistency.md`). This frees the active-plan path for the next planning session and preserves the full plan + post-mortem for historical reference.
+3. **Archive the score.** Rename `/memories/repo/plans/active-score.md` to `/memories/repo/plans/archive/<YYYY-MM-DD>-<slug>.md` where `<slug>` is the plan title slugified (e.g., `2026-04-06-project-cleanup-consistency.md`). This frees the active-score path for the next session and preserves the full score + critique for historical reference.
 
 4. **Report.** Summarize what was updated, confirm the plan was archived, and state the archive path.
 
@@ -151,8 +150,8 @@ Evaluated by: user + agent
 
 ## Key Rules
 
-- **Archive, don't delete.** After appending the post-mortem section and updating process files, rename the plan to the archive path. The active-plan slot should be empty when the postmortem is done.
+- **Archive, don't delete.** After appending the critique section and updating process files, rename the score to the archive path. The active-score slot should be empty when the critique is done.
 - **Evidence over opinion.** Every finding should reference a specific WU, commit diff, or production observation — not just "this could be better."
 - **Actionable corrections only.** Each correction must be concrete enough that a future planner or orchestrator can act on it without interpretation. "Be more specific" is not actionable. "Include viewport checkpoint list for any WU that touches CSS layout" is.
 - **Don't over-correct.** If 13 of 14 WUs executed cleanly, the process is working. Focus on the gaps, not the defaults.
-- **Respect scope.** The post-mortem evaluates the plan and its execution. It doesn't redesign the game, propose new features, or start the next planning cycle.
+- **Respect scope.** The critique evaluates the score and its execution. It doesn't redesign the game, propose new features, or start the next composing cycle.

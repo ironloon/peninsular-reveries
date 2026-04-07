@@ -1,12 +1,12 @@
 ---
-name: planning
-description: "Structured plan format for orchestrated multi-agent execution. Use when producing plans intended for the @orchestrator agent to dispatch as work units via runSubagent."
-user-invocable: true
+name: compose
+description: "Structured plan format for orchestrated multi-agent execution. Use when composing plans intended for the @orchestrator agent to dispatch as work units via runSubagent."
+user-invocable: false
 ---
 
-# Planning
+# Compose
 
-Use this skill when producing plans that will be dispatched by the `@orchestrator` agent. Plans must be written as structured work units, not prose narratives.
+Use this skill when composing plans that will be dispatched by the `@orchestrator` agent. Plans must be written as structured work units, not prose narratives.
 
 ---
 
@@ -50,7 +50,7 @@ After the draft is shown, automatically enter workshop. Walk through each WU for
 Do not advance past workshop until all WUs are either confirmed or removed.
 
 ### Phase 5 — Refinement
-After workshop is complete, write the full plan file with all fields populated for confirmed WUs. Begin the plan with the **User Intent** section — a concise summary of the user's goal and motivation, distilled from the conversation. This section is the reference point for evaluating whether each WU serves the plan and for post-mortem analysis. Then output a brief post-workshop summary (see Plan Output Rules below). Do not output the full plan document to the user.
+After workshop is complete, write the full score with all fields populated for confirmed WUs. Begin the score with the **User Intent** section — a concise summary of the user's goal and motivation, distilled from the conversation. This section is the reference point for evaluating whether each WU serves the score and for critique analysis. Then output a brief post-workshop summary (see Plan Output Rules below). Do not output the full score to the user.
 
 ---
 
@@ -78,11 +78,11 @@ Confirmed WUs are **not** re-presented automatically in subsequent workshop roun
 
 ## Plan File Location
 
-Plans live in `/memories/repo/plans/active-plan.md` (Copilot memory, workspace-persistent, not in git). There must be exactly one active plan file — the orchestrator reads only this path.
+Scores live in `/memories/repo/plans/active-score.md` (Copilot memory, workspace-persistent, not in git). There must be exactly one active score — the orchestrator reads only this path.
 
-- At the start of a new planning session, check whether `/memories/repo/plans/active-plan.md` already exists. If it does (e.g., the postmortem was skipped or the session was interrupted), delete it before creating the new one. Corrections from post-mortems are applied to process files during the postmortem itself — the planner does not need to read old plans.
-- Do not silently create plans in a different location. Do not create separate named plan files — the orchestrator will not discover them.
-- After the orchestrator completes integration and pushes, **leave the plan file in place** — the user may run the `postmortem` skill to evaluate the result and append findings. The plan is replaced only when the next planning session starts.
+- At the start of a new composing session, check whether `/memories/repo/plans/active-score.md` already exists. If it does (e.g., the critique was skipped or the session was interrupted), delete it before creating the new one. Corrections from critiques are applied to process files during the critique itself — the composer does not need to read old scores.
+- Do not silently create scores in a different location. Do not create separate named score files — the orchestrator will not discover them.
+- After the orchestrator completes integration and pushes, **leave the score in place** — the user may run the `critique` skill to evaluate the result and append findings. The score is replaced only when the next composing session starts.
 
 ---
 
@@ -97,7 +97,7 @@ The plan file is for orchestrator consumption and persistence, not for showing t
 
 [2–4 sentence summary of what the user wants to achieve and why. Written
 during Refinement; updated during workshop if scope shifts. The orchestrator
-and post-mortem both reference this section to evaluate whether finished
+and critique both reference this section to evaluate whether finished
 work aligns with original goals.]
 
 ## Work Units

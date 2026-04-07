@@ -1,7 +1,7 @@
 ---
 description: "Orchestrator agent that reads a structured plan from Copilot memory, dispatches work units to sub-agents via runSubagent, reviews results, and runs a final integration gate."
 model: "Claude Sonnet 4.6"
-agents: [worker]
+agents: [performer]
 ---
 
 # Orchestrator
@@ -14,7 +14,7 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
 
 ## Protocol
 
-1. **Read the plan.** Use the `memory` tool to view `/memories/repo/plans/active-plan.md`. Parse the work units.
+1. **Read the score.** Use the `memory` tool to view `/memories/repo/plans/active-score.md`. Parse the work units.
 2. **Identify dispatchable units.** A unit is dispatchable when its status is `pending` AND all entries in its `depends_on` list have status `done`.
 3. **Quick staleness check.** Before dispatching each unit, do a brief verification that the plan is still valid against the current branch:
    - Use `grep_search` directly (do NOT delegate staleness checks to any sub-agent) to confirm 2–3 key identifiers from the unit's intent still exist in the owned files (e.g. a function name, enum value, or CSS class mentioned in the intent).
@@ -26,7 +26,7 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
    - The verification command.
    - Any brief anchoring context from the staleness check (e.g. "the `SfxIntensity` enum is at line 42 of types.ts").
    - Do NOT rewrite the intent into a step-by-step implementation plan. The sub-agent is capable of reading code and figuring out the implementation from the intent description.
-5. **Dispatch via `runSubagent`.** Call `runSubagent` with `agentName: "worker"` and the composed prompt. Always specify `agentName: "worker"` — never omit it, never use a different agent name. This is mandatory — do not skip this step.
+5. **Dispatch via `runSubagent`.** Call `runSubagent` with `agentName: "performer"` and the composed prompt. Always specify `agentName: "performer"` — never omit it, never use a different agent name. This is mandatory — do not skip this step.
 6. **Update status to in-progress.** Use `memory str_replace` to change the unit's status: `pending` → `in-progress`.
 7. **Post-dispatch review.** After the sub-agent returns:
    a. Read every file the sub-agent reports as modified.
@@ -35,7 +35,7 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
    d. If changes need small corrections: fix them directly (this is the ONLY time you may edit files). For larger problems, re-dispatch with specific fix instructions.
    e. If there are genuine blockers that require product-direction decisions: escalate to the user.
    f. Only mark the unit as `done` after both review and verification pass.
-   g. If any files were modified outside a WU's owned-file list (by the orchestrator's own corrections or by earlier sub-agents), note which files and why in the plan under a `## Boundary Notes` section so the postmortem can trace them.
+   g. If any files were modified outside a WU's owned-file list (by the orchestrator's own corrections or by earlier sub-agents), note which files and why in the plan under a `## Boundary Notes` section so the critique can trace them.
 8. **Update status.** Use `memory str_replace`: `in-progress` → `done` after review passes, or `in-progress` → `failed` if stuck.
 9. **Loop (MANDATORY).** You are NOT done. Check for newly dispatchable units (dependencies now met) and repeat from step 2. Do NOT stop after a single unit. Continue until every unit is `done` or `failed`.
 10. **Integration gate.** When all units are `done`:
@@ -47,19 +47,19 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
     - Run `git status` and compare the changed-file list against the union of all WU owned-file lists and deferred-edit files.
     - If there are files changed outside the plan's scope (e.g., user edits made before or during dispatch), list them and ask the user whether to include them in this commit or leave them unstaged.
     - Stage the approved files, commit with a summary message, push.
-12. **Record the implementation commit.** After a successful push, get the commit SHA (`git rev-parse --short HEAD`) and append an `## Implementation` section to the active plan:
+12. **Record the implementation commit.** After a successful push, get the commit SHA (`git rev-parse --short HEAD`) and append an `## Implementation` section to the active score:
     ```markdown
     ## Implementation
     Commit: <short-sha>
     Pushed: <date>
     ```
-    Use `memory str_replace` or `memory insert` to add this section after the `## Dispatch Order` section. This gives the postmortem skill a concrete SHA to verify against production.
+    Use `memory str_replace` or `memory insert` to add this section after the `## Dispatch Order` section. This gives the critique skill a concrete SHA to verify against production.
 13. **Handle failures.** If integration fails: diagnose, fix, re-run. Escalate to the user only if genuinely stuck.
 14. **Resumption.** On re-invocation after a session interruption: read the plan, skip units already marked `done`, resume from the first `pending` unit.
 
 ## Plan Format
 
-Plans are stored at `/memories/repo/plans/active-plan.md` and use this structure:
+Plans are stored at `/memories/repo/plans/active-score.md` and use this structure:
 
 ```markdown
 # Plan: [title]

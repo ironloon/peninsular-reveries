@@ -1,12 +1,12 @@
 ---
 name: wayback
-description: "Browse and search archived plans and post-mortems. Use when the user wants to review past work: what was planned, what shipped, what went wrong, or how a specific game or area was handled before."
+description: "Browse and search archived plans and critiques. Use when the user wants to review past work: what was planned, what shipped, what went wrong, or how a specific game or area was handled before."
 user-invocable: true
 ---
 
 # Wayback
 
-Search and browse archived plans stored in `/memories/repo/plans/archive/`. Each archive contains the full plan (WUs, dispatch order, implementation commit) and its post-mortem findings.
+Search and browse archived plans stored in `/memories/repo/plans/archive/`. Each archive contains the full plan (WUs, dispatch order, implementation commit) and its critique findings.
 
 ---
 
@@ -24,14 +24,14 @@ If the user just said "wayback" with no specific query, show the list and ask wh
 
 ### Step 3 — Read and answer
 
-Read the relevant archive(s) using `memory view`. Answer the user's question by referencing specific WUs, post-mortem findings, or implementation details from the plan.
+Read the relevant archive(s) using `memory view`. Answer the user's question by referencing specific WUs, critique findings, or implementation details from the score.
 
 Common queries:
-- **"What went wrong with X?"** — Read the post-mortem's "What Didn't" section and find WUs touching the relevant area.
+- **"What went wrong with X?"** — Read the critique's "What Didn't" section and find WUs touching the relevant area.
 - **"How did we handle X last time?"** — Find WUs by owned files or intent keywords.
-- **"What corrections have we made?"** — Collect "Corrections for Next Cycle" across all archived post-mortems.
+- **"What corrections have we made?"** — Collect "Corrections for Next Cycle" across all archived critiques.
 - **"Show me the full plan for X"** — Read and summarize the archive.
-- **"Any patterns across plans?"** — Read all post-mortems and look for recurring themes in "What Didn't" and "Corrections."
+- **"Any patterns across plans?"** — Read all critiques and look for recurring themes in "What Didn't" and "Corrections."
 
 ### Step 4 — Surface insights
 

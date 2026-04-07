@@ -34,12 +34,12 @@ For project architecture, game quality standards, and testing conventions, load 
 - If the user says **"wrap it up"** or otherwise makes it clear that **pushing finished work is welcome**, treat that as permission to finish the current task end-to-end. When the work is validated and human-ready, and the commit scope is clear with no ambiguous unrelated changes, the agent may stage the intended files, create a concise commit, and push without asking for one more round of confirmation. If the working tree is mixed or risky, stop short of commit/push and explain the blocker briefly.
 - After completing work, report what changed and what was verified.
 
-## Plan Mode
+## Composing Plans
 
-- At the start of any new planning session, check for an existing `active-plan.md` in `/memories/repo/plans/`. If one exists, read its Post-Mortem section (if present) and incorporate findings into the new plan, then replace it. Never write plans to `/memories/session/` or any path other than the canonical `/memories/repo/plans/active-plan.md`.
+- At the start of any new composing session, check for an existing `active-score.md` in `/memories/repo/plans/`. If one exists, read its Critique section (if present) and incorporate findings into the new score, then replace it. Never write scores to `/memories/session/` or any path other than the canonical `/memories/repo/plans/active-score.md`.
 - When producing plans, write extremely detailed step-by-step plans with explicit file paths, function names, exact commands when helpful, contingency steps for likely failure points, and clear verification gates.
 - Include rollback or recovery notes for risky edits.
-- When producing plans intended for orchestrated execution, load the planning skill in `.github/skills/planning/` and output work units in its format. Embed the relevant project constraints (from the review skill references) directly into each work unit's intent so that dispatched sub-agents do not need to load skills independently.
+- When producing plans intended for orchestrated execution, load the compose skill in `.github/skills/compose/` and output work units in its format. Embed the relevant project constraints (from the review skill references) directly into each work unit's intent so that dispatched sub-agents do not need to load skills independently.
 
 ## Executing Agent Guidance
 
@@ -48,18 +48,18 @@ For project architecture, game quality standards, and testing conventions, load 
 - Before any push-ready handoff, inspect the changed files for accidental secrets or credential-like strings, and if a real secret was already committed, treat rotation plus history cleanup as required work rather than a documentation note.
 - After completing all planned work, run the relevant verification. If it passes, report what changed and what was verified.
 - When dispatched by the orchestrator, respect your `owned_files` boundary strictly. Do not modify files outside your owned set.
-- When dispatched by the orchestrator, do not load repository skills. The dispatch prompt already incorporates project constraints extracted from the relevant skills during plan creation. Loading skills redundantly wastes context budget and slows execution.
+- When dispatched by the orchestrator, do not load repository skills. The dispatch prompt already incorporates project constraints extracted from the relevant skills during plan composition. Loading skills redundantly wastes context budget and slows execution.
 - Run only your unit's verification command. Do not run `npm run test:local` — that is the orchestrator's job.
 - If you need a change to a shared file (package.json, build.ts, router, routes, shared styles), report it as a deferred edit rather than modifying it.
 
 ## Orchestrated Workflow
 
-- When the user says **"impl"** or **"implement"** referencing an active plan, tell the user to start a **new chat session** with the `@orchestrator` agent. Do not begin plan execution directly, do not invoke the orchestrator mid-session, and do not attempt to execute work units yourself. The orchestrator must start with a fresh context — it owns dispatch, sub-agent coordination, integration gating, and commit/push.
-- Plans live in `/memories/repo/plans/active-plan.md` as structured markdown with work units (workspace-persistent, not in git). There is exactly one active plan file.
-- Plans are written in Plan mode; the `@orchestrator` agent dispatches them via `runSubagent`.
+- When the user says **"impl"** or **"implement"** referencing an active score, tell the user to start a **new chat session** with the `@orchestrator` agent. Do not begin plan execution directly, do not invoke the orchestrator mid-session, and do not attempt to execute work units yourself. The orchestrator must start with a fresh context — it owns dispatch, sub-agent coordination, integration gating, and commit/push.
+- Plans live in `/memories/repo/plans/active-score.md` as structured markdown with work units (workspace-persistent, not in git). There is exactly one active score.
+- Plans are composed in agent mode using the compose skill; the `@orchestrator` agent dispatches them via `runSubagent`.
 - The orchestrator reads source code before each dispatch to enrich the plan's intent description into a specific implementation prompt.
 - The orchestrator reviews sub-agent results, resolves fixable issues, and escalates genuine blockers to the user.
-- Each work unit has an explicit `owned_files` set — the executing agent may ONLY modify those files.
+- Each work unit has an explicit `owned_files` set — the performing agent may ONLY modify those files.
 - The orchestrator runs `npm run test:local` once after all units complete as the integration gate.
 
 ## Environment Context
