@@ -74,3 +74,98 @@ export function bindReduceMotionToggle(
   window.addEventListener(REDUCE_MOTION_EVENT, sync)
   sync()
 }
+
+// ── Per-game preferences ──────────────────────────────────────────────────────
+
+const MUSIC_ENABLED_KEY = 'music-enabled'
+const SFX_ENABLED_KEY = 'sfx-enabled'
+const MUSIC_EVENT = 'reveries:music-change'
+const SFX_EVENT = 'reveries:sfx-change'
+
+export function getGamePreference(gameSlug: string, key: string): string | null {
+  return localStorage.getItem(`${gameSlug}-${key}`)
+}
+
+export function setGamePreference(gameSlug: string, key: string, value: string): void {
+  localStorage.setItem(`${gameSlug}-${key}`, value)
+}
+
+export function getMusicEnabled(gameSlug: string): boolean {
+  const stored = getGamePreference(gameSlug, MUSIC_ENABLED_KEY)
+  return stored === null ? true : stored === 'true'
+}
+
+export function setMusicEnabled(gameSlug: string, enabled: boolean): void {
+  setGamePreference(gameSlug, MUSIC_ENABLED_KEY, String(enabled))
+  window.dispatchEvent(new CustomEvent(MUSIC_EVENT, { detail: { gameSlug, enabled } }))
+}
+
+export function getSfxEnabled(gameSlug: string): boolean {
+  const stored = getGamePreference(gameSlug, SFX_ENABLED_KEY)
+  return stored === null ? true : stored === 'true'
+}
+
+export function setSfxEnabled(gameSlug: string, enabled: boolean): void {
+  setGamePreference(gameSlug, SFX_ENABLED_KEY, String(enabled))
+  window.dispatchEvent(new CustomEvent(SFX_EVENT, { detail: { gameSlug, enabled } }))
+}
+
+export function bindMusicToggle(
+  gameSlug: string,
+  toggleEl: HTMLInputElement | null,
+  helpTextEl: HTMLElement | null = null,
+): void {
+  if (!toggleEl) return
+
+  const sync = (): void => {
+    const enabled = getMusicEnabled(gameSlug)
+    toggleEl.checked = enabled
+    if (helpTextEl) {
+      helpTextEl.textContent = enabled
+        ? 'Music is on for this game until you change it here.'
+        : 'Music is off for this game until you change it here.'
+    }
+  }
+
+  toggleEl.addEventListener('change', () => {
+    setMusicEnabled(gameSlug, toggleEl.checked)
+    sync()
+  })
+
+  window.addEventListener(MUSIC_EVENT, (e) => {
+    const event = e as CustomEvent<{ gameSlug: string; enabled: boolean }>
+    if (event.detail.gameSlug === gameSlug) sync()
+  })
+
+  sync()
+}
+
+export function bindSfxToggle(
+  gameSlug: string,
+  toggleEl: HTMLInputElement | null,
+  helpTextEl: HTMLElement | null = null,
+): void {
+  if (!toggleEl) return
+
+  const sync = (): void => {
+    const enabled = getSfxEnabled(gameSlug)
+    toggleEl.checked = enabled
+    if (helpTextEl) {
+      helpTextEl.textContent = enabled
+        ? 'Sound effects are on for this game until you change it here.'
+        : 'Sound effects are off for this game until you change it here.'
+    }
+  }
+
+  toggleEl.addEventListener('change', () => {
+    setSfxEnabled(gameSlug, toggleEl.checked)
+    sync()
+  })
+
+  window.addEventListener(SFX_EVENT, (e) => {
+    const event = e as CustomEvent<{ gameSlug: string; enabled: boolean }>
+    if (event.detail.gameSlug === gameSlug) sync()
+  })
+
+  sync()
+}
