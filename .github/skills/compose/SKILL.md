@@ -164,6 +164,8 @@ Files the sub-agent should read for reference but must not modify. Include a rea
 ### Deferred shared edits
 Changes needed in files that are shared across MVTs or owned by the orchestrator (e.g., `package.json`, `build.ts`, `app/routes.ts`). The orchestrator applies these after all MVTs complete. Describe the edit precisely enough that the orchestrator can apply it without judgment.
 
+**Peer dependency audit for upgrade MVTs.** When an MVT bumps a package version, the intent must require checking `npm info <pkg> peerDependencies` for every package that depends on the upgraded one. Any incompatibilities must be resolved in the deferred shared edits (version bump, `.npmrc` workaround, or flagged as a blocker). Note that `npm ci` (used in CI) enforces peer deps strictly — `npm install` (local) does not.
+
 ### Verification
 A single shell command the sub-agent runs to validate its work. Must cover only the files in this MVT's owned set. Never `npm run test:local` — that is the orchestrator's integration gate.
 

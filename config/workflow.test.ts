@@ -30,10 +30,7 @@ test('local git hooks install from prepare and run the full validation gate', ()
   assert.match(installScript, /core\.hooksPath', '\.githooks'/)
 })
 
-test('workflow keeps Pages and Lighthouse URLs dynamic and repository-safe', () => {
+test('workflow keeps Pages URLs dynamic and repository-safe', () => {
   assert.match(workflow, /SITE_BASE_PATH: \/\$\{\{ github\.event\.repository\.name \}\}/)
   assert.match(workflow, /SITE_ORIGIN: https:\/\/\$\{\{ github\.repository_owner \}\}\.github\.io/)
-  assert.match(workflow, /\$\{\{ needs\.deploy\.outputs\.page_url \}\}/)
-  assert.match(workflow, /\$\{\{ needs\.deploy\.outputs\.page_url \}\}super-word\//)
-  assert.match(workflow, /budgetPath: \.\/config\/budget\.json/)
 })

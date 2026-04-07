@@ -26,6 +26,11 @@ const CANVAS_BADGE_COLORS = [
   '#ce93d8',
 ]
 
+// Emoji font stack: explicit emoji families first so iOS/Android render color emoji on canvas.
+// 'serif' fallback for letter characters drawn via strokeText/fillText.
+const EMOJI_FONT = '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla", serif'
+const LETTER_FONT = 'system-ui, -apple-system, sans-serif'
+
 // ── Render functions ─────────────────────────────────────────
 
 function drawOrder(item: SceneItem): number {
@@ -123,7 +128,7 @@ export function renderScene(puzzle: Puzzle, state: GameState, wrapperEl: HTMLEle
     const fontSize = Math.max(h * 0.04, Math.min(h * 0.38, h * fraction))
 
     ctx.save()
-    ctx.font = `${fontSize}px serif`
+    ctx.font = `${fontSize}px ${EMOJI_FONT}`
     ctx.textBaseline = 'middle'
     ctx.textAlign = 'center'
 
@@ -139,7 +144,7 @@ export function renderScene(puzzle: Puzzle, state: GameState, wrapperEl: HTMLEle
       const letterSize = fontSize * 0.35
       const charX = px + fontSize * 0.35
       const charY = py - fontSize * 0.35
-      ctx.font = `bold ${letterSize}px serif`
+      ctx.font = `bold ${letterSize}px ${LETTER_FONT}`
       ctx.strokeStyle = 'rgba(0,0,0,0.4)'
       ctx.lineWidth = Math.max(1, letterSize * 0.15)
       ctx.strokeText(item.char, charX, charY)

@@ -264,6 +264,10 @@ export const tabPanelStyles = {
   overflowY: 'auto',
   maxHeight: 'clamp(200px, 55dvh, 420px)',
   paddingRight: '0.25rem',
+  position: 'relative',
+  // Fade hint at bottom when scrollable — uses a linear gradient mask
+  maskImage: 'linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%)',
+  WebkitMaskImage: 'linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%)',
 }
 
 export const modalCloseStyles = {

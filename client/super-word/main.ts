@@ -54,7 +54,7 @@ import {
   ensureAudioUnlocked,
   syncMusicPlayback,
 } from './sounds.js'
-import { getMusicEnabled, setMusicEnabled, bindMusicToggle, bindSfxToggle, bindReduceMotionToggle } from '../preferences.js'
+import { bindMusicToggle, bindSfxToggle, bindReduceMotionToggle } from '../preferences.js'
 
 const DEFAULT_DIFFICULTY: Difficulty = 'hero'
 
@@ -77,7 +77,6 @@ function currentPuzzle(): Puzzle { return activePuzzles[gameState.currentPuzzleI
 const sceneEl = document.getElementById('scene-wrapper')!
 const slotsEl = document.getElementById('letter-slots')!
 const pendingFlightIndices = new Set<number>()
-const musicToggleButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-music-toggle="true"]'))
 
 function renderCollectedLetters(): void {
   renderLetterSlots(getState(), currentPuzzle(), slotsEl, { pendingIndices: pendingFlightIndices })
@@ -88,21 +87,6 @@ function updateCheckButtonState(): void {
     pendingFlightIndices.size === 0
     && getState().collectedLetters.length === currentPuzzle().answer.length,
   )
-}
-
-function syncMusicControls(): void {
-  const musicEnabled = getMusicEnabled('super-word')
-
-  for (const button of musicToggleButtons) {
-    const label = button.querySelector<HTMLElement>('[data-music-toggle-label="true"]')
-    const onLabel = button.dataset.musicOnLabel ?? 'Music On'
-    const offLabel = button.dataset.musicOffLabel ?? 'Music Off'
-
-    button.dataset.musicState = musicEnabled ? 'on' : 'off'
-    button.setAttribute('aria-pressed', String(musicEnabled))
-    button.setAttribute('aria-label', musicEnabled ? 'Turn chill music off' : 'Turn chill music on')
-    if (label) label.textContent = musicEnabled ? onLabel : offLabel
-  }
 }
 
 function syncSettingsForm(): void {
@@ -146,6 +130,9 @@ function onStartGame(): void {
 }
 
 function onLetterCollected(item: SceneItem): void {
+  // Guard: don't collect more letters than the answer requires
+  if (getState().collectedLetters.length >= currentPuzzle().answer.length) return
+
   ensureAudioUnlocked()
   sfxCollect()
   setState(collectLetter(getState(), item.char!, item.id))
@@ -339,7 +326,6 @@ const callbacks: InputCallbacks = {
 }
 
 syncSettingsForm()
-syncMusicControls()
 setupInput(getState, setState, currentPuzzle, callbacks)
 setupTabbedModal('settings-modal')
 
@@ -347,18 +333,9 @@ bindMusicToggle('super-word', document.getElementById('music-enabled-toggle') as
 bindSfxToggle('super-word', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
 bindReduceMotionToggle(document.getElementById('reduce-motion-toggle') as HTMLInputElement | null, document.getElementById('reduce-motion-help') as HTMLElement | null)
 
-for (const button of musicToggleButtons) {
-  button.addEventListener('click', () => {
-    const newEnabled = !getMusicEnabled('super-word')
-    if (newEnabled) ensureAudioUnlocked()
-    setMusicEnabled('super-word', newEnabled)
-  })
-}
-
 window.addEventListener('reveries:music-change', (e) => {
   const event = e as CustomEvent<{ gameSlug: string; enabled: boolean }>
   if (event.detail.gameSlug !== 'super-word') return
-  syncMusicControls()
   if (event.detail.enabled) ensureAudioUnlocked()
   syncMusicPlayback()
 })

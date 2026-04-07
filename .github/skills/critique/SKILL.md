@@ -1,24 +1,109 @@
 ---
 name: critique
-description: "Evaluate a completed plan's implementation against its intent, production behavior, and process quality. Use after the orchestrator has pushed and the user has tested in production. Produces findings that feed forward into the next planning cycle."
+description: "Evaluate completed work against intent and production behavior. Two modes: (1) plan critique — evaluates active score after orchestrator push; (2) field review (--field-review / --fr) — captures user production-testing observations independent of any plan, triages them, implements fixes, and archives findings."
 user-invocable: false
 ---
 
 # Critique
 
-Use this skill after an orchestrated plan has been implemented, pushed, and tested in production. The user invokes this directly — it is never auto-loaded.
+Two modes. Detect which one from the user's invocation:
 
-The critique evaluates what worked, what didn't, and feeds corrections forward into both the active score (for the next composer to read) and the process files themselves (compose skill, orchestrator agent, copilot instructions, review references).
+| Flag | Mode | When to use |
+|------|------|-------------|
+| *(default, no flag)* | **Plan critique** | After an orchestrated plan has been pushed and tested. Requires an active score. |
+| `--field-review` or `--fr` | **Field review** | User has production-testing observations that don't map to an active score. No plan required. |
 
 ---
 
-## Workflow
+## Mode: Field Review
+
+The user tests the deployed site on a real device and reports what they see. No active score is needed. The field review triages observations, implements the fixes, and archives findings.
+
+### FR Phase 1 — Gather Context
+
+1. **Verify deployment.** Same as plan critique Phase 1 step 3: fetch `sw.js`, extract SHA from `CACHE_NAME`, compare to `git log --oneline -1` HEAD. Confirm production matches what's in the repo.
+2. **Fetch production pages.** Use `fetch_webpage` on the pages the user mentions to capture current rendered state.
+3. **Read relevant code.** Based on the user's observations, read the specific source files (controllers, renderers, stylesheets, state modules) that could cause the reported issues. Read enough to form hypotheses — not the whole codebase.
+4. **Check archived plans.** Skim `/memories/repo/plans/archive/` for the most recent score(s) that touched the affected areas. This provides lineage — which MVT originally created the code, and whether the issue was previously flagged.
+
+### FR Phase 2 — Triage Observations
+
+Process each user observation and classify it:
+
+| Category | Meaning | Output |
+|----------|---------|--------|
+| **Bug** | Something is broken — visible defect, wrong behavior, data corruption | Root cause hypothesis with file + line references |
+| **UX issue** | Works but feels wrong — confusing, inconsistent, hard to use | Description + what "right" looks like, with evidence from code |
+| **Design question** | Not clearly a bug — user is questioning a design decision | Restate the original intent (from plan/code), note the user's concern, flag for composer |
+| **Recurring** | Issue has been flagged in a previous critique or prompt cycle | Link to prior finding, escalate priority |
+
+For each observation, include:
+- **What the user reported** (their words)
+- **Category** (from table above)
+- **Evidence** (code references, production page content, prior critique findings)
+- **Hypothesis** (what's causing it and where the fix lives)
+- **Severity** (blocker / high / medium / low)
+
+### FR Phase 3 — Findings & Plan
+
+Present triaged findings to the user in chat, then immediately propose an implementation plan. Don't stop at documentation.
+
+Structure:
+
+```
+## Field Review: [Area/Game Name]
+
+Date: [date]
+Device: [if user mentioned]
+Deployment: [SHA confirmed/mismatch]
+
+### Findings
+
+#### 1. [Short title]
+- **Reported:** [user's words, condensed]
+- **Category:** Bug / UX issue / Design question / Recurring
+- **Severity:** blocker / high / medium / low
+- **Evidence:** [file:line references, production observations]
+- **Hypothesis:** [root cause + where to fix]
+
+...
+
+### Implementation Plan
+Ordered list of fixes to implement, with files and approach for each.
+Items marked "Design question" are flagged but not implemented — the user decides.
+
+### Process Observations
+If findings reveal a gap in the compose/orchestrator/performer workflow, note the process-level correction. Otherwise omit.
+```
+
+### FR Phase 4 — Implement
+
+After presenting findings, proceed to implement fixes (bugs and UX issues). Design questions are presented to the user for a decision before acting. Work through fixes in severity order (blockers first).
+
+Run tests after each fix. If tests break, diagnose and resolve before moving on.
+
+### FR Phase 5 — Archive & Push
+
+1. **Archive findings.** Create `/memories/repo/plans/archive/<YYYY-MM-DD>-field-review-<slug>.md` with the findings + what was implemented. Same archive directory as plan critiques.
+2. **Update process files** if findings reveal a process gap.
+3. **Run full validation.** `npm run test:local` + `npm run build`.
+4. **Commit and push** with a descriptive message summarizing the field review fixes.
+
+---
+
+## Mode: Plan Critique
+
+Use after an orchestrated plan has been implemented, pushed, and tested in production.
+
+The plan critique evaluates what worked, what didn't, and feeds corrections forward into both the active score (for the next composer to read) and the process files themselves (compose skill, orchestrator agent, copilot instructions, review references).
+
+### Workflow
 
 ```
 Gather Context → User Input → Analysis → Findings → Apply
 ```
 
-### Phase 1 — Gather Context
+### PC Phase 1 — Gather Context
 
 Collect everything needed for evaluation before engaging the user:
 
@@ -34,43 +119,13 @@ Collect everything needed for evaluation before engaging the user:
 
 Do not read every file end-to-end. Targeted reads for sections relevant to observed issues.
 
-### Phase 2 — User Input
+### PC Phase 2 — User Input
 
-**Auto mode.** If the user invokes the critique with "--auto", "auto", or "no questions" (e.g. "critique --auto"), skip the structured walkthrough. Process any free-form observations the user included in their invocation message, then proceed directly to Phase 3 with the agent's own analysis. The agent still presents full findings in Phase 4 for review — auto mode only skips the questions, not the output.
+Process any free-form observations the user included in their invocation message, then proceed directly to Phase 3 with the agent's own analysis. Do not ask structured questions or use `vscode_askQuestions`. The user provides feedback at invocation time (or in follow-up messages after seeing findings) — there is no interactive walkthrough.
 
-**Interactive mode (default).** Accept the user's observations through both channels:
+If the user provides no observations, that's fine — proceed with the agent's analysis of the plan, code, and production state alone.
 
-**Free-form first.** If the user provides observations when invoking the skill, process those immediately — don't ignore them in favor of the structured flow.
-
-**Then structured walkthrough.** Use `vscode_askQuestions` to walk through four evaluation dimensions. Ask one dimension at a time so the user can respond thoughtfully. Mix multiple-choice with freeform.
-
-#### Dimension 1: Plan Quality
-- Were MVT boundaries well-drawn? Any MVTs that should have been split or merged?
-- Were dependencies correct? Any ordering issues during dispatch?
-- Were intent descriptions specific enough for the sub-agents, or were there gaps?
-- Were owned-file lists accurate?
-
-#### Dimension 2: Execution Quality
-- Did sub-agents follow the intent faithfully?
-- How many post-dispatch corrections did the orchestrator need to make?
-- Were there any MVTs that needed re-dispatch or significant rework?
-- Did the orchestrator's staleness checks catch real issues or miss any?
-
-#### Dimension 3: End-Result Quality
-- Does the shipped product match expectations?
-- What bugs or UX gaps did the user find in production?
-- Are there visual/layout/interaction issues at specific viewport sizes?
-- Does the product feel cohesive, or are there seams between MVT boundaries?
-
-#### Dimension 4: Process & Tooling
-- Did the workshop flow add value, or was it friction?
-- Did the orchestrator behave correctly (dispatch, review, integration gate)?
-- Were there process bottlenecks or wasted cycles?
-- Any context-window or session-length issues?
-
-Skip dimensions where the user has nothing to report. Don't force feedback on every axis.
-
-### Phase 3 — Analysis
+### PC Phase 3 — Analysis
 
 Cross-reference the three data sources (plan, code, user observations) to identify:
 
@@ -86,7 +141,7 @@ Cross-reference the three data sources (plan, code, user observations) to identi
    - Were certain MVT shapes (large, cross-cutting, research-only) more or less successful?
    - Did the orchestrator's review catch issues that should have been prevented by better intent descriptions?
 
-### Phase 4 — Findings
+### PC Phase 4 — Findings
 
 Produce a structured findings summary. Present it to the user in chat before applying anything.
 
@@ -116,7 +171,7 @@ If any blockers exist, the critique should recommend resolving them before the f
 
 Get user approval before applying changes.
 
-### Phase 5 — Apply
+### PC Phase 5 — Apply
 
 After user approval:
 
@@ -153,10 +208,10 @@ Evaluated by: user + agent
 
 ---
 
-## Key Rules
+## Key Rules (Both Modes)
 
 - **Archive, don't delete.** After appending the critique section and updating process files, rename the score to the archive path. The active-score slot should be empty when the critique is done.
 - **Evidence over opinion.** Every finding should reference a specific MVT, commit diff, or production observation — not just "this could be better."
 - **Actionable corrections only.** Each correction must be concrete enough that a future planner or orchestrator can act on it without interpretation. "Be more specific" is not actionable. "Include viewport checkpoint list for any MVT that touches CSS layout" is.
 - **Don't over-correct.** If 13 of 14 MVTs executed cleanly, the process is working. Focus on the gaps, not the defaults.
-- **Respect scope.** The critique evaluates the score and its execution. It doesn't redesign the game, propose new features, or start the next composing cycle.
+- **Respect scope.** Plan critique evaluates what shipped — it doesn't redesign the game or start a new composing cycle. Field review implements fixes for what the user observed, but design questions get flagged for the user to decide before acting.

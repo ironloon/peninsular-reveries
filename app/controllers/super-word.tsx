@@ -4,6 +4,7 @@ import { GameHeader, GameHeaderPill, GameScreen, GameTabbedModal, InfoSection, S
 
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
+import { attributionsPagePath } from '../data/attributions/index.js'
 
 const superWordScreenStyles = {
   transition: 'transform 500ms cubic-bezier(0.4, 0, 0.2, 1)',
@@ -17,6 +18,7 @@ const superWordModalOverlayStyles = {
 export async function superWordAction() {
   const siteBasePath = getSiteBasePath()
   const homePath = withBasePath('/', siteBasePath)
+  const infoPagePath = withBasePath(attributionsPagePath, siteBasePath)
   const html = await renderToString(
     <Document
       title="Super Word"
@@ -46,22 +48,6 @@ export async function superWordAction() {
           <p className="subtitle">Find hidden letters and solve the word puzzle!</p>
           <div className="start-actions">
             <button id="start-btn" className="btn btn-primary">Let's Go! 🚀</button>
-            <div className="start-music-panel">
-              <button
-                id="start-music-toggle"
-                type="button"
-                className="music-toggle-btn music-toggle-btn-hero"
-                data-music-toggle="true"
-                data-music-on-label="Music On"
-                data-music-off-label="Music Off"
-                aria-pressed="false"
-                aria-label="Turn chill music on"
-              >
-                <span className="music-toggle-glyph" aria-hidden="true">♪</span>
-                <span data-music-toggle-label="true">Music Off</span>
-              </button>
-              <p className="start-music-note">Soft chill music. Tap to try it before you start.</p>
-            </div>
           </div>
           <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Press Ⓐ to Start</p>
           <button data-settings-open="true" className="settings-toggle-btn" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
@@ -77,19 +63,6 @@ export async function superWordAction() {
               <GameHeaderPill icon="⭐" value={<span id="score" aria-label="Score: 0">0</span>} />
             </>}
             rightContent={<div className="game-header-right">
-              <button
-                id="hud-music-toggle"
-                type="button"
-                className="music-toggle-btn music-toggle-btn-inline"
-                data-music-toggle="true"
-                data-music-on-label="On"
-                data-music-off-label="Off"
-                aria-pressed="false"
-                aria-label="Turn chill music on"
-              >
-                <span className="music-toggle-glyph" aria-hidden="true">♪</span>
-                <span data-music-toggle-label="true">Off</span>
-              </button>
               <button data-settings-open="true" className="settings-toggle-btn settings-toggle-btn-inline" aria-label="Menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">☰</button>
               <GameHeaderPill value={<span id="letters-count" className="letters-count" aria-label="Letters found: 0 of 3">0 / 3</span>} />
             </div>}
@@ -164,18 +137,10 @@ export async function superWordAction() {
           </>}
           infoContent={<>
             <InfoSection title="About Super Word">
-              <p>Find the letters hidden in the scene to spell each word. Complete as many words as you can!</p>
+              <p>Find the letters hidden in the scene to spell each word. Words are organized by phonemic complexity — from simple words like CAT to multi-syllable words like GARDEN.</p>
+              <p>Inspired by <a href="https://pbskids.org/superwhy" target="_blank" rel="noopener">Super Why!</a> from PBS Kids.</p>
             </InfoSection>
-            <InfoSection title="How Words Are Chosen">
-              <p>Words are organized by phonemic complexity — from simple CVC words like CAT to multi-syllable words like GARDEN. Each tier follows research from the National Reading Panel, Dolch sight words, and Common Core State Standards.</p>
-              <ul>
-                <li>⭐ <strong>Sidekick</strong> — Pre-K/K: short vowel CVC words</li>
-                <li>🦸 <strong>Hero</strong> — K/Grade 1: consonant blends and digraphs</li>
-                <li>💫 <strong>Super</strong> — Grade 1/2: silent-e and vowel teams</li>
-                <li>⚡ <strong>Ultra</strong> — Grade 2/3: r-controlled vowels</li>
-                <li>🏆 <strong>Legend</strong> — Grade 3+: multi-syllable words</li>
-              </ul>
-            </InfoSection>
+            <p className="info-more-link"><a href={infoPagePath}>More info, credits &amp; attributions →</a></p>
           </>}
         />
 

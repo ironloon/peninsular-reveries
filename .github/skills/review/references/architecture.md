@@ -35,7 +35,7 @@
 
 ```text
 config/                  toolchain and repo config
-  budget.json            Lighthouse budgets
+  budget.json            build-time size budgets
   eslint.config.mjs      ESLint flat config
   playwright.config.ts   Playwright config
   tsconfig.json          TypeScript project config

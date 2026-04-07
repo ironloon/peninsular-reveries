@@ -60,6 +60,14 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
     Pushed: <date>
     ```
     Use `memory str_replace` or `memory insert` to add this section after the `## Dispatch Order` section. This gives the critique skill a concrete SHA to verify against production.
+14. **Verify deployment.** After recording the commit, monitor the GitHub Actions deployment:
+    - Use `fetch_webpage` to load `https://github.com/jwgeller/peninsular-reveries/actions` and check whether the deploy workflow for the pushed commit is still running, succeeded, or failed.
+    - If still running, wait briefly and re-check (up to 2 attempts with ~60s gaps using `get_terminal_output` on a background sleep).
+    - If the workflow **failed**: diagnose the failure from the Actions page output, attempt a fix, commit, push, and re-verify. Escalate to the user only if genuinely stuck.
+    - If the workflow **succeeded**: fetch `https://jwgeller.github.io/peninsular-reveries/sw.js` and confirm the `CACHE_NAME` SHA matches the pushed commit. Report the verified production URL.
+    - Do NOT close out the session until deployment is either confirmed or escalated.
+    ```
+    Use `memory str_replace` or `memory insert` to add this section after the `## Dispatch Order` section. This gives the critique skill a concrete SHA to verify against production.
 14. **Handle failures.** If integration fails: diagnose, fix, re-run. Escalate to the user only if genuinely stuck.
 15. **Resumption.** On re-invocation after a session interruption: read the plan, skip units already marked `done`, resume from the first `pending` unit.
 
