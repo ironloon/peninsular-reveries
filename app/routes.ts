@@ -1,4 +1,4 @@
-import { route } from 'remix/fetch-router/routes'
+import { route } from '@remix-run/fetch-router/routes'
 import { attributionsPagePath } from './data/attributions/index.js'
 
 export const routes = route({

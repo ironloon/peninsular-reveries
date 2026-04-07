@@ -22,9 +22,9 @@ Gather Context → User Input → Analysis → Findings → Apply
 
 Collect everything needed for evaluation before engaging the user:
 
-1. **Read the active score.** Use `memory` to view `/memories/repo/plans/active-score.md`. Parse all WUs, their intents, owned files, dispatch order, and status. Look for the `## Implementation` section — it contains the commit SHA the orchestrator recorded after pushing.
-2. **Read the implementation commit(s).** If the plan has an `## Implementation` section, use that SHA directly. Otherwise, run `git log --oneline -5` to find the commit(s) that landed the plan. Then run `git show <sha> --stat` for a file-level summary and `git diff <sha>~1 <sha> -- <specific files>` for targeted diffs when evaluating individual WUs.
-3. **Verify deployment.** Fetch the production root service worker at `https://jwgeller.github.io/peninsular-reveries/sw.js` using `fetch_webpage`. Extract the SHA from the `CACHE_NAME` value (format: `<prefix>-<sha>`). Compare it against the plan's implementation commit SHA. If they match, deployment is confirmed. If they don't match, warn the user that production may still be running an older build — the critique can still proceed but production observations may not reflect the plan's changes. If GitHub Pages is still deploying (404 or stale SHA), note this and suggest re-checking later.
+1. **Read the active score.** Use `memory` to view `/memories/repo/plans/active-score.md`. Parse all MVTs, their intents, owned files, dispatch order, and status. Look for the `## Implementation` section — it contains the commit SHA the orchestrator recorded after pushing.
+2. **Read the implementation commit(s).** If the plan has an `## Implementation` section, use that SHA directly. Otherwise, run `git log --oneline -5` to find the commit(s) that landed the plan. Then run `git show <sha> --stat` for a file-level summary and `git diff <sha>~1 <sha> -- <specific files>` for targeted diffs when evaluating individual MVTs.
+3. **Verify deployment.** Fetch the production root service worker at `https://jwgeller.github.io/peninsular-reveries/sw.js` using `fetch_webpage`. Extract the SHA from the `CACHE_NAME` value (format: `<prefix>-<sha>`). Compare it against the plan's implementation commit SHA. If they match, deployment is confirmed. If they don't match, warn the user that production may still be running an older build — the critique can still proceed but production observations may not reflect the plan's changes. When the SHA does not match, also check the GitHub Actions deployment status: use `fetch_webpage` to load `https://github.com/jwgeller/peninsular-reveries/actions` and look for the most recent workflow run. If the run failed or is still in progress, report the status. A failed deployment is a **blocker** — flag it as a critical finding in Phase 4 and recommend the user investigate the Actions log before proceeding with the critique. If GitHub Pages is still deploying (404 or stale SHA), note this and suggest re-checking later.
 4. **Fetch production pages.** Use `fetch_webpage` to load the relevant game/site pages at `https://jwgeller.github.io/peninsular-reveries/` and note any obvious issues (broken layout, missing content, error states).
 5. **Read process files.** Skim the current versions of:
    - `.github/skills/compose/SKILL.md`
@@ -45,7 +45,7 @@ Do not read every file end-to-end. Targeted reads for sections relevant to obser
 **Then structured walkthrough.** Use `vscode_askQuestions` to walk through four evaluation dimensions. Ask one dimension at a time so the user can respond thoughtfully. Mix multiple-choice with freeform.
 
 #### Dimension 1: Plan Quality
-- Were WU boundaries well-drawn? Any WUs that should have been split or merged?
+- Were MVT boundaries well-drawn? Any MVTs that should have been split or merged?
 - Were dependencies correct? Any ordering issues during dispatch?
 - Were intent descriptions specific enough for the sub-agents, or were there gaps?
 - Were owned-file lists accurate?
@@ -53,14 +53,14 @@ Do not read every file end-to-end. Targeted reads for sections relevant to obser
 #### Dimension 2: Execution Quality
 - Did sub-agents follow the intent faithfully?
 - How many post-dispatch corrections did the orchestrator need to make?
-- Were there any WUs that needed re-dispatch or significant rework?
+- Were there any MVTs that needed re-dispatch or significant rework?
 - Did the orchestrator's staleness checks catch real issues or miss any?
 
 #### Dimension 3: End-Result Quality
 - Does the shipped product match expectations?
 - What bugs or UX gaps did the user find in production?
 - Are there visual/layout/interaction issues at specific viewport sizes?
-- Does the product feel cohesive, or are there seams between WU boundaries?
+- Does the product feel cohesive, or are there seams between MVT boundaries?
 
 #### Dimension 4: Process & Tooling
 - Did the workshop flow add value, or was it friction?
@@ -74,16 +74,16 @@ Skip dimensions where the user has nothing to report. Don't force feedback on ev
 
 Cross-reference the three data sources (plan, code, user observations) to identify:
 
-1. **Intent-vs-implementation gaps.** For each WU, compare the plan's intent description against what actually shipped in the commit diff. Flag:
+1. **Intent-vs-implementation gaps.** For each MVT, compare the plan's intent description against what actually shipped in the commit diff. Flag:
    - Scope creep (code changes beyond the intent)
    - Incomplete implementation (intent items that didn't land)
    - Drift (the code does something reasonable but different from what was described)
 
-2. **Production issues.** Match user-reported bugs/UX gaps to specific WUs and code paths. Note whether the issue stems from the plan (bad intent), execution (bad implementation of good intent), or an unforeseen interaction between WUs.
+2. **Production issues.** Match user-reported bugs/UX gaps to specific MVTs and code paths. Note whether the issue stems from the plan (bad intent), execution (bad implementation of good intent), or an unforeseen interaction between MVTs.
 
 3. **Process patterns.** Look for recurring themes:
-   - Did multiple WUs hit the same kind of problem?
-   - Were certain WU shapes (large, cross-cutting, research-only) more or less successful?
+   - Did multiple MVTs hit the same kind of problem?
+   - Were certain MVT shapes (large, cross-cutting, research-only) more or less successful?
    - Did the orchestrator's review catch issues that should have been prevented by better intent descriptions?
 
 ### Phase 4 — Findings
@@ -97,13 +97,18 @@ Produce a structured findings summary. Present it to the user in chat before app
 - [Specific things that went well, with evidence]
 
 ### What Didn't
-- [Specific problems, each tied to a WU or process step]
+- [Specific problems, each tied to an MVT or process step]
+
+### Blockers
+- [Deploy verification failures or Actions errors that prevent production evaluation]
+
+If any blockers exist, the critique should recommend resolving them before the findings are considered complete.
 
 ### Corrections for Next Cycle
 - [Concrete, actionable changes — not vague aspirations]
-  - Plan-level: e.g. "Split UI+logic WUs even when files are coupled"
-  - Process-level: e.g. "Orchestrator should read renderer output before dispatching animation WU"
-  - Skill-level: e.g. "Compose skill should require viewport checkpoint list in visual WU intents"
+  - Plan-level: e.g. "Split UI+logic MVTs even when files are coupled"
+  - Process-level: e.g. "Orchestrator should read renderer output before dispatching animation MVT"
+  - Skill-level: e.g. "Compose skill should require viewport checkpoint list in visual MVT intents"
 
 ### Process File Updates
 - [List each file that will be updated and what changes]
@@ -134,7 +139,7 @@ Evaluated by: user + agent
 ```
 
 2. **Update process files.** Apply approved changes to the relevant files:
-   - `.github/skills/compose/SKILL.md` — WU structure rules, intent requirements, scoping guidelines
+   - `.github/skills/compose/SKILL.md` — MVT structure rules, intent requirements, scoping guidelines
    - `.github/agents/orchestrator.agent.md` — dispatch protocol, review steps, staleness checks
    - `.github/agents/performer.agent.md` — constraints, output format
    - `copilot-instructions.md` — session expectations, workflow rules
@@ -151,7 +156,7 @@ Evaluated by: user + agent
 ## Key Rules
 
 - **Archive, don't delete.** After appending the critique section and updating process files, rename the score to the archive path. The active-score slot should be empty when the critique is done.
-- **Evidence over opinion.** Every finding should reference a specific WU, commit diff, or production observation — not just "this could be better."
-- **Actionable corrections only.** Each correction must be concrete enough that a future planner or orchestrator can act on it without interpretation. "Be more specific" is not actionable. "Include viewport checkpoint list for any WU that touches CSS layout" is.
-- **Don't over-correct.** If 13 of 14 WUs executed cleanly, the process is working. Focus on the gaps, not the defaults.
+- **Evidence over opinion.** Every finding should reference a specific MVT, commit diff, or production observation — not just "this could be better."
+- **Actionable corrections only.** Each correction must be concrete enough that a future planner or orchestrator can act on it without interpretation. "Be more specific" is not actionable. "Include viewport checkpoint list for any MVT that touches CSS layout" is.
+- **Don't over-correct.** If 13 of 14 MVTs executed cleanly, the process is working. Focus on the gaps, not the defaults.
 - **Respect scope.** The critique evaluates the score and its execution. It doesn't redesign the game, propose new features, or start the next composing cycle.

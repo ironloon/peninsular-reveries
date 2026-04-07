@@ -36,8 +36,8 @@ For project architecture, game quality standards, and testing conventions, load 
 
 ## Composing Plans
 
-- When composing plans for orchestrated execution, load the compose skill in `.github/skills/compose/`. It owns the full workflow, score structure, and WU format.
-- Embed relevant project constraints (from the review skill references) directly into each work unit's intent so that performers do not need to load skills independently.
+- When composing plans for orchestrated execution, load the compose skill in `.github/skills/compose/`. It owns the full workflow, score structure, and MVT format.
+- Embed relevant project constraints (from the review skill references) directly into each movement's intent so that performers do not need to load skills independently.
 
 ## Executing Agent Guidance
 
@@ -48,7 +48,7 @@ For project architecture, game quality standards, and testing conventions, load 
 
 ## Orchestrated Workflow
 
-- When the user says **"cue"** (the word alone), tell them to start a **new chat session** with the `@Orchestrator` agent. Do not begin execution directly, do not invoke the Orchestrator mid-session, and do not attempt to execute work units yourself. The Orchestrator must start with a fresh context.
+- When the user says **"cue"** (the word alone), tell them to start a **new chat session** with the `@Orchestrator` agent. Do not begin execution directly, do not invoke the Orchestrator mid-session, and do not attempt to execute movements yourself. The Orchestrator must start with a fresh context.
 - Scores live in `/memories/repo/plans/active-score.md` (workspace-persistent, not in git). There is exactly one active score.
 
 ## Environment Context

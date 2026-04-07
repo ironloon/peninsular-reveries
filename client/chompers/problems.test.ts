@@ -77,3 +77,29 @@ describe('buildSceneItems', () => {
     }
   })
 })
+
+describe('distractor validation', () => {
+  test('each problem scene has at least 1 distractor (wrong answer)', () => {
+    for (const area of AREAS) {
+      const problem = generateProblem(area, 1, constantRng)
+      const items = buildSceneItems(problem, area, constantRng)
+      const wrong = items.filter((item) => !item.isCorrect)
+      assert.ok(wrong.length >= 1, `Expected at least 1 distractor for ${area}, got ${wrong.length}`)
+    }
+  })
+
+  test('all item values are positive integers', () => {
+    for (const area of AREAS) {
+      for (const level of LEVELS) {
+        const problem = generateProblem(area, level, constantRng)
+        const items = buildSceneItems(problem, area, constantRng)
+        for (const item of items) {
+          assert.ok(
+            Number.isInteger(item.value) && item.value > 0,
+            `Item value ${item.value} is not a positive integer for ${area} level ${level}`,
+          )
+        }
+      }
+    }
+  })
+})

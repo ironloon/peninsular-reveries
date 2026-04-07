@@ -5,6 +5,7 @@
 - E2E tests live in root `e2e/` and should keep the `site-*.spec.ts` naming pattern.
 - Unit and Node-side tests live next to the code they exercise: `app/**/*.test.ts`, `client/**/*.test.ts`, and `config/**/*.test.ts`.
 - Node-side TypeScript tests should use extensionless workspace imports.
+- Game-specific behaviors are covered by colocated unit tests, not e2e. E2E specs cover shared concerns: responsive layout, navigation, semantic HTML, accessibility, favicon, noscript.
 
 ## Validation Gates
 

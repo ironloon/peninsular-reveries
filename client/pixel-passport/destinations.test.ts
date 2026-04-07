@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { DESTINATIONS, getDestination, getTransportType, pickNextMysteryTarget } from './destinations'
+import { DESTINATION_IDS } from './types'
 
 test('destination data stays internally consistent', () => {
   const ids = new Set<string>()
@@ -47,4 +48,33 @@ test('mystery targeting advances in a stable order', () => {
   assert.equal(pickNextMysteryTarget([]), 'paris')
   assert.equal(pickNextMysteryTarget(['paris', 'cairo']), 'tokyo')
   assert.equal(pickNextMysteryTarget(DESTINATIONS.map((destination) => destination.id)), null)
+})
+
+test('every destination has a non-empty memoryEmoji', () => {
+  for (const destination of DESTINATIONS) {
+    assert.ok(
+      typeof destination.memoryEmoji === 'string' && destination.memoryEmoji.length > 0,
+      `missing memoryEmoji for destination: ${destination.id}`,
+    )
+  }
+})
+
+test('every destination id is listed in DESTINATION_IDS', () => {
+  for (const destination of DESTINATIONS) {
+    assert.ok(
+      (DESTINATION_IDS as readonly string[]).includes(destination.id),
+      `destination id "${destination.id}" is not in DESTINATION_IDS`,
+    )
+  }
+  assert.equal(DESTINATIONS.length, DESTINATION_IDS.length, 'DESTINATIONS and DESTINATION_IDS should have the same count')
+})
+
+test('transport type selection covers at least 2 distinct types across DESTINATIONS', () => {
+  const types = new Set<string>()
+  for (let i = 0; i < DESTINATIONS.length; i++) {
+    for (let j = i + 1; j < DESTINATIONS.length; j++) {
+      types.add(getTransportType(DESTINATIONS[i], DESTINATIONS[j]))
+    }
+  }
+  assert.ok(types.size >= 2, `Expected at least 2 distinct transport types, found: ${[...types].join(', ')}`)
 })

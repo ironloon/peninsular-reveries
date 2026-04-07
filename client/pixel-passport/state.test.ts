@@ -99,3 +99,25 @@ test('globe navigation wraps at both ends', () => {
   const wrapped = navigateGlobe(previous, 'next')
   assert.equal(wrapped.globeSelectedIndex, 0)
 })
+
+test('switching to mystery mode preserves collected memories', () => {
+  const base = createInitialState({ collectedMemories: ['paris', 'tokyo'] })
+  const inMystery = startMysteryMode(base, 'cairo')
+
+  assert.deepEqual(inMystery.collectedMemories, ['paris', 'tokyo'])
+  assert.equal(inMystery.mysteryTarget, 'cairo')
+  assert.equal(inMystery.phase, 'mystery-clue')
+})
+
+test('mysteryCompleted accumulates after solving multiple mysteries', () => {
+  let state = createInitialState()
+
+  const first = submitMysteryGuess(startMysteryMode(state, 'paris'), 'paris')
+  assert.equal(first.outcome, 'correct')
+  assert.deepEqual(first.state.mysteryCompleted, ['paris'])
+
+  state = createInitialState({ mysteryCompleted: first.state.mysteryCompleted })
+  const second = submitMysteryGuess(startMysteryMode(state, 'cairo'), 'cairo')
+  assert.equal(second.outcome, 'correct')
+  assert.ok(second.state.mysteryCompleted.includes('cairo'))
+})

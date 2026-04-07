@@ -5,7 +5,7 @@
   "type": "module",
   "packageManager": "npm@11.12.0",
   "engines": {
-    "node": "24.14.1"
+    "node": ">=25.0.0"
   },
   "scripts": {
     "build": "tsx --tsconfig config/tsconfig.json build.ts",
@@ -24,19 +24,19 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.11.1",
-    "@eslint/js": "9.39.4",
-    "@playwright/test": "1.58.2",
-    "@types/node": "24.12.2",
-    "esbuild": "0.25.12",
-    "eslint": "9.39.4",
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.59.1",
+    "@types/node": "25.5.2",
+    "esbuild": "0.28.0",
+    "eslint": "10.1.0",
     "eslint-plugin-jsx-a11y": "6.10.2",
     "globals": "17.4.0",
     "serve": "14.2.6",
     "tsx": "4.21.0",
     "typescript": "5.9.3",
-    "typescript-eslint": "8.58.0"
-  },
-  "dependencies": {
-    "remix": "3.0.0-alpha.4"
+    "typescript-eslint": "8.58.0",
+    "@remix-run/component": "0.6.0",
+    "@remix-run/fetch-router": "0.18.0",
+    "@remix-run/node-fetch-server": "0.13.0"
   }
 }

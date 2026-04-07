@@ -93,6 +93,16 @@ for (const { url, outPath } of staticRoutes) {
   console.log(`  rendered ${outPath}`)
 }
 
+// ── Stamp HTML files with git SHA ───────────────────────
+for (const htmlFile of readdirSync(outputDir, { recursive: true }) as string[]) {
+  if (!htmlFile.endsWith('.html')) continue
+  const htmlPath = join(outputDir, htmlFile)
+  if (statSync(htmlPath).isDirectory()) continue
+  const htmlContent = readFileSync(htmlPath, 'utf-8')
+  if (!htmlContent.includes('__BUILD_SHA__')) continue
+  writeFileSync(htmlPath, htmlContent.replaceAll('__BUILD_SHA__', sha))
+}
+
 // ── Performance budget ───────────────────────────────────
 const budgetConfig = JSON.parse(readFileSync('config/budget.json', 'utf-8')) as Array<{
   resourceSizes?: Array<{

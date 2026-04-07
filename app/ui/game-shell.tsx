@@ -1,4 +1,4 @@
-import { css, type RemixNode } from 'remix/component'
+import { css, type RemixNode } from '@remix-run/component'
 import { gameHeaderStyles, gameHeaderPillStyles, settingsSectionStyles, settingsToggleStyles, settingsActionsStyles, tabBarStyles, tabButtonStyles, tabPanelStyles, modalCloseStyles, infoSectionStyles, attributionItemStyles } from './site-styles.js'
 
 type StyleObject = Parameters<typeof css>[0]

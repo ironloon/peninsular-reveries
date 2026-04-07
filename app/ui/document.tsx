@@ -1,4 +1,4 @@
-import { css, type RemixNode } from 'remix/component'
+import { css, type RemixNode } from '@remix-run/component'
 import { getSiteBasePath, getSiteUrl } from '../site-config.js'
 import { resolveSiteUrl, withBasePath } from '../site-paths.js'
 import { gameBodyStyles, gameMainStyles } from './game-shell.js'

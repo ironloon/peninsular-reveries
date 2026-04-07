@@ -13,7 +13,7 @@ import {
   tickRoundTimer,
   resolveFrenzyRound,
 } from './state'
-import { POINTS_FOR_AREA, SCENE_ITEM_COUNTS, START_LIVES, TOTAL_ROUNDS } from './types'
+import { AREA_LEVEL_RANGES, POINTS_FOR_AREA, SCENE_ITEM_COUNTS, START_LIVES, TOTAL_ROUNDS } from './types'
 import type { Area, AreaLevel, FrenzyConfig, FrenzyState } from './types'
 
 const SEED = 0xc0ffee
@@ -346,6 +346,34 @@ test('resolveFrenzyRound: resets NPCs after round', () => {
   for (const npc of result.updatedFrenzy.npcs) {
     assert.equal(npc.chompProgress, 0)
     assert.equal(npc.targetFruitIndex, null)
+  }
+})
+
+test('advanceRound preserves area, level, and accumulated score across boundaries', () => {
+  let state = createInitialState('multiplication', 2, SEED)
+
+  // Correct answer on round 1
+  const correctItem = state.sceneItems.find((item) => item.isCorrect)
+  assert.ok(correctItem)
+  state = resolveChomp(selectAnswer(state, correctItem.id))
+  const scoreAfterRound1 = state.score
+  assert.ok(scoreAfterRound1 > 0)
+
+  state = advanceRound(state)
+
+  assert.equal(state.round, 2, 'round should increment to 2')
+  assert.equal(state.score, scoreAfterRound1, 'score should be preserved across round advance')
+  assert.equal(state.area, 'multiplication', 'area should be unchanged')
+  assert.equal(state.level, 2, 'level should be unchanged')
+  assert.equal(state.phase, 'playing')
+})
+
+test('difficulty level affects problem parameter ranges', () => {
+  const arithAreas: Array<Area> = ['addition', 'subtraction', 'multiplication', 'division']
+  for (const area of arithAreas) {
+    const l1Max = AREA_LEVEL_RANGES[area][1].max
+    const l3Max = AREA_LEVEL_RANGES[area][3].max
+    assert.ok(l3Max > l1Max, `Level 3 max (${l3Max}) should exceed level 1 max (${l1Max}) for ${area}`)
   }
 })
 

@@ -1,6 +1,6 @@
 ---
-description: "Implementation performer that executes a single movement: reads code, makes changes, runs verification. Use for all dispatched movements."
-model: "Claude Sonnet 4.6"
+description: "Lightweight performer for mechanical, low-complexity movements: renames, config bumps, find-and-replace. Use for all dispatched movements with thinking_effort: low."
+model: "Claude Haiku 4.5"
 user-invocable: false
 agents: []
 ---

@@ -1,6 +1,6 @@
 ---
-description: "Implementation performer that executes a single movement: reads code, makes changes, runs verification. Use for all dispatched movements."
-model: "Claude Sonnet 4.6"
+description: "High-capability performer for research, exploration, and complex movements requiring deep reasoning. Use for all dispatched movements with thinking_effort: high."
+model: "Claude Opus 4.6"
 user-invocable: false
 agents: []
 ---

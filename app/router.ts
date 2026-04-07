@@ -1,4 +1,4 @@
-import { createRouter } from 'remix/fetch-router'
+import { createRouter } from '@remix-run/fetch-router'
 import { routes } from './routes.js'
 import { attributionsAction } from './controllers/attributions.js'
 import { chompersAction } from './controllers/chompers.js'

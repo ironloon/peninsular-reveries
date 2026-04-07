@@ -1,5 +1,5 @@
-import { css } from 'remix/component'
-import { renderToString } from 'remix/component/server'
+import { css } from '@remix-run/component'
+import { renderToString } from '@remix-run/component/server'
 import { attributionsPagePath } from '../data/attributions/index.js'
 import { Document } from '../ui/document.js'
 import { games } from '../data/game-registry.js'
@@ -80,6 +80,9 @@ export async function homeAction() {
           <ComingSoonGameCard name={game.name} description={game.description} icon={game.icon} />
         ))}
       </section>
+      <footer mix={[css({ textAlign: 'center', padding: 'var(--space-md) 0', color: 'var(--color-muted)', fontSize: 'var(--text-xs)' })]}>
+        <small>Build __BUILD_SHA__</small>
+      </footer>
     </Document>
   )
 

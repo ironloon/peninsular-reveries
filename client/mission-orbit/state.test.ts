@@ -211,3 +211,40 @@ describe('advanceScenePhase', () => {
     strictEqual(s.sceneIndex, 1)
   })
 })
+
+describe('isSceneComplete / isMissionComplete', () => {
+  test('isSceneComplete returns false when interactionComplete is false', () => {
+    const s = createInitialState()
+    strictEqual(isSceneComplete(s), false)
+  })
+
+  test('isSceneComplete returns true when interactionComplete is true', () => {
+    const s = { ...createInitialState(), interactionComplete: true }
+    strictEqual(isSceneComplete(s), true)
+  })
+
+  test('isMissionComplete returns false when on first scene with interaction complete', () => {
+    const s = { ...createInitialState(), interactionComplete: true }
+    strictEqual(isMissionComplete(s), false)
+  })
+
+  test('isMissionComplete returns true when on last scene with interaction complete', () => {
+    const s = { ...createInitialState(), sceneIndex: SCENES.length - 1, interactionComplete: true }
+    strictEqual(isMissionComplete(s), true)
+  })
+})
+
+describe('tickState — cinematic auto-advance', () => {
+  test('cinematic advances to interaction after 3000ms', () => {
+    let s: MissionState = { ...createInitialState(), scenePhase: 'cinematic' as const }
+    s = tickState(s, 3000)
+    strictEqual(s.scenePhase, 'interaction')
+    strictEqual(s.elapsedMs, 0)
+  })
+
+  test('cinematic does not advance before 3000ms', () => {
+    let s: MissionState = { ...createInitialState(), scenePhase: 'cinematic' as const }
+    s = tickState(s, 2999)
+    strictEqual(s.scenePhase, 'cinematic')
+  })
+})

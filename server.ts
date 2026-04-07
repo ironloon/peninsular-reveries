@@ -1,6 +1,6 @@
 import * as http from 'node:http'
 import * as esbuild from 'esbuild'
-import { createRequestListener } from 'remix/node-fetch-server'
+import { createRequestListener } from '@remix-run/node-fetch-server'
 import { createAppRouter } from './app/router.js'
 import { readFileSync, existsSync, statSync } from 'node:fs'
 import { join, extname } from 'node:path'

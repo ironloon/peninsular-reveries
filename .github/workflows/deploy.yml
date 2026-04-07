@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 env:
-  NODE_VERSION: 24.14.1
+  NODE_VERSION: 25
   SITE_BASE_PATH: /${{ github.event.repository.name }}
   SITE_ORIGIN: https://${{ github.repository_owner }}.github.io
 

@@ -1,4 +1,4 @@
-﻿import { renderToString } from 'remix/component/server'
+﻿import { renderToString } from '@remix-run/component/server'
 import { getGameAttribution } from '../data/attributions/index.js'
 import { MISSION_CREW_ROSTER } from '../data/mission-orbit-data.js'
 import { getSiteBasePath } from '../site-config.js'
