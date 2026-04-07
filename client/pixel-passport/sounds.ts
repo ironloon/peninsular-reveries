@@ -1,26 +1,25 @@
 import type { TransportType } from './types.js'
+import { getAudioContext, createSfxBus } from '../audio.js'
+import { getSfxEnabled } from '../preferences.js'
 
-const SOUND_STORAGE_KEY = 'pixel-passport-sound-enabled'
-
-let audioContext: AudioContext | null = null
+let _sfxBus: GainNode | null = null
 let travelLoopStopper: (() => void) | null = null
 
 function getCtx(): AudioContext | null {
-  if (typeof window === 'undefined' || !('AudioContext' in window || 'webkitAudioContext' in window)) {
+  try {
+    return getAudioContext()
+  } catch {
     return null
   }
+}
 
-  if (!audioContext) {
-    const AudioConstructor = window.AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
-    if (!AudioConstructor) return null
-    audioContext = new AudioConstructor()
-  }
-
-  return audioContext
+function getSfxBusNode(): GainNode {
+  if (!_sfxBus) _sfxBus = createSfxBus('pixel-passport')
+  return _sfxBus
 }
 
 function canPlay(): boolean {
-  return getSoundEnabled()
+  return getSfxEnabled('pixel-passport')
 }
 
 function tone(frequency: number, durationMs: number, options?: { type?: OscillatorType; volume?: number; detune?: number }): void {
@@ -36,7 +35,7 @@ function tone(frequency: number, durationMs: number, options?: { type?: Oscillat
   oscillator.detune.value = options?.detune ?? 0
   gain.gain.value = 0.0001
   oscillator.connect(gain)
-  gain.connect(ctx.destination)
+  gain.connect(getSfxBusNode())
 
   const now = ctx.currentTime
   const volume = options?.volume ?? 0.04
@@ -62,7 +61,7 @@ function createTravelLoop(transport: TransportType): () => void {
 
   const gain = ctx.createGain()
   gain.gain.value = 0.0001
-  gain.connect(ctx.destination)
+  gain.connect(getSfxBusNode())
 
   const oscillators: OscillatorNode[] = []
   const addOscillator = (frequency: number, type: OscillatorType, volume: number): void => {
@@ -102,24 +101,7 @@ function createTravelLoop(transport: TransportType): () => void {
   }
 }
 
-export function getSoundEnabled(): boolean {
-  return localStorage.getItem(SOUND_STORAGE_KEY) !== 'off'
-}
-
-export function setSoundEnabled(enabled: boolean): void {
-  localStorage.setItem(SOUND_STORAGE_KEY, enabled ? 'on' : 'off')
-  if (!enabled) {
-    stopTravelLoop()
-  }
-}
-
-export function ensureAudioUnlocked(): void {
-  const ctx = getCtx()
-  if (!ctx) return
-  if (ctx.state === 'suspended') {
-    void ctx.resume()
-  }
-}
+export { ensureAudioUnlocked } from '../audio.js'
 
 export function sfxButton(): void {
   tone(660, 110, { volume: 0.03 })

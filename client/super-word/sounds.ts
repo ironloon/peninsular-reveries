@@ -1,14 +1,14 @@
 // ── Sound Effects (Web Audio API — no external files) ────────
 
-let ctx: AudioContext | null = null
-let unlocked = false
-let musicEnabled = false
-let musicPreferenceLoaded = false
-let musicLoopHandle: number | null = null
-let musicBus: GainNode | null = null
-let musicMeasureIndex = 0
+import { getAudioContext, createMusicBus, createSfxBus, ensureAudioUnlocked } from '../audio.js'
+import { getMusicEnabled } from '../preferences.js'
 
-const MUSIC_STORAGE_KEY = 'super-word-music-enabled'
+export { ensureAudioUnlocked }
+
+let _musicBus: GainNode | null = null
+let _sfxBus: GainNode | null = null
+let musicLoopHandle: number | null = null
+let musicMeasureIndex = 0
 const AMBIENT_MEASURE_MS = 4200
 const AMBIENT_PROGRESSIONS = [
   {
@@ -29,57 +29,19 @@ const AMBIENT_PROGRESSIONS = [
   },
 ]
 
-function getCtx(): AudioContext | null {
-  if (!ctx) {
-    try { ctx = new AudioContext() } catch { return null }
-  }
-  if (ctx.state === 'suspended') {
-    ctx.resume()
-  }
-  return ctx
+function getMusicBusNode(): GainNode {
+  if (!_musicBus) _musicBus = createMusicBus('super-word')
+  return _musicBus
 }
 
-function loadMusicPreference(): void {
-  if (musicPreferenceLoaded) return
-  musicPreferenceLoaded = true
-  try {
-    musicEnabled = window.localStorage.getItem(MUSIC_STORAGE_KEY) === 'true'
-  } catch {
-    musicEnabled = false
-  }
-}
-
-function getMusicBus(c: AudioContext): GainNode {
-  if (!musicBus) {
-    musicBus = c.createGain()
-    musicBus.gain.value = 0.0001
-    musicBus.connect(c.destination)
-  }
-  return musicBus
-}
-
-function fadeMusicBus(target: number, duration: number): void {
-  const c = getCtx()
-  if (!c) return
-
-  const bus = getMusicBus(c)
-  const safeTarget = Math.max(target, 0.0001)
-  const currentValue = Math.max(bus.gain.value, 0.0001)
-
-  bus.gain.cancelScheduledValues(c.currentTime)
-  bus.gain.setValueAtTime(currentValue, c.currentTime)
-  if (safeTarget > currentValue) {
-    bus.gain.linearRampToValueAtTime(safeTarget, c.currentTime + duration)
-  } else {
-    bus.gain.exponentialRampToValueAtTime(safeTarget, c.currentTime + duration)
-  }
+function getSfxBusNode(): GainNode {
+  if (!_sfxBus) _sfxBus = createSfxBus('super-word')
+  return _sfxBus
 }
 
 function playAmbientPad(freq: number, startTime: number, duration: number, volume: number): void {
-  const c = getCtx()
-  if (!c) return
-
-  const destination = getMusicBus(c)
+  const c = getAudioContext()
+  const destination = getMusicBusNode()
   const filter = c.createBiquadFilter()
   const gain = c.createGain()
   const oscA = c.createOscillator()
@@ -112,10 +74,8 @@ function playAmbientPad(freq: number, startTime: number, duration: number, volum
 }
 
 function playAmbientBell(freq: number, startTime: number, duration: number, volume: number): void {
-  const c = getCtx()
-  if (!c) return
-
-  const destination = getMusicBus(c)
+  const c = getAudioContext()
+  const destination = getMusicBusNode()
   const osc = c.createOscillator()
   const gain = c.createGain()
 
@@ -143,14 +103,13 @@ function scheduleAmbientMeasure(startTime: number): void {
 }
 
 function startAmbientMusic(): void {
-  const c = getCtx()
-  if (!c || c.state === 'suspended' || musicLoopHandle !== null || document.hidden) return
+  const c = getAudioContext()
+  if (c.state === 'suspended' || musicLoopHandle !== null || document.hidden) return
 
-  fadeMusicBus(0.07, 1.2)
   scheduleAmbientMeasure(c.currentTime + 0.05)
   musicLoopHandle = window.setInterval(() => {
-    const currentCtx = getCtx()
-    if (!currentCtx || currentCtx.state === 'suspended' || document.hidden) return
+    const currentCtx = getAudioContext()
+    if (currentCtx.state === 'suspended' || document.hidden) return
     scheduleAmbientMeasure(currentCtx.currentTime + 0.05)
   }, AMBIENT_MEASURE_MS)
 }
@@ -160,28 +119,11 @@ function stopAmbientMusic(): void {
     window.clearInterval(musicLoopHandle)
     musicLoopHandle = null
   }
-  fadeMusicBus(0.0001, 0.8)
-}
-
-// Must be called from a user-gesture event handler (click/pointerdown/keydown)
-export function ensureAudioUnlocked(): void {
-  if (unlocked) return
-  const c = getCtx()
-  if (!c) return
-  if (c.state === 'suspended') c.resume()
-  // Play a silent buffer to unlock on iOS/Safari
-  const buf = c.createBuffer(1, 1, c.sampleRate)
-  const src = c.createBufferSource()
-  src.buffer = buf
-  src.connect(c.destination)
-  src.start()
-  unlocked = true
-  syncMusicPlayback()
 }
 
 function playTone(freq: number, duration: number, type: OscillatorType = 'sine', volume = 0.15): void {
-  const c = getCtx()
-  if (!c) return
+  const c = getAudioContext()
+  const bus = getSfxBusNode()
   const osc = c.createOscillator()
   const gain = c.createGain()
   osc.type = type
@@ -189,14 +131,14 @@ function playTone(freq: number, duration: number, type: OscillatorType = 'sine',
   gain.gain.setValueAtTime(volume, c.currentTime)
   gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + duration)
   osc.connect(gain)
-  gain.connect(c.destination)
+  gain.connect(bus)
   osc.start(c.currentTime)
   osc.stop(c.currentTime + duration)
 }
 
 function playNotes(notes: Array<[number, number]>, type: OscillatorType = 'sine', volume = 0.12): void {
-  const c = getCtx()
-  if (!c) return
+  const c = getAudioContext()
+  const bus = getSfxBusNode()
   let offset = 0
   for (const [freq, dur] of notes) {
     const osc = c.createOscillator()
@@ -206,35 +148,15 @@ function playNotes(notes: Array<[number, number]>, type: OscillatorType = 'sine'
     gain.gain.setValueAtTime(volume, c.currentTime + offset)
     gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + offset + dur)
     osc.connect(gain)
-    gain.connect(c.destination)
+    gain.connect(bus)
     osc.start(c.currentTime + offset)
     osc.stop(c.currentTime + offset + dur)
     offset += dur * 0.7
   }
 }
 
-export function getMusicEnabled(): boolean {
-  loadMusicPreference()
-  return musicEnabled
-}
-
-export function setMusicEnabled(enabled: boolean): void {
-  loadMusicPreference()
-  if (musicEnabled !== enabled) {
-    musicMeasureIndex = 0
-  }
-  musicEnabled = enabled
-  try {
-    window.localStorage.setItem(MUSIC_STORAGE_KEY, String(enabled))
-  } catch {
-    // Ignore storage failures and keep the in-memory setting.
-  }
-  syncMusicPlayback()
-}
-
 export function syncMusicPlayback(): void {
-  loadMusicPreference()
-  if (!musicEnabled || document.hidden) {
+  if (!getMusicEnabled('super-word') || document.hidden) {
     stopAmbientMusic()
     return
   }

@@ -20,7 +20,7 @@ import {
   renderWinScreen,
   setCheckButtonEnabled,
 } from './renderer.js'
-import { setupSettingsModal } from './settings-modal.js'
+import { setupTabbedModal } from '../modal.js'
 import { setupInput } from './input.js'
 import type { InputCallbacks } from './input.js'
 import {
@@ -52,12 +52,11 @@ import {
   sfxButton,
   sfxSwap,
   ensureAudioUnlocked,
-  getMusicEnabled,
-  setMusicEnabled,
   syncMusicPlayback,
 } from './sounds.js'
+import { getMusicEnabled, setMusicEnabled, bindMusicToggle, bindSfxToggle, bindReduceMotionToggle } from '../preferences.js'
 
-const DEFAULT_DIFFICULTY: Difficulty = 'easy'
+const DEFAULT_DIFFICULTY: Difficulty = 'hero'
 
 function parseDifficulty(value: string | null | undefined): Difficulty {
   return DIFFICULTIES.find((difficulty) => difficulty === value) ?? DEFAULT_DIFFICULTY
@@ -75,7 +74,7 @@ function setState(newState: GameState): void { gameState = newState }
 function currentPuzzle(): Puzzle { return activePuzzles[gameState.currentPuzzleIndex] }
 
 // ── DOM Element References ────────────────────────────────
-const sceneEl = document.getElementById('scene')!
+const sceneEl = document.getElementById('scene-wrapper')!
 const slotsEl = document.getElementById('letter-slots')!
 const pendingFlightIndices = new Set<number>()
 const musicToggleButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-music-toggle="true"]'))
@@ -92,10 +91,7 @@ function updateCheckButtonState(): void {
 }
 
 function syncMusicControls(): void {
-  const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
-  const musicEnabled = getMusicEnabled()
-
-  if (musicToggle) musicToggle.checked = musicEnabled
+  const musicEnabled = getMusicEnabled('super-word')
 
   for (const button of musicToggleButtons) {
     const label = button.querySelector<HTMLElement>('[data-music-toggle-label="true"]')
@@ -109,17 +105,10 @@ function syncMusicControls(): void {
   }
 }
 
-function setMusicEnabledFromUi(enabled: boolean): void {
-  if (enabled) ensureAudioUnlocked()
-  setMusicEnabled(enabled)
-  syncMusicControls()
-}
-
 function syncSettingsForm(): void {
-  const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
+  const difficultySelect = document.getElementById('difficulty-select') as HTMLSelectElement | null
 
   if (difficultySelect) difficultySelect.value = activeDifficulty
-  syncMusicControls()
 }
 
 // ── Helper: Refresh Game Screen ───────────────────────────
@@ -137,9 +126,9 @@ function refreshGameScreen(): void {
 function onStartGame(): void {
   ensureAudioUnlocked()
   sfxButton()
-  const difficultySelect = document.getElementById('puzzle-difficulty-select') as HTMLSelectElement | null
+  const difficultySelect = document.getElementById('difficulty-select') as HTMLSelectElement | null
 
-  activeDifficulty = parseDifficulty(difficultySelect?.value)
+  activeDifficulty = parseDifficulty(difficultySelect?.value ?? activeDifficulty)
   activePuzzles = selectPuzzles(activeDifficulty)
 
   // Reset game state for new puzzle set
@@ -210,7 +199,7 @@ function onLetterCollected(item: SceneItem): void {
   if (sceneItem) {
     sceneItem.tabIndex = -1
     // Focus nearest uncollected item without auto-advancing
-    const uncollected = Array.from(sceneEl.querySelectorAll('.scene-item:not(.collected)')) as HTMLElement[]
+    const uncollected = Array.from(sceneEl.querySelectorAll('.sr-overlay-btn:not(.collected)')) as HTMLElement[]
     if (uncollected.length > 0) {
       for (const el of uncollected) el.tabIndex = -1
       const nextLetter = uncollected.find((el) => el.dataset.itemType === 'letter') ?? uncollected[0]
@@ -350,21 +339,29 @@ const callbacks: InputCallbacks = {
 }
 
 syncSettingsForm()
+syncMusicControls()
 setupInput(getState, setState, currentPuzzle, callbacks)
-setupSettingsModal()
+setupTabbedModal('settings-modal')
 
-const musicToggle = document.getElementById('music-enabled-toggle') as HTMLInputElement | null
-if (musicToggle) {
-  musicToggle.addEventListener('change', () => {
-    setMusicEnabledFromUi(musicToggle.checked)
-  })
-}
+bindMusicToggle('super-word', document.getElementById('music-enabled-toggle') as HTMLInputElement | null, document.getElementById('music-enabled-help') as HTMLElement | null)
+bindSfxToggle('super-word', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
+bindReduceMotionToggle(document.getElementById('reduce-motion-toggle') as HTMLInputElement | null, document.getElementById('reduce-motion-help') as HTMLElement | null)
 
 for (const button of musicToggleButtons) {
   button.addEventListener('click', () => {
-    setMusicEnabledFromUi(!getMusicEnabled())
+    const newEnabled = !getMusicEnabled('super-word')
+    if (newEnabled) ensureAudioUnlocked()
+    setMusicEnabled('super-word', newEnabled)
   })
 }
+
+window.addEventListener('reveries:music-change', (e) => {
+  const event = e as CustomEvent<{ gameSlug: string; enabled: boolean }>
+  if (event.detail.gameSlug !== 'super-word') return
+  syncMusicControls()
+  if (event.detail.enabled) ensureAudioUnlocked()
+  syncMusicPlayback()
+})
 
 document.addEventListener('visibilitychange', syncMusicPlayback)
 document.addEventListener('restart', () => { onPlayAgain() })

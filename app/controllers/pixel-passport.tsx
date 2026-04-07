@@ -1,10 +1,10 @@
 import { renderToString } from 'remix/component/server'
 import { DESTINATIONS } from '../../client/pixel-passport/destinations.js'
-import { attributionsPagePath, getGameAttribution } from '../data/attributions/index.js'
+import { getGameAttribution } from '../data/attributions/index.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
-import { GameHeader, GameHeaderPill, GameScreen, GameSettingsModal, SettingsActions, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
+import { GameHeader, GameHeaderPill, GameScreen, GameTabbedModal, InfoSection, InfoAttribution, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
 
 const pixelPassportModalOverlayStyles = {
   zIndex: 100,
@@ -293,7 +293,15 @@ export async function pixelPassportAction() {
         </GameScreen>
       </div>
 
-      <GameSettingsModal title="Menu" overlayStyles={pixelPassportModalOverlayStyles}>
+      <GameTabbedModal
+        title="Menu"
+        overlayStyles={pixelPassportModalOverlayStyles}
+        quitHref={homePath}
+        settingsContent={<>
+          <SettingsSection title="🎵 Audio">
+            <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
+            <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
+          </SettingsSection>
 
           <SettingsSection title="🗺️ Controls">
             <ul className="settings-list">
@@ -307,14 +315,6 @@ export async function pixelPassportAction() {
             <p>Explore Mode lets you roam the world. Mystery Mode gives you three clues and asks you to guess the place.</p>
           </SettingsSection>
 
-          <SettingsSection title="🔊 Audio">
-            <SettingsToggle
-              id="sound-enabled-toggle"
-              label="Sound"
-              helpText="Pip and the magic bus use tiny browser-made sounds."
-            />
-          </SettingsSection>
-
           <SettingsSection title="Accessibility">
             <SettingsToggle
               id="reduce-motion-toggle"
@@ -323,15 +323,16 @@ export async function pixelPassportAction() {
               helpId="reduce-motion-help"
             />
           </SettingsSection>
-
-          <SettingsSection title="© Credits &amp; License">
-            <p>Code license: {attribution.codeLicense}</p>
+        </>}
+        infoContent={<>
+          <InfoSection title="About Pixel Passport">
             <p>{attribution.summary}</p>
-            <a href={withBasePath(`${attributionsPagePath}#${attribution.slug}`, siteBasePath)}>View full credits</a>
-          </SettingsSection>
-
-          <SettingsActions quitHref={homePath} showRestart={true} />
-      </GameSettingsModal>
+          </InfoSection>
+          {attribution.entries.map((entry) => (
+            <InfoAttribution attribution={{ title: entry.title, author: entry.creator, license: entry.license }} />
+          ))}
+        </>}
+      />
 
       <SrOnly id="game-status" ariaLive="polite" ariaAtomic />
       <SrOnly id="game-feedback" ariaLive="assertive" ariaAtomic />

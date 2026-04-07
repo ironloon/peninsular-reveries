@@ -1,5 +1,5 @@
 import { css, type RemixNode } from 'remix/component'
-import { gameHeaderStyles, gameHeaderPillStyles, settingsSectionStyles, settingsToggleStyles, settingsActionsStyles } from './site-styles.js'
+import { gameHeaderStyles, gameHeaderPillStyles, settingsSectionStyles, settingsToggleStyles, settingsActionsStyles, tabBarStyles, tabButtonStyles, tabPanelStyles, modalCloseStyles, infoSectionStyles, attributionItemStyles } from './site-styles.js'
 
 type StyleObject = Parameters<typeof css>[0]
 
@@ -284,6 +284,92 @@ export function SettingsActions() {
         ) : null}
         <a href={quitHref} className={['settings-quit-link', quitClassName].filter(Boolean).join(' ')}>Quit</a>
         <button id="settings-close-btn" type="button" className="settings-close-btn">Close</button>
+      </div>
+    )
+  }
+}
+
+interface GameTabbedModalProps {
+  title: string
+  headingId?: string
+  settingsContent: RemixNode
+  infoContent: RemixNode
+  overlayStyles?: StyleObject
+  quitHref: string
+}
+
+export function GameTabbedModal() {
+  return (props: GameTabbedModalProps) => {
+    const {
+      title,
+      headingId = 'settings-heading',
+      settingsContent,
+      infoContent,
+      overlayStyles,
+      quitHref,
+    } = props
+
+    const overlayMixins = [css(settingsModalBaseStyles)]
+    if (overlayStyles) {
+      overlayMixins.push(css(overlayStyles))
+    }
+
+    return (
+      <div id="settings-modal" className="settings-modal settings-modal--tabbed" role="dialog" aria-modal="true" aria-labelledby={headingId} tabIndex={-1} hidden mix={overlayMixins}>
+        <div className="settings-content">
+          <h2 id={headingId} className="settings-heading">{title}</h2>
+          <button aria-label="Close menu" className="modal-close" id="settings-close-btn" type="button" mix={[css(modalCloseStyles)]}>×</button>
+          <div className="tab-bar" role="tablist" aria-label="Settings sections" mix={[css(tabBarStyles)]}>
+            <button role="tab" aria-selected="true" aria-controls="tab-panel-settings" id="tab-settings" className="tab-btn tab-btn--active" mix={[css(tabButtonStyles)]}>Settings</button>
+            <button role="tab" aria-selected="false" aria-controls="tab-panel-info" id="tab-info" className="tab-btn" mix={[css(tabButtonStyles)]}>Info</button>
+          </div>
+          <div id="tab-panel-settings" role="tabpanel" aria-labelledby="tab-settings" className="tab-panel" mix={[css(tabPanelStyles)]}>
+            {settingsContent}
+          </div>
+          <div id="tab-panel-info" role="tabpanel" aria-labelledby="tab-info" className="tab-panel" hidden mix={[css(tabPanelStyles)]}>
+            {infoContent}
+          </div>
+          <div className="settings-actions" mix={[css(settingsActionsStyles)]}>
+            <button id="restart-btn" type="button" className="settings-restart-btn">Restart</button>
+            <a href={quitHref} className="settings-quit-link">Quit</a>
+          </div>
+        </div>
+      </div>
+    )
+  }
+}
+
+interface InfoSectionProps {
+  title: string
+  children: RemixNode
+}
+
+export function InfoSection() {
+  return (props: InfoSectionProps) => {
+    const { title, children } = props
+    return (
+      <section className="info-section" mix={[css(infoSectionStyles)]}>
+        <h3 className="info-section-title">{title}</h3>
+        {children}
+      </section>
+    )
+  }
+}
+
+interface InfoAttributionProps {
+  attribution: { title: string; author?: string; license?: string; url?: string; notes?: string }
+}
+
+export function InfoAttribution() {
+  return (props: InfoAttributionProps) => {
+    const { attribution } = props
+    return (
+      <div className="attribution-item" mix={[css(attributionItemStyles)]}>
+        <strong>{attribution.title}</strong>
+        {attribution.author ? <span>{attribution.author}</span> : null}
+        {attribution.license ? <span>{attribution.license}</span> : null}
+        {attribution.url ? <a href={attribution.url} target="_blank" rel="noopener noreferrer">{attribution.url}</a> : null}
+        {attribution.notes ? <p>{attribution.notes}</p> : null}
       </div>
     )
   }

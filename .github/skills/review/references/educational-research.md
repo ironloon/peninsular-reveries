@@ -78,3 +78,72 @@ Prefer **"within N"** (matching standards language), e.g.:
 | 4     | Age 8–9 (Gr 3)  | CCSS 3.OA — multiplication/division within 100 |
 
 These are anchors, not hard requirements. Adjust if the game's audience is narrower.
+
+---
+
+## Reading / Phonics Research
+
+### National Reading Panel (2000)
+U.S. Department of Health and Human Services report identifying five pillars of effective reading instruction:
+1. **Phonemic awareness** — understanding that spoken words are made of individual sounds
+2. **Phonics** — mapping sounds to written letters
+3. **Fluency** — reading with speed, accuracy, and expression
+4. **Vocabulary** — knowing word meanings
+5. **Comprehension** — understanding what is read
+
+Research finding: systematic phonics instruction produces stronger decoding outcomes than whole-language approaches.
+Source: https://www.nichd.nih.gov/sites/default/files/publications/pubs/nrp/Documents/report.pdf
+
+### Common Core State Standards — Foundational Reading (CCSS.ELA-LITERACY.RF)
+Grade-by-grade reading foundational skills, directly governing decodable-word progression.
+- **K.RF.3**: Know and apply grade-level phonics — short vowels in CVC words, common consonant digraphs
+- **1.RF.3**: Decode regularly spelled one-syllable words; know long-vowel patterns (CVCe, vowel teams)
+- **2.RF.3**: Decode regularly spelled two-syllable words; recognize common prefixes/suffixes
+- **3.RF.3**: Read multi-syllable words; recognize and read grade-appropriate irregularly spelled words
+Source: http://www.corestandards.org/ELA-Literacy/RF/
+
+### Dolch Sight Words
+220 high-frequency function words organized by grade level (Edward Dolch, 1948). These words account for 50–75% of words encountered in children's reading material and are typically memorized on sight because many resist phonetic decoding.
+- **Pre-Primer**: ~40 words — the, a, and, to, I, you, it, he …
+- **Primer**: ~52 words — all, am, are, at, ate, be, black …
+- **Grade 1**: ~41 words — after, again, an, ask, by, could …
+- **Grade 2**: ~46 words — always, around, because, been, bring …
+- **Grade 3**: ~41 words — about, better, bring, carry, clean …
+
+### Fry Instant Words
+The 1,000 most frequent words in English text, organized in bands of 100 (Edward Fry, 1957, revised 1980). The first 300 cover approximately 65% of all written material.
+- Bands 1–100: highest-frequency function words
+- Bands 101–200: expansion of function and common content words
+- Bands 201–300: increasing content-word presence
+
+---
+
+## Phonemic Complexity Progression
+
+Use these tiers to assign decodable words to the appropriate difficulty level in word games.
+
+| Tier | Pattern | Examples | Grade Alignment |
+|------|---------|----------|----------------|
+| 1 | CVC (short vowel) | cat, sun, dog, bug | K–Grade 1 |
+| 1 | High-frequency sight words | the, and, you, for | K–Grade 1 |
+| 2 | CCVC / CVCC (initial/final blends) | frog, star, jump, sand | K–Grade 1 |
+| 2 | Digraphs (sh, ch, th, wh, ph) | ship, chat, thin, whale | K–Grade 1 |
+| 3 | CVCe (silent-e long vowel) | cake, bike, home, cute | Grade 1–2 |
+| 3 | Vowel teams (ee, oa, ai, ea, oo) | tree, boat, rain, bead, moon | Grade 1–2 |
+| 4 | R-controlled vowels (ar, er, ir, or, ur) | star, tiger, bird, storm, burn | Grade 2–3 |
+| 4 | Simple 2-syllable words | cabin, happy, jelly, magic | Grade 2–3 |
+| 5 | Complex multi-syllable words | garden, planet, castle, rocket | Grade 3+ |
+| 5 | Complex consonant clusters + fluent vocab | crisp, ghost, glare, grace | Grade 3+ |
+
+### Word List Sources
+- **Dolch Sight Words**: 220 words organized by grade (Pre-Primer through Grade 3) — high-frequency functional words
+- **Fry Instant Words**: 1,000 most frequent words in English text, organized in bands of 100
+- **CCSS K.RF / 1.RF / 2.RF / 3.RF**: Defines expected decodable patterns by grade
+- **National Reading Panel (2000)**: Five pillars — phonemic awareness, phonics, fluency, vocabulary, comprehension
+
+### Age-Appropriate Content Guidelines (Word Games)
+- Use concrete, imageable nouns (words a child can picture): cat, sun, tree, cake
+- Avoid abstract concepts for early tiers (love, hope, anger — not appropriate for Tier 1–2)
+- Avoid homographs that could confuse (bark = tree vs. dog sound)
+- Use universal vocabulary: words children encounter regardless of cultural background
+- No violent, scary, or body-related terms that create discomfort

@@ -1,7 +1,14 @@
-import { BASE_LAYOUTS, DISTRACTOR_ART, LETTER_ART, TOTAL_ITEMS_BY_DIFFICULTY } from './scene-art.js'
+import { BASE_LAYOUTS, DISTRACTOR_ART, LETTER_ART } from './scene-art.js'
 import type { ItemArt, ScenePosition } from './scene-art.js'
-import type { Puzzle, SceneItem } from './types.js'
-import type { WordSpec, WordTheme } from './word-bank.js'
+import type { Difficulty, Puzzle, SceneItem, SizeCategory, WordSpec, WordTheme } from './types.js'
+
+const TOTAL_ITEMS_BY_DIFFICULTY: Record<Difficulty, number> = {
+  sidekick: 7,
+  hero: 8,
+  super: 8,
+  ultra: 9,
+  legend: 10,
+}
 
 export function shuffleList<T>(items: readonly T[]): T[] {
   const result = [...items]
@@ -75,35 +82,50 @@ function pickDistractors(answer: string, theme: WordTheme, count: number, usedLa
   return selected
 }
 
-function getZoneBounds(zone: SceneItem['zone']): { minY: number; maxY: number } {
+function getZoneBounds(zone: SceneItem['zone'], sizeCategory?: SizeCategory): { minY: number; maxY: number } {
   if (zone === 'sky') {
+    if (sizeCategory === 'tiny') return { minY: 15, maxY: 25 }
+    if (sizeCategory === 'large' || sizeCategory === 'huge') return { minY: 25, maxY: 40 }
     return { minY: 16, maxY: 46 }
   }
 
   if (zone === 'ground') {
+    if (sizeCategory === 'huge') return { minY: 60, maxY: 76 }
+    if (sizeCategory === 'large') return { minY: 65, maxY: 76 }
     return { minY: 54, maxY: 76 }
   }
 
-  return { minY: 24, maxY: 66 }
+  return { minY: 40, maxY: 65 }
 }
 
-function mapYToZone(baseY: number, zone: SceneItem['zone']): number {
+function mapYToZone(baseY: number, zone: SceneItem['zone'], sizeCategory?: SizeCategory): number {
   const normalized = clamp((baseY - 14) / 64, 0, 1)
-  const { minY, maxY } = getZoneBounds(zone)
+  const { minY, maxY } = getZoneBounds(zone, sizeCategory)
   return minY + normalized * (maxY - minY)
 }
 
-function getVerticalPlacementOffset(item: Pick<SceneItem, 'zone' | 'scale' | 'yOffset'>): number {
+function getVerticalPlacementOffset(item: Pick<SceneItem, 'zone' | 'scale' | 'yOffset' | 'sizeCategory' | 'anchor'>): number {
   if (item.zone !== 'ground') {
     return item.yOffset ?? 0
+  }
+
+  if (item.sizeCategory) {
+    const categoryOffsets: Record<SizeCategory, number> = {
+      tiny: 0,
+      small: 0,
+      medium: 2,
+      large: 5,
+      huge: 10,
+    }
+    return categoryOffsets[item.sizeCategory] + (item.yOffset ?? 0)
   }
 
   return Math.max(0, (item.scale ?? 1) - 1) * 15 + (item.yOffset ?? 0)
 }
 
-export function positionItemY(baseY: number, item: Pick<SceneItem, 'zone' | 'scale' | 'yOffset'>): number {
-  const { minY, maxY } = getZoneBounds(item.zone)
-  return clamp(mapYToZone(baseY, item.zone) + getVerticalPlacementOffset(item), minY, maxY)
+export function positionItemY(baseY: number, item: Pick<SceneItem, 'zone' | 'scale' | 'yOffset' | 'sizeCategory' | 'anchor'>): number {
+  const { minY, maxY } = getZoneBounds(item.zone, item.sizeCategory)
+  return clamp(mapYToZone(baseY, item.zone, item.sizeCategory) + getVerticalPlacementOffset(item), minY, maxY)
 }
 
 function assignBasePositions(items: readonly Omit<SceneItem, 'x' | 'y'>[]): SceneItem[] {
@@ -152,7 +174,7 @@ function randomizeLayout(items: readonly SceneItem[]): SceneItem[] {
 
   return shuffledItems.map((item) => {
     const slot = takeLayoutSlot(slots, item.zone)
-    const { minY, maxY } = getZoneBounds(item.zone)
+    const { minY, maxY } = getZoneBounds(item.zone, item.sizeCategory)
     const xJitter = item.zone === 'middle' ? 5 : 3.5
     const yJitter = item.zone === 'middle' ? 4 : 2.5
 
@@ -166,8 +188,9 @@ function randomizeLayout(items: readonly SceneItem[]): SceneItem[] {
 
 export function buildPuzzle(spec: WordSpec): Puzzle {
   const usedLabels = new Set<string>()
+  const theme = ((spec.theme ?? 'animals') as WordTheme)
   const letters = [...spec.answer].map((char, index) => {
-    const art = getLetterArt(char, spec.theme, hashString(`${spec.answer}-${index}`))
+    const art = getLetterArt(char, theme, hashString(`${spec.answer}-${index}`))
     usedLabels.add(art.label)
 
     return {
@@ -178,11 +201,13 @@ export function buildPuzzle(spec: WordSpec): Puzzle {
       emoji: art.emoji,
       label: art.label,
       scale: art.scale ?? 1.04,
+      sizeCategory: art.sizeCategory,
+      anchor: art.anchor,
     }
   })
 
   const distractorCount = Math.max(0, TOTAL_ITEMS_BY_DIFFICULTY[spec.difficulty] - letters.length)
-  const distractors = pickDistractors(spec.answer, spec.theme, distractorCount, usedLabels).map((art, index) => ({
+  const distractors = pickDistractors(spec.answer, theme, distractorCount, usedLabels).map((art, index) => ({
     id: `${spec.answer.toLowerCase()}-distractor-${index}`,
     type: 'distractor' as const,
     zone: art.zone ?? 'ground',
@@ -190,6 +215,8 @@ export function buildPuzzle(spec: WordSpec): Puzzle {
     label: art.label,
     scale: art.scale ?? 1,
     yOffset: art.yOffset,
+    sizeCategory: art.sizeCategory,
+    anchor: art.anchor,
   }))
 
   return {

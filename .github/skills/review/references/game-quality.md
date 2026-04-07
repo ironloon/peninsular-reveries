@@ -75,4 +75,30 @@
 
 ## In-Game Menu Standard
 
-Every game's settings modal must include three action buttons in a `<footer>` within the modal children: **Restart** (returns player to the game's own start screen / lobby — no navigation away from the page), **Quit** (navigates to site root via `withBasePath('/', siteBasePath)`), and **Close** (dismisses the modal and resumes the current game session). Use the exact labels "Restart", "Quit", "Close". Restart must be a `<button>` with `id="restart-btn"` wired in the game's `main.ts`. Quit must be an `<a>` element pointed at the site root with `className="...-quit-link"`. Close must be a `<button>` with `id="settings-close-btn"` referencing the existing close handler. The former "Home" link (site root) in existing games must be relabeled "Quit". Restart does not apply on the start screen itself (hide or omit in that context if needed, but consistency across games is more important — keeping it and simply re-showing the same screen is acceptable).
+Every game's settings modal uses a two-tab layout (Settings / Info) rendered by `GameTabbedModal`. An X close button (`aria-label="Close menu"`, `id="settings-close-btn"`, `className="modal-close"`) appears in the top-right corner of the dialog. The footer inside the dialog contains exactly two actions: **Restart** (a `<button>` with `id="restart-btn"` wired in the game's `main.ts`, returns player to the game's own start screen — no navigation away from the page) and **Quit** (an `<a>` element pointed at the site root via `withBasePath('/', siteBasePath)`, `className="...-quit-link"`). Use the exact labels "Restart" and "Quit". The former "Home" link in existing games must be relabeled "Quit". Games still using the legacy `GameSettingsModal` will be migrated to `GameTabbedModal` in WU-8/9. Restart does not apply on the start screen itself (hide or omit in that context if needed, but consistency across games is more important — keeping it visible and simply re-showing the same screen is acceptable).
+
+## Quality Benchmarks
+
+Aspirational references for design decisions in Peninsular Reveries:
+
+**PBS Kids (pbskids.org)**
+- Warm, inviting visuals with high contrast
+- Simple, consistent navigation patterns children can learn
+- Content is never scary, violent, or shame-based
+- Pacing is calm and forgiving — wrong answers get gentle feedback, not punishment
+- Accessible via keyboard and assistive technology
+
+**Khan Academy Kids**
+- Research-driven progression (phonemic awareness before phonics before fluency)
+- Celebrates all attempts, not only correct ones
+- Offline-first reliability
+- Clean, uncluttered interface that focuses the child's attention on the learning task
+- Uses concrete, imageable vocabulary so children can visualize every word
+
+**Applying these benchmarks:**
+When making design decisions, ask:
+1. Would a 5-year-old find this calming or stressful?  
+2. Is feedback warm and encouraging, regardless of whether the answer is right?
+3. Does the visual hierarchy guide the child's eyes to the learning task?
+4. Can a child with low vision, motor difficulty, or hearing impairment complete this game?
+5. Is every word or concept concrete and imageable for a child at this grade level?

@@ -1,0 +1,5 @@
+# Normalize line endings: store as LF, checkout as LF on all platforms
+* text=auto
+
+# Generated files that the test suite reads and byte-compares must stay LF
+ATTRIBUTIONS.md text eol=lf

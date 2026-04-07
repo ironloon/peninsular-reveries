@@ -24,17 +24,19 @@ import {
   announceMissionComplete,
 } from './accessibility.js'
 import {
-  setupSounds,
   playHoldTone,
   playSceneChime,
   playMissionCompleteSound,
 } from './sounds.js'
+import { setupTabbedModal } from '../modal.js'
+import { bindMusicToggle, bindSfxToggle, bindReduceMotionToggle } from '../preferences.js'
 import { setupInput, type InputCallbacks } from './input.js'
 
 // State
 let state = createInitialState()
 let animFrameId: number | null = null
 let lastTimestamp = 0
+let settingsModal = { open() {}, close() {}, toggle() {} }
 
 // DOM helpers
 function el(id: string): HTMLElement | null {
@@ -46,15 +48,6 @@ function showScreen(name: 'start-screen' | 'game-screen' | 'end-screen'): void {
     screen.classList.toggle('active', screen.id === name)
     screen.classList.toggle('leaving', false)
   }
-}
-
-function openSettings(): void {
-  el('settings-modal')?.removeAttribute('hidden')
-  el('settings-modal')?.focus()
-}
-
-function closeSettings(): void {
-  el('settings-modal')?.setAttribute('hidden', '')
 }
 
 // Game loop
@@ -134,20 +127,15 @@ function onHoldEnd(): void {
 
 function onSettings(): void {
   stopLoop()
-  openSettings()
+  settingsModal.open()
 }
 
 function onPlayAgain(): void {
   state = createInitialState()
-  closeSettings()
+  settingsModal.close()
   showScreen('start-screen')
   stopLoop()
 }
-
-// Wire settings toggles
-const sfxToggle = document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null
-const sfxEnabled = (): boolean => sfxToggle?.checked ?? true
-setupSounds(sfxEnabled)
 
 const callbacks: InputCallbacks = {
   onStart,
@@ -163,5 +151,10 @@ setupInput(callbacks)
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) stopLoop()
 })
+
+settingsModal = setupTabbedModal()
+bindMusicToggle('mission-orbit', document.getElementById('music-enabled-toggle') as HTMLInputElement | null, document.getElementById('music-enabled-help') as HTMLElement | null)
+bindSfxToggle('mission-orbit', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
+bindReduceMotionToggle(document.getElementById('reduce-motion-toggle') as HTMLInputElement | null, document.getElementById('reduce-motion-help'))
 
 showScreen('start-screen')

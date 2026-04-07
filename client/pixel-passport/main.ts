@@ -1,4 +1,5 @@
-import { bindReduceMotionToggle } from '../preferences.js'
+import { bindReduceMotionToggle, bindMusicToggle, bindSfxToggle } from '../preferences.js'
+import { setupTabbedModal } from '../modal.js'
 import {
   announceClue,
   announceDestination,
@@ -36,8 +37,6 @@ import {
 } from './state.js'
 import {
   ensureAudioUnlocked,
-  getSoundEnabled,
-  setSoundEnabled,
   sfxArrive,
   sfxButton,
   sfxCorrectGuess,
@@ -53,7 +52,6 @@ import {
 import type { DestinationId, GameProgress, GameState, NavigationDirection } from './types.js'
 
 const PROGRESS_STORAGE_KEY = 'pixel-passport-progress'
-const MODAL_OPEN_CLASS = 'modal-open'
 
 let state: GameState = createInitialState(loadProgress())
 let lastFrame = performance.now()
@@ -85,33 +83,6 @@ function saveProgress(): void {
 
 function getState(): GameState {
   return state
-}
-
-function soundToggle(): HTMLInputElement | null {
-  return document.getElementById('sound-enabled-toggle') as HTMLInputElement | null
-}
-
-function openSettings(): void {
-  const modal = document.getElementById('settings-modal')
-  if (!modal || !modal.hasAttribute('hidden')) return
-
-  modal.removeAttribute('hidden')
-  document.body.classList.add(MODAL_OPEN_CLASS)
-  for (const button of document.querySelectorAll<HTMLElement>('[data-settings-open="true"]')) {
-    button.setAttribute('aria-expanded', 'true')
-  }
-  requestAnimationFrame(() => element('settings-close-btn').focus())
-}
-
-function closeSettings(): void {
-  const modal = document.getElementById('settings-modal')
-  if (!modal || modal.hasAttribute('hidden')) return
-
-  modal.setAttribute('hidden', '')
-  document.body.classList.remove(MODAL_OPEN_CLASS)
-  for (const button of document.querySelectorAll<HTMLElement>('[data-settings-open="true"]')) {
-    button.setAttribute('aria-expanded', 'false')
-  }
 }
 
 function element<T extends HTMLElement>(id: string): T {
@@ -403,57 +374,6 @@ const callbacks: InputCallbacks = {
   onMysteryResultContinue: continueMysteryResult,
 }
 
-function setupSettingsModal(): void {
-  document.querySelectorAll<HTMLElement>('[data-settings-open="true"]').forEach((button) => {
-    button.addEventListener('click', () => openSettings())
-  })
-
-  element('settings-close-btn').addEventListener('click', () => closeSettings())
-
-  const restartBtn = document.getElementById('restart-btn')
-  if (restartBtn) {
-    restartBtn.addEventListener('click', () => {
-      closeSettings()
-      const previousState = state
-      state = returnToGlobe(state)
-      syncView(previousState)
-      announcePhase('Back on the globe. Pick a place to visit.')
-      focusSelectedMarker('globe')
-    })
-  }
-
-  element('settings-modal').addEventListener('click', (event) => {
-    if (event.target === event.currentTarget) {
-      closeSettings()
-    }
-  })
-
-  window.__pixelPassportSettingsToggle = () => {
-    const modal = document.getElementById('settings-modal')
-    if (!modal || modal.hasAttribute('hidden')) {
-      openSettings()
-    } else {
-      closeSettings()
-    }
-  }
-}
-
-function bindSettingsControls(): void {
-  bindReduceMotionToggle(
-    document.getElementById('reduce-motion-toggle') as HTMLInputElement | null,
-    document.getElementById('reduce-motion-help'),
-  )
-
-  const toggle = soundToggle()
-  if (!toggle) return
-
-  toggle.checked = getSoundEnabled()
-  toggle.addEventListener('change', () => {
-    ensureAudioUnlocked()
-    setSoundEnabled(toggle.checked)
-  })
-}
-
 function tick(now: number): void {
   const deltaMs = now - lastFrame
   lastFrame = now
@@ -484,8 +404,21 @@ function tick(now: number): void {
   requestAnimationFrame(tick)
 }
 
-setupSettingsModal()
-bindSettingsControls()
+document.addEventListener('restart', () => {
+  const previousState = state
+  state = returnToGlobe(state)
+  syncView(previousState)
+  announcePhase('Back on the globe. Pick a place to visit.')
+  focusSelectedMarker('globe')
+})
+
+setupTabbedModal()
+bindMusicToggle('pixel-passport', document.getElementById('music-enabled-toggle') as HTMLInputElement | null, document.getElementById('music-enabled-help') as HTMLElement | null)
+bindSfxToggle('pixel-passport', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
+bindReduceMotionToggle(
+  document.getElementById('reduce-motion-toggle') as HTMLInputElement | null,
+  document.getElementById('reduce-motion-help'),
+)
 setupInput(getState, callbacks)
 syncView()
 requestAnimationFrame(tick)

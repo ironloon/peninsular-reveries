@@ -5,7 +5,7 @@ import type { Puzzle } from './types'
 
 const samplePuzzle: Puzzle = {
   answer: 'CAT',
-  difficulty: 'easy',
+  difficulty: 'hero',
   prompt: 'Spell CAT',
   items: [],
 }

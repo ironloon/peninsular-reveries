@@ -486,7 +486,8 @@ body.gamepad-active .music-toggle-btn:focus {
 #scene-wrapper {
   touch-action: none;
   width: 100%;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   position: relative;
   background: linear-gradient(180deg, var(--game-sky) 0%, var(--game-sky-light) 60%, var(--game-grass) 85%, var(--game-grass-dark) 100%);
   min-height: clamp(160px, 36dvh, 250px);
@@ -546,6 +547,40 @@ body.gamepad-active .music-toggle-btn:focus {
     radial-gradient(ellipse at 48% 100%, rgba(90, 157, 86, 0.98) 0 42%, transparent 43%),
     radial-gradient(ellipse at 82% 100%, rgba(61, 139, 61, 0.98) 0 37%, transparent 38%);
   z-index: 0;
+}
+
+/* ── Canvas scene renderer ───────────────────────────────── */
+#scene-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sr-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sr-overlay-btn {
+  pointer-events: auto;
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.sr-overlay-btn:focus-visible {
+  opacity: 1;
+  outline: 3px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
 }
 
 .scene-item {
@@ -1511,6 +1546,28 @@ body.gamepad-active .gamepad-start-hint {
 
   #scene-wrapper {
     min-height: 140px;
+  }
+}
+
+@media (max-height: 850px) and (orientation: portrait) {
+  .game-header {
+    padding: 0.25rem 0.7rem;
+  }
+  .prompt-bubble {
+    font-size: clamp(0.72rem, 2.8vw, 0.88rem);
+    padding: 0.2rem 0.6rem;
+  }
+  #scene-wrapper {
+    min-height: clamp(160px, 36dvh, 240px);
+  }
+}
+
+@media (max-height: 750px) and (orientation: portrait) {
+  .game-header {
+    padding: 0.2rem 0.5rem;
+  }
+  #scene-wrapper {
+    min-height: clamp(140px, 32dvh, 200px);
   }
 }
 

@@ -17,8 +17,8 @@ async function startGame(page: Page): Promise<void> {
   await startButton.focus()
   await page.keyboard.press('Enter')
 
-  const firstSceneItem = page.locator('#scene .scene-item[tabindex="0"]').first()
-  await expect(firstSceneItem).toBeVisible()
+  const firstSceneItem = page.locator('#scene-a11y .sr-overlay-btn[tabindex="0"]').first()
+  await expect(firstSceneItem).toBeAttached()
   await expect(firstSceneItem).toBeFocused()
 }
 
@@ -44,12 +44,11 @@ test.describe('SITE-04: Accessibility', () => {
 
     const dialog = page.getByRole('dialog', { name: 'Menu' })
     await expect(dialog).toBeVisible()
-    await expect(page.locator('#puzzle-difficulty-select')).toBeFocused()
-    await expect(page.locator('#puzzle-difficulty-select')).toHaveValue('easy')
-    await expect(page.locator('#music-enabled-toggle')).not.toBeChecked()
-    await expect(dialog).toContainText('Credits & License')
-    await expect(dialog).toContainText('GPL-3.0')
-    await expect(dialog).toContainText('View full credits')
+    await expect(page.locator('#settings-close-btn')).toBeFocused()
+    await expect(page.locator('#difficulty-select')).toHaveValue('hero')
+    await expect(page.locator('#music-enabled-toggle')).toBeChecked()
+    await expect(dialog).toContainText('Audio')
+    await expect(dialog).toContainText('Difficulty')
 
     await page.keyboard.press('Escape')
 
@@ -62,15 +61,15 @@ test.describe('SITE-04: Accessibility', () => {
 
     const quickToggle = page.locator('#start-music-toggle')
     await expect(quickToggle).toBeVisible()
-    await expect(quickToggle).toContainText('Music Off')
+    await expect(quickToggle).toContainText('Music On')
 
     await quickToggle.click()
 
-    await expect(quickToggle).toHaveAttribute('aria-pressed', 'true')
-    await expect(quickToggle).toContainText('Music On')
+    await expect(quickToggle).toHaveAttribute('aria-pressed', 'false')
+    await expect(quickToggle).toContainText('Music Off')
 
     await page.getByRole('button', { name: 'Menu' }).click()
-    await expect(page.locator('#music-enabled-toggle')).toBeChecked()
+    await expect(page.locator('#music-enabled-toggle')).not.toBeChecked()
   })
 
   test('starting the game moves focus into the custom-rendered puzzle scene', async ({ page }) => {
@@ -83,8 +82,8 @@ test.describe('SITE-04: Accessibility', () => {
 
     await page.getByRole('button', { name: /let's go/i }).click()
 
-    const firstSceneItem = page.locator('#scene .scene-item[tabindex="0"]').first()
-    await expect(firstSceneItem).toBeVisible()
+    const firstSceneItem = page.locator('#scene-a11y .sr-overlay-btn[tabindex="0"]').first()
+    await expect(firstSceneItem).toBeAttached()
   })
 
   test('starting the game announces the current puzzle in the polite live region', async ({ page }) => {
@@ -114,7 +113,7 @@ test.describe('SITE-04: Accessibility', () => {
   test('collecting a letter announces progress in the assertive live region', async ({ page }) => {
     await startGame(page)
 
-    await page.locator('#scene .scene-item[data-item-type="letter"][tabindex="0"]').focus()
+    await page.locator('#scene-a11y .sr-overlay-btn[data-item-type="letter"][tabindex="0"]').focus()
     await page.keyboard.press('Enter')
 
     await expect(page.locator('#game-feedback')).toContainText('Collected letter')
@@ -124,7 +123,7 @@ test.describe('SITE-04: Accessibility', () => {
   test('motion-enabled collection keeps the destination tile hidden until the letter lands', async ({ page }) => {
     await startGame(page)
 
-    await page.locator('#scene .scene-item[data-item-type="letter"][tabindex="0"]').focus()
+    await page.locator('#scene-a11y .sr-overlay-btn[data-item-type="letter"][tabindex="0"]').focus()
     await page.keyboard.press('Enter')
 
     const tile = page.locator('#letter-slots .letter-tile').first()
@@ -138,7 +137,7 @@ test.describe('SITE-04: Accessibility', () => {
   test('activating a distractor announces feedback without collecting a tile', async ({ page }) => {
     await startGame(page)
 
-    const distractor = page.locator('#scene .scene-item[data-item-type="distractor"]').first()
+    const distractor = page.locator('#scene-a11y .sr-overlay-btn[data-item-type="distractor"]').first()
     await distractor.focus()
     await page.keyboard.press('Enter')
 
@@ -149,7 +148,7 @@ test.describe('SITE-04: Accessibility', () => {
   test('keyboard tile swapping updates the polite live region and tile order', async ({ page }) => {
     await startGame(page)
 
-    const remainingLetters = page.locator('#scene .scene-item[data-item-type="letter"]:not(.collected)')
+    const remainingLetters = page.locator('#scene-a11y .sr-overlay-btn[data-item-type="letter"]:not(.collected)')
     await remainingLetters.first().focus()
     await page.keyboard.press('Enter')
     await remainingLetters.first().focus()
@@ -177,7 +176,7 @@ test.describe('SITE-04: Accessibility', () => {
     await page.emulateMedia({ reducedMotion: 'reduce' })
     await startGame(page)
 
-    await page.locator('#scene .scene-item[data-item-type="letter"][tabindex="0"]').focus()
+    await page.locator('#scene-a11y .sr-overlay-btn[data-item-type="letter"][tabindex="0"]').focus()
     await page.keyboard.press('Enter')
 
     await expect(page.locator('.flying-letter')).toHaveCount(0)

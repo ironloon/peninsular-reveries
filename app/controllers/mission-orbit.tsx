@@ -1,5 +1,5 @@
 ﻿import { renderToString } from 'remix/component/server'
-import { attributionsPagePath, getGameAttribution } from '../data/attributions/index.js'
+import { getGameAttribution } from '../data/attributions/index.js'
 import { MISSION_CREW_ROSTER } from '../data/mission-orbit-data.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
@@ -7,8 +7,9 @@ import { Document } from '../ui/document.js'
 import {
   GameHeader,
   GameScreen,
-  GameSettingsModal,
-  SettingsActions,
+  GameTabbedModal,
+  InfoSection,
+  InfoAttribution,
   SettingsSection,
   SettingsToggle,
   SrOnly,
@@ -168,48 +169,53 @@ export async function missionOrbitAction() {
           </div>
         </GameScreen>
 
-        <GameSettingsModal
+        <GameTabbedModal
           title="Menu"
-          headingClassName="settings-heading"
-          contentClassName="settings-content mission-settings-content"
           overlayStyles={missionOrbitModalOverlayStyles}
-        >
-          <SettingsSection title="Controls">
-            <div className="controls-grid mission-controls-grid">
-              <div>
-                <h4>Touch / mouse</h4>
-                <ul className="controls-list">
-                  <li>Tap or hold the action button for each scene.</li>
-                  <li>Read the mission brief and continue when ready.</li>
-                </ul>
+          quitHref={homePath}
+          settingsContent={<>
+            <SettingsSection title="🎵 Audio">
+              <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
+              <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
+            </SettingsSection>
+
+            <SettingsSection title="Controls">
+              <div className="controls-grid mission-controls-grid">
+                <div>
+                  <h4>Touch / mouse</h4>
+                  <ul className="controls-list">
+                    <li>Tap or hold the action button for each scene.</li>
+                    <li>Read the mission brief and continue when ready.</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4>Keyboard</h4>
+                  <ul className="controls-list">
+                    <li><kbd>Space</kbd> or <kbd>Enter</kbd> fires the action.</li>
+                    <li>The mission waits at each step until you move on.</li>
+                  </ul>
+                </div>
               </div>
-              <div>
-                <h4>Keyboard</h4>
-                <ul className="controls-list">
-                  <li><kbd>Space</kbd> or <kbd>Enter</kbd> fires the action.</li>
-                  <li>The mission waits at each step until you move on.</li>
-                </ul>
-              </div>
-            </div>
-          </SettingsSection>
+            </SettingsSection>
 
-          <SettingsSection title="Accessibility">
-            <SettingsToggle
-              id="reduce-motion-toggle"
-              label="Reduce motion"
-              helpText="Defaults to your device setting until you change it here."
-              helpId="reduce-motion-help"
-            />
-          </SettingsSection>
-
-          <SettingsSection title="Credits">
-            <p>Code license: {attribution.codeLicense}</p>
-            <p>{attribution.summary}</p>
-            <a href={withBasePath(`${attributionsPagePath}#${attribution.slug}`, siteBasePath)}>View full credits</a>
-          </SettingsSection>
-
-          <SettingsActions quitHref={homePath} />
-        </GameSettingsModal>
+            <SettingsSection title="Accessibility">
+              <SettingsToggle
+                id="reduce-motion-toggle"
+                label="Reduce motion"
+                helpText="Defaults to your device setting until you change it here."
+                helpId="reduce-motion-help"
+              />
+            </SettingsSection>
+          </>}
+          infoContent={<>
+            <InfoSection title="About Mission: Orbit">
+              <p>{attribution.summary}</p>
+            </InfoSection>
+            {attribution.entries.map((entry) => (
+              <InfoAttribution attribution={{ title: entry.title, author: entry.creator, license: entry.license, url: entry.sourceUrl, notes: entry.notes }} />
+            ))}
+          </>}
+        />
       </div>
 
       <SrOnly id="sr-announcer" ariaLive="polite" ariaAtomic />

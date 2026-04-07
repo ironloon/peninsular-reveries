@@ -22,6 +22,10 @@ When a new game lands here, it should follow these principles:
 - `build.ts` pre-renders static HTML and bundles browser code.
 - `server.ts` runs the dev server with live reload.
 
+## Quality Benchmarks
+
+Peninsular Reveries holds itself to the same standards as [PBS Kids](https://pbskids.org) and Khan Academy Kids: accessible via keyboard and assistive technology, calm and non-punitive (wrong answers get warm feedback, never shame), grounded in published educational research, and visually inviting for every child. Correct answers are celebrated, but so is every genuine attempt.
+
 ## Adding a Game
 
 1. Add the game to `app/data/game-registry.ts`.

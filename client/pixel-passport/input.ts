@@ -2,7 +2,7 @@ import { DESTINATION_IDS, type DestinationId, type GameState, type NavigationDir
 
 declare global {
   interface Window {
-    __pixelPassportSettingsToggle?: () => void
+    __settingsToggle?: () => void
   }
 }
 
@@ -63,7 +63,7 @@ export function setupInput(getState: () => GameState, callbacks: InputCallbacks)
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && isModalOpen()) {
       event.preventDefault()
-      window.__pixelPassportSettingsToggle?.()
+      window.__settingsToggle?.()
       return
     }
 
@@ -169,7 +169,7 @@ export function setupInput(getState: () => GameState, callbacks: InputCallbacks)
     }
 
     if (startPressed && !previousStartPressed) {
-      window.__pixelPassportSettingsToggle?.()
+      window.__settingsToggle?.()
     }
 
     previousActionPressed = actionPressed

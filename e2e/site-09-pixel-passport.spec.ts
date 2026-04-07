@@ -69,7 +69,7 @@ test.describe('SITE-09: Pixel Passport', () => {
 
     await page.getByRole('button', { name: 'Menu' }).click()
     await expect(page.locator('#settings-modal')).toBeVisible()
-    await expect(page.getByLabel('Sound')).toBeVisible()
+    await expect(page.getByLabel('Music')).toBeVisible()
     await expect(page.getByLabel('Reduce motion')).toBeVisible()
 
     await page.getByRole('button', { name: 'Close' }).click()

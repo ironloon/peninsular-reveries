@@ -1,7 +1,7 @@
 import { renderToString } from 'remix/component/server'
 import { Document } from '../ui/document.js'
-import { GameHeader, GameHeaderPill, GameScreen, GameSettingsModal, SettingsActions, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
-import { attributionsPagePath, getGameAttribution } from '../data/attributions/index.js'
+import { GameHeader, GameHeaderPill, GameScreen, GameTabbedModal, InfoSection, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
+
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 
@@ -15,10 +15,8 @@ const superWordModalOverlayStyles = {
 }
 
 export async function superWordAction() {
-  const attribution = getGameAttribution('super-word')
   const siteBasePath = getSiteBasePath()
   const homePath = withBasePath('/', siteBasePath)
-  const superWordAttributionsPath = withBasePath(`${attributionsPagePath}#super-word`, siteBasePath)
   const html = await renderToString(
     <Document
       title="Super Word"
@@ -100,7 +98,8 @@ export async function superWordAction() {
             <span id="prompt-text" role="status">Find the letters!</span>
           </div>
           <div id="scene-wrapper">
-            <div id="scene" role="group" aria-label="Find letters in the scene"></div>
+            <canvas id="scene-canvas" role="img" aria-label="Game scene with letters and objects"></canvas>
+            <div id="scene-a11y" role="group" aria-label="Interactive scene items" className="sr-overlay"></div>
           </div>
           <div className="collection-area notepad">
             <span id="letter-slots-label" className="collection-label notepad-label">Super Letters</span>
@@ -122,8 +121,26 @@ export async function superWordAction() {
         </div>
 
         {/* Settings Modal */}
-        <GameSettingsModal title="Menu" headingClassName="settings-heading" overlayStyles={superWordModalOverlayStyles}>
-
+        <GameTabbedModal
+          title="Menu"
+          overlayStyles={superWordModalOverlayStyles}
+          quitHref={homePath}
+          settingsContent={<>
+            <SettingsSection title="🎵 Audio">
+              <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
+              <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
+              <SettingsToggle id="reduce-motion-toggle" label="Reduce Motion" helpId="reduce-motion-help" />
+            </SettingsSection>
+            <SettingsSection title="📚 Difficulty">
+              <label htmlFor="difficulty-select" className="settings-label">Word difficulty</label>
+              <select id="difficulty-select" className="settings-select" defaultValue="hero">
+                <option value="sidekick">⭐ Sidekick</option>
+                <option value="hero">🦸 Hero</option>
+                <option value="super">💫 Super</option>
+                <option value="ultra">⚡ Ultra</option>
+                <option value="legend">🏆 Legend</option>
+              </select>
+            </SettingsSection>
             <SettingsSection title="🎮 Controls">
               <div className="controls-grid">
                 <div className="controls-column">
@@ -144,46 +161,23 @@ export async function superWordAction() {
                 </div>
               </div>
             </SettingsSection>
-
-            <SettingsSection title="🧩 Game">
-              <label htmlFor="puzzle-difficulty-select">Difficulty:</label>
-              <select id="puzzle-difficulty-select" className="puzzle-select">
-                <option value="starter">Starter · 2 letters</option>
-                <option value="easy" selected>Easy · 3 letters</option>
-                <option value="medium">Medium · 4 letters</option>
-                <option value="hard">Hard · 5 letters</option>
-                <option value="expert">Expert · 6 letters</option>
-              </select>
-              <p className="settings-help">Each round randomly picks 5 words from the selected difficulty, from high-frequency starter words to longer concrete words for fluent early readers.</p>
-              <p className="settings-help">The tiers draw on Dolch and Fry high-frequency words, systematic phonics progressions, and Common Core K–3 reading patterns. <a href={superWordAttributionsPath}>See reading notes</a>.</p>
-            </SettingsSection>
-
-            <SettingsSection title="🎵 Audio">
-              <SettingsToggle
-                id="music-enabled-toggle"
-                label="Chill music"
-                helpText="Soft ambient synth music. It stays off until you turn it on."
-              />
-              <p className="settings-help">Sound effects stay on by default.</p>
-            </SettingsSection>
-
-            <SettingsSection title="Accessibility">
-              <SettingsToggle
-                id="reduce-motion-toggle"
-                label="Reduce motion"
-                helpText="Defaults to your device setting until you change it here."
-                helpId="reduce-motion-help"
-              />
-            </SettingsSection>
-
-            <SettingsSection title="© Credits &amp; License">
-              <p>Code license: {attribution.codeLicense}</p>
-              <p>{attribution.summary}</p>
-              <a href={superWordAttributionsPath}>View full credits</a>
-            </SettingsSection>
-
-            <SettingsActions quitHref={homePath} showRestart={true} />
-        </GameSettingsModal>
+          </>}
+          infoContent={<>
+            <InfoSection title="About Super Word">
+              <p>Find the letters hidden in the scene to spell each word. Complete as many words as you can!</p>
+            </InfoSection>
+            <InfoSection title="How Words Are Chosen">
+              <p>Words are organized by phonemic complexity — from simple CVC words like CAT to multi-syllable words like GARDEN. Each tier follows research from the National Reading Panel, Dolch sight words, and Common Core State Standards.</p>
+              <ul>
+                <li>⭐ <strong>Sidekick</strong> — Pre-K/K: short vowel CVC words</li>
+                <li>🦸 <strong>Hero</strong> — K/Grade 1: consonant blends and digraphs</li>
+                <li>💫 <strong>Super</strong> — Grade 1/2: silent-e and vowel teams</li>
+                <li>⚡ <strong>Ultra</strong> — Grade 2/3: r-controlled vowels</li>
+                <li>🏆 <strong>Legend</strong> — Grade 3+: multi-syllable words</li>
+              </ul>
+            </InfoSection>
+          </>}
+        />
 
         {/* Level Complete Screen */}
         <GameScreen id="complete-screen" as="div" screenStyles={superWordScreenStyles}>

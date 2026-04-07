@@ -1,9 +1,9 @@
 import { chompersSampleManifest, getBundledChompersSamples, type ChompersSampleDefinition, type ChompersSampleId } from './sample-manifest.js'
+import { getAudioContext, ensureAudioUnlocked as baseEnsureAudioUnlocked, createMusicBus, createSfxBus } from '../audio.js'
+import { getMusicEnabled } from '../preferences.js'
 
-let audioContext: AudioContext | null = null
-let audioUnlocked = false
-let outputBus: GainNode | null = null
-let compressor: DynamicsCompressorNode | null = null
+let _musicBus: GainNode | null = null
+let _sfxBus: GainNode | null = null
 let sampleLoadPromise: Promise<void> | null = null
 
 const decodedSamples = new Map<ChompersSampleId, AudioBuffer>()
@@ -18,39 +18,22 @@ interface SamplePlaybackOptions {
   readonly release?: number
 }
 
-function getAudioContext(): AudioContext | null {
-  if (!audioContext) {
-    try {
-      audioContext = new AudioContext()
-    } catch {
-      return null
-    }
+function getCtx(): AudioContext | null {
+  try {
+    return getAudioContext()
+  } catch {
+    return null
   }
-
-  if (audioContext.state === 'suspended') {
-    audioContext.resume()
-  }
-
-  return audioContext
 }
 
-function getOutput(context: AudioContext): AudioNode {
-  if (!compressor || !outputBus) {
-    compressor = context.createDynamicsCompressor()
-    outputBus = context.createGain()
+function getMusicBusNode(): GainNode {
+  if (!_musicBus) _musicBus = createMusicBus('chompers')
+  return _musicBus
+}
 
-    compressor.threshold.value = -18
-    compressor.knee.value = 16
-    compressor.ratio.value = 3.5
-    compressor.attack.value = 0.006
-    compressor.release.value = 0.16
-    outputBus.gain.value = 0.92
-
-    compressor.connect(outputBus)
-    outputBus.connect(context.destination)
-  }
-
-  return compressor
+function getSfxBusNode(): GainNode {
+  if (!_sfxBus) _sfxBus = createSfxBus('chompers')
+  return _sfxBus
 }
 
 function createEnvelope(
@@ -80,7 +63,7 @@ function playTone(
   volume: number = 0.1,
   delay: number = 0,
 ): void {
-  const context = getAudioContext()
+  const context = getCtx()
   if (!context) return
 
   const startTime = context.currentTime + delay
@@ -90,7 +73,7 @@ function playTone(
   oscillator.type = type
   oscillator.frequency.setValueAtTime(frequency, startTime)
   oscillator.connect(gain)
-  gain.connect(getOutput(context))
+  gain.connect(getSfxBusNode())
 
   oscillator.start(startTime)
   oscillator.stop(startTime + duration)
@@ -103,7 +86,7 @@ function playSweep(
   type: OscillatorType = 'triangle',
   volume: number = 0.08,
 ): void {
-  const context = getAudioContext()
+  const context = getCtx()
   if (!context) return
 
   const oscillator = context.createOscillator()
@@ -114,14 +97,14 @@ function playSweep(
   oscillator.frequency.exponentialRampToValueAtTime(endFrequency, context.currentTime + duration)
 
   oscillator.connect(gain)
-  gain.connect(getOutput(context))
+  gain.connect(getSfxBusNode())
 
   oscillator.start(context.currentTime)
   oscillator.stop(context.currentTime + duration)
 }
 
 async function decodeSample(sample: ChompersSampleDefinition): Promise<void> {
-  const context = getAudioContext()
+  const context = getCtx()
   if (!context || decodedSamples.has(sample.id) || failedSamples.has(sample.id)) return
 
   try {
@@ -140,7 +123,7 @@ async function decodeSample(sample: ChompersSampleDefinition): Promise<void> {
 }
 
 function loadSamples(): Promise<void> {
-  const context = getAudioContext()
+  const context = getCtx()
   if (!context) return Promise.resolve()
   if (sampleLoadPromise) return sampleLoadPromise
 
@@ -159,7 +142,7 @@ function loadSamples(): Promise<void> {
 }
 
 function playSample(sampleId: ChompersSampleId, options: SamplePlaybackOptions = {}): boolean {
-  const context = getAudioContext()
+  const context = getCtx()
   const sample = chompersSampleManifest[sampleId]
   const buffer = decodedSamples.get(sampleId)
   if (!context || !sample || !buffer) return false
@@ -181,7 +164,7 @@ function playSample(sampleId: ChompersSampleId, options: SamplePlaybackOptions =
   source.loop = sample.loop && duration > 0
   source.playbackRate.setValueAtTime(playbackRate, startTime)
   source.connect(gain)
-  gain.connect(getOutput(context))
+  gain.connect(getSfxBusNode())
 
   source.start(startTime)
   source.stop(startTime + duration)
@@ -189,16 +172,7 @@ function playSample(sampleId: ChompersSampleId, options: SamplePlaybackOptions =
 }
 
 export function ensureAudioUnlocked(): void {
-  if (audioUnlocked) return
-  const context = getAudioContext()
-  if (!context) return
-
-  const buffer = context.createBuffer(1, 1, context.sampleRate)
-  const source = context.createBufferSource()
-  source.buffer = buffer
-  source.connect(context.destination)
-  source.start()
-  audioUnlocked = true
+  baseEnsureAudioUnlocked()
   void loadSamples()
 }
 
@@ -236,10 +210,6 @@ export function sfxGameOver(): void {
 
 // ── Frenzy sounds ──────────────────────────────────────────────────────────────
 
-function getMusicEnabled(): boolean {
-  return true // no music toggle in Chompers yet; wired for future use
-}
-
 const PENTATONIC_FREQS = [261, 294, 329, 392, 440] as const
 const FRENZY_MELODY = [0, 2, 3, 4, 3, 2, 1, 2, 0, 2, 4, 3, 4, 3, 2, 1] as const
 const BEAT_DUR = 0.25 // 8th note at 120 BPM
@@ -263,7 +233,7 @@ function scheduleFrenzyNote(context: AudioContext): void {
   gain.gain.linearRampToValueAtTime(0.08, noteTime + 0.01)
   gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + BEAT_DUR * 0.85)
   osc.connect(gain)
-  gain.connect(getOutput(context))
+  gain.connect(getMusicBusNode())
   osc.start(noteTime)
   osc.stop(noteTime + BEAT_DUR)
 
@@ -277,7 +247,7 @@ function scheduleFrenzyNote(context: AudioContext): void {
     bassGain.gain.linearRampToValueAtTime(0.05, noteTime + 0.01)
     bassGain.gain.exponentialRampToValueAtTime(0.0001, noteTime + BEAT_DUR * 4 * 0.9)
     bassOsc.connect(bassGain)
-    bassGain.connect(getOutput(context))
+    bassGain.connect(getMusicBusNode())
     bassOsc.start(noteTime)
     bassOsc.stop(noteTime + BEAT_DUR * 4)
   }
@@ -287,7 +257,7 @@ function scheduleFrenzyNote(context: AudioContext): void {
 }
 
 function frenzySchedulerLoop(): void {
-  const context = getAudioContext()
+  const context = getCtx()
   if (!context || !frenzyMusicActive) return
 
   while (frenzyNextNoteTime < context.currentTime + SCHEDULE_AHEAD) {
@@ -299,8 +269,8 @@ function frenzySchedulerLoop(): void {
 
 export function playFrenzyMusic(): void {
   if (frenzyMusicActive) return
-  if (!getMusicEnabled()) return
-  const context = getAudioContext()
+  if (!getMusicEnabled('chompers')) return
+  const context = getCtx()
   if (!context) return
 
   frenzyMusicActive = true
@@ -352,8 +322,7 @@ export function playFrenzyWin(): void {
 }
 
 export function playFrenzyLose(): void {
-  // Descending wah-wah (two overlapping sweeps)
-  const context = getAudioContext()
+  const context = getCtx()
   if (!context) return
 
   const startTime = context.currentTime
@@ -367,7 +336,7 @@ export function playFrenzyLose(): void {
   gain1.gain.linearRampToValueAtTime(0.1, startTime + 0.05)
   gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.8)
   osc1.connect(gain1)
-  gain1.connect(getOutput(context))
+  gain1.connect(getMusicBusNode())
   osc1.start(startTime)
   osc1.stop(startTime + 0.8)
 
@@ -381,7 +350,7 @@ export function playFrenzyLose(): void {
   gain2.gain.linearRampToValueAtTime(0.07, startTime + delay2 + 0.05)
   gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + delay2 + 0.8)
   osc2.connect(gain2)
-  gain2.connect(getOutput(context))
+  gain2.connect(getMusicBusNode())
   osc2.start(startTime + delay2)
   osc2.stop(startTime + delay2 + 0.8)
 }

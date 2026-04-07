@@ -23,7 +23,7 @@ export function setupInput(
   getPuzzle: () => Puzzle,
   callbacks: InputCallbacks,
 ): void {
-  const sceneEl = document.getElementById('scene')!
+  const sceneEl = document.getElementById('scene-a11y')!
   const sceneWrapper = document.getElementById('scene-wrapper')!
   const slotsEl = document.getElementById('letter-slots')!
   const startBtn = document.getElementById('start-btn')!
@@ -44,8 +44,8 @@ export function setupInput(
 
   // ── Scene item interaction (Pointer Events) ─────────────
   sceneEl.addEventListener('pointerdown', (e: PointerEvent) => {
-    const target = (e.target as HTMLElement).closest('.scene-item') as HTMLElement | null
-    if (!target || target.classList.contains('collected')) return
+    const target = (e.target as HTMLElement).closest('[data-item-id]') as HTMLElement | null
+    if (!target) return
     e.preventDefault()
 
     const itemId = target.dataset.itemId
@@ -64,7 +64,7 @@ export function setupInput(
   // ── Scene keyboard navigation (roving tabindex) ─────────
   sceneEl.addEventListener('keydown', (e: KeyboardEvent) => {
     const target = e.target as HTMLElement
-    if (!target.classList.contains('scene-item')) return
+    if (!target.hasAttribute('data-item-id')) return
 
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault()
@@ -83,7 +83,7 @@ export function setupInput(
 
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
       e.preventDefault()
-      const uncollected = Array.from(sceneEl.querySelectorAll('.scene-item:not(.collected)')) as HTMLElement[]
+      const uncollected = Array.from(sceneEl.querySelectorAll('.sr-overlay-btn')) as HTMLElement[]
       if (uncollected.length <= 1) return
 
       const currentIdx = uncollected.indexOf(target)
@@ -288,20 +288,20 @@ export function setupInput(
     // Remove previous gamepad focus ring
     document.querySelector('.gamepad-focus')?.classList.remove('gamepad-focus')
     // Reset tabindex on scene items
-    for (const si of sceneEl.querySelectorAll('.scene-item') as NodeListOf<HTMLElement>) si.tabIndex = -1
-    if (el.classList.contains('scene-item')) el.tabIndex = 0
+    for (const si of sceneEl.querySelectorAll('.sr-overlay-btn') as NodeListOf<HTMLElement>) si.tabIndex = -1
+    if (el.hasAttribute('data-item-id')) el.tabIndex = 0
     el.classList.add('gamepad-focus')
     el.focus()
   }
 
   function focusNearestItem(direction: string): void {
     const focused = document.activeElement as HTMLElement
-    const sceneItems = Array.from(sceneEl.querySelectorAll('.scene-item:not(.collected)')) as HTMLElement[]
+    const sceneItems = Array.from(sceneEl.querySelectorAll('.sr-overlay-btn')) as HTMLElement[]
     const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
     const checkEnabled = !checkBtn.hasAttribute('disabled')
 
     // Determine which zone we're in
-    const inScene = focused?.classList.contains('scene-item')
+    const inScene = focused?.hasAttribute('data-item-id')
     const inTiles = focused?.classList.contains('letter-tile')
     const inCheck = focused === checkBtn
 

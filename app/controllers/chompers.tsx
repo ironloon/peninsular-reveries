@@ -1,9 +1,9 @@
 import { renderToString } from 'remix/component/server'
-import { attributionsPagePath, getGameAttribution } from '../data/attributions/index.js'
+import { getGameAttribution } from '../data/attributions/index.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
 import { Document } from '../ui/document.js'
-import { GameHeader, GameHeaderPill, GameSettingsModal, SettingsActions, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
+import { GameHeader, GameHeaderPill, GameTabbedModal, InfoSection, InfoAttribution, SettingsSection, SettingsToggle, SrOnly } from '../ui/game-shell.js'
 
 const chompersModalOverlayStyles = {
   zIndex: 100,
@@ -264,41 +264,49 @@ export async function chompersAction() {
         </section>
       </div>
 
-      <GameSettingsModal title="Menu" overlayStyles={chompersModalOverlayStyles}>
+      <GameTabbedModal
+        title="Menu"
+        overlayStyles={chompersModalOverlayStyles}
+        quitHref={homePath}
+        settingsContent={<>
+          <SettingsSection title="🎵 Audio">
+            <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
+            <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
+          </SettingsSection>
 
-        <SettingsSection title="Controls">
-          <p className="settings-copy">Tap or click a fruit to choose your answer. Use arrow keys or D-pad to navigate, Enter/Space to select.</p>
-        </SettingsSection>
+          <SettingsSection title="Controls">
+            <p className="settings-copy">Tap or click a fruit to choose your answer. Use arrow keys or D-pad to navigate, Enter/Space to select.</p>
+          </SettingsSection>
 
-        <SettingsSection title="Math areas">
-          <ul className="settings-list">
-            <li><strong>Matching ⭐</strong> — Find the displayed number among tiles</li>
-            <li><strong>Counting 🔢</strong> — Count objects and tap the matching number</li>
-            <li><strong>Addition ➕</strong> — Add numbers together</li>
-            <li><strong>Subtraction ➖</strong> — Take numbers away</li>
-            <li><strong>Multiplication ✖️</strong> — Times tables</li>
-            <li><strong>Division ➗</strong> — Split numbers up</li>
-          </ul>
-        </SettingsSection>
+          <SettingsSection title="Math areas">
+            <ul className="settings-list">
+              <li><strong>Matching ⭐</strong> — Find the displayed number among tiles</li>
+              <li><strong>Counting 🔢</strong> — Count objects and tap the matching number</li>
+              <li><strong>Addition ➕</strong> — Add numbers together</li>
+              <li><strong>Subtraction ➖</strong> — Take numbers away</li>
+              <li><strong>Multiplication ✖️</strong> — Times tables</li>
+              <li><strong>Division ➗</strong> — Split numbers up</li>
+            </ul>
+          </SettingsSection>
 
-        <SettingsSection title="Accessibility">
-          <SettingsToggle
-            id="reduce-motion-toggle"
-            label="Reduce motion"
-            helpText="Defaults to your device setting until you change it here."
-            helpId="reduce-motion-help"
-          />
-        </SettingsSection>
-
-        <SettingsSection title="Credits & License">
-          <p>Code license: {attribution.codeLicense}</p>
-          <p>{attribution.summary}</p>
-          <a href={withBasePath(`${attributionsPagePath}#${attribution.slug}`, siteBasePath)}>View full credits</a>
-        </SettingsSection>
-
-        <SettingsActions quitHref={homePath} quitClassName="chomp-btn chomp-btn-secondary" showRestart={true} />
-
-      </GameSettingsModal>
+          <SettingsSection title="Accessibility">
+            <SettingsToggle
+              id="reduce-motion-toggle"
+              label="Reduce motion"
+              helpText="Defaults to your device setting until you change it here."
+              helpId="reduce-motion-help"
+            />
+          </SettingsSection>
+        </>}
+        infoContent={<>
+          <InfoSection title="About Chompers">
+            <p>{attribution.summary}</p>
+          </InfoSection>
+          {attribution.entries.map((entry) => (
+            <InfoAttribution attribution={{ title: entry.title, author: entry.creator, license: entry.license }} />
+          ))}
+        </>}
+      />
 
       <SrOnly id="game-status" ariaLive="polite" ariaAtomic />
       <SrOnly id="game-feedback" ariaLive="assertive" ariaAtomic />

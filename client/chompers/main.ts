@@ -1,7 +1,9 @@
 import { announceCorrect, announceGameOver, announceProblem, announceRound, announceWrong, moveFocusAfterTransition } from './accessibility.js'
 import { animateCorrectFeedback, animateHippoChomp, animateNextRound, animateNpcChomp, animateWrongFeedback, spawnPointsPopup } from './animations.js'
 import { moveFocusToFirstItem, setupInput, teardownInput } from './input.js'
-import { renderAll, renderEndScreen, renderFrenzyEndScreen, renderFrenzyScoreboard, renderHUD, renderHippo, renderNpcHippos, renderProblem, renderRoundTimer, renderScene, setupSettingsModal } from './renderer.js'
+import { renderAll, renderEndScreen, renderFrenzyEndScreen, renderFrenzyScoreboard, renderHUD, renderHippo, renderNpcHippos, renderProblem, renderRoundTimer, renderScene } from './renderer.js'
+import { setupTabbedModal } from '../modal.js'
+import { bindMusicToggle, bindSfxToggle, bindReduceMotionToggle } from '../preferences.js'
 import { ensureAudioUnlocked, playFrenzyLose, playFrenzyMusic, playFrenzyWin, playNpcChomp, playNpcScore, playTimerWarning, sfxChomp, sfxCorrect, sfxGameOver, sfxProblemAppear, sfxWrong, stopFrenzyMusic } from './sounds.js'
 import { advanceRound, createInitialState, createNpcHippos, getRoundTimerMax, npcSelectTarget, resolveFrenzyRound, resolveChomp, selectAnswer, tickNpcProgress, tickRoundTimer } from './state.js'
 import type { Area, AreaLevel, FrenzyConfig, GameState, NpcHippo } from './types.js'
@@ -15,7 +17,10 @@ let frenzyRoundCount = 0
 let frenzyPlayerScore = 0
 let isResolvingFrenzyRound = false
 
-const settingsModal = setupSettingsModal()
+const settingsModal = setupTabbedModal()
+bindMusicToggle('chompers', document.getElementById('music-enabled-toggle') as HTMLInputElement | null, document.getElementById('music-enabled-help') as HTMLElement | null)
+bindSfxToggle('chompers', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
+bindReduceMotionToggle(document.getElementById('reduce-motion-toggle') as HTMLInputElement | null, document.getElementById('reduce-motion-help'))
 
 function showScreen(screenId: string): void {
   for (const id of ['start-screen', 'game-screen', 'end-screen']) {
@@ -401,6 +406,8 @@ function onReturnToMenu(): void {
   moveFocusAfterTransition('start-btn', 320)
 }
 
+document.addEventListener('restart', () => { onReturnToMenu() })
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('start-btn')?.addEventListener('click', () => {
     onStartGame()
@@ -408,18 +415,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('replay-btn')?.addEventListener('click', onReplay)
   document.getElementById('menu-btn')?.addEventListener('click', onReturnToMenu)
-
-  document.getElementById('restart-btn')?.addEventListener('click', () => {
-    settingsModal.close()
-    onReturnToMenu()
-  })
-
-  document.getElementById('settings-close-btn')?.addEventListener('click', () => {
-    settingsModal.close()
-  })
-
-  const settingsBtn = document.getElementById('settings-btn')
-  settingsBtn?.addEventListener('click', () => settingsModal.open(settingsBtn))
 
   // Mode toggle
   const modeNormalBtn = document.getElementById('mode-normal-btn')

@@ -217,3 +217,96 @@ export const settingsActionsStyles = {
     gap: '0.4rem',
   },
 }
+
+export const tabBarStyles = {
+  display: 'flex',
+  flexDirection: 'row',
+  borderBottom: '2px solid var(--modal-accent, var(--color-accent, #7ec8e3))',
+  marginBottom: '0.5rem',
+  gap: '0.25rem',
+}
+
+export const tabButtonStyles = {
+  background: 'none',
+  border: 'none',
+  padding: '0.5rem 1rem',
+  fontSize: '0.9rem',
+  fontWeight: 600,
+  color: 'var(--modal-text, var(--color-text, inherit))',
+  cursor: 'pointer',
+  borderRadius: '6px 6px 0 0',
+  minWidth: '44px',
+  minHeight: '44px',
+  position: 'relative',
+  '&.tab-btn--active': {
+    color: 'var(--modal-accent, var(--color-accent, #7ec8e3))',
+    '&::after': {
+      content: '""',
+      position: 'absolute',
+      bottom: '-2px',
+      left: 0,
+      right: 0,
+      height: '3px',
+      background: 'var(--modal-accent, var(--color-accent, #7ec8e3))',
+      borderRadius: '2px 2px 0 0',
+    },
+  },
+  '&:hover': {
+    background: 'rgba(255,255,255,0.08)',
+  },
+  '&:focus-visible': {
+    outline: '3px solid var(--modal-accent, var(--color-accent, #7ec8e3))',
+    outlineOffset: '2px',
+  },
+}
+
+export const tabPanelStyles = {
+  overflowY: 'auto',
+  maxHeight: 'clamp(200px, 55dvh, 420px)',
+  paddingRight: '0.25rem',
+}
+
+export const modalCloseStyles = {
+  position: 'absolute',
+  top: '0.5rem',
+  right: '0.5rem',
+  width: '44px',
+  height: '44px',
+  minWidth: '44px',
+  minHeight: '44px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  background: 'rgba(255,255,255,0.08)',
+  border: 'none',
+  borderRadius: '8px',
+  fontSize: '1.4rem',
+  cursor: 'pointer',
+  color: 'var(--modal-text, var(--color-text, inherit))',
+  lineHeight: 1,
+  '&:hover': {
+    background: 'rgba(255,255,255,0.18)',
+  },
+  '&:focus-visible': {
+    outline: '3px solid var(--modal-accent, var(--color-accent, #7ec8e3))',
+    outlineOffset: '2px',
+  },
+}
+
+export const infoSectionStyles = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.5rem',
+  padding: '0.5rem 0',
+  '& h3': {
+    fontSize: '0.9rem',
+    fontWeight: 700,
+    color: 'var(--modal-accent, var(--color-accent, inherit))',
+    margin: 0,
+  },
+  '& p, & ul, & ol': {
+    fontSize: '0.85rem',
+    color: 'var(--modal-text, var(--color-text, inherit))',
+    margin: 0,
+  },
+}

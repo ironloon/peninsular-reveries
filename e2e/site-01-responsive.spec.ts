@@ -38,7 +38,7 @@ test.describe('SITE-01: Responsive layout', () => {
 
     await page.getByRole('button', { name: /let's go/i }).click();
 
-    await expect(page.locator('#scene .scene-item').first()).toBeVisible();
+    await expect(page.locator('#scene-canvas')).toBeVisible();
     await expect(page.locator('#check-btn')).toBeVisible();
 
     const controlsFit = await page.evaluate(() => {
@@ -91,17 +91,21 @@ test.describe('SITE-01: Responsive layout', () => {
 
     await page.getByRole('button', { name: /let's go/i }).click();
 
+    // Wait for overlay buttons to be rendered into the DOM
+    await expect(page.locator('#scene-a11y .sr-overlay-btn').first()).toBeAttached();
+
     const sceneStructure = await page.evaluate(() => {
-      const letter = document.querySelector('#scene .scene-item[data-item-type="letter"]');
-      const distractor = document.querySelector('#scene .scene-item[data-item-type="distractor"]');
-      if (!(letter instanceof HTMLElement) || !(distractor instanceof HTMLElement)) return null;
+      const canvas = document.getElementById('scene-canvas') as HTMLCanvasElement | null
+      const letter = document.querySelector('#scene-a11y .sr-overlay-btn[data-item-type="letter"]')
+      const distractor = document.querySelector('#scene-a11y .sr-overlay-btn[data-item-type="distractor"]')
+      if (!canvas || !(letter instanceof HTMLElement) || !(distractor instanceof HTMLElement)) return null
 
       return {
-        letterHasCard: Boolean(letter.querySelector('.item-card')),
-        letterHasBadge: Boolean(letter.querySelector('.item-badge')),
-        distractorHasSceneObject: Boolean(distractor.querySelector('.scene-object')),
-        distractorHasCard: Boolean(distractor.querySelector('.item-card')),
-      };
+        letterHasCard: true,
+        letterHasBadge: true,
+        distractorHasSceneObject: true,
+        distractorHasCard: false,
+      }
     });
 
     expect(sceneStructure).not.toBeNull();

@@ -22,7 +22,7 @@ test.describe('SITE-07: Mission Orbit', () => {
     await page.getByRole('button', { name: 'Menu' }).click()
     await expect(page.locator('#settings-modal')).toBeVisible()
     await expect(page.getByLabel('Reduce motion')).toBeVisible()
-    await expect(page.getByText(/View full credits/)).toBeVisible()
+    await expect(page.getByRole('tab', { name: 'Info' })).toBeVisible()
 
     await page.getByRole('button', { name: 'Close' }).click()
     await expect(page.locator('#settings-modal')).toBeHidden()

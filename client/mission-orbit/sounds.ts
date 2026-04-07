@@ -1,5 +1,7 @@
-let ctx: AudioContext | null = null
-let getSfxEnabled: (() => boolean) | null = null
+import { getAudioContext, createSfxBus } from '../audio.js'
+import { getSfxEnabled } from '../preferences.js'
+
+let _sfxBus: GainNode | null = null
 let holdOscillator: OscillatorNode | null = null
 
 
@@ -33,21 +35,20 @@ let holdOscillator: OscillatorNode | null = null
 
 
 function sfxEnabled(): boolean {
-  return getSfxEnabled?.() ?? true
+  return getSfxEnabled('mission-orbit')
 }
 
 function getCtx(): AudioContext | null {
-  if (!ctx) {
-    try {
-      ctx = new AudioContext()
-    } catch {
-      return null
-    }
+  try {
+    return getAudioContext()
+  } catch {
+    return null
   }
-  if (ctx.state === 'suspended') {
-    void ctx.resume()
-  }
-  return ctx
+}
+
+function getSfxBusNode(): GainNode {
+  if (!_sfxBus) _sfxBus = createSfxBus('mission-orbit')
+  return _sfxBus
 }
 
 function playOsc(
@@ -70,7 +71,7 @@ function playOsc(
   gainNode.gain.setValueAtTime(gain, startTime)
   gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
   osc.connect(gainNode)
-  gainNode.connect(audio.destination)
+  gainNode.connect(getSfxBusNode())
   osc.start(startTime)
   osc.stop(startTime + duration)
 }
@@ -89,7 +90,7 @@ function playNoise(audio: AudioContext, duration: number, gain: number): void {
   gainNode.gain.setValueAtTime(gain, now)
   gainNode.gain.exponentialRampToValueAtTime(0.0001, now + duration)
   source.connect(gainNode)
-  gainNode.connect(audio.destination)
+  gainNode.connect(getSfxBusNode())
   source.start(now)
   source.stop(now + duration)
 }
@@ -103,10 +104,6 @@ function stopHoldTone(): void {
     }
     holdOscillator = null
   }
-}
-
-export function setupSounds(getSfxEnabledFn: () => boolean): void {
-  getSfxEnabled = getSfxEnabledFn
 }
 
 export function playSceneSound(cinematicType: string): void {
@@ -173,7 +170,7 @@ export function playHoldTone(active: boolean): void {
     osc.frequency.setValueAtTime(120, audio.currentTime)
     gain.gain.setValueAtTime(0.06, audio.currentTime)
     osc.connect(gain)
-    gain.connect(audio.destination)
+    gain.connect(getSfxBusNode())
     osc.start()
     osc.onended = () => { holdOscillator = null }
     holdOscillator = osc
