@@ -208,14 +208,9 @@ export const settingsToggleStyles = {
 
 export const settingsActionsStyles = {
   display: 'flex',
+  flexDirection: 'row',
   gap: '0.5rem',
-  flexWrap: 'wrap',
   alignItems: 'center',
-  '@media (max-width: 420px)': {
-    flexDirection: 'column',
-    alignItems: 'stretch' as const,
-    gap: '0.4rem',
-  },
 }
 
 export const tabBarStyles = {
@@ -232,14 +227,17 @@ export const tabButtonStyles = {
   padding: '0.5rem 1rem',
   fontSize: '0.9rem',
   fontWeight: 600,
-  color: 'var(--modal-text, var(--color-text, inherit))',
+  color: 'rgba(255, 255, 255, 0.5)',
   cursor: 'pointer',
   borderRadius: '6px 6px 0 0',
   minWidth: '44px',
   minHeight: '44px',
   position: 'relative',
+  transition: 'color 150ms ease, background 150ms ease',
   '&.tab-btn--active': {
-    color: 'var(--modal-accent, var(--color-accent, #7ec8e3))',
+    color: '#fff',
+    fontWeight: 800,
+    background: 'rgba(255, 255, 255, 0.08)',
     '&::after': {
       content: '""',
       position: 'absolute',
@@ -262,12 +260,10 @@ export const tabButtonStyles = {
 
 export const tabPanelStyles = {
   overflowY: 'auto',
-  maxHeight: 'clamp(200px, 55dvh, 420px)',
+  maxHeight: 'clamp(240px, 65dvh, 540px)',
   paddingRight: '0.25rem',
+  paddingBottom: '0.5rem',
   position: 'relative',
-  // Fade hint at bottom when scrollable — uses a linear gradient mask
-  maskImage: 'linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%)',
-  WebkitMaskImage: 'linear-gradient(to bottom, black calc(100% - 1.5rem), transparent 100%)',
 }
 
 export const modalCloseStyles = {

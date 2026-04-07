@@ -43,6 +43,71 @@ Research-based developmental progressions for early mathematics.
 
 ---
 
+## Literacy & Phonics Sources
+
+### National Reading Panel — "Teaching Children to Read" (2000)
+U.S. National Institute of Child Health and Human Development report. Established the five pillars of reading instruction.
+- **Phonemic awareness**: ability to hear and manipulate individual sounds in words.
+- **Phonics**: systematic instruction on letter-sound correspondences (CVC → blends → digraphs → CVCe → vowel teams → r-controlled → multisyllable).
+- **Fluency**: automatic, accurate reading with expression.
+- **Vocabulary**: word knowledge and word-learning strategies.
+- **Comprehension**: understanding and interpreting text.
+- Key finding: **systematic, explicit phonics instruction significantly improves children's word recognition, spelling, and reading comprehension** through Grade 6.
+- Source: https://www.nichd.nih.gov/publications/pubs/nrp/smallbook
+
+### Common Core ELA — Foundational Skills (CCSS.ELA-LITERACY.RF, 2010)
+Grade-by-grade phonics and word recognition expectations.
+- **K (RF.K.3)**: Letter-sound correspondences; CVC words.
+- **Grade 1 (RF.1.3)**: Consonant digraphs (sh, ch, th, wh); CVCe (silent-e); common vowel teams.
+- **Grade 2 (RF.2.3)**: Long vowel patterns; common prefixes/suffixes; irregularly spelled words.
+- **Grade 3 (RF.3.3)**: Multisyllable words; Latin suffixes; morphological awareness.
+- Source: http://www.corestandards.org/ELA-Literacy/RF/
+
+### Dolch Sight Word Lists (Dolch, 1936 / 1948)
+315 high-frequency "service words" that make up roughly 50–75% of children's reading material. Organized by grade level:
+- **Pre-Primer** (40 words): a, and, big, blue, can, come, down, find, for, funny, go, help, here, I, in, is, it, jump, little, look, make, me, my, not, one, play, red, run, said, see, the, three, to, two, up, we, where, yellow, you.
+- **Primer** (52 words): all, am, are, at, ate, be, black, brown, but, came, did, do, eat, four, get, good, have, he, into, like, must, new, no, now, on, our, out, please, pretty, ran, ride, saw, say, she, so, soon, that, there, they, this, too, under, want, was, well, went, what, white, who, will, with, yes.
+- **Grade 1–3**: Progressively less frequent words.
+- Use Dolch lists to validate that words are familiar to the target age group.
+- Source: Dolch, E. W. (1948). *Problems in Reading*. Garrard Press.
+
+### Fry Instant Word Lists (Fry, 1957 / revised 1980, 2000)
+1,000 most frequently used English words, organized in groups of 100 by frequency rank.
+- **Fry-100**: the 100 most common (the, of, and, a, to, in, is, you, that, it...).
+- **Fry-200**: next 100 (over, new, sound, take, only, little, work, know, place...).
+- **Fry-300**: next 100 (high, every, near, add, food, between, own, below...).
+- Together, the first 300 Fry words account for ~65% of all written English.
+- Use Fry lists to ensure words are high-frequency and will be encountered across reading material.
+- Source: Fry, E. B. (2000). *1000 Instant Words*. Teacher Created Resources.
+
+### Ehri's Phases of Word Reading Development (1995, 2005, 2014)
+Research-based model describing how children progress through word recognition:
+1. **Pre-alphabetic**: guesses words from visual cues (logos, first letter).
+2. **Partial alphabetic**: uses some letter-sound knowledge (reads "bat" from b-t).
+3. **Full alphabetic**: decodes using all grapheme-phoneme correspondences.
+4. **Consolidated alphabetic**: recognizes chunks (onsets, rimes, syllables, morphemes).
+- Key finding: **children must develop full alphabetic decoding before they can build a robust sight vocabulary**. Games should support this progression.
+- Source: Ehri, L. C. (2014). Orthographic mapping in the acquisition of sight word reading. In *Handbook of Children's Literacy*.
+
+### Bear et al. "Words Their Way" Developmental Spelling Stages (2000+)
+A widely used framework mapping phonics/spelling development to instruction:
+- **Emergent**: learns letter names and sounds.
+- **Letter Name-Alphabetic**: spells CVC words; initial/final consonants.
+- **Within Word Pattern**: explores long vowels, CVCe, vowel teams.
+- **Syllables and Affixes**: two-syllable words, inflected endings.
+- **Derivational Relations**: Greek/Latin roots, advanced morphology.
+- Use this progression to align difficulty tiers: Sidekick = Letter Name, Hero = late Letter Name / early Within Word, Super = Within Word, Ultra/Legend = Syllables and Affixes.
+- Source: Bear, D. R., Invernizzi, M., Templeton, S., & Johnston, F. (2000). *Words Their Way*. Pearson.
+
+### Word Appropriateness Guidelines for Children's Educational Content
+When selecting words for K–3 educational games:
+- **Include only**: concrete, imageable nouns; common action verbs; familiar descriptive words; high-frequency sight words.
+- **Exclude**: words with violent connotations (slap, whip, punch), body-shaming terms (chub, fat, ugly), words with adult/slang meanings, overly technical vocabulary (shim, brim), culturally unfamiliar terms (pram in US contexts), words associated with bodily functions (spit, puke).
+- Cross-check against **both Dolch and Fry** lists to confirm frequency.
+- When in doubt, ask: "Would a PBS Kids or Khan Academy Kids game use this word?"
+
+---
+
 ## Guidelines for Implementation
 
 ### Citing research in code
@@ -70,12 +135,12 @@ Prefer **"within N"** (matching standards language), e.g.:
 - **Level 3** should reach the grade-level standard for the target age group.
 
 ### Age grounding
-| Level | Rough target age | Example anchor standard |
-|-------|-----------------|------------------------|
-| 1     | Age 5–6 (K)     | CCSS K.OA — add within 5 |
-| 2     | Age 6–7 (Gr 1)  | CCSS 1.OA — add/subtract within 20 |
-| 3     | Age 7–8 (Gr 2)  | CCSS 2.OA — fluency within 20; 2.NBT multi-digit |
-| 4     | Age 8–9 (Gr 3)  | CCSS 3.OA — multiplication/division within 100 |
+| Level | Rough target age | Math anchor standard | Literacy anchor standard |
+|-------|-----------------|----------------------|--------------------------|
+| 1     | Age 5–6 (K)     | CCSS K.OA — add within 5 | CCSS RF.K.3 — CVC words, letter-sound |
+| 2     | Age 6–7 (Gr 1)  | CCSS 1.OA — add/subtract within 20 | CCSS RF.1.3 — digraphs, blends, CVCe |
+| 3     | Age 7–8 (Gr 2)  | CCSS 2.OA — fluency within 20; 2.NBT multi-digit | CCSS RF.2.3 — vowel teams, r-controlled |
+| 4     | Age 8–9 (Gr 3)  | CCSS 3.OA — multiplication/division within 100 | CCSS RF.3.3 — multisyllable, morphology |
 
 These are anchors, not hard requirements. Adjust if the game's audience is narrower.
 

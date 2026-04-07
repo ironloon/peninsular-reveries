@@ -119,10 +119,16 @@ function onStartGame(): void {
   pendingFlightIndices.clear()
   gameState = createInitialState(activePuzzles.length, false)
 
-  // Show the game screen first so the canvas has non-zero dimensions,
-  // then render the scene after the layout completes.
+  // Show the game screen first, then render the scene once the screen
+  // transition is fully settled and the canvas has real dimensions.
+  // iOS Safari needs the transition to finish before clientWidth/Height
+  // report non-zero, so we wait for transitionend (with a 650ms fallback).
   showScreen('game-screen')
-  requestAnimationFrame(() => {
+  const gameScreen = document.getElementById('game-screen')!
+  let rendered = false
+  const renderOnce = () => {
+    if (rendered) return
+    rendered = true
     refreshGameScreen()
     syncMusicPlayback()
     announceNextPuzzle(
@@ -131,7 +137,9 @@ function onStartGame(): void {
       currentPuzzle().prompt,
     )
     moveFocusToFirstSceneItem(300)
-  })
+  }
+  gameScreen.addEventListener('transitionend', renderOnce, { once: true })
+  setTimeout(renderOnce, 650)
 }
 
 function onLetterCollected(item: SceneItem): void {

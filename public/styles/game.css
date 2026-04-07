@@ -260,8 +260,11 @@ body.gamepad-active .music-toggle-btn:focus {
 }
 
 .settings-section-title {
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.6;
   margin: 0 0 var(--game-space-xs);
 }
 
@@ -276,7 +279,7 @@ body.gamepad-active .music-toggle-btn:focus {
   gap: var(--game-space-xs);
 }
 
-@media (max-width: 400px) {
+@media (max-width: 420px) {
   .controls-grid {
     grid-template-columns: 1fr;
   }
@@ -308,12 +311,14 @@ body.gamepad-active .music-toggle-btn:focus {
 
 .settings-actions {
   display: flex;
-  gap: var(--game-space-xs);
-  margin-top: var(--game-space-xs);
+  flex-direction: row;
+  gap: var(--game-space-sm);
+  margin-top: var(--game-space-sm);
 }
 
 .settings-actions > * {
   flex: 1 1 0;
+  min-width: 0;
 }
 
 .settings-restart-btn,
@@ -474,6 +479,7 @@ body.gamepad-active .music-toggle-btn:focus {
   background: var(--game-purple-dark);
   color: var(--game-white);
   width: 100%;
+  box-sizing: border-box;
 }
 
 .game-header-left,
