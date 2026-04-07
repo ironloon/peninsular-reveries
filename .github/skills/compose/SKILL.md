@@ -103,7 +103,7 @@ work aligns with original goals.]
 ## Work Units
 
 ### WU-1: [Game/Area] — [Short description]
-- Status: not-started
+- Status: pending
 - Confirmed: yes | no
 - Depends on: none | WU-N
 - Thinking effort: low | medium | high
@@ -133,7 +133,7 @@ After all complete: [integration steps] → npm run test:local → commit → pu
 ## Field Definitions
 
 ### Status
-One of: `not-started`, `in-progress`, `done`, `blocked`. Only the orchestrator updates status during dispatch.
+One of: `pending`, `in-progress`, `done`, `failed`. Only the orchestrator updates status during dispatch.
 
 ### Confirmed
 `yes` or `no`. Set to `yes` when the user approves the WU during workshop. Defaults to `no` in the draft. The orchestrator will not dispatch a WU with `Confirmed: no`.
@@ -142,12 +142,12 @@ One of: `not-started`, `in-progress`, `done`, `blocked`. Only the orchestrator u
 `none` or a WU ID like `WU-3`. WUs with no dependencies can be dispatched in any order. The Dispatch Order section makes the actual sequence explicit.
 
 ### Thinking effort
-Guides the orchestrator's sub-agent configuration and **model selection**:
-- **low** — Rename, config change, mechanical transformation. Dispatched with **Claude Haiku 4.5**.
-- **medium** — Feature in a known pattern, moderate judgment needed. Dispatched with **Claude Sonnet 4.6**.
-- **high** — Reserved for research/exploration WUs (e.g., an `Explore` sub-agent gathering context for later WUs). Dispatched with **Claude Opus 4.6**.
+Guides the orchestrator on WU complexity:
+- **low** — Rename, config change, mechanical transformation.
+- **medium** — Feature in a known pattern, moderate judgment needed.
+- **high** — Reserved for research/exploration WUs (e.g., an `Explore` sub-agent gathering context for later WUs).
 
-**Default to medium or low.** If a WU requires high thinking effort for *implementation*, that complexity should be resolved during planning — break it into smaller WUs, add more specificity to the Intent, or move the hard reasoning into a preceding research WU. A well-written plan should rarely produce high-effort implementation WUs.
+**Default to medium or low.** If a WU requires high thinking effort for *implementation*, that complexity should be resolved during composition — break it into smaller WUs, add more specificity to the Intent, or move the hard reasoning into a preceding research WU. A well-written score should rarely produce high-effort implementation WUs.
 
 ### Owned files
 The exhaustive list of files the sub-agent is allowed to modify. Use globs sparingly and only for asset directories (e.g., `public/game/audio/*`). Never split a single file across multiple WUs — exactly one WU owns each file.

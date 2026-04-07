@@ -36,10 +36,8 @@ For project architecture, game quality standards, and testing conventions, load 
 
 ## Composing Plans
 
-- At the start of any new composing session, check for an existing `active-score.md` in `/memories/repo/plans/`. If one exists, read its Critique section (if present) and incorporate findings into the new score, then replace it. Never write scores to `/memories/session/` or any path other than the canonical `/memories/repo/plans/active-score.md`.
-- When producing plans, write extremely detailed step-by-step plans with explicit file paths, function names, exact commands when helpful, contingency steps for likely failure points, and clear verification gates.
-- Include rollback or recovery notes for risky edits.
-- When producing plans intended for orchestrated execution, load the compose skill in `.github/skills/compose/` and output work units in its format. Embed the relevant project constraints (from the review skill references) directly into each work unit's intent so that dispatched sub-agents do not need to load skills independently.
+- When composing plans for orchestrated execution, load the compose skill in `.github/skills/compose/`. It owns the full workflow, score structure, and WU format.
+- Embed relevant project constraints (from the review skill references) directly into each work unit's intent so that performers do not need to load skills independently.
 
 ## Executing Agent Guidance
 
@@ -47,20 +45,11 @@ For project architecture, game quality standards, and testing conventions, load 
 - If you hit an error, diagnose it and fix it. If you are genuinely stuck, explain the specific blocker. Do not abandon the remaining steps.
 - Before any push-ready handoff, inspect the changed files for accidental secrets or credential-like strings, and if a real secret was already committed, treat rotation plus history cleanup as required work rather than a documentation note.
 - After completing all planned work, run the relevant verification. If it passes, report what changed and what was verified.
-- When dispatched by the orchestrator, respect your `owned_files` boundary strictly. Do not modify files outside your owned set.
-- When dispatched by the orchestrator, do not load repository skills. The dispatch prompt already incorporates project constraints extracted from the relevant skills during plan composition. Loading skills redundantly wastes context budget and slows execution.
-- Run only your unit's verification command. Do not run `npm run test:local` — that is the orchestrator's job.
-- If you need a change to a shared file (package.json, build.ts, router, routes, shared styles), report it as a deferred edit rather than modifying it.
 
 ## Orchestrated Workflow
 
-- When the user says **"cue"** referencing an active score, tell the user to start a **new chat session** with the `@orchestrator` agent. Do not begin execution directly, do not invoke the orchestrator mid-session, and do not attempt to execute work units yourself. The orchestrator must start with a fresh context — it owns dispatch, sub-agent coordination, integration gating, and commit/push.
-- Plans live in `/memories/repo/plans/active-score.md` as structured markdown with work units (workspace-persistent, not in git). There is exactly one active score.
-- Plans are composed in agent mode using the compose skill; the `@orchestrator` agent dispatches them via `runSubagent`.
-- The orchestrator reads source code before each dispatch to enrich the plan's intent description into a specific implementation prompt.
-- The orchestrator reviews sub-agent results, resolves fixable issues, and escalates genuine blockers to the user.
-- Each work unit has an explicit `owned_files` set — the performing agent may ONLY modify those files.
-- The orchestrator runs `npm run test:local` once after all units complete as the integration gate.
+- When the user says **"cue"** (the word alone), tell them to start a **new chat session** with the `@orchestrator` agent. Do not begin execution directly, do not invoke the orchestrator mid-session, and do not attempt to execute work units yourself. The orchestrator must start with a fresh context.
+- Scores live in `/memories/repo/plans/active-score.md` (workspace-persistent, not in git). There is exactly one active score.
 
 ## Environment Context
 
