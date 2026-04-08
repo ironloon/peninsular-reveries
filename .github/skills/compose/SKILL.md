@@ -139,6 +139,19 @@ After all complete: [integration steps] → npm run test:local → commit → pu
 
 ---
 
+## Composition Rules
+
+### Visual art MVTs
+If an MVT produces visual assets (pixel art, sprites, icons, illustrations), it must reference the `creative-assets` skill workflow or `scripts/generate-pixel-art.ts` with explicit iteration steps. Do not assign freeform artistic output to code performer agents — their strength is code, not visual design. Route art creation through the asset curation pipeline and plan for user review of the output.
+
+### Visual checkpoints
+MVTs involving CSS visual design (character orientation, layout hierarchy, animation states) must include a "visual checkpoint" in the Intent: a brief description of the expected appearance at key states (idle, animating, complete). This gives the performer a concrete target to verify against and the orchestrator a review criterion beyond "code compiles."
+
+### Shared-character NPCs
+If NPCs share the player character's structure, the Intent must explicitly state whether NPCs animate identically to the player or are static. Do not leave this ambiguous — the performer will default to whichever is easier to implement, which may not match the user's expectation.
+
+---
+
 ## Field Definitions
 
 ### Status

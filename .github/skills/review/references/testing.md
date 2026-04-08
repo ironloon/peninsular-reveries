@@ -19,6 +19,15 @@
 - Playwright stays local-only.
 - `npm install` configures the repo-owned pre-commit hook, and the hook runs `npm run test:local` automatically.
 
+## Smoke Test Requirements
+
+- Game smoke tests (`site-07-game-smoke.spec.ts`) must verify more than element presence. After entering the game screen, assert that key interactive elements are within the viewport:
+  ```ts
+  await expect(page.locator('#interactive-element')).toBeInViewport()
+  ```
+- `toBeInViewport()` retries until the element is fully visible within viewport bounds, handling CSS transition timing automatically.
+- This catches elements that are technically visible but clipped by `overflow: hidden`, positioned off-screen, or pushed out of the viewport by layout bugs.
+
 ## Attribution Sync
 
 - If a change updates attribution or info files in `games/*/`, run `npm run sync:attributions` before considering the work human-ready.

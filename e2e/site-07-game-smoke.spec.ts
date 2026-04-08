@@ -14,6 +14,9 @@ test.describe('SITE-07: Game smoke tests', () => {
     await expect(page.locator('#game-screen')).toBeVisible()
     await expect(page.locator('#hippo')).toBeVisible()
     await expect(page.locator('#scene-items button').first()).toBeVisible()
+
+    await expect(page.locator('#hippo')).toBeInViewport()
+    await expect(page.locator('#scene-items button').first()).toBeInViewport()
   })
 
   // Pixel Passport
@@ -28,6 +31,8 @@ test.describe('SITE-07: Game smoke tests', () => {
     await page.getByRole('button', { name: /explore/i }).click()
     await expect(page.locator('#globe-screen')).toBeVisible()
     await expect(page.locator('.destination-marker').first()).toBeVisible()
+
+    await expect(page.locator('.destination-marker').first()).toBeInViewport()
   })
 
   // Mission Orbit
@@ -42,6 +47,8 @@ test.describe('SITE-07: Game smoke tests', () => {
     await page.getByRole('button', { name: 'Begin Mission' }).click()
     await expect(page.locator('#game-screen')).toBeVisible()
     await expect(page.locator('.continue-prompt')).toBeVisible()
+
+    await expect(page.locator('.continue-prompt')).toBeInViewport()
   })
 
   // Super Word
@@ -59,5 +66,7 @@ test.describe('SITE-07: Game smoke tests', () => {
     const box = await canvas.boundingBox()
     expect(box?.width).toBeGreaterThan(0)
     expect(box?.height).toBeGreaterThan(0)
+
+    await expect(canvas).toBeInViewport()
   })
 })

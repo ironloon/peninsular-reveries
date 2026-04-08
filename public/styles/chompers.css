@@ -483,6 +483,7 @@
   position: absolute;
   bottom: 0;
   left: 50%;
+  transform: translateX(-50%);
   --neck-height: 20px;
   --jaw-angle: 0;
   --hippo-color: #8BC34A;
@@ -515,14 +516,14 @@
   width: clamp(52px, 12vw, 84px);
   height: clamp(38px, 8.5vw, 60px);
   background: var(--hippo-color, #8BC34A);
-  border-radius: 50% 50% 38% 38% / 58% 58% 34% 34%;
+  border-radius: 38% 38% 50% 50% / 34% 34% 58% 58%;
   flex-shrink: 0;
 }
 
 .hippo-ear-left,
 .hippo-ear-right {
   position: absolute;
-  top: -9px;
+  bottom: -9px;
   width: clamp(11px, 2.4vw, 17px);
   height: clamp(11px, 2.4vw, 17px);
   background: color-mix(in srgb, var(--hippo-color, #8BC34A) 80%, #000 20%);
@@ -532,23 +533,10 @@
 .hippo-ear-left  { left: 7px; }
 .hippo-ear-right { right: 7px; }
 
-.hippo-eye-left,
-.hippo-eye-right {
-  position: absolute;
-  top: 22%;
-  width: clamp(9px, 1.9vw, 13px);
-  height: clamp(9px, 1.9vw, 13px);
-  border-radius: 50%;
-  background: radial-gradient(circle at 55% 55%, #1a1a2e 36%, #fff 37%);
-}
-
-.hippo-eye-left  { left: 18%; }
-.hippo-eye-right { right: 18%; }
-
 .hippo-nostril-left,
 .hippo-nostril-right {
   position: absolute;
-  bottom: 22%;
+  top: 18%;
   width: clamp(5px, 1.1vw, 8px);
   height: clamp(3px, 0.7vw, 5px);
   background: color-mix(in srgb, var(--hippo-color, #8BC34A) 50%, #000 50%);
@@ -558,20 +546,33 @@
 .hippo-nostril-left  { left: 30%; }
 .hippo-nostril-right { right: 30%; }
 
+.hippo-eye-left,
+.hippo-eye-right {
+  position: absolute;
+  bottom: 26%;
+  width: clamp(9px, 1.9vw, 13px);
+  height: clamp(9px, 1.9vw, 13px);
+  border-radius: 50%;
+  background: radial-gradient(circle at 55% 45%, #1a1a2e 36%, #fff 37%);
+}
+
+.hippo-eye-left  { left: 18%; }
+.hippo-eye-right { right: 18%; }
+
 .hippo-jaw {
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 8%;
   right: 8%;
   height: clamp(12px, 2.6vw, 18px);
   background: color-mix(in srgb, var(--hippo-color, #8BC34A) 65%, #fff 35%);
-  border-radius: 0 0 38% 38%;
-  transform-origin: top center;
-  transform: translateY(calc(var(--jaw-angle, 0) * clamp(10px, 2.2vw, 14px)));
+  border-radius: 38% 38% 0 0;
+  transform-origin: bottom center;
+  transform: translateY(calc(var(--jaw-angle, 0) * clamp(-10px, -2.2vw, -14px)));
   transition: transform 0.12s ease-out;
   display: flex;
   justify-content: space-around;
-  align-items: flex-start;
+  align-items: flex-end;
   padding: 2px 22%;
   box-sizing: border-box;
 }
@@ -581,7 +582,7 @@
   width: clamp(4px, 1vw, 7px);
   height: clamp(6px, 1.4vw, 10px);
   background: #fff;
-  border-radius: 0 0 3px 3px;
+  border-radius: 3px 3px 0 0;
 }
 
 /* Hippo outcome feedback */
@@ -997,7 +998,7 @@
   position: absolute;
   bottom: 0;
   left: var(--hippo-x, 0%);
-  transform: translateX(-50%) scale(0.6);
+  transform: translateX(-50%);
   transform-origin: bottom center;
   z-index: 5;
   pointer-events: none;
@@ -1019,14 +1020,14 @@
 }
 
 @keyframes npcChomp {
-  0%, 100% { transform: translateX(-50%) scale(0.6); }
-  50% { transform: translateX(-50%) scale(0.75); }
+  0%, 100% { transform: translateX(-50%); }
+  50% { transform: translateX(-50%) scale(1.08); }
 }
 
 @keyframes npcWobble {
-  0%, 100% { transform: translateX(-50%) scale(0.6) rotate(0deg); }
-  25% { transform: translateX(-50%) scale(0.6) rotate(-10deg); }
-  75% { transform: translateX(-50%) scale(0.6) rotate(10deg); }
+  0%, 100% { transform: translateX(-50%) rotate(0deg); }
+  25% { transform: translateX(-50%) rotate(-10deg); }
+  75% { transform: translateX(-50%) rotate(10deg); }
 }
 
 /* Timer bar */

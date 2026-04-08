@@ -345,35 +345,98 @@
 }
 
 #cinematic-pane[data-cinematic="launch-pad"] {
-  background: linear-gradient(180deg, #1a0a2e 0%, #0a1628 100%);
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255, 200, 100, 0.15), transparent 40%),
+    radial-gradient(1px 1px at 10% 15%, #fff, transparent),
+    radial-gradient(1px 1px at 30% 8%, #fff, transparent),
+    radial-gradient(1px 1px at 55% 20%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 75% 12%, #fff, transparent),
+    radial-gradient(1px 1px at 88% 25%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 42% 35%, #fff, transparent),
+    radial-gradient(1px 1px at 65% 5%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(ellipse at 50% 95%, #3a1a0a 0%, transparent 50%),
+    linear-gradient(180deg, #1a1040 0%, #1a2a5e 100%);
 }
 
 #cinematic-pane[data-cinematic="ascent"] {
-  background: linear-gradient(180deg, #0a1628 0%, #1a3a6e 100%);
+  background:
+    radial-gradient(circle at 50% 85%, rgba(255, 160, 60, 0.35), transparent 35%),
+    radial-gradient(1px 1px at 12% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 38% 10%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 60% 22%, #fff, transparent),
+    radial-gradient(1px 1px at 82% 8%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 25% 30%, rgba(255,255,255,0.5), transparent),
+    linear-gradient(180deg, #1a2a5e 0%, #2a4a8e 60%, #5a8ac0 100%);
 }
 
 #cinematic-pane[data-cinematic="orbit-insertion"] {
-  background: linear-gradient(180deg, #0f0f30 0%, #0a1628 100%);
+  background:
+    radial-gradient(circle at 80% 70%, rgba(100, 180, 255, 0.2), transparent 30%),
+    radial-gradient(1px 1px at 8% 12%, #fff, transparent),
+    radial-gradient(1px 1px at 22% 28%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 45% 8%, #fff, transparent),
+    radial-gradient(1px 1px at 68% 35%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 90% 15%, #fff, transparent),
+    radial-gradient(1px 1px at 35% 42%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(ellipse at 50% 110%, #2a5a9a 0%, transparent 60%),
+    linear-gradient(180deg, #0a1030 0%, #1a2a5e 100%);
 }
 
 #cinematic-pane[data-cinematic="trans-lunar-injection"] {
-  background: linear-gradient(180deg, #050510 0%, #0a1628 100%);
+  background:
+    radial-gradient(1px 1px at 15% 20%, #fff, transparent),
+    radial-gradient(1px 1px at 35% 10%, rgba(255,255,255,0.8), transparent),
+    radial-gradient(1px 1px at 55% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 72% 15%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 88% 38%, #fff, transparent),
+    radial-gradient(1px 1px at 28% 42%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 45% 18%, rgba(255,255,255,0.5), transparent),
+    radial-gradient(ellipse at 20% 60%, rgba(100, 160, 255, 0.15), transparent 40%),
+    linear-gradient(180deg, #050818 0%, #0a1a3e 100%);
 }
 
 #cinematic-pane[data-cinematic="lunar-approach"] {
-  background: linear-gradient(180deg, #080818 0%, #1a1a3a 100%);
+  background:
+    radial-gradient(circle at 70% 50%, #3a3a5a 0%, transparent 28%),
+    radial-gradient(1px 1px at 10% 10%, #fff, transparent),
+    radial-gradient(1px 1px at 25% 25%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 48% 8%, #fff, transparent),
+    radial-gradient(1px 1px at 90% 30%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 15% 40%, rgba(255,255,255,0.5), transparent),
+    linear-gradient(180deg, #080818 0%, #1a1a3e 100%);
 }
 
 #cinematic-pane[data-cinematic="lunar-flyby"] {
-  background: radial-gradient(ellipse at 30% 50%, #2a2a4a 0%, #050510 60%);
+  background:
+    radial-gradient(circle at 30% 50%, #4a4a6a 0%, #2a2a4a 25%, transparent 45%),
+    radial-gradient(circle at 28% 48%, rgba(200, 200, 220, 0.12), transparent 30%),
+    radial-gradient(1px 1px at 60% 15%, #fff, transparent),
+    radial-gradient(1px 1px at 75% 35%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 85% 10%, #fff, transparent),
+    radial-gradient(1px 1px at 55% 40%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 92% 25%, rgba(255,255,255,0.8), transparent),
+    linear-gradient(180deg, #050510 0%, #0a0a2a 100%);
 }
 
 #cinematic-pane[data-cinematic="return"] {
-  background: linear-gradient(180deg, #050510 0%, #0a2a5a 100%);
+  background:
+    radial-gradient(circle at 85% 40%, rgba(100, 180, 255, 0.2), transparent 35%),
+    radial-gradient(1px 1px at 18% 12%, #fff, transparent),
+    radial-gradient(1px 1px at 40% 28%, rgba(255,255,255,0.7), transparent),
+    radial-gradient(1px 1px at 62% 8%, #fff, transparent),
+    radial-gradient(1px 1px at 80% 35%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 30% 20%, rgba(255,255,255,0.5), transparent),
+    linear-gradient(180deg, #050818 0%, #1a3a6e 100%);
 }
 
 #cinematic-pane[data-cinematic="reentry-splashdown"] {
-  background: linear-gradient(180deg, #1a3a6e 0%, #0a3a6a 100%);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(255, 160, 60, 0.25), transparent 35%),
+    radial-gradient(1px 1px at 15% 15%, #fff, transparent),
+    radial-gradient(1px 1px at 45% 10%, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 70% 20%, #fff, transparent),
+    radial-gradient(ellipse at 50% 100%, #2a5a8a 0%, transparent 50%),
+    linear-gradient(180deg, #2a4a8e 0%, #1a5a8a 50%, #2a7aaa 100%);
 }
 
 /* Narrative pane ============================================== */

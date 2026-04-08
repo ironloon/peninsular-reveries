@@ -9,7 +9,6 @@ import {
   GameScreen,
   GameTabbedModal,
   InfoSection,
-  InfoAttribution,
   SettingsSection,
   SettingsToggle,
   SrOnly,
@@ -24,6 +23,7 @@ export async function missionOrbitAction() {
   const attribution = getGameAttribution('mission-orbit')
   const siteBasePath = getSiteBasePath()
   const homePath = withBasePath('/', siteBasePath)
+  const infoPagePath = withBasePath('/mission-orbit/info/', siteBasePath)
   const html = await renderToString(
     <Document
       title="Mission: Orbit"
@@ -173,7 +173,7 @@ export async function missionOrbitAction() {
           overlayStyles={missionOrbitModalOverlayStyles}
           quitHref={homePath}
           settingsContent={<>
-            <SettingsSection title="🎵 Audio">
+            <SettingsSection title="Audio">
               <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
               <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
             </SettingsSection>
@@ -210,9 +210,7 @@ export async function missionOrbitAction() {
             <InfoSection title="About Mission: Orbit">
               <p>{attribution.summary}</p>
             </InfoSection>
-            {attribution.entries.map((entry) => (
-              <InfoAttribution attribution={{ title: entry.title, author: entry.creator, license: entry.license, url: entry.sourceUrl, notes: entry.notes }} />
-            ))}
+            <p className="info-more-link"><a href={infoPagePath}>More info, credits &amp; attributions →</a></p>
           </>}
         />
       </div>

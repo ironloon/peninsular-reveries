@@ -3,7 +3,7 @@ import { getGameAttribution } from '../../app/data/attribution-index.js'
 import { getSiteBasePath } from '../../app/site-config.js'
 import { withBasePath } from '../../app/site-paths.js'
 import { Document } from '../../app/ui/document.js'
-import { GameHeader, GameHeaderPill, GameTabbedModal, InfoSection, InfoAttribution, SettingsSection, SettingsToggle, SrOnly } from '../../app/ui/game-shell.js'
+import { GameHeader, GameHeaderPill, GameTabbedModal, InfoSection, SettingsSection, SettingsToggle, SrOnly } from '../../app/ui/game-shell.js'
 
 const chompersModalOverlayStyles = {
   zIndex: 100,
@@ -14,6 +14,7 @@ export async function chompersAction() {
   const attribution = getGameAttribution('chompers')
   const siteBasePath = getSiteBasePath()
   const homePath = withBasePath('/', siteBasePath)
+  const infoPagePath = withBasePath('/chompers/info/', siteBasePath)
   const html = await renderToString(
     <Document
       title="Chompers"
@@ -345,24 +346,13 @@ export async function chompersAction() {
         overlayStyles={chompersModalOverlayStyles}
         quitHref={homePath}
         settingsContent={<>
-          <SettingsSection title="🎵 Audio">
+          <SettingsSection title="Audio">
             <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
             <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
           </SettingsSection>
 
           <SettingsSection title="Controls">
             <p className="settings-copy">Tap or click a fruit to choose your answer. Use arrow keys or D-pad to navigate, Enter/Space to select.</p>
-          </SettingsSection>
-
-          <SettingsSection title="Math areas">
-            <ul className="settings-list">
-              <li><strong>Matching ⭐</strong> — Find the displayed number among tiles</li>
-              <li><strong>Counting 🔢</strong> — Count objects and tap the matching number</li>
-              <li><strong>Addition ➕</strong> — Add numbers together</li>
-              <li><strong>Subtraction ➖</strong> — Take numbers away</li>
-              <li><strong>Multiplication ✖️</strong> — Times tables</li>
-              <li><strong>Division ➗</strong> — Split numbers up</li>
-            </ul>
           </SettingsSection>
 
           <SettingsSection title="Accessibility">
@@ -378,9 +368,7 @@ export async function chompersAction() {
           <InfoSection title="About Chompers">
             <p>{attribution.summary}</p>
           </InfoSection>
-          {attribution.entries.map((entry) => (
-            <InfoAttribution attribution={{ title: entry.title, author: entry.creator, license: entry.license }} />
-          ))}
+          <p className="info-more-link"><a href={infoPagePath}>More info, credits &amp; attributions →</a></p>
         </>}
       />
 

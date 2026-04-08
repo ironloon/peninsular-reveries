@@ -4,7 +4,7 @@ import { getGameAttribution } from '../../app/data/attribution-index.js'
 import { getSiteBasePath } from '../../app/site-config.js'
 import { withBasePath } from '../../app/site-paths.js'
 import { Document } from '../../app/ui/document.js'
-import { GameHeader, GameHeaderPill, GameScreen, GameTabbedModal, InfoSection, InfoAttribution, SettingsSection, SettingsToggle, SrOnly } from '../../app/ui/game-shell.js'
+import { GameHeader, GameHeaderPill, GameScreen, GameTabbedModal, InfoSection, SettingsSection, SettingsToggle, SrOnly } from '../../app/ui/game-shell.js'
 
 const pixelPassportModalOverlayStyles = {
   zIndex: 100,
@@ -33,6 +33,7 @@ export async function pixelPassportAction() {
   const attribution = getGameAttribution('pixel-passport')
   const siteBasePath = getSiteBasePath()
   const homePath = withBasePath('/', siteBasePath)
+  const infoPagePath = withBasePath('/pixel-passport/info/', siteBasePath)
   const html = await renderToString(
     <Document
       title="Pixel Passport"
@@ -245,7 +246,7 @@ export async function pixelPassportAction() {
         overlayStyles={pixelPassportModalOverlayStyles}
         quitHref={homePath}
         settingsContent={<>
-          <SettingsSection title="🎵 Audio">
+          <SettingsSection title="Audio">
             <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
             <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
           </SettingsSection>
@@ -271,9 +272,7 @@ export async function pixelPassportAction() {
           <InfoSection title="About Pixel Passport">
             <p>{attribution.summary}</p>
           </InfoSection>
-          {attribution.entries.map((entry) => (
-            <InfoAttribution attribution={{ title: entry.title, author: entry.creator, license: entry.license }} />
-          ))}
+          <p className="info-more-link"><a href={infoPagePath}>More info, credits &amp; attributions →</a></p>
         </>}
       />
 

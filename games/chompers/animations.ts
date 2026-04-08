@@ -166,12 +166,44 @@ export function spawnPointsPopup(
 
 export function animateNpcChomp(npcId: string, targetEl: HTMLElement | null): void {
   const npcEl = document.getElementById(npcId)
-  if (npcEl) {
-    npcEl.classList.remove('chomping')
-    void npcEl.offsetWidth // force reflow to restart animation
-    npcEl.classList.add('chomping')
-    window.setTimeout(() => npcEl.classList.remove('chomping'), 400)
+  if (!npcEl) return
+
+  const arenaEl = document.getElementById('game-arena')
+  let targetXPct = parseFloat(npcEl.style.getPropertyValue('--hippo-x') || '50')
+  let neckH = 20
+
+  if (arenaEl && targetEl) {
+    const arenaRect = arenaEl.getBoundingClientRect()
+    const targetRect = targetEl.getBoundingClientRect()
+    const targetCenterX = targetRect.left + targetRect.width / 2
+    const targetCenterY = targetRect.top + targetRect.height / 2
+    targetXPct = ((targetCenterX - arenaRect.left) / arenaRect.width) * 100
+
+    const bodyEl = npcEl.querySelector<HTMLElement>('.hippo-body')
+    const headEl = npcEl.querySelector<HTMLElement>('.hippo-head')
+    const bodyH = bodyEl?.offsetHeight ?? 40
+    const headH = headEl?.offsetHeight ?? 48
+    neckH = Math.max(20, arenaRect.bottom - targetCenterY - bodyH - headH / 2)
   }
+
+  // Slide to target
+  npcEl.style.setProperty('--hippo-x', `${targetXPct}%`)
+
+  // Extend neck + open jaw after slide
+  window.setTimeout(() => {
+    npcEl.style.setProperty('--neck-height', `${neckH}px`)
+    npcEl.style.setProperty('--jaw-angle', '1')
+  }, 200)
+
+  // Close jaw
+  window.setTimeout(() => {
+    npcEl.style.setProperty('--jaw-angle', '0')
+  }, 500)
+
+  // Retract neck
+  window.setTimeout(() => {
+    npcEl.style.setProperty('--neck-height', '20px')
+  }, 700)
 
   if (targetEl) {
     targetEl.classList.remove('shrink-claimed')

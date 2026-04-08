@@ -36,6 +36,7 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
    a. Read every file the sub-agent reports as modified.
    b. Verify changes match the intent — no unrelated additions, no skipped requirements, no odd workarounds.
    c. **Check numeric targets.** If the intent specifies a quantity (e.g., "expand pool to ~60 entries", "50+ words per tier"), verify the actual count. Flag shortfalls and either re-dispatch with specific instructions or document the gap with a rationale.
+   d. **Check text quality.** If the intent mentions fixing typos, copy, or user-facing text: grep for common irregular plurals (e.g., `memory/memories`, `mystery/mysteries`, `child/children`) and verify dynamic text formatters handle them correctly. Don't rely on the performer to catch every edge case.
    d. Run the unit's `verification` command in the terminal.
    e. If changes need small corrections: fix them directly (this is the ONLY time you may edit files). For larger problems, re-dispatch with specific fix instructions.
    f. If there are genuine blockers that require product-direction decisions: escalate to the user.

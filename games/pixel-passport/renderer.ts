@@ -29,7 +29,9 @@ function screenIdForPhase(phase: GamePhase): string {
 }
 
 function formatCount(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? '' : 's'}`
+  if (count === 1) return `${count} ${noun}`
+  if (noun === 'memory') return `${count} memories`
+  return `${count} ${noun}s`
 }
 
 function renderPixelArt(art: PixelArt, container: HTMLElement, cacheKey: string): void {
