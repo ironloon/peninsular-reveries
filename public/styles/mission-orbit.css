@@ -43,6 +43,10 @@
   box-sizing: border-box;
 }
 
+.mission-orbit-game [hidden] {
+  display: none !important;
+}
+
 .scene-track {
   position: relative;
   flex: 1;
@@ -480,7 +484,12 @@
 /* Continue prompt ============================================= */
 
 .continue-prompt {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0.5rem 0.75rem;
   margin: 0;
+  font-family: inherit;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--mission-muted);
@@ -488,6 +497,22 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 300ms ease 200ms;
+  cursor: pointer;
+  border-radius: 8px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.continue-prompt:focus-visible {
+  outline: 2px solid rgba(255, 209, 102, 0.7);
+  outline-offset: 2px;
+}
+
+.continue-prompt:active {
+  color: var(--mission-signal);
 }
 
 .continue-prompt.continue-visible {

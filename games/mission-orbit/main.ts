@@ -154,11 +154,16 @@ const callbacks: InputCallbacks = {
 }
 setupInput(callbacks)
 
-// Tap / click anywhere on mission-content advances briefing/cinematic phases.
-// Uses pointerup instead of click to reliably fire on iOS Safari <div> elements.
+// Direct click on the continue button — native <button> always fires click on iOS.
+const continueBtn = document.getElementById('continue-btn')
+if (continueBtn) {
+  continueBtn.addEventListener('click', () => onAdvancePhase())
+}
+
+// Tapping elsewhere on mission-content also advances briefing/cinematic phases.
 const missionContentEl = document.querySelector<HTMLElement>('.mission-content')
 if (missionContentEl) {
-  missionContentEl.addEventListener('pointerup', (e) => {
+  missionContentEl.addEventListener('click', (e) => {
     const target = e.target as HTMLElement
     if (target.closest('#interaction-area') || target.closest('button') || target.closest('a')) return
     onAdvancePhase()
