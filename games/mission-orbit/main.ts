@@ -154,20 +154,13 @@ const callbacks: InputCallbacks = {
 }
 setupInput(callbacks)
 
-// Narrative pane click advances briefing/cinematic phases
-const narrativePaneEl = document.getElementById('narrative-pane')
-if (narrativePaneEl) {
-  narrativePaneEl.addEventListener('click', (e) => {
+// Tap / click anywhere on mission-content advances briefing/cinematic phases.
+// Uses pointerup instead of click to reliably fire on iOS Safari <div> elements.
+const missionContentEl = document.querySelector<HTMLElement>('.mission-content')
+if (missionContentEl) {
+  missionContentEl.addEventListener('pointerup', (e) => {
     const target = e.target as HTMLElement
-    if (target.closest('#interaction-area')) return
-    onAdvancePhase()
-  })
-}
-
-// Cinematic pane click also advances briefing/cinematic phases
-const cinematicPaneEl = document.getElementById('cinematic-pane')
-if (cinematicPaneEl) {
-  cinematicPaneEl.addEventListener('click', () => {
+    if (target.closest('#interaction-area') || target.closest('button') || target.closest('a')) return
     onAdvancePhase()
   })
 }

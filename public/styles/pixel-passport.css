@@ -1056,8 +1056,14 @@ html[data-reduce-motion='reduce'] .travel-vehicle-shadow {
     grid-template-columns: 1fr;
   }
 
-  .world-globe-start {
-    width: min(100%, 13rem);
+  /* Hide decorative globe on narrow screens so text is unobscured */
+  .start-stage {
+    display: none;
+  }
+
+  /* Cap main globe to leave room for side info */
+  .world-globe {
+    width: min(100%, 16rem);
   }
 
   .travel-guide-card {

@@ -830,6 +830,12 @@
 /* ===== RESPONSIVE: landscape phone (~844x390) ===== */
 
 @media (max-height: 500px) and (orientation: landscape) {
+  #hippo,
+  .npc-hippo {
+    transform: translateX(-50%) scale(0.6);
+    transform-origin: bottom center;
+  }
+
   .game-hud {
     min-height: 1.9rem;
     padding: 0.28rem 0.7rem;

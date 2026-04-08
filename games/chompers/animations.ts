@@ -9,12 +9,35 @@ export function animateHippoChomp(
   targetEl: HTMLElement | null,
   isCorrect: boolean,
 ): Promise<void> {
+  const arenaEl = document.getElementById('game-arena')
+  let targetXPct = 50
+  let neckH = 20
+
+  if (arenaEl && targetEl) {
+    const arenaRect = arenaEl.getBoundingClientRect()
+    const targetRect = targetEl.getBoundingClientRect()
+    const targetCenterX = targetRect.left + targetRect.width / 2
+    const targetCenterY = targetRect.top + targetRect.height / 2
+    targetXPct = ((targetCenterX - arenaRect.left) / arenaRect.width) * 100
+
+    const bodyEl = hippoEl.querySelector<HTMLElement>('.hippo-body')
+    const headEl = hippoEl.querySelector<HTMLElement>('.hippo-head')
+    const bodyH = bodyEl?.offsetHeight ?? 40
+    const headH = headEl?.offsetHeight ?? 48
+    const maxNeck = Math.max(20, arenaRect.height * 0.55 - bodyH - headH)
+    neckH = Math.min(Math.max(20, arenaRect.bottom - targetCenterY - bodyH - headH / 2), maxNeck)
+  }
+
   if (isReducedMotion()) {
-    // Reduced motion: jaw-only animation, no slide or neck extend
+    // Reduced motion: position + extend instantly, no transitions
+    hippoEl.style.left = `${targetXPct}%`
+    hippoEl.style.setProperty('--neck-height', `${neckH}px`)
+    hippoEl.style.setProperty('--jaw-angle', '1')
+
     return new Promise<void>((resolve) => {
-      hippoEl.style.setProperty('--jaw-angle', '1')
       window.setTimeout(() => {
         hippoEl.style.setProperty('--jaw-angle', '0')
+        hippoEl.style.setProperty('--neck-height', '20px')
         const outcomeClass = isCorrect ? 'hippo-chomp-correct' : 'hippo-chomp-wrong'
         hippoEl.classList.add(outcomeClass)
         window.setTimeout(() => {
@@ -26,26 +49,6 @@ export function animateHippoChomp(
   }
 
   return new Promise<void>((resolve) => {
-    const arenaEl = document.getElementById('game-arena')
-    let targetXPct = 50
-    let neckH = 20
-
-    if (arenaEl && targetEl) {
-      const arenaRect = arenaEl.getBoundingClientRect()
-      const targetRect = targetEl.getBoundingClientRect()
-      const targetCenterX = targetRect.left + targetRect.width / 2
-      const targetCenterY = targetRect.top + targetRect.height / 2
-      targetXPct = ((targetCenterX - arenaRect.left) / arenaRect.width) * 100
-
-      // Neck height: distance from arena bottom to target, minus body+head heights
-      const bodyEl = hippoEl.querySelector<HTMLElement>('.hippo-body')
-      const headEl = hippoEl.querySelector<HTMLElement>('.hippo-head')
-      const bodyH = bodyEl?.offsetHeight ?? 40
-      const headH = headEl?.offsetHeight ?? 48
-      const maxNeck = Math.max(20, arenaRect.height * 0.55 - bodyH - headH)
-      neckH = Math.min(Math.max(20, arenaRect.bottom - targetCenterY - bodyH - headH / 2), maxNeck)
-    }
-
     // Phase 1: slide to align under target (200ms CSS transition)
     hippoEl.style.left = `${targetXPct}%`
 

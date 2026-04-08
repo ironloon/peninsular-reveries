@@ -336,6 +336,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 12px 0 0 12px;
+  cursor: pointer;
 }
 
 @media (max-width: 600px), (orientation: portrait) {
@@ -450,6 +451,7 @@
   overflow-y: auto;
   color: #e8f0ff;
   border-radius: 0 12px 12px 0;
+  cursor: pointer;
 }
 
 @media (max-width: 600px), (orientation: portrait) {
