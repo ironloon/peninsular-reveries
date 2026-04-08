@@ -27,9 +27,9 @@
 
 ### Core Runtime
 - TypeScript `^5.9`
-- esbuild `^0.25`
+- esbuild `^0.28`
 - tsx `^4.21`
-- Node `>=22.6` with the repo pinned to `24.14.1`
+- Node `>=25.0` with the repo pinned to `25.9.0`
 
 ## Architecture Layout
 
@@ -156,7 +156,7 @@ This repo uses a hybrid CSS model.
 - Use scoped PWA manifests with `"start_url": "./"` and `"scope": "./"`.
 - Root offline support lives in `public/sw.js`; game workers own game-specific caches.
 - When a game-scoped service worker precaches media files, bump its `CACHE_NAME` whenever bundled audio or art bytes change so clients do not stay stuck on stale assets.
-- `ATTRIBUTIONS.md` is generated from `app/data/attributions/`.
+- ATTRIBUTIONS.md is generated from `games/*/attributions.ts`.
 
 ## Build Flow
 

@@ -42,7 +42,7 @@ When a step is marked ❌ agent, pause and write a handoff note instead of silen
 
 - **CC0 or public domain only.** Verify the license explicitly before download. Do not assume; open the license page and confirm.
 - **File-size budget.** Raster images ≤ 60 KB per asset. SVGs ≤ 8 KB. Audio one-shots ≤ 64 kbps mono OGG with tight trims.
-- **Attribution required.** Every third-party asset must have an entry in `ATTRIBUTIONS.md` via the per-game data file in `app/data/attributions/`. Run `npm run sync:attributions` after updating.
+- **Attribution required.** Every third-party asset must have an entry in `ATTRIBUTIONS.md` via the per-game data file in `games/<game>/attributions.ts`. Run `npm run sync:attributions` after updating.
 - **Match the visual or sonic language** of the game. External assets that feel generic or out-of-register hurt cohesion more than they help.
 - **Minimize processing passes.** Evaluate the rendered file after the real filter or optimization chain, not just a raw preview.
 
@@ -50,7 +50,7 @@ When a step is marked ❌ agent, pause and write a handoff note instead of silen
 
 ## Attribution Format
 
-Entries in `app/data/attributions/<game-slug>.ts` follow this shape (from `ATTRIBUTIONS.md`):
+Entries in `games/<game>/attributions.ts` follow this shape (from `ATTRIBUTIONS.md`):
 
 ```
 - Type: <sound effect | music | image | other>

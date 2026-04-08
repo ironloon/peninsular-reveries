@@ -60,8 +60,8 @@ For project architecture, game quality standards, and testing conventions, load 
 - Dev OS: Windows
 - CI OS: Ubuntu (`ubuntu-latest`)
 - Shell: PowerShell — set `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8` at session start to avoid mojibake with Unicode characters (e.g. `→` rendering as `ΓåÆ`).
-- Node: `24.14.1`
-- npm: `11.12.0`
+- Node: `25.9.0`
+- npm: `11.12.1`
 - Editor: VS Code with GitHub Copilot
 - GitHub CLI: `gh` is available and should be assumed authenticated; if auth fails, help the user recover and use `gh --help` for command discovery.
 - No Docker or container workflow is expected; use direct Node execution.
