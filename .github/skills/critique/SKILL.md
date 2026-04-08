@@ -104,7 +104,7 @@ The plan critique evaluates what worked, what didn't, and feeds corrections forw
 ### Workflow
 
 ```
-Gather Context → User Input → Analysis → Findings → Apply
+Gather Context → Interactive Review → Analysis → Findings → Apply
 ```
 
 ### PC Phase 1 — Gather Context
@@ -123,15 +123,50 @@ Collect everything needed for evaluation before engaging the user:
 
 Do not read every file end-to-end. Targeted reads for sections relevant to observed issues.
 
-### PC Phase 2 — User Input
+### PC Phase 2 — Interactive Score Review
 
-Process any free-form observations the user included in their invocation message, then proceed directly to Phase 3 with the agent's own analysis. Do not ask structured questions or use `vscode_askQuestions`. The user provides feedback at invocation time (or in follow-up messages after seeing findings) — there is no interactive walkthrough.
+An interactive walkthrough with the user in three beats. The goal is to surface gaps — both in the implementation and in the original plan — before the agent runs its own analysis.
 
-If the user provides no observations, that's fine — proceed with the agent's analysis of the plan, code, and production state alone.
+**Beat 1 — Intent Check**
+
+Show the user the **User Intent** section from the active score and ask: *"Does this still capture what you wanted? Anything it misses or gets wrong?"*
+
+Use `vscode_askQuestions` with options: **Yes, that's right** (recommended), **Needs adjustment**.
+
+This is the highest-value moment. Pay close attention to the response:
+- If the user confirms, proceed to Beat 2.
+- If the user says "yeah, but I also wanted X" — that is a **compose gap**. The workshop failed to surface or capture that aspect of the user's intent. Flag it immediately: note the missing facet and mark it as a compose-skill correction candidate. Do not treat it as field review material.
+- If the user revises the intent substantially, update the score's User Intent section and re-evaluate whether existing MVTs still serve it (this feeds into Phase 3 analysis).
+
+**Beat 2 — MVT Walkthrough**
+
+Walk MVTs one at a time (or grouped by area). For each, show a brief summary of what shipped (from the commit diff, not the plan's intent — what *actually* landed). Then ask: *"How did this land in practice?"*
+
+Use `vscode_askQuestions` with options: **Landed well**, **Has issues**, **Didn't notice it**. Freeform input is always available.
+
+Anchor every question to the score's scope. If the user raises something during an MVT walkthrough that doesn't relate to that MVT, apply the triage rules below before moving on.
+
+**Beat 3 — Open Impressions**
+
+One final open question after all MVTs: *"Anything else you noticed when using the site?"*
+
+This is where out-of-scope observations naturally surface. Apply triage rules to each.
+
+**Triage rules for off-topic observations**
+
+When the user raises something during Beat 2 or Beat 3 that doesn't map to any MVT, classify it:
+
+| Signal | Classification | Action |
+|--------|---------------|--------|
+| Relates to User Intent but no MVT covers it | **Compose gap** — workshop failed to translate intent into an MVT | Flag as a compose-skill correction. Evaluate in Phase 3. Tell the user: *"That sounds like something the plan should have covered. I'll flag it as a planning gap."* |
+| Relates to an area the plan didn't touch at all | **Out of scope** — field review territory | Tell the user: *"This wasn't part of the score. I'll collect it — after we finish the critique, I can pivot into field review mode to address it."* Add to a **Field Review Holding List**. |
+| Ambiguous — could be either | **Clarify** | Ask: *"Was this something you expected the plan to address, or something new you noticed while testing?"* Then classify based on the answer. |
+
+Do not dismiss off-topic observations as noise. They may reveal that the compose phase dropped the ball — the user intended something that never made it into the score. That's a different (and more important) finding than a production bug.
 
 ### PC Phase 3 — Analysis
 
-Cross-reference the three data sources (plan, code, user observations) to identify:
+Cross-reference the four data sources (plan, code, user observations from Phase 2, triage classifications) to identify:
 
 1. **Intent-vs-implementation gaps.** For each MVT, compare the plan's intent description against what actually shipped in the commit diff. Flag:
    - Scope creep (code changes beyond the intent)
@@ -140,7 +175,21 @@ Cross-reference the three data sources (plan, code, user observations) to identi
 
 2. **Production issues.** Match user-reported bugs/UX gaps to specific MVTs and code paths. Note whether the issue stems from the plan (bad intent), execution (bad implementation of good intent), or an unforeseen interaction between MVTs.
 
-3. **Process patterns.** Look for recurring themes:
+3. **Compose gaps.** For any observations classified as compose gaps in Phase 2 triage, analyze the root cause:
+   - Was the user's original prompt unclear about this facet? (User-side improvement opportunity)
+   - Was the prompt clear but the compose agent failed to pick it up during Discovery/Alignment? (Compose-skill gap)
+   - Did it surface during Workshop but get dropped or de-scoped without the user realizing? (Workshop-process gap)
+   
+   Be specific about which phase of composition failed and why.
+
+4. **User effectiveness patterns.** The automated system can only improve so much — the user's prompting clarity, thoroughness, and intent articulation also affect outcomes. Look for:
+   - Vague or assumed-context in the original prompt that led to ambiguous MVTs
+   - Scope that the user cared about but didn't express until critique time
+   - Cases where the user approved an MVT in workshop without noticing it missed something they cared about
+   
+   Frame these as collaborative observations, not blame. The goal is to help the user tighten their compose-time input so the system captures more of their intent upfront.
+
+5. **Process patterns.** Look for recurring themes:
    - Did multiple MVTs hit the same kind of problem?
    - Were certain MVT shapes (large, cross-cutting, research-only) more or less successful?
    - Did the orchestrator's review catch issues that should have been prevented by better intent descriptions?
@@ -158,6 +207,15 @@ Produce a structured findings summary. Present it to the user in chat before app
 ### What Didn't
 - [Specific problems, each tied to an MVT or process step]
 
+### Compose Gaps
+- [Intent facets the user cared about that never became MVTs, with root cause]
+  - Which compose phase failed (Discovery / Alignment / Workshop) and why
+
+### User Effectiveness
+- [Observations about prompting clarity, assumed context, or workshop engagement]
+  - Framed as collaborative suggestions, not criticism
+  - e.g. "The original prompt didn't mention [X], which meant the compose agent scoped around it. Next time, explicitly stating [X] during alignment would help."
+
 ### Blockers
 - [Deploy verification failures or Actions errors that prevent production evaluation]
 
@@ -168,6 +226,11 @@ If any blockers exist, the critique should recommend resolving them before the f
   - Plan-level: e.g. "Split UI+logic MVTs even when files are coupled"
   - Process-level: e.g. "Orchestrator should read renderer output before dispatching animation MVT"
   - Skill-level: e.g. "Compose skill should require viewport checkpoint list in visual MVT intents"
+  - User-level: e.g. "Call out mobile-specific concerns during alignment — they won't be inferred from desktop-first prompts"
+
+### Field Review Holding List
+- [Observations from Phase 2 classified as out-of-scope / field review territory]
+  - Include only if any were collected. Omit section if empty.
 
 ### Process File Updates
 - [List each file that will be updated and what changes]
@@ -185,7 +248,7 @@ After user approval:
 ## Critique
 
 Completed: [date]
-Evaluated by: user + agent
+Evaluated by: user + agent (interactive review)
 
 ### What Worked
 - ...
@@ -193,8 +256,17 @@ Evaluated by: user + agent
 ### What Didn't
 - ...
 
+### Compose Gaps
+- ...
+
+### User Effectiveness
+- ...
+
 ### Corrections for Next Cycle
 - ...
+
+### Field Review Holding List
+- ... (if any; omit if empty)
 ```
 
 2. **Update process files.** Apply approved changes to the relevant files. Every skill, agent, and instruction file is eligible — not just the ones most commonly touched:
@@ -212,6 +284,8 @@ Evaluated by: user + agent
 3. **Archive the score.** Rename `/memories/repo/plans/active-score.md` to `/memories/repo/plans/archive/<YYYY-MM-DD>-<slug>.md` where `<slug>` is the plan title slugified (e.g., `2026-04-06-project-cleanup-consistency.md`). This frees the active-score path for the next session and preserves the full score + critique for historical reference.
 
 4. **Report.** Summarize what was updated, confirm the plan was archived, and state the archive path.
+
+5. **Field review handoff.** If the Field Review Holding List is non-empty, offer to pivot into field review mode for the collected items: *"You mentioned [N] things during the critique that were outside the plan's scope. Want me to switch into field review mode to triage and address them now?"* If the user accepts, enter the Field Review workflow (FR Phase 2 onward) with the holding list items pre-loaded as observations. If the user declines, the items remain documented in the archived critique for future reference.
 
 ---
 

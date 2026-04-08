@@ -40,6 +40,7 @@ After the draft is shown, automatically enter workshop. Walk through each MVT fo
 1. Present MVTs one at a time. Group tightly coupled MVTs (e.g., two MVTs that depend on each other's outputs) and present them together at the planner's discretion.
 2. For each MVT (or group), show a **brief summary as regular Markdown in chat** — not inside the `vscode_askQuestions` tool:
    - Title and ID
+   - **Goal link** — one sentence connecting this MVT to the overall user goal (e.g., "This serves your goal of [X] by [Y]"). Keeps the user anchored to the big picture during granular review.
    - 2–3 concise bullet points of key intent (what changes and why)
    - Owned files list
    - One alternative approach or tradeoff, if one exists. If the MVT is purely mechanical, state that.
@@ -51,7 +52,13 @@ After the draft is shown, automatically enter workshop. Walk through each MVT fo
 Do not advance past workshop until all MVTs are either confirmed or removed.
 
 ### Phase 5 — Refinement
-After workshop is complete, write the full score with all fields populated for confirmed MVTs. Begin the score with the **User Intent** section — a concise summary of the user's goal and motivation, distilled from the conversation. This section is the reference point for evaluating whether each MVT serves the score and for critique analysis. Then output a brief post-workshop summary (see Plan Output Rules below). Do not output the full score to the user.
+After workshop is complete, write the full score with all fields populated for confirmed MVTs.
+
+**User Intent confirmation.** Before finalizing, present the **User Intent** summary to the user — a concise 2–4 sentence summary of what they want to achieve and why, distilled from the conversation. Show it in chat and ask via `vscode_askQuestions`: "Does this capture your goal? Anything missing or off?" Options: **Looks right** (recommended), **Needs revision**. If the user revises, update the summary and re-confirm. Do not finalize the score until User Intent is confirmed.
+
+This step matters because the User Intent is the reference point for the entire downstream chain — the orchestrator uses it to evaluate MVTs, and the critique uses it to evaluate the finished work. If it's incomplete or slightly off, the whole plan drifts. The user may also have refined their thinking during workshop; this is the moment to capture that.
+
+Then output a brief post-workshop summary (see Plan Output Rules below). Do not output the full score to the user.
 
 ---
 
@@ -96,16 +103,17 @@ The plan file is for orchestrator consumption and persistence, not for showing t
 
 ## User Intent
 
-[2–4 sentence summary of what the user wants to achieve and why. Written
-during Refinement; updated during workshop if scope shifts. The orchestrator
-and critique both reference this section to evaluate whether finished
-work aligns with original goals.]
+[2–4 sentence summary of what the user wants to achieve and why. Confirmed
+by the user during Refinement; updated during workshop if scope shifts.
+The orchestrator and critique both reference this section to evaluate whether
+finished work aligns with original goals.]
 
 ## Movements
 
 ### MVT-1: [Game/Area] — [Short description]
 - Status: pending
 - Confirmed: yes | no
+- Goal link: [One sentence: how this MVT serves the User Intent]
 - Depends on: none | MVT-N
 - Thinking effort: low | medium | high
 - Owned files:
