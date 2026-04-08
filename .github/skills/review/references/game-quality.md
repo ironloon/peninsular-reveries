@@ -48,6 +48,10 @@
 - Analog stick navigation should use ±0.5 dead zone thresholds and 200ms debounce between actions.
 - Tab order and arrow-key navigation must work independently of gamepad polling.
 - When refactoring input handling, verify all three input methods still function.
+
+## Bug Fix Escalation
+
+- When a reported bug survives a fix attempt, escalate investigation before guessing again: dump computed styles and stacking context for visual bugs, bisect CSS rules, toggle pseudo-elements, or add diagnostic logging. Do not repeat surface-level guesses across multiple rounds.
 - Gamepad connection/disconnection should be handled gracefully (no errors when controller is unplugged mid-game).
 
 ## Educational Content

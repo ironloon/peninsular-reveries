@@ -34,6 +34,10 @@ For project architecture, game quality standards, and testing conventions, load 
 - If the user says **"wrap it up"** or otherwise makes it clear that **pushing finished work is welcome**, treat that as permission to finish the current task end-to-end. When the work is validated and human-ready, and the commit scope is clear with no ambiguous unrelated changes, the agent may stage the intended files, create a concise commit, and push without asking for one more round of confirmation. If the working tree is mixed or risky, stop short of commit/push and explain the blocker briefly.
 - After completing work, report what changed and what was verified.
 
+## Process Improvements
+
+- Do not store process improvements in Copilot memory preference files. Encode them in skills, copilot-instructions.md, or agent definitions instead.
+
 ## Composing Plans
 
 - When composing plans for orchestrated execution, load the compose skill in `.github/skills/compose/`. It owns the full workflow, score structure, and MVT format.
