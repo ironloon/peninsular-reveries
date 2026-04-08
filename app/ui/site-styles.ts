@@ -61,6 +61,13 @@ export const pageHomeLinkStyles = {
   },
 }
 
+export const pageNavRowStyles = {
+  display: 'flex',
+  justifyContent: 'center',
+  gap: 'var(--space-md)',
+  flexWrap: 'wrap',
+}
+
 export const sectionCardStyles = {
   display: 'flex',
   flexDirection: 'column',

@@ -1,6 +1,6 @@
 import { css } from '@remix-run/component'
 import { renderToString } from '@remix-run/component/server'
-import { getGameAttribution, repositoryCodeLicense } from '../data/attribution-index.js'
+import { getGameAttribution } from '../data/attribution-index.js'
 import { Document } from '../ui/document.js'
 import { getSiteBasePath } from '../site-config.js'
 import { withBasePath } from '../site-paths.js'
@@ -9,6 +9,7 @@ import {
   attributionListStyles,
   pageHeroStyles,
   pageHomeLinkStyles,
+  pageNavRowStyles,
   pageStackStyles,
   sectionCardHeadingStyles,
   sectionCardStyles,
@@ -30,7 +31,10 @@ export async function gameInfoAction(slug: string) {
     >
       <div className="page-stack" mix={[css(pageStackStyles)]}>
         <section className="page-hero" mix={[css(pageHeroStyles)]}>
-          <a href={gamePath} className="page-home-link" mix={[css(pageHomeLinkStyles)]}>▶ Play {game.name}</a>
+          <nav className="page-nav-row" aria-label="Page navigation" mix={[css(pageNavRowStyles)]}>
+            <a href={withBasePath('/', siteBasePath)} className="page-home-link" mix={[css(pageHomeLinkStyles)]}>← Home</a>
+            <a href={gamePath} className="page-home-link" mix={[css(pageHomeLinkStyles)]}>▶ Play</a>
+          </nav>
           <h1>{game.name}</h1>
           <p><span className="section-label" mix={[css(sectionLabelStyles)]}>Code license:</span> {game.codeLicense}</p>
         </section>
@@ -69,11 +73,6 @@ export async function gameInfoAction(slug: string) {
           </div>
         </section>
 
-        <section className="section-card" mix={[css(sectionCardStyles)]}>
-          <p className="section-muted" mix={[css(sectionMutedStyles)]}>
-            Repository code is licensed under {repositoryCodeLicense}. Games surface their own credits in the deployed UI whenever they use third-party or notable media resources.
-          </p>
-        </section>
       </div>
     </Document>
   )
