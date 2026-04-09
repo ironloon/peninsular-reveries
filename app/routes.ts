@@ -8,9 +8,11 @@ export const routes = route({
   missionOrbitInfo: '/mission-orbit/info/',
   chompersInfo: '/chompers/info/',
   pixelPassportInfo: '/pixel-passport/info/',
+  storyTrailInfo: '/story-trail/info/',
   missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
   chompers: '/chompers/',
   pixelPassport: '/pixel-passport/',
+  storyTrail: '/story-trail/',
   notFound: '/404.html',
 })

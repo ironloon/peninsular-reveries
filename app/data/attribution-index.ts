@@ -6,6 +6,8 @@ import { pixelPassportAttribution } from '../../games/pixel-passport/attribution
 import { pixelPassportInfo } from '../../games/pixel-passport/info.js'
 import { superWordAttribution } from '../../games/super-word/attributions.js'
 import { superWordInfo } from '../../games/super-word/info.js'
+import { storyTrailAttribution } from '../../games/story-trail/attributions.js'
+import { storyTrailInfo } from '../../games/story-trail/info.js'
 import type { GameAttribution, GameInfo } from './attribution-types.js'
 import { attributionsPagePath, repositoryCodeLicense } from './attribution-types.js'
 
@@ -21,6 +23,7 @@ const gameEntries: readonly { attribution: GameAttribution; info: GameInfo }[] =
   { attribution: superWordAttribution, info: superWordInfo },
   { attribution: chompersAttribution, info: chompersInfo },
   { attribution: pixelPassportAttribution, info: pixelPassportInfo },
+  { attribution: storyTrailAttribution, info: storyTrailInfo },
 ]
 
 export const gameAttributions: readonly GameAttributionWithInfo[] = gameEntries.map(

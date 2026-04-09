@@ -20,6 +20,7 @@ const swFiles = [
   'mission-orbit/sw.js',
   'super-word/sw.js',
   'pixel-passport/sw.js',
+  'story-trail/sw.js',
 ]
 for (const swFile of swFiles) {
   const swPath = join(outputDir, swFile)
@@ -36,6 +37,7 @@ mkdirSync(join(outputDir, 'client', 'mission-orbit'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'super-word'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'chompers'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'pixel-passport'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'story-trail'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -74,6 +76,7 @@ await esbuild.build({
     'games/super-word/main.ts',
     'games/chompers/main.ts',
     'games/pixel-passport/main.ts',
+    'games/story-trail/main.ts',
   ],
   bundle: true,
   outbase: 'games',
@@ -98,6 +101,8 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/chompers/info/', outPath: 'chompers/info/index.html' },
   { url: 'http://localhost/pixel-passport/', outPath: 'pixel-passport/index.html' },
   { url: 'http://localhost/pixel-passport/info/', outPath: 'pixel-passport/info/index.html' },
+  { url: 'http://localhost/story-trail/', outPath: 'story-trail/index.html' },
+  { url: 'http://localhost/story-trail/info/', outPath: 'story-trail/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 

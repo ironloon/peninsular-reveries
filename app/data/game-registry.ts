@@ -35,4 +35,11 @@ export const games: GameEntry[] = [
     icon: '🌍',
     status: 'live',
   },
+  {
+    slug: 'story-trail',
+    name: 'Story Trail',
+    description: 'Read, explore, and solve puzzles on five adventure trails.',
+    icon: '📖',
+    status: 'live',
+  },
 ]

@@ -255,3 +255,31 @@
 - License: GPL-3.0
 - Modifications: Not applicable
 - Notes: All interactive sounds are synthesized at runtime. No external samples or music files are bundled for Pixel Passport.
+
+### Story Trail
+
+- Slug: story-trail
+- Code license: GPL-3.0
+- Summary: Five adventure stories for young readers. Explore weather, plants, animal homes, community helpers, and the five senses. Read scenes, collect items, and solve puzzles along the trail.
+
+#### Entries
+
+##### Ambient synth soundtrack
+
+- Type: music
+- Used in: Story Trail trail map ambient music
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Procedurally generated ambient pad using triangle and sine oscillators.
+
+##### Sound effects
+
+- Type: sound effect
+- Used in: Story Trail typing blips, item collect chimes, choice confirms, and story complete fanfare
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: All sound effects are synthesized in real-time.

@@ -41,6 +41,7 @@ const gameCtx = await esbuild.context({
     'games/super-word/main.ts',
     'games/chompers/main.ts',
     'games/pixel-passport/main.ts',
+    'games/story-trail/main.ts',
   ],
   bundle: true,
   outbase: 'games',

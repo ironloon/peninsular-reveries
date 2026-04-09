@@ -1,0 +1,18 @@
+{
+  "id": "./",
+  "name": "Story Trail",
+  "short_name": "Story Trail",
+  "description": "Read, explore, and solve puzzles on five adventure trails.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f0e8",
+  "theme_color": "#f5f0e8",
+  "icons": [
+    {
+      "src": "../favicon-game-story-trail.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

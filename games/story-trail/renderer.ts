@@ -1,0 +1,155 @@
+import type { Story, Scene, Item, GameState } from './types.js'
+
+// ── Lazy element cache ───────────────────────────────────────
+let trailMapEl: HTMLElement | null = null
+function getTrailMap(): HTMLElement { return trailMapEl ??= document.getElementById('trail-map')! }
+let trailStopsEl: HTMLElement | null = null
+function getTrailStops(): HTMLElement { return trailStopsEl ??= document.getElementById('trail-stops')! }
+let sceneViewEl: HTMLElement | null = null
+function getSceneView(): HTMLElement { return sceneViewEl ??= document.getElementById('scene-view')! }
+let sceneIllustrationEl: HTMLElement | null = null
+function getSceneIllustration(): HTMLElement { return sceneIllustrationEl ??= document.getElementById('scene-illustration')! }
+let sceneTextEl: HTMLElement | null = null
+function getSceneText(): HTMLElement { return sceneTextEl ??= document.getElementById('scene-text')! }
+let hintAreaEl: HTMLElement | null = null
+function getHintArea(): HTMLElement { return hintAreaEl ??= document.getElementById('hint-area')! }
+let itemFlashEl: HTMLElement | null = null
+function getItemFlash(): HTMLElement { return itemFlashEl ??= document.getElementById('item-flash')! }
+let choicesEl: HTMLElement | null = null
+function getChoices(): HTMLElement { return choicesEl ??= document.getElementById('choices')! }
+let inventoryBarEl: HTMLElement | null = null
+function getInventoryBar(): HTMLElement { return inventoryBarEl ??= document.getElementById('inventory-bar')! }
+let completionViewEl: HTMLElement | null = null
+function getCompletionView(): HTMLElement { return completionViewEl ??= document.getElementById('completion-view')! }
+let inventoryOverlayEl: HTMLElement | null = null
+function getInventoryOverlay(): HTMLElement { return inventoryOverlayEl ??= document.getElementById('inventory-overlay')! }
+let gameAreaEl: HTMLElement | null = null
+function getGameArea(): HTMLElement { return gameAreaEl ??= document.getElementById('game-area')! }
+
+export { getSceneText, getItemFlash, getHintArea, getInventoryOverlay }
+
+// ── Screen management ────────────────────────────────────────
+
+export function showScreen(screenId: string): void {
+  getGameArea().dataset['activeScreen'] = screenId
+}
+
+// ── Trail map ────────────────────────────────────────────────
+
+export function renderTrailMap(stories: readonly Story[], state: GameState): void {
+  let html = ''
+  for (let i = 0; i < stories.length; i++) {
+    const story = stories[i]
+    const isCompleted = state.completedStoryIds.includes(story.id)
+    const isUnlocked = i === 0 || state.completedStoryIds.length >= i
+
+    if (isCompleted) {
+      html += `<div class="trail-stop trail-stop-completed" data-story-id="${story.id}" aria-label="${story.title} — completed"><span class="stop-icon">${story.badgeEmoji}</span> <span class="stop-title">${story.title}</span> <span class="stop-badge">${story.badgeName}</span></div>`
+    } else if (isUnlocked) {
+      html += `<button class="trail-stop trail-stop-unlocked" data-story-id="${story.id}" aria-label="Play ${story.title}"><span class="stop-icon">${story.icon}</span> <span class="stop-title">${story.title}</span></button>`
+    } else {
+      html += `<div class="trail-stop trail-stop-locked" data-story-id="${story.id}" aria-disabled="true"><span class="stop-icon">🔒</span> <span class="stop-title">${story.title}</span></div>`
+    }
+
+    if (i < stories.length - 1) {
+      html += `<div class="trail-path" aria-hidden="true">│</div>`
+    }
+  }
+  getTrailStops().innerHTML = html
+}
+
+// ── Scene view ───────────────────────────────────────────────
+
+export function renderScene(story: Story, scene: Scene, state: GameState): void {
+  getSceneIllustration().textContent = scene.illustration ?? ''
+  getSceneText().textContent = scene.description
+  getHintArea().setAttribute('hidden', '')
+  getItemFlash().setAttribute('hidden', '')
+
+  const choicesEl = getChoices()
+  choicesEl.innerHTML = ''
+  for (let i = 0; i < scene.choices.length; i++) {
+    const choice = scene.choices[i]
+    const hasRequiredItem = !choice.requiredItemId || state.inventory.includes(choice.requiredItemId)
+    const btn = document.createElement('button')
+    btn.className = `choice-btn${hasRequiredItem ? '' : ' choice-locked'}`
+    btn.dataset['choiceIndex'] = String(i)
+    btn.type = 'button'
+    btn.textContent = choice.text + (!hasRequiredItem && choice.requiredItemId ? ' 🔒' : '')
+    choicesEl.appendChild(btn)
+  }
+
+  updateInventoryBar(story, state)
+}
+
+// ── Inventory overlay ────────────────────────────────────────
+
+export function renderInventoryOverlay(story: Story, state: GameState): void {
+  let html = '<h2>Your Items</h2>'
+  if (state.inventory.length === 0) {
+    html += '<p class="inventory-empty">Your bag is empty.</p>'
+  } else {
+    html += '<ul class="inventory-list">'
+    for (const itemId of state.inventory) {
+      const item = story.items.find(it => it.id === itemId)
+      if (item) {
+        html += `<li class="inventory-entry"><span class="inv-name">${item.name}</span> — <span class="inv-desc">${item.description}</span></li>`
+      }
+    }
+    html += '</ul>'
+  }
+  html += `<button class="inventory-close-btn" id="inventory-close-btn" type="button">Close</button>`
+  getInventoryOverlay().innerHTML = html
+}
+
+// ── Story completion ─────────────────────────────────────────
+
+export function renderStoryComplete(story: Story): void {
+  getCompletionView().innerHTML = `<div class="completion-badge">${story.badgeEmoji}</div>
+<p class="completion-title">You got the ${story.badgeName}!</p>
+<p class="completion-msg">Great job! You learned about ${story.theme}.</p>
+<button id="back-to-trail-btn" class="back-to-trail-btn" type="button">Back to Trail</button>`
+}
+
+// ── Hint and item flash ──────────────────────────────────────
+
+export function renderHint(hint: string): void {
+  const el = getHintArea()
+  el.textContent = hint
+  el.removeAttribute('hidden')
+}
+
+export function renderItemCollected(item: Item): void {
+  const el = getItemFlash()
+  el.textContent = `You found: ${item.name}!`
+  el.removeAttribute('hidden')
+}
+
+// ── Inventory bar ────────────────────────────────────────────
+
+export function updateInventoryBar(story: Story, state: GameState): void {
+  const bar = getInventoryBar()
+  bar.innerHTML = ''
+  if (state.inventory.length === 0) {
+    const span = document.createElement('span')
+    span.className = 'inventory-empty-label'
+    span.textContent = 'Bag: empty'
+    bar.appendChild(span)
+  } else {
+    for (const itemId of state.inventory) {
+      const item = story.items.find(it => it.id === itemId)
+      if (item) {
+        const span = document.createElement('span')
+        span.className = 'inventory-item'
+        span.title = item.description
+        span.textContent = item.name
+        bar.appendChild(span)
+      }
+    }
+  }
+}
+
+// Suppress unused variable warnings for getters that are wired up but referenced
+// only via the lazy-cache export path.
+void getTrailMap
+void getSceneView
