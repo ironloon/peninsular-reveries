@@ -449,6 +449,16 @@
   z-index: 2;
 }
 
+body.gamepad-active .scene-item:focus,
+body.gamepad-active .scene-item.gamepad-focus {
+  transform: translate(-50%, -50%) scale(1.15);
+  border-color: rgba(255, 209, 102, 0.82);
+  outline: 3px solid rgba(255, 209, 102, 0.9);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(15, 43, 38, 0.5), 0 0 18px rgba(255, 209, 102, 0.24);
+  z-index: 2;
+}
+
 .scene-item:disabled {
   opacity: 0.3;
   cursor: default;

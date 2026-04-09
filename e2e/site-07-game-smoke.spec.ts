@@ -83,6 +83,12 @@ test.describe('SITE-07: Game smoke tests', () => {
     await tapGamepadButton(page, 0)
     await expect(page.locator('#game-screen')).toBeVisible()
     await expect(page.locator('#scene-items button').first()).toBeVisible()
+
+    await expect.poll(async () => page.evaluate(() => {
+      const active = document.activeElement as HTMLElement | null
+      if (!active?.classList.contains('scene-item')) return 0
+      return parseFloat(getComputedStyle(active).outlineWidth || '0')
+    })).toBeGreaterThan(0)
   })
 
   // Pixel Passport
@@ -142,6 +148,12 @@ test.describe('SITE-07: Game smoke tests', () => {
 
     await tapGamepadButton(page, 0)
     await expect(page.locator('#game-screen')).toBeVisible()
+
+    await expect.poll(async () => page.evaluate(() => {
+      const active = document.activeElement as HTMLElement | null
+      if (!active?.classList.contains('sr-overlay-btn')) return 0
+      return parseFloat(getComputedStyle(active).opacity || '0')
+    })).toBeGreaterThan(0)
 
     await page.waitForTimeout(400)
     await tapGamepadButton(page, 0)
