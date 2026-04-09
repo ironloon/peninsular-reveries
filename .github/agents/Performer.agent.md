@@ -1,6 +1,6 @@
 ---
 description: "Implementation performer that executes a single movement: reads code, makes changes, runs verification. Use for all dispatched movements."
-model: "Claude Sonnet 4.6"
+model: "GPT-5.4"
 user-invocable: false
 agents: []
 ---

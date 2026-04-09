@@ -1,13 +1,13 @@
 ---
 name: compose
-description: "Structured plan format for orchestrated multi-agent execution. Use when composing plans intended for the @orchestrator agent to dispatch as movements via runSubagent."
+description: "Structured plan format for orchestrated execution via @Orchestrator and the Performer agent. Use when composing plans intended for @Orchestrator to dispatch as movements via runSubagent."
 user-invocable: true
 disable-model-invocation: true
 ---
 
 # Compose
 
-Use this skill when composing plans that will be dispatched by the `@orchestrator` agent. Plans must be written as structured movements, not prose narratives.
+Use this skill when composing plans that will be dispatched by the `@Orchestrator` agent to the `Performer` agent. Plans must be written as structured movements, not prose narratives.
 
 ---
 
@@ -115,7 +115,6 @@ finished work aligns with original goals.]
 - Confirmed: yes | no
 - Goal link: [One sentence: how this MVT serves the User Intent]
 - Depends on: none | MVT-N
-- Thinking effort: low | medium | high
 - Owned files:
   - `path/to/file.ts`
 - Read-only:
@@ -150,6 +149,12 @@ MVTs involving CSS visual design (character orientation, layout hierarchy, anima
 ### Shared-character NPCs
 If NPCs share the player character's structure, the Intent must explicitly state whether NPCs animate identically to the player or are static. Do not leave this ambiguous — the performer will default to whichever is easier to implement, which may not match the user's expectation.
 
+### Shared GameScreen activation
+If an MVT uses `GameScreen` but activates screens via custom CSS selectors, `data-active-screen`, or any non-`.active` mechanism, the Intent must state how the shared `GameScreen` base `transform`, `visibility`, and hit-testing behavior are overridden for the active screen. Do not assume `display: block` alone is sufficient.
+
+### Menu baseline
+If a game includes a menu or settings modal, the Intent must enumerate the baseline sections and actions the game should ship: a home or quit path, controls help when gameplay exists, audio settings, reduce-motion control, and an info or credits path. Do not approve a movement that only says "add menu" or "wire GameTabbedModal".
+
 ---
 
 ## Field Definitions
@@ -163,15 +168,8 @@ One of: `pending`, `in-progress`, `done`, `failed`. Only the orchestrator update
 ### Depends on
 `none` or an MVT ID like `MVT-3`. MVTs with no dependencies can be dispatched in any order. The Dispatch Order section makes the actual sequence explicit.
 
-### Thinking effort
-Guides the orchestrator on MVT complexity:
-- **low** — Rename, config change, mechanical transformation.
-- **medium** — Feature in a known pattern, moderate judgment needed.
-- **high** — Reserved for research/exploration MVTs (e.g., an `Explore` sub-agent gathering context for later MVTs).
-
-The orchestrator dispatches based on this field: `low` → Understudy (Haiku), `medium` → Performer (Sonnet), `high` → Soloist (Opus).
-
-**Default to medium or low.** If an MVT requires high thinking effort for *implementation*, that complexity should be resolved during composition — break it into smaller MVTs, add more specificity to the Intent, or move the hard reasoning into a preceding research MVT. A well-written score should rarely produce high-effort implementation MVTs.
+### Dispatch agent
+All implementation movements are dispatched to `Performer`. Do not add a `Thinking effort` field to the plan. If a movement seems too vague or risky for the Performer to execute directly, resolve that complexity during composition by tightening the Intent, splitting the movement, or adding a prior research step.
 
 ### Owned files
 The exhaustive list of files the sub-agent is allowed to modify. Use globs sparingly and only for asset directories (e.g., `public/game/audio/*`). Never split a single file across multiple MVTs — exactly one MVT owns each file.
@@ -192,6 +190,8 @@ Changes needed in files that are shared across MVTs or owned by the orchestrator
 A single shell command the sub-agent runs to validate its work. Must cover only the files in this MVT's owned set. Never `npm run test:local` — that is the orchestrator's integration gate.
 
 **For verification/testing MVTs:** The intent must list explicit per-file expected assertions, not vague directives like "fill E2E gaps." For each owned test file, name the specific checks: e.g., "in `site-08-chompers.spec.ts`, assert two `role=tab` elements exist, tab switching shows/hides panels, X close button dismisses modal." This gives the sub-agent concrete acceptance criteria.
+
+**Visible interaction rule.** When a spec validates a visible gameplay path, at least one happy path must use real user interaction (`click`, keyboard, or touch/pointer path) plus `toBeVisible()` or `toBeInViewport()` on a key active-screen element. Do not normalize off-canvas or hidden UI with `dispatchEvent()` unless the test is explicitly covering non-user-visible DOM behavior.
 
 ### Intent
 The most critical field. This is what the orchestrator enriches into the sub-agent dispatch prompt. It should be:

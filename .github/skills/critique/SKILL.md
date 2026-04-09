@@ -1,6 +1,6 @@
 ---
 name: critique
-description: "Evaluate completed work against intent and production behavior. Two modes: (1) plan critique — evaluates active score after orchestrator push; (2) field review (--field-review / --fr) — captures user production-testing observations independent of any plan, triages them, implements fixes, and archives findings."
+description: "Evaluate completed work against intent and production behavior. Two modes: (1) plan critique — evaluates active score after Orchestrator execution; (2) field review (--field-review / --fr) — captures user production-testing observations independent of any plan, triages them, implements fixes, and archives findings."
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -106,9 +106,9 @@ Run tests after each fix. If tests break, diagnose and resolve before moving on.
 
 ## Mode: Plan Critique
 
-Use after an orchestrated plan has been implemented, pushed, and tested in production.
+Use after an Orchestrator-led plan has been implemented, pushed, and tested in production.
 
-The plan critique evaluates what worked, what didn't, and feeds corrections forward into both the active score (for the next composer to read) and the process files themselves (compose skill, orchestrator agent, copilot instructions, review references).
+The plan critique evaluates what worked, what didn't, and feeds corrections forward into both the active score (for the next composer to read) and the process files themselves (compose skill, Orchestrator and Performer agents, workspace instructions, review references).
 
 ### Workflow
 
@@ -126,9 +126,9 @@ Collect everything needed for evaluation before engaging the user:
 4. **Fetch production pages.** Use `fetch_webpage` to load the relevant game/site pages at `https://ironloon.github.io/peninsular-reveries/` and note any obvious issues (broken layout, missing content, error states).
 5. **Read process files.** Skim the current versions of:
    - `.github/skills/compose/SKILL.md`
-   - `.github/agents/orchestrator.agent.md`
-   - `.github/agents/performer.agent.md`
-   - `copilot-instructions.md`
+   - `.github/agents/Orchestrator.agent.md`
+   - `.github/agents/Performer.agent.md`
+   - `AGENTS.md`
 
 Do not read every file end-to-end. Targeted reads for sections relevant to observed issues.
 
@@ -285,8 +285,8 @@ Evaluated by: user + agent (interactive review)
    - `.github/skills/wayback/SKILL.md` — archive browsing, plan history search
    - `.github/skills/creative-assets/SKILL.md` — asset sourcing, licensing, attribution workflow
    - `.github/agents/Orchestrator.agent.md` — dispatch protocol, review steps, staleness checks
-   - `.github/agents/performer.agent.md` — constraints, output format
-   - `copilot-instructions.md` — session expectations, workflow rules
+   - `.github/agents/Performer.agent.md` — constraints, output format
+   - `AGENTS.md` — session expectations, workflow rules
 
    Only update files where the findings warrant a change. Don't make drive-by improvements.
 

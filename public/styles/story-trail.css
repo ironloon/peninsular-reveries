@@ -41,9 +41,32 @@
   box-sizing: border-box;
 }
 
-#game-area[data-active-screen="trail-map"] #trail-map { display: block; visibility: visible; }
-#game-area[data-active-screen="scene-view"] #scene-view { display: flex; flex-direction: column; visibility: visible; }
-#game-area[data-active-screen="completion-view"] #completion-view { display: flex; flex-direction: column; align-items: center; justify-content: center; visibility: visible; }
+#game-area[data-active-screen="trail-map"] #trail-map {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  transform: translateX(0);
+  visibility: visible;
+}
+
+#game-area[data-active-screen="scene-view"] #scene-view {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  transform: translateX(0);
+  visibility: visible;
+}
+
+#game-area[data-active-screen="completion-view"] #completion-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transform: translateX(0);
+  visibility: visible;
+}
 
 /* ── Trail map ────────────────────────────────────────────── */
 
@@ -301,6 +324,24 @@
   cursor: pointer;
   margin-top: 0.75rem;
   touch-action: manipulation;
+}
+
+.story-trail-controls-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.5rem;
+  color: var(--trail-text);
+}
+
+.story-trail-controls-list kbd {
+  display: inline-block;
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.4rem;
+  background: rgba(58, 46, 31, 0.08);
+  border: 1px solid rgba(58, 46, 31, 0.18);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85em;
 }
 
 /* ── Responsive ───────────────────────────────────────────── */

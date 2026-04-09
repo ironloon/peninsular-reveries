@@ -1,7 +1,7 @@
 ---
-description: "Orchestrator agent that reads a structured plan from Copilot memory, dispatches movements to sub-agents via runSubagent, reviews results, and runs a final integration gate."
-model: "Claude Sonnet 4.6"
-agents: [Understudy, Performer, Soloist]
+description: "Orchestrator agent that reads a structured plan from Copilot memory, dispatches movements to Performer via runSubagent, reviews results, and runs a final integration gate."
+model: "GPT-5.4"
+agents: [Performer]
 ---
 
 # Orchestrator
@@ -26,11 +26,7 @@ You are an orchestrator agent for the Peninsular Reveries project. Your ONLY job
    - The verification command.
    - Any brief anchoring context from the staleness check (e.g. "the `SfxIntensity` enum is at line 42 of types.ts").
    - Do NOT rewrite the intent into a step-by-step implementation plan. The sub-agent is capable of reading code and figuring out the implementation from the intent description.
-5. **Dispatch via `runSubagent`.** Call `runSubagent` with the composed prompt. Select the agent based on the movement's `thinking_effort` field:
-   - `low` → `agentName: "Understudy"`
-   - `medium` → `agentName: "Performer"` (default when field is absent)
-   - `high` → `agentName: "Soloist"`
-   Always specify `agentName` explicitly — never omit it. This is mandatory — do not skip this step.
+5. **Dispatch via `runSubagent`.** Call `runSubagent` with the composed prompt and always use `agentName: "Performer"`. Do not vary the implementation agent by movement complexity — resolve that complexity during composition instead. Always specify `agentName` explicitly — never omit it. This is mandatory — do not skip this step.
 6. **Update status to in-progress.** Use `memory str_replace` to change the unit's status: `pending` → `in-progress`.
 7. **Post-dispatch review.** After the sub-agent returns:
    a. Read every file the sub-agent reports as modified.
@@ -84,7 +80,6 @@ Plans are stored at `/memories/repo/plans/active-score.md` and use this structur
 ### MVT-[N]: [short title]
 - Status: pending | in-progress | done | failed
 - Depends on: none | MVT-[X], MVT-[Y]
-- Thinking effort: medium | high
 - Owned files:
   - `path/to/file.ts`
 - Read-only:

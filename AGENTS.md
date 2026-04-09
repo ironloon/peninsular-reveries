@@ -1,0 +1,74 @@
+# Project Guidelines
+
+## Workflow
+
+`README.md` is the source of truth for game principles and site values.
+
+For project architecture, game quality standards, and testing conventions, load the `review` skill in `.github/skills/review/` before doing substantial repo work.
+
+## Knowledge Persistence
+
+- Never write project knowledge to any Copilot memory path except orchestrated workflow plans in `/memories/repo/plans/`, which are ephemeral dispatch state.
+- When you learn something reusable about this project, record it in the appropriate in-repo file instead:
+  - Architecture, conventions, build and deploy patterns -> `.github/skills/review/references/architecture.md`
+  - Game quality, layout, pacing, visual rules -> `.github/skills/review/references/game-quality.md`
+  - Testing conventions, validation gates, CI behavior -> `.github/skills/review/references/testing.md`
+  - Workflow, session expectations, environment -> `AGENTS.md`
+- Keep additions concise. If the insight is game-specific rather than project-wide, note the game slug inline.
+
+## Styling Guidance
+
+- This repo uses a hybrid CSS model. Prefer Remix `css()` mixins in `app/` for shared server-rendered UI, page layouts, shared game shell helpers, modal shells, and accessibility utilities.
+- Keep `public/styles/*.css` for global foundation CSS and large game-specific visual systems, especially where client DOM code depends on stable class hooks or art-heavy selector or animation sections.
+- Do not reintroduce duplicated per-game shell rules such as hiding site chrome, full-screen `main` layout, base screen transitions, base settings-modal overlay behavior, or `.sr-only` when `app/ui/game-shell.tsx` or other shared UI modules already own them.
+- When updating a server-rendered component in `app/`, prefer co-located style objects or shared modules in `app/ui/` over adding new page-specific rules to `public/styles/main.css`.
+- Treat `public/styles/main.css` as the global foundation stylesheet for tokens, theme overrides, theme toggle styling, and view-transition or reduced-motion glue.
+
+## Session Expectations
+
+- Default to human-ready completion for non-trivial feature work. Do not stop at code edits alone when the clear user intent is ready for me to try it. Continue through generated-file sync, repository validation, and low-risk regression fixes unless the user explicitly scopes the work smaller.
+- Treat `npm run test:local` as the preferred end-state check before handoff when the change is large enough to affect app behavior beyond a single isolated file.
+- Treat secret hygiene as blocking release work. Do not leave real credentials, tokens, private keys, or committed `.env` secrets in the working tree or reachable history when the task is about review, release readiness, pushing, or security cleanup.
+- If a validation run finds an objective blocker to human testing that was introduced or exposed by the current work, fix it before stopping when the fix is clear and low-risk.
+- Ask the user a clarifying question only when the answer would materially change the implementation, or when proceeding would require a destructive, irreversible, or product-direction choice. If a reasonable default exists, use it and keep going.
+- If the user says some version of continue until done, interpret done as human-ready unless genuinely blocked.
+- If the user says wrap it up or otherwise makes it clear that pushing finished work is welcome, treat that as permission to finish the current task end-to-end. When the work is validated and human-ready, and the commit scope is clear with no ambiguous unrelated changes, stage the intended files, create a concise commit, and push without another confirmation round. If the working tree is mixed or risky, stop short of commit or push and explain the blocker briefly.
+- After completing work, report what changed and what was verified.
+
+## Composing Plans
+
+- When composing plans for orchestrated execution, load the compose skill in `.github/skills/compose/`. It owns the full workflow, score structure, and movement format.
+- Embed relevant project constraints from the review skill references directly into each movement's intent so that performers do not need to load skills independently.
+
+## Executing Agent Guidance
+
+- Complete every step in the approved plan. When you finish one step, immediately start the next. Do not stop partway to ask whether you should continue.
+- If you hit an error, diagnose it and fix it. If you are genuinely stuck, explain the specific blocker. Do not abandon the remaining steps.
+- Before any push-ready handoff, inspect the changed files for accidental secrets or credential-like strings, and if a real secret was already committed, treat rotation plus history cleanup as required work rather than a documentation note.
+- After completing all planned work, run the relevant verification. If it passes, report what changed and what was verified.
+
+## Orchestrated Workflow
+
+- When the user says `cue` alone, tell them to start a new chat session with the `@Orchestrator` agent. Do not begin execution directly, do not invoke the Orchestrator mid-session, and do not attempt to execute movements yourself. The Orchestrator must start with a fresh context.
+- Scores live in `/memories/repo/plans/active-score.md` and there is exactly one active score.
+
+## Environment Context
+
+- Dev OS: Windows
+- CI OS: Ubuntu (`ubuntu-latest`)
+- Shell: PowerShell. Set `[Console]::OutputEncoding = [System.Text.Encoding]::UTF8` at session start to avoid mojibake with Unicode characters.
+- Node: `25.9.0`
+- npm: `11.12.1`
+- Editor: VS Code with GitHub Copilot
+- GitHub CLI: `gh` is available and should be assumed authenticated. If auth fails, help the user recover and use `gh --help` for command discovery.
+- No Docker or container workflow is expected. Use direct Node execution.
+
+## Key Commands
+
+- `npm run dev` -> local dev server
+- `npm run check` -> lint and typecheck
+- `npm run test:local` -> full local validation gate
+- `npm run build` -> static build
+- `npm run sync:attributions` -> regenerate `ATTRIBUTIONS.md`
+
+`npm install` configures the repo-owned pre-commit hook, and the hook runs `npm run test:local` automatically.

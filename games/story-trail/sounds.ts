@@ -20,6 +20,7 @@ function getSfxBusNode(): GainNode {
 let ambientOscillators: OscillatorNode[] = []
 let ambientGains: GainNode[] = []
 let ambientLfo: OscillatorNode | null = null
+let ambientChordInterval: number | null = null
 
 // ── SFX ───────────────────────────────────────────────────────
 
@@ -147,44 +148,68 @@ export function playAmbientLoop(): void {
   try {
     const c = getAudioContext()
     const bus = getMusicBusNode()
+    const chordProgression = [
+      [130.81, 164.81, 196.0],
+      [146.83, 174.61, 220.0],
+      [110.0, 130.81, 164.81],
+      [98.0, 123.47, 146.83],
+    ] as const
     const t = c.currentTime
 
-    // Master gain with LFO modulation (0.01–0.03 range)
+    // Master gain with a subtle LFO so the chord bed breathes instead of pulsing.
     const masterGain = c.createGain()
-    masterGain.gain.setValueAtTime(0.02, t)
+    masterGain.gain.setValueAtTime(0.015, t)
     masterGain.connect(bus)
     ambientGains.push(masterGain)
 
     const lfo = c.createOscillator()
     const lfoGain = c.createGain()
     lfo.type = 'sine'
-    lfo.frequency.setValueAtTime(0.1, t)
-    lfoGain.gain.setValueAtTime(0.01, t)
+    lfo.frequency.setValueAtTime(0.08, t)
+    lfoGain.gain.setValueAtTime(0.004, t)
     lfo.connect(lfoGain)
     lfoGain.connect(masterGain.gain)
     lfo.start(t)
     ambientLfo = lfo
     ambientGains.push(lfoGain)
 
-    // C3=131Hz, G3=196Hz, E3=164Hz
-    for (const freq of [131, 196, 164]) {
+    for (const freq of chordProgression[0]) {
       const osc = c.createOscillator()
       const gain = c.createGain()
       osc.type = 'triangle'
       osc.frequency.setValueAtTime(freq, t)
-      gain.gain.setValueAtTime(0.3, t)
+      gain.gain.setValueAtTime(0.22, t)
       osc.connect(gain)
       gain.connect(masterGain)
       osc.start(t)
       ambientOscillators.push(osc)
       ambientGains.push(gain)
     }
+
+    let chordIndex = 0
+    ambientChordInterval = window.setInterval(() => {
+      chordIndex = (chordIndex + 1) % chordProgression.length
+      const when = c.currentTime + 0.05
+      const chord = chordProgression[chordIndex]
+
+      chord.forEach((freq, voiceIndex) => {
+        const osc = ambientOscillators[voiceIndex]
+        if (!osc) return
+        osc.frequency.cancelScheduledValues(when)
+        osc.frequency.setValueAtTime(osc.frequency.value, when)
+        osc.frequency.linearRampToValueAtTime(freq, when + 1.8)
+      })
+    }, 5500)
   } catch {
     // AudioContext unavailable
   }
 }
 
 export function stopAmbientLoop(): void {
+  if (ambientChordInterval !== null) {
+    window.clearInterval(ambientChordInterval)
+    ambientChordInterval = null
+  }
   for (const osc of ambientOscillators) {
     try { osc.stop(); osc.disconnect() } catch { /* already stopped */ }
   }
