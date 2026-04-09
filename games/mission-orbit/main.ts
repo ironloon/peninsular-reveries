@@ -31,6 +31,7 @@ import {
 import { setupTabbedModal } from '../../client/modal.js'
 import { bindMusicToggle, bindSfxToggle, bindReduceMotionToggle } from '../../client/preferences.js'
 import { setupInput, type InputCallbacks } from './input.js'
+import { renderCinematic } from './cinematic.js'
 
 // State
 let state = createInitialState()
@@ -60,6 +61,8 @@ function loop(timestamp: number): void {
 
   // Render
   renderScene(state)
+  const cinematicPane = el('cinematic-pane')
+  if (cinematicPane) renderCinematic(state, cinematicPane)
   renderNarrativePane(state)
   renderInteractionArea(state)
   renderProgress(state)
@@ -76,7 +79,13 @@ function loop(timestamp: number): void {
     playSceneChime()
     announceSceneComplete(SCENES[state.sceneIndex].title)
     triggerCompletionFlash(el('cinematic-pane') ?? document.body)
-    state = advanceScenePhase(state)
+    state = advanceScenePhase(state) // → transition
+  }
+
+  // Auto-advance from transition to next scene after a brief pause
+  if (state.scenePhase === 'transition' && state.transitionMs >= 800) {
+    state = advanceScenePhase(state) // → next scene's briefing
+    announcePhase(state.sceneIndex, state.scenePhase)
   }
 
   // Check mission complete
