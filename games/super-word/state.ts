@@ -37,7 +37,7 @@ export function selectTile(state: GameState, index: number): GameState {
     return { ...state, selectedTileIndex: index }
   }
   if (state.selectedTileIndex === index) {
-    return { ...state, selectedTileIndex: null }
+    return state
   }
   return swapLetters(state, state.selectedTileIndex, index)
 }

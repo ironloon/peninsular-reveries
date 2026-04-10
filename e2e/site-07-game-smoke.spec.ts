@@ -305,4 +305,64 @@ test.describe('SITE-07: Game smoke tests', () => {
       return parseInt(active.dataset.index ?? '-1', 10)
     })).toBe(1)
   })
+
+  test('Super Word — controller keeps the source tile selected until a different tile is activated', async ({ page }) => {
+    await installMockGamepad(page)
+    await page.goto('/super-word/')
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#game-screen')).toBeVisible()
+
+    for (let collected = 1; collected <= 3; collected++) {
+      await page.locator('#scene-a11y .sr-overlay-btn[data-item-type="letter"]').first().click({ force: true })
+      await expect(page.locator('#letters-count')).toHaveText(new RegExp(`^${collected}\\s*\\/\\s*\\d+$`))
+    }
+
+    await expect.poll(async () => page.evaluate(() =>
+      document.querySelectorAll('#letter-slots .letter-tile:not(.pending-flight)').length,
+    )).toBe(3)
+
+    const beforeSwap = await page.evaluate(() => {
+      const source = document.querySelector<HTMLElement>('#letter-slots .letter-tile[data-index="1"]')
+      const destination = document.querySelector<HTMLElement>('#letter-slots .letter-tile[data-index="2"]')
+      if (!source || !destination) throw new Error('Expected source and destination tiles to exist')
+
+      document.body.classList.add('gamepad-active')
+      source.focus()
+
+      return {
+        sourceText: source.textContent?.trim() ?? '',
+        destinationText: destination.textContent?.trim() ?? '',
+      }
+    })
+
+    await tapGamepadButton(page, 0)
+
+    await expect.poll(async () => page.evaluate(() =>
+      document.querySelector<HTMLElement>('#letter-slots .letter-tile.selected')?.dataset.index ?? null,
+    )).toBe('1')
+
+    await tapGamepadButton(page, 0)
+
+    await expect.poll(async () => page.evaluate(() =>
+      document.querySelector<HTMLElement>('#letter-slots .letter-tile.selected')?.dataset.index ?? null,
+    )).toBe('1')
+
+    await tapGamepadButton(page, 15)
+
+    await expect.poll(async () => page.evaluate(() => {
+      const active = document.activeElement as HTMLElement | null
+      if (!active?.classList.contains('letter-tile')) return -1
+      return parseInt(active.dataset.index ?? '-1', 10)
+    })).toBe(2)
+
+    await tapGamepadButton(page, 0)
+
+    await expect.poll(async () => page.evaluate(() =>
+      document.querySelectorAll('#letter-slots .letter-tile.selected').length,
+    )).toBe(0)
+
+    await expect(page.locator('#letter-slots .letter-tile').nth(1)).toContainText(beforeSwap.destinationText)
+    await expect(page.locator('#letter-slots .letter-tile').nth(2)).toContainText(beforeSwap.sourceText)
+  })
 })

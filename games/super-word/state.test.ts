@@ -23,6 +23,18 @@ test('selectTile selects on first activation and swaps on second activation', ()
   assert.equal(swapped.selectedTileIndex, null)
 })
 
+test('selectTile keeps the current tile selected when activated again', () => {
+  let state = createInitialState(1, false)
+  state = collectLetter(state, 'C', 'c0')
+  state = collectLetter(state, 'A', 'a0')
+
+  const selected = selectTile(state, 0)
+  const selectedAgain = selectTile(selected, 0)
+
+  assert.equal(selectedAgain.selectedTileIndex, 0)
+  assert.deepEqual(selectedAgain.collectedLetters.map((letter) => letter.char), ['C', 'A'])
+})
+
 test('checkAnswer scores correct words and advance/reset clear transient state', () => {
   let state = createInitialState(2, true)
   state = collectLetter(state, 'C', 'c0')

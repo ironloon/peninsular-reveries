@@ -205,23 +205,32 @@ function onDistractorClicked(item: SceneItem): void {
 
 function onTileSelected(index: number): void {
   const prevState = getState()
-  setState(selectTile(prevState, index))
+  if (prevState.selectedTileIndex === index) {
+    requestAnimationFrame(() => {
+      const tile = slotsEl.querySelector(`[data-index="${index}"]`) as HTMLElement | null
+      if (tile) tile.focus()
+    })
+    return
+  }
+
+  const nextState = selectTile(prevState, index)
+  setState(nextState)
   renderCollectedLetters()
 
   requestAnimationFrame(() => {
-    const focusIndex = getState().selectedTileIndex ?? index
+    const focusIndex = nextState.selectedTileIndex ?? index
     const tile = slotsEl.querySelector(`[data-index="${focusIndex}"]`) as HTMLElement | null
     if (tile) tile.focus()
   })
 
-  if (getState().selectedTileIndex !== null) {
+  if (nextState.selectedTileIndex !== null) {
     announceLetterSelected(
-      getState().collectedLetters[index].char,
+      nextState.collectedLetters[index].char,
       index + 1,
     )
   } else if (prevState.selectedTileIndex !== null && prevState.selectedTileIndex !== index) {
     // A swap happened through selectTile
-    const letters = getState().collectedLetters.map(l => l.char)
+    const letters = nextState.collectedLetters.map(l => l.char)
     announceLettersSwapped(
       letters[prevState.selectedTileIndex],
       letters[index],
