@@ -7,6 +7,7 @@ let pointerHandler: ((event: PointerEvent) => void) | null = null
 let keydownHandler: ((event: KeyboardEvent) => void) | null = null
 let gamepadHandle: number | null = null
 let lastGamepadAction = 0
+let clearGamepadModeHandler: (() => void) | null = null
 
 function isModalOpen(): boolean {
   const modal = document.getElementById('settings-modal')
@@ -50,6 +51,8 @@ function getModalTargets(): HTMLElement[] {
 }
 
 function focusGamepadTarget(target: HTMLElement): void {
+  document.body.classList.add('gamepad-active')
+
   const previous = document.querySelector<HTMLElement>('.gamepad-focus')
   if (previous && previous !== target) {
     previous.classList.remove('gamepad-focus')
@@ -139,6 +142,16 @@ export function moveFocusToFirstItem(): void {
 
 export function setupInput(callbacks: InputCallbacks): void {
   if (pointerHandler || keydownHandler || gamepadHandle !== null) return
+
+  clearGamepadModeHandler = () => {
+    document.body.classList.remove('gamepad-active')
+    document.querySelector<HTMLElement>('.gamepad-focus')?.classList.remove('gamepad-focus')
+  }
+
+  document.addEventListener('mousemove', clearGamepadModeHandler)
+  document.addEventListener('pointerdown', clearGamepadModeHandler)
+  document.addEventListener('touchstart', clearGamepadModeHandler, { passive: true })
+  document.addEventListener('keydown', clearGamepadModeHandler)
 
   pointerHandler = (event: PointerEvent) => {
     const target = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-item-id]')
@@ -307,6 +320,8 @@ export function setupInput(callbacks: InputCallbacks): void {
     const pad = pads ? pads[0] : null
 
     if (pad) {
+      document.body.classList.add('gamepad-active')
+
       const now = Date.now()
       const debounce = 200
 
@@ -376,4 +391,15 @@ export function teardownInput(): void {
     cancelAnimationFrame(gamepadHandle)
     gamepadHandle = null
   }
+
+  if (clearGamepadModeHandler) {
+    document.removeEventListener('mousemove', clearGamepadModeHandler)
+    document.removeEventListener('pointerdown', clearGamepadModeHandler)
+    document.removeEventListener('touchstart', clearGamepadModeHandler)
+    document.removeEventListener('keydown', clearGamepadModeHandler)
+    clearGamepadModeHandler = null
+  }
+
+  document.body.classList.remove('gamepad-active')
+  document.querySelector<HTMLElement>('.gamepad-focus')?.classList.remove('gamepad-focus')
 }

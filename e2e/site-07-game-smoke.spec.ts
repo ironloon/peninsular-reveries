@@ -84,6 +84,8 @@ test.describe('SITE-07: Game smoke tests', () => {
     await expect(page.locator('#game-screen')).toBeVisible()
     await expect(page.locator('#scene-items button').first()).toBeVisible()
 
+    await expect.poll(async () => page.evaluate(() => document.body.classList.contains('gamepad-active'))).toBe(true)
+
     await expect.poll(async () => page.evaluate(() => {
       const active = document.activeElement as HTMLElement | null
       if (!active?.classList.contains('scene-item')) return 0
@@ -161,5 +163,86 @@ test.describe('SITE-07: Game smoke tests', () => {
 
     await tapGamepadButton(page, 9)
     await expect(page.locator('#settings-modal')).toBeVisible()
+  })
+
+  test('Super Word — controller drops to the nearest tile instead of the first tile', async ({ page }) => {
+    await installMockGamepad(page)
+    await page.goto('/super-word/')
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#game-screen')).toBeVisible()
+
+    for (let collected = 1; collected <= 3; collected++) {
+      await page.locator('#scene-a11y .sr-overlay-btn[data-item-type="letter"]').first().click({ force: true })
+      await expect(page.locator('#letters-count')).toHaveText(new RegExp(`^${collected}\\s*\\/\\s*\\d+$`))
+    }
+
+    await expect.poll(async () => page.evaluate(() =>
+      document.querySelectorAll('#letter-slots .letter-tile:not(.pending-flight)').length,
+    )).toBe(3)
+
+    const target = await page.evaluate(() => {
+      const tiles = Array.from(document.querySelectorAll<HTMLElement>('#letter-slots .letter-tile:not(.pending-flight)'))
+      const sceneItems = Array.from(document.querySelectorAll<HTMLElement>('#scene-a11y .sr-overlay-btn'))
+      if (tiles.length === 0 || sceneItems.length === 0) return null
+
+      const tileCenters = tiles.map((tile) => ({
+        index: parseInt(tile.dataset.index ?? '-1', 10),
+        center: tile.getBoundingClientRect().left + tile.getBoundingClientRect().width / 2,
+        top: tile.getBoundingClientRect().top + tile.getBoundingClientRect().height / 2,
+      }))
+
+      const candidates = sceneItems
+        .map((item) => {
+          const rect = item.getBoundingClientRect()
+          const center = rect.left + rect.width / 2
+          const top = rect.top + rect.height / 2
+
+          const nearestTile = tileCenters.reduce((best, candidate) => {
+            if (!best) return candidate
+            const bestDistance = Math.hypot(best.center - center, best.top - top)
+            const candidateDistance = Math.hypot(candidate.center - center, candidate.top - top)
+            return candidateDistance < bestDistance ? candidate : best
+          }, tileCenters[0])
+
+          const hasLowerSceneItem = sceneItems.some((other) => {
+            if (other === item) return false
+            const otherRect = other.getBoundingClientRect()
+            const otherTop = otherRect.top + otherRect.height / 2
+            return otherTop > top + 10
+          })
+
+          if (!item.dataset.itemId || hasLowerSceneItem) return null
+
+          return {
+            itemId: item.dataset.itemId,
+            expectedTileIndex: nearestTile.index,
+            center,
+            top,
+          }
+        })
+        .filter((candidate): candidate is { itemId: string; expectedTileIndex: number; center: number; top: number } => candidate !== null)
+        .sort((a, b) => b.expectedTileIndex - a.expectedTileIndex || b.center - a.center)
+
+      return candidates[0] ?? null
+    })
+
+    expect(target).not.toBeNull()
+    if (!target) throw new Error('Expected a scene item with a nearest tile target')
+    expect(target.expectedTileIndex).toBeGreaterThan(0)
+
+    await page.evaluate(({ itemId }) => {
+      const sceneItem = document.querySelector<HTMLElement>(`#scene-a11y .sr-overlay-btn[data-item-id="${itemId}"]`)
+      if (!sceneItem) throw new Error('Expected scene item to exist')
+      sceneItem.focus()
+    }, { itemId: target.itemId })
+
+    await tapGamepadButton(page, 13)
+
+    await expect.poll(async () => page.evaluate(() => {
+      const active = document.activeElement as HTMLElement | null
+      if (!active?.classList.contains('letter-tile')) return -1
+      return parseInt(active.dataset.index ?? '-1', 10)
+    })).toBe(target.expectedTileIndex)
   })
 })

@@ -272,6 +272,8 @@ export function setupInput(
   const prevButtons: boolean[] = []
   let prevStickDir = ''
   let stickCooldown = 0
+  let lastSceneItemId: string | null = null
+  let lastTileIndex: number | null = null
 
   function isModalOpen(): boolean {
     const modal = document.getElementById('settings-modal')
@@ -291,6 +293,49 @@ export function setupInput(
     if (screen === 'start-screen') return [startBtn]
     if (screen === 'win-screen') return [replayBtn]
     return []
+  }
+
+  function getSceneItems(): HTMLElement[] {
+    return Array.from(sceneEl.querySelectorAll('.sr-overlay-btn')) as HTMLElement[]
+  }
+
+  function getTiles(): HTMLElement[] {
+    return Array.from(slotsEl.querySelectorAll('.letter-tile:not(.pending-flight)')) as HTMLElement[]
+  }
+
+  function findNearestByHorizontalPosition(
+    reference: HTMLElement,
+    candidates: HTMLElement[],
+  ): HTMLElement | null {
+    const referenceRect = reference.getBoundingClientRect()
+    const referenceCenter = referenceRect.left + referenceRect.width / 2
+
+    let best: HTMLElement | null = null
+    let bestDistance = Infinity
+
+    for (const candidate of candidates) {
+      const rect = candidate.getBoundingClientRect()
+      const center = rect.left + rect.width / 2
+      const distance = Math.abs(center - referenceCenter)
+
+      if (distance < bestDistance) {
+        bestDistance = distance
+        best = candidate
+      }
+    }
+
+    return best
+  }
+
+  function getRememberedSceneItem(sceneItems: HTMLElement[]): HTMLElement | null {
+    if (!lastSceneItemId) return null
+    return sceneItems.find((item) => item.dataset.itemId === lastSceneItemId) ?? null
+  }
+
+  function getRememberedTile(tiles: HTMLElement[]): HTMLElement | null {
+    if (lastTileIndex === null) return null
+
+    return tiles.find((tile) => parseInt(tile.dataset.index ?? '-1', 10) === lastTileIndex) ?? null
   }
 
   // Remove gamepad-active on mouse/keyboard
@@ -314,14 +359,19 @@ export function setupInput(
     // Reset tabindex on scene items
     for (const si of sceneEl.querySelectorAll('.sr-overlay-btn') as NodeListOf<HTMLElement>) si.tabIndex = -1
     if (el.hasAttribute('data-item-id')) el.tabIndex = 0
+    if (el.hasAttribute('data-item-id')) lastSceneItemId = el.dataset.itemId ?? lastSceneItemId
+    if (el.classList.contains('letter-tile')) {
+      const index = parseInt(el.dataset.index ?? '-1', 10)
+      if (index >= 0) lastTileIndex = index
+    }
     el.classList.add('gamepad-focus')
     el.focus()
   }
 
   function focusNearestItem(direction: string): void {
     const focused = document.activeElement as HTMLElement
-    const sceneItems = Array.from(sceneEl.querySelectorAll('.sr-overlay-btn')) as HTMLElement[]
-    const tiles = Array.from(slotsEl.querySelectorAll('.letter-tile')) as HTMLElement[]
+    const sceneItems = getSceneItems()
+    const tiles = getTiles()
     const checkEnabled = !checkBtn.hasAttribute('disabled')
 
     // Determine which zone we're in
@@ -330,27 +380,48 @@ export function setupInput(
     const inCheck = focused === checkBtn
 
     if (inScene) {
-      // All 4 directions: try spatial navigation within scene first
-      const nearest = findNearestInDirection(focused, sceneItems, direction)
-      if (nearest) {
-        gamepadFocus(nearest)
-      } else if (direction === 'ArrowDown') {
-        // No scene item below — fall through to tiles zone
-        if (tiles.length > 0) gamepadFocus(tiles[0])
-        else if (checkEnabled) gamepadFocus(checkBtn)
+      if (direction === 'ArrowDown') {
+        const downwardCandidates = [
+          ...sceneItems.filter((item) => item !== focused),
+          ...tiles,
+          ...(checkEnabled ? [checkBtn] : []),
+        ]
+        const nearestDownward = findNearestInDirection(focused, downwardCandidates, 'ArrowDown')
+
+        if (nearestDownward) {
+          gamepadFocus(nearestDownward)
+        } else {
+          const targetTile = findNearestByHorizontalPosition(focused, tiles) ?? getRememberedTile(tiles)
+          if (targetTile) gamepadFocus(targetTile)
+          else if (checkEnabled) gamepadFocus(checkBtn)
+        }
+      } else {
+        // Left/right/up stay within the scene cluster.
+        const nearest = findNearestInDirection(focused, sceneItems, direction)
+        if (nearest) {
+          gamepadFocus(nearest)
+        }
       }
-      // ArrowUp/Left/Right with nothing found: stay put
     } else if (inTiles) {
       if (direction === 'ArrowLeft' || direction === 'ArrowRight') {
         // STRICTLY stay within tiles — never escape
         const idx = tiles.indexOf(focused)
-        if (idx === -1) { if (tiles.length > 0) gamepadFocus(tiles[0]); return }
+        if (idx === -1) {
+          const rememberedTile = getRememberedTile(tiles)
+          if (rememberedTile) gamepadFocus(rememberedTile)
+          else if (tiles.length > 0) gamepadFocus(tiles[0])
+          return
+        }
         const next = direction === 'ArrowLeft' ? tiles[idx - 1] : tiles[idx + 1]
         if (next) gamepadFocus(next)
         // At boundary: do nothing (stay on current tile)
       } else if (direction === 'ArrowUp') {
         if (sceneItems.length > 0) {
-          const nearest = findNearestInDirection(focused, sceneItems, 'ArrowUp') ?? sceneItems[0]
+          const rememberedSceneItem = getRememberedSceneItem(sceneItems)
+          const nearest = rememberedSceneItem
+            ?? findNearestInDirection(focused, sceneItems, 'ArrowUp')
+            ?? findNearestByHorizontalPosition(focused, sceneItems)
+            ?? sceneItems[0]
           gamepadFocus(nearest)
         }
       } else if (direction === 'ArrowDown') {
@@ -359,14 +430,16 @@ export function setupInput(
     } else if (inCheck) {
       if (direction === 'ArrowUp') {
         // Move up to tiles, or scene if no tiles
-        if (tiles.length > 0) gamepadFocus(tiles[0])
-        else if (sceneItems.length > 0) gamepadFocus(sceneItems[0])
+        const rememberedTile = getRememberedTile(tiles)
+        if (rememberedTile) gamepadFocus(rememberedTile)
+        else if (tiles.length > 0) gamepadFocus(findNearestByHorizontalPosition(checkBtn, tiles) ?? tiles[0])
+        else if (sceneItems.length > 0) gamepadFocus(getRememberedSceneItem(sceneItems) ?? sceneItems[0])
       }
       // Left/right/down from check: no-op
     } else {
       // Not focused on anything — start at first scene item
-      if (sceneItems.length > 0) gamepadFocus(sceneItems[0])
-      else if (tiles.length > 0) gamepadFocus(tiles[0])
+      if (sceneItems.length > 0) gamepadFocus(getRememberedSceneItem(sceneItems) ?? sceneItems[0])
+      else if (tiles.length > 0) gamepadFocus(getRememberedTile(tiles) ?? tiles[0])
       else if (checkEnabled) gamepadFocus(checkBtn)
     }
   }
