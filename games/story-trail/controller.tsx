@@ -71,7 +71,9 @@ export async function storyTrailAction() {
               <li>Tap any trail stop to start a story.</li>
               <li>Tap a choice to keep reading. Locked choices give hints.</li>
               <li><kbd>Arrow keys</kbd> or <kbd>D-pad</kbd> move. <kbd>Enter</kbd>, <kbd>Space</kbd>, or <kbd>A</kbd> choose.</li>
-              <li>Press <kbd>I</kbd> for your bag. Press <kbd>Start</kbd> for the menu.</li>
+                <li>Tap an item in the bar or bag to hold it.</li>
+                <li>Hold the right item, then tap the matching choice.</li>
+                <li>Press <kbd>I</kbd> for your bag. Press <kbd>Start</kbd> for the menu.</li>
             </ul>
           </SettingsSection>
         </>}

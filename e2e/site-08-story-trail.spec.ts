@@ -12,6 +12,17 @@ async function startWeatherStory(page: Page): Promise<void> {
   await expect(page.locator('.choice-btn').first()).toBeInViewport()
 }
 
+async function completeWeatherStory(page: Page): Promise<void> {
+  await startWeatherStory(page)
+  await page.getByRole('button', { name: 'Put on your sun hat' }).click()
+  await page.getByRole('button', { name: 'Grab an umbrella' }).click()
+  await page.getByRole('button', { name: /Cross with the umbrella/ }).click()
+  await page.getByRole('button', { name: 'Put on the warm coat' }).click()
+  await page.getByRole('button', { name: 'Walk to the snowy field' }).click()
+  await page.getByRole('button', { name: /Walk through the snow/ }).click()
+  await page.getByRole('button', { name: 'Look for the rainbow' }).click()
+}
+
 test.describe('SITE-08: Story Trail', () => {
   test('trail map renders with 5 story stops', async ({ page }) => {
     await page.goto('/story-trail/')
@@ -38,11 +49,48 @@ test.describe('SITE-08: Story Trail', () => {
     await expect(page.locator('#scene-illustration')).not.toHaveText(initial ?? '')
   })
 
-  test('inventory shows collected item after choice grants it', async ({ page }) => {
+  test('equipped item from the scene bar mirrors into the bag and unlocks the matching choice', async ({ page }) => {
     await page.goto('/story-trail/')
     await startWeatherStory(page)
-    await page.locator('[data-choice-index="0"]').first().click()
-    await expect(page.locator('#inventory-bar')).toContainText('Sun Hat', { timeout: 5000 })
+
+    await page.getByRole('button', { name: 'Look at the cloudy sky' }).click()
+    await expect(page.getByRole('button', { name: 'Grab an umbrella' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Grab an umbrella' })).toBeInViewport()
+    await page.getByRole('button', { name: 'Grab an umbrella' }).click()
+
+    const inventoryBar = page.locator('#inventory-bar')
+    const umbrellaBarButton = page.locator('#inventory-bar [data-inventory-item-id="umbrella"]')
+    const gatedChoice = page.getByRole('button', { name: /Cross with the umbrella/ })
+
+    await expect(inventoryBar).toBeVisible()
+    await expect(umbrellaBarButton).toBeVisible()
+    await expect(umbrellaBarButton).toBeInViewport()
+    await expect(umbrellaBarButton).toHaveAttribute('aria-pressed', 'true')
+    await expect(gatedChoice).toBeVisible()
+    await expect(gatedChoice).toBeInViewport()
+
+    await umbrellaBarButton.click()
+    await expect(umbrellaBarButton).toHaveAttribute('aria-pressed', 'false')
+    await gatedChoice.click()
+    await expect(page.locator('#scene-text')).toContainText('Rain falls hard on the path ahead.')
+    await expect(page.locator('#hint-area')).toBeVisible()
+    await expect(page.locator('#hint-area')).toContainText('Pick it in your bag first.')
+
+    await umbrellaBarButton.click()
+    await expect(umbrellaBarButton).toHaveAttribute('aria-pressed', 'true')
+
+    await page.keyboard.press('KeyI')
+    const inventoryOverlay = page.locator('#inventory-overlay')
+    const umbrellaOverlayButton = page.locator('#inventory-overlay [data-inventory-item-id="umbrella"]')
+    await expect(inventoryOverlay).toBeVisible()
+    await expect(umbrellaOverlayButton).toBeVisible()
+    await expect(umbrellaOverlayButton).toBeInViewport()
+    await expect(umbrellaOverlayButton).toHaveAttribute('aria-pressed', 'true')
+    await inventoryOverlay.getByRole('button', { name: 'Close' }).click()
+    await expect(inventoryOverlay).toBeHidden()
+
+    await gatedChoice.click()
+    await expect(page.locator('#scene-text')).toContainText('Cold wind blows hard on the tall hill.')
   })
 
   test('locked choice shows hint when item missing', async ({ page }) => {
@@ -60,10 +108,7 @@ test.describe('SITE-08: Story Trail', () => {
 
   test('story completion shows badge and returns to trail', async ({ page }) => {
     await page.goto('/story-trail/')
-    await startWeatherStory(page)
-    for (let i = 0; i < 7; i++) {
-      await page.locator('[data-choice-index="0"]').first().click()
-    }
+    await completeWeatherStory(page)
     await expect(page.locator('#game-area')).toHaveAttribute('data-active-screen', 'completion-view', { timeout: 15000 })
     await expect(page.locator('#completion-view')).toBeVisible()
     await expect(page.locator('#completion-view')).toContainText('Rainbow Badge')
@@ -81,6 +126,8 @@ test.describe('SITE-08: Story Trail', () => {
     await expect(page.locator('#sfx-enabled-toggle')).toBeVisible()
     await expect(page.locator('#settings-modal')).toContainText('Controls')
     await expect(page.locator('#settings-modal')).toContainText('Tap any trail stop to start a story.')
+    await expect(page.locator('#settings-modal')).toContainText('Tap an item in the bar or bag to hold it.')
+    await expect(page.locator('#settings-modal')).toContainText('Hold the right item, then tap the matching choice.')
     await page.locator('#settings-close-btn').click()
     await expect(page.locator('#settings-modal')).toHaveAttribute('hidden')
   })
@@ -105,10 +152,7 @@ test.describe('SITE-08: Story Trail', () => {
 
   test('progress persists across page reload', async ({ page }) => {
     await page.goto('/story-trail/')
-    await startWeatherStory(page)
-    for (let i = 0; i < 7; i++) {
-      await page.locator('[data-choice-index="0"]').first().click()
-    }
+    await completeWeatherStory(page)
     await expect(page.locator('#game-area')).toHaveAttribute('data-active-screen', 'completion-view', { timeout: 15000 })
     await page.locator('#back-to-trail-btn').click()
     await expect(page.locator('#game-area')).toHaveAttribute('data-active-screen', 'trail-map', { timeout: 5000 })

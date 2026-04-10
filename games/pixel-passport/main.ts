@@ -6,6 +6,7 @@ import {
   announceMarkerSelection,
   announceMemory,
   announcePhase,
+  announceRevisit,
   announceRoom,
   announceTravel,
   moveFocusAfterTransition,
@@ -25,7 +26,9 @@ import {
   finishExplore,
   navigateGlobe,
   prepareTravel,
+  resetGame,
   returnToGlobe,
+  revisitDestination,
   setSelectedDestinationIndex,
   startExploreMode,
 } from './state.js'
@@ -40,35 +43,22 @@ import {
   startTravelLoop,
   stopTravelLoop,
 } from './sounds.js'
-import type { DestinationId, GameProgress, GameState, NavigationDirection } from './types.js'
+import type { DestinationId, GameState, NavigationDirection } from './types.js'
 
 const PROGRESS_STORAGE_KEY = 'pixel-passport-progress'
 
-let state: GameState = createInitialState(loadProgress())
-let lastFrame = performance.now()
-
-function loadProgress(): GameProgress {
+function clearStoredProgress(): void {
   try {
-    const stored = localStorage.getItem(PROGRESS_STORAGE_KEY)
-    if (!stored) {
-      return { collectedMemories: [] }
-    }
-
-    const parsed = JSON.parse(stored) as Partial<GameProgress>
-    return {
-      collectedMemories: Array.isArray(parsed.collectedMemories) ? parsed.collectedMemories as DestinationId[] : [],
-    }
+    localStorage.removeItem(PROGRESS_STORAGE_KEY)
   } catch {
-    return { collectedMemories: [] }
+    // Ignore browsers that disallow storage access.
   }
 }
 
-function saveProgress(): void {
-  const progress: GameProgress = {
-    collectedMemories: [...state.collectedMemories],
-  }
-  localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress))
-}
+clearStoredProgress()
+
+let state: GameState = createInitialState()
+let lastFrame = performance.now()
 
 function getState(): GameState {
   return state
@@ -147,6 +137,18 @@ function travelToDestination(destinationId: DestinationId): void {
   ensureAudioUnlocked()
   const previousState = state
   state = setSelectedDestinationIndex(state, destinationId)
+
+  if (state.currentLocation === destinationId) {
+    sfxButton()
+    state = revisitDestination(state, destinationId)
+    syncView(previousState)
+    announceRevisit(destination.name, destination.country)
+    sfxPipSpeak()
+    announceFact(destination.facts[0])
+    moveFocusAfterTransition('explore-next-btn', 220)
+    return
+  }
+
   const origin = getDestination(state.currentLocation)
   const transport = getTransportType(origin, destination)
   state = prepareTravel(state, destinationId, transport)
@@ -177,7 +179,6 @@ function continueFactSequence(): void {
   const previousState = state
   state = finishExplore(state)
   state = collectMemory(state)
-  saveProgress()
   syncView(previousState)
 
   if (state.memoryWasNew) {
@@ -195,7 +196,7 @@ function continueMemorySequence(): void {
   const previousState = state
   state = returnToGlobe(state)
   syncView(previousState)
-  announcePhase('Back on the globe. Pick another place to visit.')
+  announcePhase('Back on the globe. Pick a place to visit or read again.')
   focusSelectedMarker()
 }
 
@@ -215,7 +216,7 @@ function closeRoom(): void {
   const previousState = state
   state = exitRoom(state)
   syncView(previousState)
-  announcePhase('Back on the globe. Pick a place to visit.')
+  announcePhase('Back on the globe. Pick a place to visit or read again.')
   focusSelectedMarker()
 }
 
@@ -227,7 +228,8 @@ function moveSelection(direction: NavigationDirection): void {
     '#globe-screen .destination-marker.is-selected .destination-marker-icon',
   )
   void pulseElement(selectedIcon, 'marker-pulse', 320)
-  announceMarkerSelection(getDestination(selectedDestinationId())?.name ?? 'Destination')
+  const destination = getDestination(selectedDestinationId())
+  announceMarkerSelection(destination?.name ?? 'Destination', destination?.id === state.currentLocation)
   focusSelectedMarker()
 }
 
@@ -272,11 +274,13 @@ function tick(now: number): void {
 }
 
 document.addEventListener('restart', () => {
+  stopTravelLoop()
+  clearStoredProgress()
   const previousState = state
-  state = returnToGlobe(state)
+  state = resetGame()
   syncView(previousState)
-  announcePhase('Back on the globe. Pick a place to visit.')
-  focusSelectedMarker()
+  announcePhase('Fresh trip. Press Explore to start.')
+  moveFocusAfterTransition('start-explore-btn', 220)
 })
 
 const modal = setupTabbedModal('settings-modal')
@@ -290,7 +294,3 @@ bindReduceMotionToggle(
 setupInput(getState, callbacks)
 syncView()
 requestAnimationFrame(tick)
-
-if (state.collectedMemories.length > 0) {
-  announcePhase('Welcome back. Choose a place or solve a mystery.')
-}

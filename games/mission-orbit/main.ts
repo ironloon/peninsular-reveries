@@ -44,6 +44,62 @@ function el(id: string): HTMLElement | null {
   return document.getElementById(id)
 }
 
+function isGameScreenActive(): boolean {
+  return el('game-screen')?.classList.contains('active') ?? false
+}
+
+function isSettingsOpen(): boolean {
+  const modal = el('settings-modal')
+  return modal instanceof HTMLElement && !modal.hasAttribute('hidden')
+}
+
+function syncControllerAffordances(): void {
+  const continueBtn = el('continue-btn') as HTMLButtonElement | null
+  if (continueBtn) {
+    continueBtn.dataset.controllerHint = 'Tap or A'
+    continueBtn.setAttribute('aria-label', 'Continue when you are ready')
+  }
+
+  const tapBtn = el('tap-btn') as HTMLButtonElement | null
+  if (!tapBtn) {
+    return
+  }
+
+  const interactionType = SCENES[state.sceneIndex].interactionType
+  if (interactionType === 'hold') {
+    tapBtn.dataset.actionMode = 'hold'
+    tapBtn.dataset.controllerHint = 'Hold A'
+    tapBtn.setAttribute('aria-label', 'Hold A or press and hold to complete the maneuver')
+    return
+  }
+
+  if (interactionType === 'tap-fast') {
+    tapBtn.dataset.actionMode = 'tap'
+    tapBtn.dataset.controllerHint = 'Press A'
+    tapBtn.setAttribute('aria-label', 'Press A or tap as fast as you can')
+    return
+  }
+
+  if (interactionType === 'tap-single') {
+    tapBtn.dataset.actionMode = 'tap'
+    tapBtn.dataset.controllerHint = 'Press A'
+    tapBtn.setAttribute('aria-label', 'Press A or tap to fire the maneuver')
+    return
+  }
+
+  tapBtn.dataset.actionMode = 'none'
+  tapBtn.dataset.controllerHint = ''
+}
+
+function syncLoopState(): void {
+  if (document.visibilityState !== 'visible' || !isGameScreenActive() || isSettingsOpen()) {
+    stopLoop()
+    return
+  }
+
+  startLoop()
+}
+
 function showScreen(name: 'start-screen' | 'game-screen' | 'end-screen'): void {
   for (const screen of document.querySelectorAll('.screen')) {
     screen.classList.toggle('active', screen.id === name)
@@ -66,6 +122,7 @@ function loop(timestamp: number): void {
   renderNarrativePane(state)
   renderInteractionArea(state)
   renderProgress(state)
+  syncControllerAffordances()
 
   if (SCENES[state.sceneIndex].interactionType === 'hold') {
     renderHoldProgress(state.holdProgress)
@@ -101,6 +158,10 @@ function loop(timestamp: number): void {
 }
 
 function startLoop(): void {
+  if (animFrameId !== null) {
+    return
+  }
+
   lastTimestamp = 0
   animFrameId = requestAnimationFrame(loop)
 }
@@ -117,7 +178,7 @@ function onStart(): void {
   state = createInitialState()
   showScreen('game-screen')
   announcePhase(state.sceneIndex, state.scenePhase)
-  startLoop()
+  syncLoopState()
 }
 
 function onTap(): void {
@@ -125,17 +186,24 @@ function onTap(): void {
 }
 
 function onHoldStart(): void {
+  if (state.scenePhase !== 'interaction' || SCENES[state.sceneIndex].interactionType !== 'hold') {
+    return
+  }
+
   state = handleHoldStart(state)
   playHoldTone(true)
 }
 
 function onHoldEnd(): void {
+  if (SCENES[state.sceneIndex].interactionType !== 'hold') {
+    return
+  }
+
   state = handleHoldEnd(state)
   playHoldTone(false)
 }
 
 function onSettings(): void {
-  stopLoop()
   settingsModal.open()
 }
 
@@ -155,6 +223,7 @@ function onAdvancePhase(): void {
 
 const callbacks: InputCallbacks = {
   onStart,
+  onAdvancePhase,
   onTap,
   onHoldStart,
   onHoldEnd,
@@ -162,6 +231,10 @@ const callbacks: InputCallbacks = {
   onPlayAgain,
 }
 setupInput(callbacks)
+
+document.addEventListener('restart', () => {
+  onPlayAgain()
+})
 
 // Direct click on the continue button — native <button> always fires click on iOS.
 const continueBtn = document.getElementById('continue-btn')
@@ -189,14 +262,20 @@ document.addEventListener('keydown', (e) => {
   }
 })
 
-// Settings close wiring (in addition to what input.ts does)
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) stopLoop()
-})
-
 settingsModal = setupTabbedModal()
+const settingsModalEl = el('settings-modal')
+if (settingsModalEl) {
+  const observer = new MutationObserver(() => {
+    syncLoopState()
+  })
+  observer.observe(settingsModalEl, { attributes: true, attributeFilter: ['hidden'] })
+}
+
+document.addEventListener('visibilitychange', syncLoopState)
+
 bindMusicToggle('mission-orbit', document.getElementById('music-enabled-toggle') as HTMLInputElement | null, document.getElementById('music-enabled-help') as HTMLElement | null)
 bindSfxToggle('mission-orbit', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
 bindReduceMotionToggle(document.getElementById('reduce-motion-toggle') as HTMLInputElement | null, document.getElementById('reduce-motion-help'))
 
 showScreen('start-screen')
+syncControllerAffordances()

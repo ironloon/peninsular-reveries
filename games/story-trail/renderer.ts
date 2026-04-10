@@ -66,11 +66,16 @@ export function renderScene(story: Story, scene: Scene, state: GameState): void 
   getHintArea().setAttribute('hidden', '')
   getItemFlash().setAttribute('hidden', '')
 
+  updateSceneChoices(scene, state)
+  updateInventoryBar(story, state)
+}
+
+export function updateSceneChoices(scene: Scene, state: GameState): void {
   const choicesEl = getChoices()
   choicesEl.innerHTML = ''
   for (let i = 0; i < scene.choices.length; i++) {
     const choice = scene.choices[i]
-    const hasRequiredItem = !choice.requiredItemId || state.inventory.includes(choice.requiredItemId)
+    const hasRequiredItem = !choice.requiredItemId || state.equippedItemId === choice.requiredItemId
     const btn = document.createElement('button')
     btn.className = `choice-btn${hasRequiredItem ? '' : ' choice-locked'}`
     btn.dataset['choiceIndex'] = String(i)
@@ -78,28 +83,38 @@ export function renderScene(story: Story, scene: Scene, state: GameState): void 
     btn.textContent = choice.text + (!hasRequiredItem && choice.requiredItemId ? ' 🔒' : '')
     choicesEl.appendChild(btn)
   }
-
-  updateInventoryBar(story, state)
 }
 
 // ── Inventory overlay ────────────────────────────────────────
 
 export function renderInventoryOverlay(story: Story, state: GameState): void {
-  let html = '<h2>Your Items</h2>'
+  const selectedItem = state.equippedItemId
+    ? story.items.find(item => item.id === state.equippedItemId)
+    : undefined
+
+  let html = '<div class="inventory-overlay-panel">'
+  html += '<h2 id="inventory-heading" class="inventory-heading">Your Bag</h2>'
+  html += `<p class="inventory-help">${selectedItem ? `Holding ${selectedItem.name}. Tap it again to put it away.` : 'Pick one item to hold.'}</p>`
+
   if (state.inventory.length === 0) {
     html += '<p class="inventory-empty">Your bag is empty.</p>'
   } else {
-    html += '<ul class="inventory-list">'
+    html += '<div class="inventory-list" role="group" aria-label="Bag items">'
     for (const itemId of state.inventory) {
       const item = story.items.find(it => it.id === itemId)
       if (item) {
-        html += `<li class="inventory-entry"><span class="inv-name">${item.name}</span> — <span class="inv-desc">${item.description}</span></li>`
+        const isSelected = state.equippedItemId === item.id
+        html += `<button class="inventory-overlay-item${isSelected ? ' is-selected' : ''}" type="button" data-inventory-item-id="${item.id}" aria-pressed="${isSelected ? 'true' : 'false'}"><span class="inv-name">${item.name}</span><span class="inv-desc">${item.description}</span></button>`
       }
     }
-    html += '</ul>'
+    html += '</div>'
   }
-  html += `<button class="inventory-close-btn" id="inventory-close-btn" type="button">Close</button>`
-  getInventoryOverlay().innerHTML = html
+  html += '<button class="inventory-close-btn" id="inventory-close-btn" type="button">Close</button>'
+  html += '</div>'
+
+  const overlay = getInventoryOverlay()
+  overlay.innerHTML = html
+  overlay.setAttribute('aria-labelledby', 'inventory-heading')
 }
 
 // ── Story completion ─────────────────────────────────────────
@@ -130,6 +145,20 @@ export function renderItemCollected(item: Item): void {
 export function updateInventoryBar(story: Story, state: GameState): void {
   const bar = getInventoryBar()
   bar.innerHTML = ''
+
+  const bagButton = document.createElement('button')
+  bagButton.className = 'inventory-bag-btn'
+  bagButton.id = 'inventory-btn'
+  bagButton.type = 'button'
+  bagButton.textContent = 'Bag'
+  bagButton.setAttribute('aria-haspopup', 'dialog')
+  bagButton.setAttribute('aria-controls', 'inventory-overlay')
+  bagButton.setAttribute('aria-expanded', getInventoryOverlay().hidden ? 'false' : 'true')
+  if (!getInventoryOverlay().hidden) {
+    bagButton.classList.add('is-open')
+  }
+  bar.appendChild(bagButton)
+
   if (state.inventory.length === 0) {
     const span = document.createElement('span')
     span.className = 'inventory-empty-label'
@@ -139,11 +168,17 @@ export function updateInventoryBar(story: Story, state: GameState): void {
     for (const itemId of state.inventory) {
       const item = story.items.find(it => it.id === itemId)
       if (item) {
-        const span = document.createElement('span')
-        span.className = 'inventory-item'
-        span.title = item.description
-        span.textContent = item.name
-        bar.appendChild(span)
+        const button = document.createElement('button')
+        button.className = 'inventory-item-btn'
+        button.type = 'button'
+        button.title = item.description
+        button.textContent = item.name
+        button.dataset['inventoryItemId'] = item.id
+        button.setAttribute('aria-pressed', state.equippedItemId === item.id ? 'true' : 'false')
+        if (state.equippedItemId === item.id) {
+          button.classList.add('is-selected')
+        }
+        bar.appendChild(button)
       }
     }
   }

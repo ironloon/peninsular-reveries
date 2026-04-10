@@ -37,6 +37,7 @@ export interface GameState {
   readonly currentStoryId: string | null
   readonly currentSceneId: string | null
   readonly inventory: readonly string[]
+  readonly equippedItemId: string | null
   readonly completedStoryIds: readonly string[]
   readonly earnedBadges: readonly string[]
   readonly lastHint: string | null

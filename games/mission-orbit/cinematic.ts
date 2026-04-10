@@ -22,6 +22,15 @@ function pingPong(elapsedMs: number, periodMs: number): number {
   return phase < 0.5 ? phase * 2 : 2 - phase * 2
 }
 
+function rotationForMotion(deltaX: number, deltaY: number, fallback: number = -45): number {
+  if (Math.abs(deltaX) < 0.001 && Math.abs(deltaY) < 0.001) {
+    return fallback
+  }
+
+  const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI + 45
+  return angle > 180 ? angle - 360 : angle
+}
+
 // ── element pool ─────────────────────────────────────────────────────
 
 const pool: HTMLSpanElement[] = []
@@ -73,7 +82,7 @@ function placeSprite(pane: HTMLElement, s: Sprite): void {
   el.style.left = `${s.x}%`
   el.style.top = `${s.y}%`
   el.style.opacity = String(s.opacity ?? 1)
-  el.style.transform = `translate(-50%, -50%)${s.rotate ? ` rotate(${s.rotate}deg)` : ''}`
+  el.style.transform = `translate(-50%, -50%)${s.rotate !== undefined ? ` rotate(${s.rotate}deg)` : ''}`
 }
 
 // ── per-scene cinematics ─────────────────────────────────────────────
@@ -134,10 +143,20 @@ function renderOrbitInsertion(pane: HTMLElement, state: MissionState): void {
   placeSprite(pane, { emoji: '🌍', x: 50, y: 85, size: 6 })
 
   // Rocket orbiting: circular path
-  const angle = reduced ? 0 : (t * 0.001) % (Math.PI * 2)
+  const angle = reduced ? -0.35 : (t * 0.001) % (Math.PI * 2)
   const rx = 25
   const ry = 15
-  placeSprite(pane, { emoji: '🚀', x: 50 + Math.cos(angle) * rx, y: 45 + Math.sin(angle) * ry, size: 2, rotate: -45 + (angle * 180 / Math.PI) })
+  const rocketX = 50 + Math.cos(angle) * rx
+  const rocketY = 45 + Math.sin(angle) * ry
+  const velocityX = -Math.sin(angle) * rx
+  const velocityY = Math.cos(angle) * ry
+  placeSprite(pane, {
+    emoji: '🚀',
+    x: rocketX,
+    y: rocketY,
+    size: 2,
+    rotate: rotationForMotion(velocityX, velocityY, 15),
+  })
 }
 
 function renderTransLunar(pane: HTMLElement, state: MissionState): void {
@@ -145,24 +164,47 @@ function renderTransLunar(pane: HTMLElement, state: MissionState): void {
   const reduced = isReducedMotion()
   const isInteraction = state.scenePhase === 'interaction'
   const progress = isInteraction ? state.holdProgress : 0
+  const travelT = isInteraction
+    ? 0.28 + progress * 0.72
+    : reduced ? 0.28 : Math.min(t / 5000, 0.28)
+  const pathStartX = 34
+  const pathEndX = 70
+  const pathStartY = 58
+  const pathEndY = 44
+  const headingX = pathEndX - pathStartX
+  const headingY = pathEndY - pathStartY
+  const headingLength = Math.hypot(headingX, headingY) || 1
 
   // Earth shrinking on left
-  const earthSize = lerp(3, 1.5, progress)
-  placeSprite(pane, { emoji: '🌍', x: lerp(25, 10, progress), y: 50, size: earthSize })
+  const earthSize = lerp(3.2, 1.4, travelT)
+  placeSprite(pane, { emoji: '🌍', x: lerp(24, 10, travelT), y: 54, size: earthSize })
 
-  // Moon growing on right
-  const moonSize = lerp(1.5, 3, progress)
-  placeSprite(pane, { emoji: '🌙', x: lerp(80, 75, progress), y: 40, size: moonSize })
+  // Moon growing on right so the destination reads clearly even from far away.
+  const moonSize = lerp(2.6, 4.2, travelT)
+  placeSprite(pane, { emoji: '🌕', x: lerp(82, 76, travelT), y: 38, size: moonSize })
 
   // Rocket traveling right
-  const rocketX = lerp(35, 65, progress)
-  const waver = reduced ? 0 : Math.sin(t * 0.003) * 2
-  placeSprite(pane, { emoji: '🚀', x: rocketX, y: 50 + waver, size: 2, rotate: -45 })
+  const rocketX = lerp(pathStartX, pathEndX, travelT)
+  const waver = reduced ? 0 : Math.sin(t * 0.003) * 1.4
+  const rocketY = lerp(pathStartY, pathEndY, travelT) + waver
+  placeSprite(pane, {
+    emoji: '🚀',
+    x: rocketX,
+    y: rocketY,
+    size: 2,
+    rotate: rotationForMotion(headingX, headingY, 24),
+  })
 
   // Flame during hold
   if (isInteraction && state.holdActive) {
     const flicker = reduced ? 1 : 0.7 + pingPong(t, 180) * 0.3
-    placeSprite(pane, { emoji: '🔥', x: rocketX - 6, y: 52 + waver, size: 1.5, opacity: flicker })
+    placeSprite(pane, {
+      emoji: '🔥',
+      x: rocketX - (headingX / headingLength) * 7,
+      y: rocketY - (headingY / headingLength) * 7,
+      size: 1.5,
+      opacity: flicker,
+    })
   }
 }
 
@@ -170,14 +212,26 @@ function renderLunarApproach(pane: HTMLElement, state: MissionState): void {
   const t = state.elapsedMs
   const reduced = isReducedMotion()
 
-  // Moon growing
-  const growT = reduced ? 0.5 : Math.min(t / 5000, 1)
-  const moonSize = lerp(3, 6, growT)
-  placeSprite(pane, { emoji: '🌙', x: 55, y: 50, size: moonSize })
+  // Moon growing into view and reading as the clear destination.
+  const growT = reduced ? 0.55 : Math.min(t / 5000, 1)
+  const moonSize = lerp(4.2, 7, growT)
+  placeSprite(pane, { emoji: '🌕', x: 58, y: 50, size: moonSize })
+  placeSprite(pane, { emoji: '🌍', x: 13, y: 16, size: 1.4, opacity: 0.55 })
 
   // Rocket approaching
-  const rocketX = reduced ? 35 : lerp(20, 40, growT)
-  placeSprite(pane, { emoji: '🚀', x: rocketX, y: 40, size: 2, rotate: -30 })
+  const pathStartX = 16
+  const pathEndX = 42
+  const pathStartY = 31
+  const pathEndY = 45
+  const rocketX = reduced ? 35 : lerp(pathStartX, pathEndX, growT)
+  const rocketY = reduced ? 38 : lerp(pathStartY, pathEndY, growT)
+  placeSprite(pane, {
+    emoji: '🚀',
+    x: rocketX,
+    y: rocketY,
+    size: 2,
+    rotate: rotationForMotion(pathEndX - pathStartX, pathEndY - pathStartY, 24),
+  })
 }
 
 function renderLunarFlyby(pane: HTMLElement, state: MissionState): void {
@@ -188,10 +242,20 @@ function renderLunarFlyby(pane: HTMLElement, state: MissionState): void {
   placeSprite(pane, { emoji: '🌕', x: 50, y: 55, size: 8 })
 
   // Rocket orbiting the moon
-  const angle = reduced ? -0.5 : -0.5 + (t * 0.0006) % (Math.PI * 2)
+  const angle = reduced ? -0.75 : -0.75 + (t * 0.0006) % (Math.PI * 2)
   const rx = 38
   const ry = 30
-  placeSprite(pane, { emoji: '🚀', x: 50 + Math.cos(angle) * rx, y: 50 + Math.sin(angle) * ry, size: 1.5, rotate: -45 + (angle * 180 / Math.PI) })
+  const rocketX = 50 + Math.cos(angle) * rx
+  const rocketY = 50 + Math.sin(angle) * ry
+  const velocityX = -Math.sin(angle) * rx
+  const velocityY = Math.cos(angle) * ry
+  placeSprite(pane, {
+    emoji: '🚀',
+    x: rocketX,
+    y: rocketY,
+    size: 1.5,
+    rotate: rotationForMotion(velocityX, velocityY, -15),
+  })
 
   // Earth small in distance
   placeSprite(pane, { emoji: '🌍', x: 85, y: 15, size: 1.5, opacity: 0.7 })
@@ -202,17 +266,28 @@ function renderReturn(pane: HTMLElement, state: MissionState): void {
   const reduced = isReducedMotion()
 
   // Earth growing
-  const growT = reduced ? 0.5 : Math.min(t / 5000, 1)
-  const earthSize = lerp(2, 5, growT)
-  placeSprite(pane, { emoji: '🌍', x: 55, y: 55, size: earthSize })
+  const growT = reduced ? 0.55 : Math.min(t / 5000, 1)
+  const earthSize = lerp(2.4, 5.4, growT)
+  placeSprite(pane, { emoji: '🌍', x: 58, y: 56, size: earthSize })
 
   // Moon shrinking behind
-  const moonSize = lerp(2.5, 1, growT)
-  placeSprite(pane, { emoji: '🌙', x: 15, y: 20, size: moonSize, opacity: lerp(0.8, 0.4, growT) })
+  const moonSize = lerp(3, 1.2, growT)
+  placeSprite(pane, { emoji: '🌕', x: 15, y: 20, size: moonSize, opacity: lerp(0.85, 0.45, growT) })
 
   // Rocket heading toward Earth
-  const rocketX = reduced ? 40 : lerp(25, 45, growT)
-  placeSprite(pane, { emoji: '🚀', x: rocketX, y: 45, size: 2, rotate: -45 })
+  const pathStartX = 18
+  const pathEndX = 46
+  const pathStartY = 34
+  const pathEndY = 47
+  const rocketX = reduced ? 38 : lerp(pathStartX, pathEndX, growT)
+  const rocketY = reduced ? 43 : lerp(pathStartY, pathEndY, growT)
+  placeSprite(pane, {
+    emoji: '🚀',
+    x: rocketX,
+    y: rocketY,
+    size: 2,
+    rotate: rotationForMotion(pathEndX - pathStartX, pathEndY - pathStartY, 18),
+  })
 }
 
 function renderReentry(pane: HTMLElement, state: MissionState): void {

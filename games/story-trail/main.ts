@@ -4,6 +4,7 @@ import {
   createInitialState,
   startStory,
   makeChoice,
+  toggleEquippedItem,
   completeStory,
   returnToTrailMap,
   isStoryUnlocked,
@@ -16,7 +17,10 @@ import {
   renderHint,
   renderItemCollected,
   renderInventoryOverlay,
+  updateInventoryBar,
+  updateSceneChoices,
   showScreen,
+  getHintArea,
   getSceneText,
   getItemFlash,
   getInventoryOverlay,
@@ -25,11 +29,14 @@ import { setupInput } from './input.js'
 import {
   announceSceneDescription,
   announceChoiceResult,
-  announceItemCollected,
+  announceItemCleared,
+  announceItemEquipped,
   announceHint,
   announceStoryComplete,
   announceTrailMap,
   moveFocusToFirstChoice,
+  moveFocusToInventoryBarItem,
+  moveFocusToInventoryOverlay,
   moveFocusToTrailMap,
 } from './accessibility.js'
 import {
@@ -73,9 +80,41 @@ function refreshUI(): void {
     const story = currentStory()
     if (story && gameState.currentSceneId) {
       const scene = getScene(story, gameState.currentSceneId)
-      if (scene) renderScene(story, scene, gameState)
+      if (scene) {
+        renderScene(story, scene, gameState)
+        if (!getInventoryOverlay().hidden) {
+          renderInventoryOverlay(story, gameState)
+        }
+      }
     }
   }
+}
+
+function syncSceneSelectionUI(itemId: string, focusTarget: 'bar' | 'overlay'): void {
+  const story = currentStory()
+  if (!story || !gameState.currentSceneId) return
+
+  const scene = getScene(story, gameState.currentSceneId)
+  if (!scene) return
+
+  updateSceneChoices(scene, gameState)
+  updateInventoryBar(story, gameState)
+  if (!getInventoryOverlay().hidden) {
+    renderInventoryOverlay(story, gameState)
+  }
+
+  getHintArea().setAttribute('hidden', '')
+  getItemFlash().setAttribute('hidden', '')
+
+  if (focusTarget === 'overlay') {
+    moveFocusToInventoryOverlay(itemId)
+  } else {
+    moveFocusToInventoryBarItem(itemId)
+  }
+}
+
+function hideInventoryOverlay(): void {
+  getInventoryOverlay().setAttribute('hidden', '')
 }
 
 // ── Game Flow ─────────────────────────────────────────────────
@@ -120,15 +159,9 @@ function onChoiceMade(choiceIndex: number): void {
     return
   }
 
-  if (newState.lastCollectedItem !== null) {
-    const item = story.items.find(it => it.id === newState.lastCollectedItem)
-    if (item) {
-      playItemCollect()
-      renderItemCollected(item)
-      animateItemFlash(getItemFlash())
-      announceItemCollected(item.name)
-    }
-  }
+  const collectedItem = newState.lastCollectedItem
+    ? story.items.find(item => item.id === newState.lastCollectedItem)
+    : undefined
 
   setState(newState)
 
@@ -141,14 +174,25 @@ function onChoiceMade(choiceIndex: number): void {
   }
 
   renderScene(story, newScene, gameState)
+  if (collectedItem) {
+    playItemCollect()
+    renderItemCollected(collectedItem)
+    animateItemFlash(getItemFlash())
+  }
+
   const textEl = getSceneText()
   typeText(textEl, newScene.description, playTypingBlip).then(() => moveFocusToFirstChoice())
-  announceChoiceResult(choice.text)
+  if (collectedItem) {
+    announceItemEquipped(collectedItem.name)
+  } else {
+    announceChoiceResult(choice.text)
+  }
 }
 
 function onStoryComplete(): void {
   const story = currentStory()!
   playStoryComplete()
+  hideInventoryOverlay()
   setState(completeStory(gameState, story.id, story.badgeName))
   renderStoryComplete(story)
   showScreen('completion-view')
@@ -157,6 +201,7 @@ function onStoryComplete(): void {
 }
 
 function onBackToTrail(): void {
+  hideInventoryOverlay()
   setState(returnToTrailMap(gameState))
   renderTrailMap(allStories, gameState)
   showScreen('trail-map')
@@ -166,14 +211,47 @@ function onBackToTrail(): void {
 }
 
 function onInventoryOpen(): void {
+  const story = currentStory()
+  if (!story) return
+
   const overlay = getInventoryOverlay()
   overlay.removeAttribute('hidden')
-  const story = currentStory()
-  if (story) renderInventoryOverlay(story, gameState)
+  renderInventoryOverlay(story, gameState)
+  updateInventoryBar(story, gameState)
+  moveFocusToInventoryOverlay(gameState.equippedItemId ?? undefined)
 }
 
 function onInventoryClose(): void {
-  getInventoryOverlay().setAttribute('hidden', '')
+  hideInventoryOverlay()
+  const story = currentStory()
+  if (!story) return
+
+  updateInventoryBar(story, gameState)
+  moveFocusToInventoryBarItem(gameState.equippedItemId ?? undefined)
+}
+
+function onInventoryItemToggle(itemId: string): void {
+  const story = currentStory()
+  if (!story) return
+
+  const item = story.items.find(entry => entry.id === itemId)
+  if (!item) return
+
+  const focusTarget = (document.activeElement as HTMLElement | null)?.closest('#inventory-overlay')
+    ? 'overlay'
+    : 'bar'
+  const nextState = toggleEquippedItem(gameState, itemId)
+  if (nextState === gameState) return
+
+  const clearedItem = nextState.equippedItemId === null
+  gameState = nextState
+  syncSceneSelectionUI(itemId, focusTarget)
+
+  if (clearedItem) {
+    announceItemCleared(item.name)
+  } else {
+    announceItemEquipped(item.name)
+  }
 }
 
 function saveProgress(): void {
@@ -201,7 +279,14 @@ playAmbientLoop()
 announceTrailMap(gameState.completedStoryIds.length + 1, allStories.length)
 
 // Wire input
-setupInput(getState, { onStorySelected, onChoiceMade, onInventoryOpen, onInventoryClose, onBackToTrail })
+setupInput(getState, {
+  onStorySelected,
+  onChoiceMade,
+  onInventoryOpen,
+  onInventoryClose,
+  onInventoryItemToggle,
+  onBackToTrail,
+})
 
 // Wire settings
 setupTabbedModal('settings-modal')

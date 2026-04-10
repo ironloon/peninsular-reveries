@@ -95,7 +95,7 @@ export async function pixelPassportAction() {
               leftContent={<>
                 <p className="screen-kicker">Explore</p>
                 <h2 id="globe-heading" className="screen-title">Choose a place</h2>
-                <p id="globe-location-copy" className="screen-copy">Home base</p>
+                <p id="globe-location-copy" className="screen-copy">Pick a place for your first ride.</p>
               </>}
               rightContent={<>
                 <GameHeaderPill value={<span id="globe-memory-pill">0 memories</span>} />
@@ -143,6 +143,7 @@ export async function pixelPassportAction() {
               <div className="travel-clouds travel-layer" aria-hidden="true"></div>
               <div className="travel-midground travel-layer" aria-hidden="true"></div>
               <div className="travel-foreground travel-layer" aria-hidden="true"></div>
+              <div id="travel-vehicle-halo" className="travel-vehicle-halo" aria-hidden="true"></div>
               <div id="travel-vehicle-shadow" className="travel-vehicle-shadow" aria-hidden="true"></div>
               <div id="travel-vehicle" className="travel-vehicle pixel-art" aria-hidden="true"></div>
               <div className="travel-guide-card guide-card">
@@ -254,8 +255,9 @@ export async function pixelPassportAction() {
           <SettingsSection title="🗺️ Controls">
             <ul className="settings-list">
               <li>Tap a place on the globe to ride there.</li>
+              <li>Tap the place that says you are here to hear it again.</li>
               <li>Arrow keys or D-pad move between places.</li>
-              <li>Enter, Space, or A picks the highlighted place.</li>
+              <li>Enter, Space, or A picks the highlighted place. Start opens Menu.</li>
             </ul>
           </SettingsSection>
 

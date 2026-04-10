@@ -53,6 +53,52 @@ async function tapGamepadButton(page: Page, index: number): Promise<void> {
   await page.waitForTimeout(260)
 }
 
+async function holdGamepadButton(page: Page, index: number, holdMs: number): Promise<void> {
+  await setGamepadButton(page, index, true)
+  await page.waitForTimeout(holdMs)
+  await setGamepadButton(page, index, false)
+  await page.waitForTimeout(260)
+}
+
+async function completePixelPassportStop(page: Page): Promise<void> {
+  const memoryScreen = page.locator('#memory-screen')
+
+  for (let step = 0; step < 6; step++) {
+    if (await memoryScreen.isVisible()) {
+      break
+    }
+
+    const nextButton = page.locator('#explore-next-btn')
+    await expect(nextButton).toBeVisible()
+    await expect(nextButton).toBeInViewport()
+    await tapGamepadButton(page, 0)
+  }
+
+  await expect(memoryScreen).toBeVisible()
+
+  const continueButton = page.locator('#memory-continue-btn')
+  await expect(continueButton).toBeVisible()
+  await expect(continueButton).toBeInViewport()
+  await tapGamepadButton(page, 0)
+  await expect(page.locator('#globe-screen')).toBeVisible()
+}
+
+async function advanceMissionOrbitSceneToInteraction(page: Page): Promise<void> {
+  const continueButton = page.locator('#continue-btn')
+
+  await expect(continueButton).toBeVisible()
+  await expect(continueButton).toBeInViewport()
+  await tapGamepadButton(page, 0)
+  await expect(page.locator('#cinematic-pane')).toHaveAttribute('data-phase', 'cinematic')
+  await expect(continueButton).toBeVisible()
+  await expect(continueButton).toBeInViewport()
+  await tapGamepadButton(page, 0)
+
+  const actionButton = page.locator('#tap-btn')
+  await expect(actionButton).toBeVisible()
+  await expect(actionButton).toBeInViewport()
+}
+
 test.describe('SITE-07: Game smoke tests', () => {
   // Chompers
   test('Chompers — start screen is visible', async ({ page }) => {
@@ -119,6 +165,86 @@ test.describe('SITE-07: Game smoke tests', () => {
     )).toBeGreaterThan(0)
   })
 
+  test('Pixel Passport — controller revisits the current place, takes a new trip, and clears memories on restart', async ({ page }) => {
+    await installMockGamepad(page)
+    await page.goto('/pixel-passport/')
+
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await expect(page.locator('#start-explore-btn')).toBeInViewport()
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#globe-screen')).toBeVisible()
+    await expect(page.locator('#globe-room-btn')).toBeInViewport()
+
+    const selectedMarker = page.locator('#globe-screen .destination-marker.is-selected')
+    await expect(selectedMarker).toBeVisible()
+    await expect(selectedMarker).toHaveAttribute('data-destination-id', 'paris')
+
+    await tapGamepadButton(page, 15)
+    await expect(selectedMarker).toBeVisible()
+    await expect(page.locator('#globe-room-btn')).toBeInViewport()
+    await expect(selectedMarker).toHaveAttribute('data-destination-id', 'cairo')
+
+    await tapGamepadButton(page, 14)
+    await expect(selectedMarker).toBeVisible()
+    await expect(page.locator('#globe-room-btn')).toBeInViewport()
+    await expect(selectedMarker).toHaveAttribute('data-destination-id', 'paris')
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#travel-screen')).toBeVisible()
+    await expect(page.locator('#travel-stage')).toBeInViewport()
+    await expect(page.locator('#travel-to')).toHaveText('Paris')
+    await expect(page.locator('#explore-screen')).toBeVisible({ timeout: 6000 })
+    await expect(page.locator('#explore-next-btn')).toBeVisible()
+    await expect(page.locator('#explore-next-btn')).toBeInViewport()
+
+    await completePixelPassportStop(page)
+
+    const currentMarker = page.locator('#globe-screen .destination-marker[aria-current="location"]')
+    await expect(currentMarker).toBeVisible()
+    await expect(page.locator('#globe-room-btn')).toBeInViewport()
+    await expect(currentMarker).toHaveAttribute('data-destination-id', 'paris')
+    await expect(page.locator('#globe-memory-pill')).toHaveText('1 memory')
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#explore-screen')).toBeVisible()
+    await expect(page.locator('#explore-next-btn')).toBeVisible()
+    await expect(page.locator('#explore-next-btn')).toBeInViewport()
+    await expect(page.locator('#travel-screen')).toBeHidden()
+    await expect(page.locator('#explore-heading')).toContainText('Paris')
+
+    await completePixelPassportStop(page)
+    await expect(currentMarker).toHaveAttribute('data-destination-id', 'paris')
+
+    await tapGamepadButton(page, 15)
+    await expect(selectedMarker).toBeVisible()
+    await expect(page.locator('#globe-room-btn')).toBeInViewport()
+    await expect(selectedMarker).toHaveAttribute('data-destination-id', 'cairo')
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#travel-screen')).toBeVisible()
+    await expect(page.locator('#travel-stage')).toBeInViewport()
+    await expect(page.locator('#travel-to')).toHaveText('Cairo')
+    await expect(page.locator('#explore-screen')).toBeVisible({ timeout: 6000 })
+    await expect(page.locator('#explore-next-btn')).toBeVisible()
+    await expect(page.locator('#explore-next-btn')).toBeInViewport()
+
+    await completePixelPassportStop(page)
+    await expect(currentMarker).toHaveAttribute('data-destination-id', 'cairo')
+    await expect(page.locator('#globe-memory-pill')).toHaveText('2 memories')
+
+    await tapGamepadButton(page, 9)
+    await expect(page.locator('#settings-modal')).toBeVisible()
+    await expect(page.locator('#restart-btn')).toBeVisible()
+    await expect(page.locator('#restart-btn')).toBeInViewport()
+
+    await page.locator('#restart-btn').click()
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await expect(page.locator('#title-memory-count')).toBeVisible()
+    await expect(page.locator('#title-memory-count')).toHaveText('0 memories')
+    await expect(page.locator('#start-explore-btn')).toBeInViewport()
+  })
+
   // Mission Orbit
   test('Mission Orbit — start screen is visible', async ({ page }) => {
     await page.goto('/mission-orbit/')
@@ -133,6 +259,57 @@ test.describe('SITE-07: Game smoke tests', () => {
     await expect(page.locator('.continue-prompt')).toBeVisible()
 
     await expect(page.locator('.continue-prompt')).toBeInViewport()
+  })
+
+  test('Mission Orbit — controller completes tap and hold scenes and opens the menu', async ({ page }) => {
+    await installMockGamepad(page)
+    await page.goto('/mission-orbit/')
+
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await expect(page.locator('#start-btn')).toBeInViewport()
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#game-screen')).toBeVisible()
+    await expect(page.locator('#continue-btn')).toBeVisible()
+    await expect(page.locator('#continue-btn')).toBeInViewport()
+
+    await advanceMissionOrbitSceneToInteraction(page)
+
+    const actionButton = page.locator('#tap-btn')
+    await expect(actionButton).toHaveAttribute('data-controller-hint', 'Press A')
+    await expect(page.locator('#tap-count-display')).toBeVisible()
+    await expect(page.locator('#tap-count-display')).toBeInViewport()
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#tap-count-display')).toHaveText(/^1\s*\/\s*20$/)
+
+    for (let tapCount = 1; tapCount < 20; tapCount++) {
+      await tapGamepadButton(page, 0)
+    }
+
+    await expect(page.locator('#scene-progress-label')).toHaveText('Scene 2 of 8', { timeout: 5000 })
+    await expect(page.locator('#continue-btn')).toBeVisible()
+    await expect(page.locator('#continue-btn')).toBeInViewport()
+
+    await advanceMissionOrbitSceneToInteraction(page)
+
+    await expect(actionButton).toHaveAttribute('data-controller-hint', 'Hold A')
+    await expect(page.locator('#hold-progress')).toBeVisible()
+    await expect(page.locator('#hold-progress')).toBeInViewport()
+
+    await setGamepadButton(page, 0, true)
+    await expect.poll(async () => page.evaluate(() => {
+      const bar = document.getElementById('hold-progress-bar') as HTMLElement | null
+      return parseFloat(bar?.style.width ?? '0')
+    })).toBeGreaterThan(0)
+    await holdGamepadButton(page, 0, 3400)
+
+    await expect(page.locator('#scene-progress-label')).toHaveText('Scene 3 of 8', { timeout: 5000 })
+    await expect(page.locator('#continue-btn')).toBeVisible()
+    await expect(page.locator('#continue-btn')).toBeInViewport()
+
+    await tapGamepadButton(page, 9)
+    await expect(page.locator('#settings-modal')).toBeVisible()
   })
 
   // Super Word

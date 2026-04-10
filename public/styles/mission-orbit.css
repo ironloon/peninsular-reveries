@@ -246,6 +246,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.65rem;
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .mission-btn:hover:not(:disabled),
@@ -280,6 +283,36 @@
   margin: 0.8rem 0 0;
   color: var(--mission-muted);
   font-size: 0.9rem;
+}
+
+.start-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.6rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--mission-copy);
+  font-family: var(--mission-font);
+  font-size: 0.8rem;
+}
+
+.mission-orbit-game .gamepad-focus {
+  outline: 3px solid rgba(255, 209, 102, 0.92);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(5, 16, 31, 0.78), 0 0 0 7px rgba(255, 209, 102, 0.24);
+}
+
+.mission-btn.gamepad-focus,
+.continue-prompt.gamepad-focus,
+.tap-btn.gamepad-focus,
+.mission-settings-content .settings-restart-btn.gamepad-focus,
+.mission-settings-content .settings-quit-link.gamepad-focus,
+.modal-close.gamepad-focus,
+.tab-btn.gamepad-focus {
+  transform: translateY(-1px);
 }
 
 /* Progress pill in game header ================================ */
@@ -504,6 +537,26 @@
   min-height: 44px;
   display: inline-flex;
   align-items: center;
+  gap: 0.6rem;
+  width: fit-content;
+}
+
+.continue-prompt[data-controller-hint]:not([data-controller-hint=''])::after,
+.tap-btn[data-controller-hint]:not([data-controller-hint=''])::after {
+  content: attr(data-controller-hint);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.55rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--mission-copy);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .continue-prompt:focus-visible {
@@ -559,6 +612,11 @@
   transition: transform 0.1s, background 0.1s;
   min-height: 44px;
   min-width: 44px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
 }
 
 .tap-btn:active {
@@ -689,6 +747,10 @@
   line-height: 1.5;
 }
 
+.controls-list li + li {
+  margin-top: 0.35rem;
+}
+
 .controls-list kbd {
   display: inline-block;
   padding: 0.1rem 0.35rem;
@@ -705,6 +767,16 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  min-height: 44px;
+  padding: 0.75rem 0.9rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.settings-toggle-row:focus-within {
+  border-color: rgba(255, 209, 102, 0.5);
+  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.2);
 }
 
 .settings-toggle-row input[type='checkbox'] {
@@ -804,7 +876,15 @@
   align-items: center;
   justify-content: center;
   text-align: center;
+  min-height: 44px;
+  min-width: 44px;
   transition: transform 140ms ease, background-color 140ms ease;
+}
+
+.mission-orbit-game .modal-close,
+.mission-orbit-game .tab-btn {
+  min-height: 44px;
+  min-width: 44px;
 }
 
 .mission-settings-content .settings-restart-btn:hover,

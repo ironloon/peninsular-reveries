@@ -11,6 +11,7 @@ export interface InputCallbacks {
   onChoiceMade: (choiceIndex: number) => void
   onInventoryOpen: () => void
   onInventoryClose: () => void
+  onInventoryItemToggle: (itemId: string) => void
   onBackToTrail: () => void
 }
 
@@ -30,15 +31,15 @@ export function setupInput(
   gameArea.style.touchAction = 'manipulation'
 
   // ── Context detection ─────────────────────────────────────
-  function getContext(): 'trail' | 'scene' | 'completion' {
+  function getContext(): 'trail-map' | 'scene-view' | 'completion-view' {
     const screen = gameArea.dataset.activeScreen
-    if (screen === 'trail') return 'trail'
-    if (screen === 'completion') return 'completion'
-    if (screen === 'scene') return 'scene'
+    if (screen === 'trail-map') return 'trail-map'
+    if (screen === 'completion-view') return 'completion-view'
+    if (screen === 'scene-view') return 'scene-view'
     // Fallback via state
     const state = getState()
-    if (state.currentStoryId === null) return 'trail'
-    return 'scene'
+    if (state.currentStoryId === null) return 'trail-map'
+    return 'scene-view'
   }
 
   function isInventoryOpen(): boolean {
@@ -53,6 +54,18 @@ export function setupInput(
 
   function getChoiceButtons(): HTMLElement[] {
     return Array.from(document.querySelectorAll('.choice-btn')) as HTMLElement[]
+  }
+
+  function getInventoryButtons(): HTMLElement[] {
+    return Array.from(document.querySelectorAll('#inventory-bar button')) as HTMLElement[]
+  }
+
+  function getSceneFocusables(): HTMLElement[] {
+    return [...getChoiceButtons(), ...getInventoryButtons()]
+  }
+
+  function getOverlayButtons(): HTMLElement[] {
+    return Array.from(document.querySelectorAll('#inventory-overlay button')) as HTMLElement[]
   }
 
   function navigateList(items: HTMLElement[], direction: 'ArrowUp' | 'ArrowDown'): void {
@@ -74,42 +87,30 @@ export function setupInput(
       if (e.key === 'Escape' || e.key === 'i' || e.key === 'I') {
         e.preventDefault()
         callbacks.onInventoryClose()
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        navigateList(getOverlayButtons(), e.key)
       }
       return
     }
 
-    const focused = document.activeElement as HTMLElement | null
     const context = getContext()
 
-    if (context === 'trail') {
+    if (context === 'trail-map') {
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault()
         navigateList(getUnlockedStops(), e.key)
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        const stopEl = focused?.closest('.trail-stop-unlocked') as HTMLElement | null
-        if (stopEl) {
-          e.preventDefault()
-          const storyId = stopEl.dataset.storyId
-          if (storyId) callbacks.onStorySelected(storyId)
-        }
       }
-    } else if (context === 'scene') {
+    } else if (context === 'scene-view') {
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault()
-        navigateList(getChoiceButtons(), e.key)
-      } else if (e.key === 'Enter' || e.key === ' ') {
-        const choiceEl = focused?.closest('[data-choice-index]') as HTMLElement | null
-        if (choiceEl) {
-          e.preventDefault()
-          const idx = parseInt(choiceEl.dataset.choiceIndex ?? '-1', 10)
-          if (idx >= 0) callbacks.onChoiceMade(idx)
-        }
+        navigateList(getSceneFocusables(), e.key)
       } else if (e.key === 'i' || e.key === 'I') {
         e.preventDefault()
         callbacks.onInventoryOpen()
       }
-    } else if (context === 'completion') {
-      if (e.key === 'Enter') {
+    } else if (context === 'completion-view') {
+      if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
         callbacks.onBackToTrail()
       }
@@ -140,6 +141,13 @@ export function setupInput(
       return
     }
 
+    const inventoryItemEl = target.closest('[data-inventory-item-id]') as HTMLElement | null
+    if (inventoryItemEl) {
+      const itemId = inventoryItemEl.dataset.inventoryItemId
+      if (itemId) callbacks.onInventoryItemToggle(itemId)
+      return
+    }
+
     const choiceEl = target.closest('[data-choice-index]') as HTMLElement | null
     if (choiceEl) {
       const idx = parseInt(choiceEl.dataset.choiceIndex ?? '-1', 10)
@@ -158,28 +166,25 @@ export function setupInput(
   function activateFocused(): void {
     const focused = document.activeElement as HTMLElement | null
     if (!focused) return
-    const context = getContext()
 
-    if (context === 'trail') {
-      const stopEl = focused.closest('.trail-stop-unlocked') as HTMLElement | null
-      const storyId = stopEl?.dataset.storyId
-      if (storyId) callbacks.onStorySelected(storyId)
-    } else if (context === 'scene') {
-      const choiceEl = focused.closest('[data-choice-index]') as HTMLElement | null
-      const idx = parseInt(choiceEl?.dataset.choiceIndex ?? '-1', 10)
-      if (idx >= 0) callbacks.onChoiceMade(idx)
-    } else if (context === 'completion') {
+    if (focused instanceof HTMLButtonElement || focused instanceof HTMLAnchorElement) {
+      focused.click()
+      return
+    }
+
+    if (getContext() === 'completion-view') {
       callbacks.onBackToTrail()
     }
   }
 
   function navigateDirection(dir: 'ArrowUp' | 'ArrowDown'): void {
-    if (isInventoryOpen()) return
     const context = getContext()
-    if (context === 'trail') {
+    if (isInventoryOpen()) {
+      navigateList(getOverlayButtons(), dir)
+    } else if (context === 'trail-map') {
       navigateList(getUnlockedStops(), dir)
-    } else if (context === 'scene') {
-      navigateList(getChoiceButtons(), dir)
+    } else if (context === 'scene-view') {
+      navigateList(getSceneFocusables(), dir)
     }
   }
 
@@ -218,7 +223,7 @@ export function setupInput(
           case 1: // B — back
             if (isInventoryOpen()) {
               callbacks.onInventoryClose()
-            } else if (getContext() === 'completion') {
+            } else if (getContext() === 'completion-view') {
               callbacks.onBackToTrail()
             }
             break

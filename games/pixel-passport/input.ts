@@ -16,6 +16,9 @@ export interface InputCallbacks {
   onNavigateGlobe: (direction: NavigationDirection) => void
 }
 
+const STICK_THRESHOLD = 0.5
+const NAVIGATION_DEBOUNCE_MS = 200
+
 function isModalOpen(): boolean {
   const modal = document.getElementById('settings-modal')
   return modal ? !modal.hasAttribute('hidden') : false
@@ -28,6 +31,110 @@ function isInteractiveTarget(target: EventTarget | null): boolean {
 
 function currentSelectedDestination(state: GameState): DestinationId {
   return DESTINATION_IDS[state.globeSelectedIndex] ?? DESTINATION_IDS[0]
+}
+
+function screenIdForPhase(phase: GameState['phase']): string {
+  switch (phase) {
+    case 'title': return 'start-screen'
+    case 'globe': return 'globe-screen'
+    case 'travel': return 'travel-screen'
+    case 'explore': return 'explore-screen'
+    case 'memory-collect': return 'memory-screen'
+    case 'room': return 'room-screen'
+  }
+}
+
+function focusableElements(root: ParentNode | null): HTMLElement[] {
+  if (!root) return []
+
+  return Array.from(root.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]')).filter((element) => {
+    if (element.tabIndex < 0) return false
+    if (element.hasAttribute('disabled') || element.hasAttribute('hidden') || element.getAttribute('aria-hidden') === 'true') {
+      return false
+    }
+
+    if (element instanceof HTMLInputElement && element.type === 'hidden') {
+      return false
+    }
+
+    return element.getClientRects().length > 0
+  })
+}
+
+function cycleFocus(elements: readonly HTMLElement[], direction: NavigationDirection): void {
+  if (elements.length === 0) return
+
+  const active = document.activeElement instanceof HTMLElement ? document.activeElement : null
+  const currentIndex = active ? elements.indexOf(active) : -1
+
+  const nextIndex = currentIndex >= 0
+    ? direction === 'next'
+      ? (currentIndex + 1) % elements.length
+      : (currentIndex - 1 + elements.length) % elements.length
+    : direction === 'next'
+      ? 0
+      : elements.length - 1
+
+  elements[nextIndex]?.focus()
+}
+
+function activateFocusedElement(root: ParentNode | null): boolean {
+  const active = document.activeElement
+  if (!(active instanceof HTMLElement) || !isInteractiveTarget(active)) {
+    return false
+  }
+
+  if (root && !root.contains(active)) {
+    return false
+  }
+
+  active.click()
+  return true
+}
+
+function activeScreenElement(state: GameState): HTMLElement | null {
+  return document.getElementById(screenIdForPhase(state.phase))
+}
+
+function connectedGamepad(): Gamepad | null {
+  const gamepads = navigator.getGamepads?.()
+  if (!gamepads) {
+    return null
+  }
+
+  for (const gamepad of Array.from(gamepads)) {
+    if (gamepad?.connected) {
+      return gamepad
+    }
+  }
+
+  return null
+}
+
+function gamepadDirection(gamepad: Gamepad): NavigationDirection | null {
+  const dpadPrevious = Boolean(gamepad.buttons[12]?.pressed) || Boolean(gamepad.buttons[14]?.pressed)
+  const dpadNext = Boolean(gamepad.buttons[13]?.pressed) || Boolean(gamepad.buttons[15]?.pressed)
+
+  if (dpadPrevious) {
+    return 'previous'
+  }
+
+  if (dpadNext) {
+    return 'next'
+  }
+
+  const axisX = gamepad.axes[0] ?? 0
+  const axisY = gamepad.axes[1] ?? 0
+
+  if (axisX <= -STICK_THRESHOLD || axisY <= -STICK_THRESHOLD) {
+    return 'previous'
+  }
+
+  if (axisX >= STICK_THRESHOLD || axisY >= STICK_THRESHOLD) {
+    return 'next'
+  }
+
+  return null
 }
 
 export function setupInput(getState: () => GameState, callbacks: InputCallbacks): void {
@@ -107,52 +214,128 @@ export function setupInput(getState: () => GameState, callbacks: InputCallbacks)
     }
   })
 
-  let previousActionPressed = false
-  let previousLeftPressed = false
-  let previousRightPressed = false
-  let previousStartPressed = false
+  function handleDirectionalInput(direction: NavigationDirection): void {
+    if (isModalOpen()) {
+      cycleFocus(focusableElements(document.getElementById('settings-modal')), direction)
+      return
+    }
+
+    const state = getState()
+
+    if (state.phase === 'globe') {
+      callbacks.onNavigateGlobe(direction)
+      return
+    }
+
+    if (state.phase === 'travel') {
+      return
+    }
+
+    cycleFocus(focusableElements(activeScreenElement(state)), direction)
+  }
+
+  function handlePrimaryAction(): void {
+    if (isModalOpen()) {
+      if (!activateFocusedElement(document.getElementById('settings-modal'))) {
+        focusableElements(document.getElementById('settings-modal'))[0]?.focus()
+      }
+      return
+    }
+
+    const state = getState()
+    if (activateFocusedElement(activeScreenElement(state))) {
+      return
+    }
+
+    if (state.phase === 'title') {
+      callbacks.onStartExplore()
+      return
+    }
+
+    if (state.phase === 'globe') {
+      callbacks.onSelectDestination(currentSelectedDestination(state))
+      return
+    }
+
+    if (state.phase === 'explore') {
+      callbacks.onAdvanceFact()
+      return
+    }
+
+    if (state.phase === 'memory-collect') {
+      callbacks.onContinueMemory()
+      return
+    }
+
+    if (state.phase === 'room') {
+      callbacks.onExitRoom()
+    }
+  }
+
+  let gamepadFrameId: number | null = null
+  let previousButtonStates: boolean[] = []
+  let heldDirection: NavigationDirection | null = null
+  let lastNavigationAt = 0
 
   const pollGamepad = (): void => {
-    const state = getState()
-    const pad = navigator.getGamepads().find((gamepad) => gamepad !== null)
-    const leftPressed = Boolean(pad?.buttons[14]?.pressed) || Boolean((pad?.axes[0] ?? 0) < -0.5)
-    const rightPressed = Boolean(pad?.buttons[15]?.pressed) || Boolean((pad?.axes[0] ?? 0) > 0.5)
-    const actionPressed = Boolean(pad?.buttons[0]?.pressed)
-    const startPressed = Boolean(pad?.buttons[9]?.pressed)
-
-    if (state.phase === 'globe' && rightPressed && !previousRightPressed) {
-      callbacks.onNavigateGlobe('next')
+    if (document.visibilityState !== 'visible') {
+      gamepadFrameId = requestAnimationFrame(pollGamepad)
+      return
     }
 
-    if (state.phase === 'globe' && leftPressed && !previousLeftPressed) {
-      callbacks.onNavigateGlobe('previous')
+    const pad = connectedGamepad()
+    if (!pad) {
+      heldDirection = null
+      previousButtonStates = []
+      gamepadFrameId = requestAnimationFrame(pollGamepad)
+      return
     }
 
-    if (actionPressed && !previousActionPressed && !isModalOpen()) {
-      if (state.phase === 'title') {
-        callbacks.onStartExplore()
-      } else if (state.phase === 'globe') {
-        callbacks.onSelectDestination(currentSelectedDestination(state))
-      } else if (state.phase === 'explore') {
-        callbacks.onAdvanceFact()
-      } else if (state.phase === 'memory-collect') {
-        callbacks.onContinueMemory()
-      } else if (state.phase === 'room') {
-        callbacks.onExitRoom()
-      }
+    const now = Date.now()
+    const direction = gamepadDirection(pad)
+    if (direction && (direction !== heldDirection || now - lastNavigationAt >= NAVIGATION_DEBOUNCE_MS)) {
+      handleDirectionalInput(direction)
+      lastNavigationAt = now
+    }
+    heldDirection = direction
+
+    const actionPressed = Boolean(pad.buttons[0]?.pressed)
+    const startPressed = Boolean(pad.buttons[9]?.pressed)
+
+    if (actionPressed && !(previousButtonStates[0] ?? false)) {
+      handlePrimaryAction()
     }
 
-    if (startPressed && !previousStartPressed) {
+    if (startPressed && !(previousButtonStates[9] ?? false)) {
       window.__settingsToggle?.()
     }
 
-    previousActionPressed = actionPressed
-    previousLeftPressed = leftPressed
-    previousRightPressed = rightPressed
-    previousStartPressed = startPressed
-
-    requestAnimationFrame(pollGamepad)
+    previousButtonStates = pad.buttons.map((button) => button.pressed)
+    gamepadFrameId = requestAnimationFrame(pollGamepad)
   }
 
-  requestAnimationFrame(pollGamepad)
+  const ensureGamepadPolling = (): void => {
+    if (gamepadFrameId === null) {
+      gamepadFrameId = requestAnimationFrame(pollGamepad)
+    }
+  }
+
+  if (connectedGamepad()) {
+    ensureGamepadPolling()
+  }
+
+  window.addEventListener('gamepadconnected', ensureGamepadPolling)
+  window.addEventListener('gamepaddisconnected', () => {
+    if (connectedGamepad()) {
+      return
+    }
+
+    if (gamepadFrameId !== null) {
+      cancelAnimationFrame(gamepadFrameId)
+      gamepadFrameId = null
+    }
+
+    heldDirection = null
+    previousButtonStates = []
+  })
 }

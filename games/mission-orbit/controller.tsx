@@ -61,6 +61,7 @@ export async function missionOrbitAction() {
               }
             />
             <p className="mission-subtitle">A guided trip from the pad to the Moon and back home.</p>
+            <p className="start-hint"><kbd>A</kbd> begin or act. <kbd>Start</kbd> opens the menu. <kbd>D-pad</kbd> moves between buttons.</p>
 
             <section className="crew-picker-panel" aria-labelledby="crew-roster-title">
               <h2 id="crew-roster-title" className="crew-picker-title">Artemis II crew</h2>
@@ -119,7 +120,7 @@ export async function missionOrbitAction() {
                 <h2 id="scene-title" className="scene-title" aria-hidden="true"></h2>
                 <p id="briefing-text" className="briefing-text"></p>
                 <p id="interaction-prompt" className="interaction-prompt" hidden></p>
-                <button type="button" id="continue-btn" className="continue-prompt">Tap to continue →</button>
+                <button type="button" id="continue-btn" className="continue-prompt">Continue</button>
                 <div id="interaction-area" className="interaction-area">
                   <button id="tap-btn" type="button" className="tap-btn" aria-label="Take action" hidden>
                     Take action
@@ -183,15 +184,22 @@ export async function missionOrbitAction() {
                 <div>
                   <h4>Touch / mouse</h4>
                   <ul className="controls-list">
-                    <li>Tap or hold the action button for each scene.</li>
-                    <li>Read the mission brief and continue when ready.</li>
+                    <li>Tap Continue when the crew is ready.</li>
+                    <li>Tap or hold the action button shown for each scene.</li>
                   </ul>
                 </div>
                 <div>
                   <h4>Keyboard</h4>
                   <ul className="controls-list">
-                    <li><kbd>Space</kbd> or <kbd>Enter</kbd> fires the action.</li>
-                    <li>The mission waits at each step until you move on.</li>
+                    <li><kbd>Space</kbd> or <kbd>Enter</kbd> continues the brief or fires the action.</li>
+                    <li><kbd>Z</kbd> helps with the fast tap scene.</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4>Controller</h4>
+                  <ul className="controls-list">
+                    <li><kbd>A</kbd> begins, continues, taps, and holds while pressed.</li>
+                    <li><kbd>Start</kbd> opens the menu. <kbd>D-pad</kbd> moves between visible buttons.</li>
                   </ul>
                 </div>
               </div>

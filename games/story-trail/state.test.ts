@@ -5,6 +5,7 @@ import {
   startStory,
   makeChoice,
   collectItem,
+  toggleEquippedItem,
   completeStory,
   returnToTrailMap,
   isStoryUnlocked,
@@ -56,6 +57,7 @@ describe('createInitialState', () => {
     assert.equal(state.currentStoryId, null)
     assert.equal(state.currentSceneId, null)
     assert.deepEqual(state.inventory, [])
+    assert.equal(state.equippedItemId, null)
     assert.deepEqual(state.completedStoryIds, [])
     assert.deepEqual(state.earnedBadges, [])
     assert.equal(state.lastHint, null)
@@ -64,10 +66,11 @@ describe('createInitialState', () => {
 })
 
 describe('startStory', () => {
-  it('sets storyId and sceneId, clears inventory and hints', () => {
+  it('sets storyId and sceneId, clears inventory, equipped item, and hints', () => {
     const initial = {
       ...createInitialState(),
       inventory: ['umbrella'],
+      equippedItemId: 'umbrella',
       lastHint: 'some hint',
       lastCollectedItem: 'umbrella',
     }
@@ -75,6 +78,7 @@ describe('startStory', () => {
     assert.equal(state.currentStoryId, 'weather')
     assert.equal(state.currentSceneId, 'start')
     assert.deepEqual(state.inventory, [])
+    assert.equal(state.equippedItemId, null)
     assert.equal(state.lastHint, null)
     assert.equal(state.lastCollectedItem, null)
   })
@@ -111,8 +115,30 @@ describe('makeChoice', () => {
     assert.equal(next.lastHint, 'You need something for that.')
   })
 
-  it('moves to target scene when required item is in inventory', () => {
-    const state = { ...createInitialState(), inventory: ['umbrella'] as readonly string[] }
+  it('requires the matching item to be equipped, not just owned', () => {
+    const state = {
+      ...createInitialState(),
+      currentSceneId: 'rainy-path',
+      inventory: ['umbrella'] as readonly string[],
+    }
+    const choice: Choice = {
+      text: 'Head out',
+      targetSceneId: 'rain',
+      requiredItemId: 'umbrella',
+    }
+    const next = makeChoice(state, choice)
+    assert.equal(next.currentSceneId, 'rainy-path')
+    assert.equal(next.lastHint, 'Pick it in your bag first.')
+    assert.deepEqual(next.inventory, ['umbrella'])
+  })
+
+  it('moves to target scene when the required item is equipped', () => {
+    const state = {
+      ...createInitialState(),
+      currentSceneId: 'rainy-path',
+      inventory: ['umbrella'] as readonly string[],
+      equippedItemId: 'umbrella',
+    }
     const choice: Choice = {
       text: 'Head out',
       targetSceneId: 'rain',
@@ -123,7 +149,7 @@ describe('makeChoice', () => {
     assert.equal(next.lastHint, null)
   })
 
-  it('adds grantsItemId to inventory and sets lastCollectedItem', () => {
+  it('adds grantsItemId to inventory, auto-equips it, and sets lastCollectedItem', () => {
     const state = createInitialState()
     const choice: Choice = {
       text: 'Grab an umbrella',
@@ -133,7 +159,25 @@ describe('makeChoice', () => {
     const next = makeChoice(state, choice)
     assert.equal(next.currentSceneId, 'park')
     assert.ok(next.inventory.includes('umbrella'))
+    assert.equal(next.equippedItemId, 'umbrella')
     assert.equal(next.lastCollectedItem, 'umbrella')
+  })
+
+  it('keeps required items in inventory after they are used', () => {
+    const state = {
+      ...createInitialState(),
+      currentSceneId: 'rainy-path',
+      inventory: ['umbrella', 'watering-can'] as readonly string[],
+      equippedItemId: 'umbrella',
+    }
+    const choice: Choice = {
+      text: 'Head out',
+      targetSceneId: 'rain',
+      requiredItemId: 'umbrella',
+    }
+    const next = makeChoice(state, choice)
+    assert.deepEqual(next.inventory, ['umbrella', 'watering-can'])
+    assert.equal(next.equippedItemId, 'umbrella')
   })
 
   it('does not duplicate item already in inventory from grantsItemId', () => {
@@ -153,6 +197,33 @@ describe('makeChoice', () => {
     const next = makeChoice(state, choice)
     assert.notEqual(next, state)
     assert.deepEqual(state.inventory, [])
+  })
+})
+
+describe('toggleEquippedItem', () => {
+  it('selects an owned item and clears the last hint', () => {
+    const state = {
+      ...createInitialState(),
+      inventory: ['umbrella'] as readonly string[],
+      lastHint: 'Pick it in your bag first.',
+    }
+
+    const next = toggleEquippedItem(state, 'umbrella')
+
+    assert.equal(next.equippedItemId, 'umbrella')
+    assert.equal(next.lastHint, null)
+  })
+
+  it('clears the equipped item when the same item is toggled again', () => {
+    const state = {
+      ...createInitialState(),
+      inventory: ['umbrella'] as readonly string[],
+      equippedItemId: 'umbrella',
+    }
+
+    const next = toggleEquippedItem(state, 'umbrella')
+
+    assert.equal(next.equippedItemId, null)
   })
 })
 
@@ -179,6 +250,7 @@ describe('completeStory', () => {
       currentStoryId: 'weather',
       currentSceneId: 'park',
       inventory: ['umbrella'] as readonly string[],
+      equippedItemId: 'umbrella',
     }
     const next = completeStory(state, 'weather', 'Weather Watcher')
     assert.ok(next.completedStoryIds.includes('weather'))
@@ -186,6 +258,7 @@ describe('completeStory', () => {
     assert.equal(next.currentStoryId, null)
     assert.equal(next.currentSceneId, null)
     assert.deepEqual(next.inventory, [])
+    assert.equal(next.equippedItemId, null)
   })
 
   it('does not duplicate storyId or badgeName on repeat completion', () => {
@@ -223,12 +296,14 @@ describe('returnToTrailMap', () => {
       currentStoryId: 'weather',
       currentSceneId: 'start',
       inventory: ['umbrella'] as readonly string[],
+      equippedItemId: 'umbrella',
       lastHint: 'some hint',
     }
     const next = returnToTrailMap(state)
     assert.equal(next.currentStoryId, null)
     assert.equal(next.currentSceneId, null)
     assert.deepEqual(next.inventory, [])
+    assert.equal(next.equippedItemId, null)
     assert.equal(next.lastHint, null)
   })
 

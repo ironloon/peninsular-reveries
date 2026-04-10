@@ -75,6 +75,21 @@ export function prepareTravel(state: GameState, destinationId: DestinationId, tr
   }
 }
 
+export function revisitDestination(state: GameState, destinationId: DestinationId): GameState {
+  return {
+    ...state,
+    phase: 'explore',
+    currentLocation: destinationId,
+    targetDestination: destinationId,
+    transportType: null,
+    travelProgress: 0,
+    factIndex: 0,
+    lastGuessCorrect: null,
+    revealedDestination: false,
+    memoryWasNew: false,
+  }
+}
+
 export function advanceTravelProgress(state: GameState, deltaMs: number, durationMs: number = 2600): GameState {
   if (state.phase !== 'travel') return state
 
@@ -90,6 +105,7 @@ export function arriveAtDestination(state: GameState): GameState {
   return {
     ...state,
     phase: 'explore',
+    currentLocation: state.targetDestination,
     factIndex: 0,
     travelProgress: 1,
   }
@@ -154,6 +170,6 @@ export function exitRoom(state: GameState): GameState {
   return { ...state, phase: 'globe' }
 }
 
-export function resetGame(state: GameState): GameState {
-  return createInitialState({ collectedMemories: state.collectedMemories })
+export function resetGame(): GameState {
+  return createInitialState()
 }

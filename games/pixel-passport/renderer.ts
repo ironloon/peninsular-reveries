@@ -117,6 +117,7 @@ function updateMarkerGroup(group: 'globe' | 'mystery', state: GameState): void {
 
   for (const destination of DESTINATIONS) {
     const button = element<HTMLButtonElement>(markerId(group, destination.id))
+    const label = button.querySelector<HTMLElement>('.destination-marker-label')
     const visited = state.collectedMemories.includes(destination.id)
     const current = state.currentLocation === destination.id
     const isSelected = selected.id === destination.id
@@ -126,6 +127,22 @@ function updateMarkerGroup(group: 'globe' | 'mystery', state: GameState): void {
     button.classList.toggle('is-selected', isSelected)
     button.tabIndex = isSelected ? 0 : -1
     button.setAttribute('aria-pressed', isSelected ? 'true' : 'false')
+    button.setAttribute(
+      'aria-label',
+      current
+        ? `${destination.name}, ${destination.country}. You are here. Open this place again.`
+        : `${destination.name}, ${destination.country}`,
+    )
+
+    if (current) {
+      button.setAttribute('aria-current', 'location')
+    } else {
+      button.removeAttribute('aria-current')
+    }
+
+    if (label) {
+      label.textContent = current ? `${destination.name} · you are here` : destination.name
+    }
   }
 }
 
@@ -149,9 +166,11 @@ function renderGlobe(state: GameState): void {
   const currentLocation = getDestination(state.currentLocation)
   const selected = selectedDestination(state)
   element('globe-location-copy').textContent = currentLocation
-    ? `You last visited ${currentLocation.name}.`
+    ? `You are here: ${currentLocation.name}.`
     : 'Pick any place for your first ride.'
-  element('globe-selected-copy').textContent = `${selected.name}, ${selected.country}`
+  element('globe-selected-copy').textContent = currentLocation?.id === selected.id
+    ? `${selected.name}, ${selected.country}. You are here. Pick it again to read it again.`
+    : `${selected.name}, ${selected.country}`
   element('globe-memory-pill').textContent = formatCount(state.collectedMemories.length, 'memory')
 }
 
@@ -197,9 +216,22 @@ function renderTravel(state: GameState): void {
 
   const travelStage = element<HTMLElement>('travel-stage')
   const travelBackground = element<HTMLElement>('travel-background')
+  const travelHalo = element<HTMLElement>('travel-vehicle-halo')
   const travelShadow = element<HTMLElement>('travel-vehicle-shadow')
   const travelVehicle = element<HTMLElement>('travel-vehicle')
   const travelCopy = element<HTMLElement>('travel-copy')
+  const haloScale = state.transportType === 'plane'
+    ? 1.22
+    : state.transportType === 'boat'
+      ? 1.14
+      : state.transportType === 'train'
+        ? 1.1
+        : 1.04
+  const haloOpacity = state.transportType === 'plane'
+    ? 0.96
+    : state.transportType === 'boat'
+      ? 0.84
+      : 0.8
 
   travelStage.dataset.transport = state.transportType
   travelStage.style.setProperty('--travel-progress', state.travelProgress.toFixed(4))
@@ -208,6 +240,9 @@ function renderTravel(state: GameState): void {
   element('travel-to').textContent = destination.name
   element('travel-mode-pill').textContent = `By ${state.transportType}`
   travelBackground.style.transform = `translate3d(${(-5 - easedProgress * 16).toFixed(2)}%, 0, 0)`
+  travelHalo.style.left = `${vehicleLeft.toFixed(2)}%`
+  travelHalo.style.transform = `translate3d(-50%, ${(vehicleBob * 0.28).toFixed(2)}px, 0) scale(${haloScale.toFixed(2)})`
+  travelHalo.style.opacity = haloOpacity.toFixed(2)
   travelVehicle.style.left = `${vehicleLeft.toFixed(2)}%`
   travelVehicle.style.transform = `translate3d(-50%, ${vehicleBob.toFixed(2)}px, 0) rotate(${vehicleTilt.toFixed(2)}deg)`
   travelShadow.style.left = `${vehicleLeft.toFixed(2)}%`
