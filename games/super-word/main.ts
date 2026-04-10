@@ -203,13 +203,15 @@ function onDistractorClicked(item: SceneItem): void {
   announceDistractorClicked(item.label)
 }
 
+function focusTile(index: number): void {
+  const tile = slotsEl.querySelector(`[data-index="${index}"]`) as HTMLElement | null
+  if (tile) tile.focus()
+}
+
 function onTileSelected(index: number): void {
   const prevState = getState()
   if (prevState.selectedTileIndex === index) {
-    requestAnimationFrame(() => {
-      const tile = slotsEl.querySelector(`[data-index="${index}"]`) as HTMLElement | null
-      if (tile) tile.focus()
-    })
+    focusTile(index)
     return
   }
 
@@ -225,11 +227,7 @@ function onTileSelected(index: number): void {
   setState(nextState)
   renderCollectedLetters()
 
-  requestAnimationFrame(() => {
-    const focusIndex = nextState.selectedTileIndex ?? index
-    const tile = slotsEl.querySelector(`[data-index="${focusIndex}"]`) as HTMLElement | null
-    if (tile) tile.focus()
-  })
+  focusTile(nextState.selectedTileIndex ?? index)
 
   if (nextState.selectedTileIndex !== null) {
     announceLetterSelected(
@@ -256,10 +254,7 @@ function onLettersSwapped(indexA: number, indexB: number): void {
   announceLettersSwapped(prevLetters[indexA].char, prevLetters[indexB].char, letters)
 
   // Refocus the tile at the swapped position
-  requestAnimationFrame(() => {
-    const tile = slotsEl.querySelector(`[data-index="${indexB}"]`) as HTMLElement | null
-    if (tile) tile.focus()
-  })
+  focusTile(indexB)
 }
 
 function onCheckAnswer(): void {

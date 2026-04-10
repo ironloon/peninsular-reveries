@@ -153,7 +153,7 @@ test.describe('SITE-04: Accessibility', () => {
     await expect(page.locator('#letter-slots .letter-tile')).toHaveCount(0)
   })
 
-  test('keyboard tile selection and swapping updates the polite live region and tile order', async ({ page }) => {
+  test('keyboard tile selection and immediate movement keep focus stable before swapping', async ({ page }) => {
     await startGame(page)
 
     const remainingLetters = page.locator('#scene-a11y .sr-overlay-btn[data-item-type="letter"]:not(.collected)')
@@ -175,13 +175,11 @@ test.describe('SITE-04: Accessibility', () => {
     const secondTile = page.locator('#letter-slots .letter-tile').nth(1)
     await firstTile.focus()
     await page.keyboard.press('Enter')
-
-    await expect(page.locator('#game-status')).toContainText('Selected letter')
-    await expect(firstTile).toBeFocused()
     await page.keyboard.press('ArrowRight')
 
     await expect(page.locator('#game-status')).toContainText('Selected letter')
     await expect(secondTile).toBeFocused()
+  await expect(page.locator('#letter-slots .letter-tile.selected')).toContainText(firstBefore)
     await expect(page.locator('#letter-slots .letter-tile').nth(0)).toContainText(firstBefore)
     await expect(page.locator('#letter-slots .letter-tile').nth(1)).toContainText(secondBefore)
 
