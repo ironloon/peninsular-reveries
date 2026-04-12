@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 const pages = [
   { name: 'homepage', path: '/', expectedFavicon: '/favicon.svg' },
   { name: 'game page', path: '/super-word/', expectedFavicon: '/favicon-game-super-word.svg' },
+  { name: 'Squares game page', path: '/squares/', expectedFavicon: '/favicon-game-squares.svg' },
   { name: '404 page', path: '/404.html', expectedFavicon: '/favicon.svg' },
 ];
 
@@ -44,5 +45,12 @@ test.describe('SITE-05: SVG favicon', () => {
     const manifest = page.locator('link[rel="manifest"]');
     await expect(manifest).toBeAttached();
     await expect(manifest).toHaveAttribute('href', '/super-word/manifest.json');
+  });
+
+  test('Squares page advertises a game-scoped install manifest', async ({ page }) => {
+    await page.goto('/squares/');
+    const manifest = page.locator('link[rel="manifest"]');
+    await expect(manifest).toBeAttached();
+    await expect(manifest).toHaveAttribute('href', '/squares/manifest.json');
   });
 });

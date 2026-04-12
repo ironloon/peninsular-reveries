@@ -9,10 +9,12 @@ export const routes = route({
   chompersInfo: '/chompers/info/',
   pixelPassportInfo: '/pixel-passport/info/',
   storyTrailInfo: '/story-trail/info/',
+  squaresInfo: '/squares/info/',
   missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
   chompers: '/chompers/',
   pixelPassport: '/pixel-passport/',
   storyTrail: '/story-trail/',
+  squares: '/squares/',
   notFound: '/404.html',
 })

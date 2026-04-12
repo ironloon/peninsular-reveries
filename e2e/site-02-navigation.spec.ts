@@ -7,9 +7,19 @@ test.describe('SITE-02: Navigation', () => {
     await expect(gameLink).toBeVisible();
   });
 
+  test('homepage has link to Squares game', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'Open Squares' })).toBeVisible();
+  });
+
   test('homepage has link to the game info page', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('link', { name: 'View info for Super Word' })).toBeVisible();
+  });
+
+  test('homepage has link to the Squares info page', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('link', { name: 'View info for Squares' })).toBeVisible();
   });
 
   test('clicking game link navigates to /super-word/', async ({ page }) => {
@@ -26,11 +36,33 @@ test.describe('SITE-02: Navigation', () => {
     expect(page.url()).toContain('super-word');
   });
 
+  test('clicking Squares game link navigates to /squares/', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('link', { name: 'Open Squares' }).click();
+    await page.waitForURL('**/squares/**');
+    expect(page.url()).toContain('squares');
+  });
+
+  test('clicking the Squares card body navigates to /squares/', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('heading', { name: 'Squares' }).click();
+    await page.waitForURL('**/squares/**');
+    expect(page.url()).toContain('squares');
+  });
+
   test('game page exposes Quit inside the Menu', async ({ page }) => {
     await page.goto('/super-word/');
     await page.getByRole('button', { name: /let's go/i }).click();
     await page.locator('#scene-a11y .sr-overlay-btn[tabindex="0"]').first().waitFor();
     await page.getByRole('button', { name: 'Menu' }).click();
+    await expect(page.getByRole('link', { name: 'Quit' })).toBeVisible();
+  });
+
+  test('Squares game page exposes Quit inside the Menu', async ({ page }) => {
+    await page.goto('/squares/');
+    await page.getByRole('button', { name: 'Start puzzle' }).click();
+    await expect(page.locator('#squares-board')).toBeVisible();
+    await page.locator('#game-screen').getByRole('button', { name: 'Menu' }).first().click();
     await expect(page.getByRole('link', { name: 'Quit' })).toBeVisible();
   });
 
@@ -52,6 +84,18 @@ test.describe('SITE-02: Navigation', () => {
     const response = await page.goto('/super-word/');
     expect(response?.status()).toBe(200);
     await expect(page.locator('main')).toBeVisible();
+  });
+
+  test('Squares game page is directly URL-addressable', async ({ page }) => {
+    const response = await page.goto('/squares/');
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('main')).toBeVisible();
+  });
+
+  test('Squares info page is directly URL-addressable', async ({ page }) => {
+    const response = await page.goto('/squares/info/');
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('main')).toContainText('Squares');
   });
 
   test('attributions page is directly URL-addressable', async ({ page }) => {

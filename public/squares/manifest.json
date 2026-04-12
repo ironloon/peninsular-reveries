@@ -1,0 +1,22 @@
+{
+  "id": "./",
+  "name": "Squares",
+  "short_name": "Squares",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#d9d7d2",
+  "theme_color": "#d9d7d2",
+  "icons": [
+    {
+      "src": "../favicon-game-squares.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "../apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}

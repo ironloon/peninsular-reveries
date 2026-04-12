@@ -4,6 +4,8 @@ import { missionOrbitAttribution } from '../../games/mission-orbit/attributions.
 import { missionOrbitInfo } from '../../games/mission-orbit/info.js'
 import { pixelPassportAttribution } from '../../games/pixel-passport/attributions.js'
 import { pixelPassportInfo } from '../../games/pixel-passport/info.js'
+import { squaresAttribution } from '../../games/squares/attributions.js'
+import { squaresInfo } from '../../games/squares/info.js'
 import { superWordAttribution } from '../../games/super-word/attributions.js'
 import { superWordInfo } from '../../games/super-word/info.js'
 import { storyTrailAttribution } from '../../games/story-trail/attributions.js'
@@ -24,6 +26,7 @@ const gameEntries: readonly { attribution: GameAttribution; info: GameInfo }[] =
   { attribution: chompersAttribution, info: chompersInfo },
   { attribution: pixelPassportAttribution, info: pixelPassportInfo },
   { attribution: storyTrailAttribution, info: storyTrailInfo },
+  { attribution: squaresAttribution, info: squaresInfo },
 ]
 
 export const gameAttributions: readonly GameAttributionWithInfo[] = gameEntries.map(

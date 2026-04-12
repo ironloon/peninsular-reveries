@@ -5,10 +5,12 @@ const staticPages = [
   { name: 'homepage', path: '/' },
   { name: 'attributions page', path: '/attributions/' },
   { name: 'game start screen', path: '/super-word/' },
+  { name: 'Squares start screen', path: '/squares/' },
   { name: '404 page', path: '/404.html' },
 ]
 
 const gamePath = '/super-word/'
+const squaresGamePath = '/squares/'
 
 async function startGame(page: Page): Promise<void> {
   await page.goto(gamePath)
@@ -20,6 +22,20 @@ async function startGame(page: Page): Promise<void> {
   const firstSceneItem = page.locator('#scene-a11y .sr-overlay-btn[tabindex="0"]').first()
   await expect(firstSceneItem).toBeAttached()
   await expect(firstSceneItem).toBeFocused()
+}
+
+async function startSquaresGame(page: Page, rulesetId: 'classic-hybrid' | 'easy-plus' = 'classic-hybrid'): Promise<void> {
+  await page.goto(squaresGamePath)
+
+  if (rulesetId !== 'classic-hybrid') {
+    await page.getByRole('button', { name: 'Menu' }).click()
+    await page.locator('#ruleset-select').selectOption(rulesetId)
+    await page.keyboard.press('Escape')
+  }
+
+  await page.getByRole('button', { name: 'Start puzzle' }).click()
+  await expect(page.locator('#game-screen')).toHaveClass(/active/)
+  await expect(page.locator('#squares-board')).toBeVisible()
 }
 
 test.describe('SITE-04: Accessibility', () => {
@@ -199,5 +215,68 @@ test.describe('SITE-04: Accessibility', () => {
 
     await expect(page.locator('.flying-letter')).toHaveCount(0)
     await expect(page.locator('#game-feedback')).toContainText('Collected letter')
+  })
+
+  test('Squares settings dialog is keyboard accessible and restores focus when closed', async ({ page }) => {
+    await startSquaresGame(page)
+
+    const settingsButton = page.locator('#game-screen').getByRole('button', { name: 'Menu' }).first()
+    await settingsButton.focus()
+    await page.keyboard.press('Enter')
+
+    const dialog = page.getByRole('dialog', { name: 'Menu' })
+    await expect(dialog).toBeVisible()
+    await expect(page.locator('#settings-close-btn')).toBeFocused()
+
+    await page.keyboard.press('Escape')
+
+    await expect(dialog).toBeHidden()
+    await expect(settingsButton).toBeFocused()
+  })
+
+  test('Squares move announcements update the polite live region', async ({ page }) => {
+    await startSquaresGame(page)
+
+    await page.locator('#squares-cell-r0-c0').focus()
+    await page.keyboard.press('Enter')
+
+    await expect(page.locator('#hud-move-count')).toHaveText('1')
+    await expect(page.locator('#game-status')).toContainText('Move 1.')
+  })
+
+  test('Squares pattern changes announce in the polite live region', async ({ page }) => {
+    await startSquaresGame(page)
+
+    const patternToggle = page.locator('[data-squares-pattern-toggle="true"]')
+    await expect(patternToggle).toHaveText(/Pattern: Plus/)
+    await patternToggle.click()
+
+    await expect(patternToggle).toHaveText(/Pattern: X/)
+    await expect(page.locator('#game-status')).toContainText('X on.')
+  })
+
+  test('Squares active gameplay state has no critical accessibility violations in the rendered build', async ({ page }) => {
+    await startSquaresGame(page)
+
+    const results = await new AxeBuilder({ page })
+      .include('#game-screen')
+      .include('#game-status')
+      .include('#game-feedback')
+      .withTags(['wcag2a', 'wcag2aa'])
+      .analyze()
+
+    expect(results.violations).toEqual([])
+  })
+
+  test('Squares solving updates the win context and assertive live region', async ({ page }) => {
+    await startSquaresGame(page, 'easy-plus')
+
+    await page.locator('#squares-cell-r1-c1').click()
+    await page.locator('#squares-cell-r0-c2').click()
+
+    await expect(page.locator('#win-screen')).toHaveClass(/active/)
+    await expect(page.locator('#game-feedback')).toContainText('Solved in 2 moves.')
+    await expect(page.locator('#win-summary')).toContainText('Solved in 2 moves.')
+    await expect(page.locator('#win-high-score-context')).toContainText('Easy Plus')
   })
 })

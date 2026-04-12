@@ -30,6 +30,17 @@ test.describe('SITE-06: Noscript fallback', () => {
     await context.close();
   });
 
+  test('Squares game page shows a noscript message and loads without errors with JS disabled', async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    const page = await context.newPage();
+    const response = await page.goto('/squares/');
+    expect(response?.status()).toBe(200);
+    await expect(page.locator('main')).toBeVisible();
+    await expect(page.locator('.noscript-message-squares')).toBeVisible();
+    await expect(page.locator('.noscript-message-squares')).toContainText('Squares needs JavaScript');
+    await context.close();
+  });
+
   test('404 page loads without errors with JS disabled', async ({ browser }) => {
     const context = await browser.newContext({ javaScriptEnabled: false });
     const page = await context.newPage();

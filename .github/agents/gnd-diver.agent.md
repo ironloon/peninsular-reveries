@@ -1,5 +1,6 @@
 ---
-description: "Implementation agent. Executes a single plan leg by reading code, making changes, and running verification."
+name: "gnd-diver"
+description: "Implementation agent. Executes a single confirmed plan leg by reading code, making bounded changes in owned files, and running the leg verification command."
 user-invocable: false
 agents: []
 ---

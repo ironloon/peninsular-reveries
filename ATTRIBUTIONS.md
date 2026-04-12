@@ -283,3 +283,31 @@
 - License: GPL-3.0
 - Modifications: Not applicable
 - Notes: All sound effects are synthesized in real-time.
+
+### Squares
+
+- Slug: squares
+- Code license: GPL-3.0
+- Summary: Squares is a calm tile puzzle. Flip the board into one shared color by tapping cells and switching between plus and X patterns. It keeps local high scores by board size and ruleset, and all music and sound are synthesized in the browser at runtime.
+
+#### Entries
+
+##### Squares music profiles
+
+- Type: music
+- Used in: Squares chill and tense menu and play music profiles
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Both music profiles are synthesized at runtime with deterministic note schedules. No bundled music files ship with the game.
+
+##### Squares sound effects
+
+- Type: sound effect
+- Used in: Squares move confirmations, pattern switches, and win cue
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: All sound effects are synthesized at runtime unless a future implementation proves external media necessary.

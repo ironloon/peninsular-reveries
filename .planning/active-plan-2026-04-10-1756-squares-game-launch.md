@@ -22,7 +22,7 @@ You want a new full-screen game called Squares that keeps the core feel of your 
 ## Legs
 
 ### LEG-1: Squares - Rules engine
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Create the pure board model that makes Squares faithful, fair, restartable, and scoreable across classic hybrid play and easier locked-pattern variants.
 - Depends on: none
@@ -39,7 +39,7 @@ You want a new full-screen game called Squares that keeps the core feel of your 
 - Intent: (1) In `types.ts`, define the core puzzle contract: board cell values, row/column coordinates, board preset metadata, ruleset IDs (`classic-hybrid`, `easy-plus`, `easy-x`), theme preset IDs, celebration pattern IDs, game phases, and the high-score bucket key shape. Keep these types implementation-oriented so `main.ts`, `renderer.ts`, and settings UI can all read the same preset and ruleset labels without duplicating strings. (2) In `state.ts`, implement pure immutable helpers for creating a board from a preset, computing the affected cells for plus and X patterns with edge clipping, applying a move, switching patterns in classic hybrid mode, locking patterns in easy modes, detecting a solved board when every cell is either all light or all dark, computing the active high-score key, and restarting the current puzzle from its original scramble instead of generating a fresh board. (3) Easy modes must generate guaranteed-solvable starts by reverse-scrambling from a solved board using only the locked pattern for that mode; classic hybrid mode can use the same board-generation machinery but must still allow the player to switch between plus and X during play because that is core to the original design. (4) Keep move counts and local best-score buckets separate by preset and ruleset so guaranteed-solvable easy boards never overwrite classic hybrid highs. (5) In `state.test.ts`, add explicit assertions for plus-shape toggles, X-shape toggles, corner and edge clipping, solved detection for both all-light and all-dark boards, easy-mode pattern locking, restart restoring the original scramble, reverse-scrambled easy boards being built from legal moves, and high-score keys differing for classic hybrid vs easy-plus vs easy-x on the same board preset. Relevant project constraints: state transitions stay pure and immutable, pacing stays calm and user-controlled, and no network or account state is introduced.
 
 ### LEG-2: Squares - Interaction and board runtime
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Turn the rules engine into a playable board that is clear and usable across keyboard, mouse, touch, and controller on every supported viewport.
 - Depends on: LEG-1
@@ -59,7 +59,7 @@ You want a new full-screen game called Squares that keeps the core feel of your 
 - Intent: (1) In `renderer.ts`, render the active puzzle as a semantic grid of native `<button>` elements, never generic `<div>` click targets, with stable IDs/data attributes for row, column, and current pattern preview hooks. The grid must stay full-screen friendly with no document scroll, safe-area-aware spacing, and touch targets that remain at least 44px where interaction is expected. (2) Build clear preview state for the next move: before activation, the focused or hovered cell and every affected plus/X neighbor should show a readable preview treatment; when reduced motion is enabled, swap pulsing or flowing emphasis for calmer contrast, outline, or shade changes that still make the target pattern obvious. (3) In `input.ts`, normalize actions around move focus, play cell, toggle pattern, open menu, and restart-current-puzzle. Support arrow keys and Enter/Space for play, provide a direct keyboard shortcut for pattern switching during gameplay, allow mouse users to right-click to switch the active pattern, allow touch users to long-hold to switch the active pattern, and keep a dedicated focusable pattern-toggle control for keyboard and gamepad users so the mechanic is never hidden behind gestures. Gamepad support must include D-pad navigation between grid cells and controls, button 0/A for select, button 9/Start for menu, a dedicated controller button for pattern switching, analog-stick dead zone +/-0.5, roughly 200ms debounce, and graceful handling for connection or disconnection. (4) In `accessibility.ts`, announce pattern changes, moves, restart events, high-score context changes, and solved-state feedback through `#game-status` (polite) and `#game-feedback` (assertive), using short low-reading-level strings. (5) In `animations.ts`, implement crunchy-but-calm feedback for played moves plus solve celebrations that can sweep across the board in a few styles such as snake, wave, and diagonal fan; each effect must have a reduced-motion-safe equivalent that still communicates success without relying on travel-heavy animation. Visual checkpoint: the idle board feels calm and tactile, the currently targeted plus/X pattern is obvious before every move, and a solved board celebrates briefly before settling into a clean unified field. (6) In `input.test.ts`, add explicit assertions for keyboard pattern switching, mouse right-click mapping to pattern toggle without also consuming the move path, long-hold threshold behavior vs tap behavior on touch input helpers, and controller mappings for D-pad, A/select, Start/menu, and the dedicated pattern-switch action. Relevant project constraints: keyboard, touch/pointer, and gamepad must all work; WCAG 2A/2AA semantics and focus handling apply; iOS Safari requires native interactive elements; and reduced-motion support must preserve correct visual state, not just suppress animation.
 
 ### LEG-3: Squares - Shell, audio, and game assets
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Present Squares as a finished Peninsular Reveries game with clear settings, visible high scores, calm visuals, synth audio, and install/offline support.
 - Depends on: LEG-1, LEG-2
@@ -110,3 +110,7 @@ Sequential via runSubagent (navigator reviews between each):
 3. LEG-3 (Squares - Shell, audio, and game assets) - depends on LEG-1 and LEG-2
 
 After all complete: apply deferred edits -> `pnpm sync:attributions` -> `pnpm test:local` -> commit -> push.
+
+## Implementation
+Commit: none (local-only)
+Pushed: not applicable (local-only)

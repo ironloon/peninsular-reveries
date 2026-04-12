@@ -6,7 +6,7 @@ const viewports = [
   { name: 'desktop', width: 1280, height: 800 },
 ];
 
-const pages = ['/', '/attributions/', '/super-word/', '/mission-orbit/', '/pixel-passport/'];
+const pages = ['/', '/attributions/', '/super-word/', '/mission-orbit/', '/pixel-passport/', '/squares/'];
 
 test.describe('SITE-01: Responsive layout', () => {
   for (const vp of viewports) {
@@ -144,5 +144,46 @@ test.describe('SITE-01: Responsive layout', () => {
     });
 
     expect(controlsFit).toBe(true);
+  });
+
+  test('Squares keeps the board and pattern control visible across project viewport checkpoints', async ({ page }) => {
+    for (const viewport of [
+      { width: 390, height: 844 },
+      { width: 844, height: 390 },
+      { width: 1024, height: 768 },
+      { width: 1280, height: 800 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.goto('/squares/');
+      await page.getByRole('button', { name: 'Start puzzle' }).click();
+
+      const board = page.locator('#squares-board');
+      const patternToggle = page.locator('[data-squares-pattern-toggle="true"]');
+      const firstCell = page.locator('#squares-cell-r0-c0');
+
+      await expect(board).toBeVisible();
+      await expect(patternToggle).toBeVisible();
+      await expect(firstCell).toBeVisible();
+      await expect(patternToggle).toBeInViewport();
+      await expect(firstCell).toBeInViewport();
+
+      const layoutFits = await page.evaluate(() => {
+        const boardElement = document.getElementById('squares-board');
+        const patternToggleButton = document.querySelector('[data-squares-pattern-toggle="true"]');
+        if (!(boardElement instanceof HTMLElement) || !(patternToggleButton instanceof HTMLElement)) {
+          return false;
+        }
+
+        const boardRect = boardElement.getBoundingClientRect();
+        const toggleRect = patternToggleButton.getBoundingClientRect();
+        return boardRect.left >= 0
+          && boardRect.right <= window.innerWidth + 1
+          && boardRect.bottom <= window.innerHeight + 1
+          && toggleRect.bottom <= window.innerHeight + 1
+          && document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1;
+      });
+
+      expect(layoutFits).toBe(true);
+    }
   });
 });

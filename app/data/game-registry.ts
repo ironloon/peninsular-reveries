@@ -42,4 +42,11 @@ export const games: GameEntry[] = [
     icon: '📖',
     status: 'live',
   },
+  {
+    slug: 'squares',
+    name: 'Squares',
+    description: 'Make the whole board match by flipping tiles with plus and X patterns.',
+    icon: '🔳',
+    status: 'live',
+  },
 ]

@@ -99,7 +99,62 @@ async function advanceMissionOrbitSceneToInteraction(page: Page): Promise<void> 
   await expect(actionButton).toBeInViewport()
 }
 
+async function startSquaresGame(page: Page): Promise<void> {
+  await page.goto('/squares/')
+  await page.getByRole('button', { name: 'Start puzzle' }).click()
+  await expect(page.locator('#game-screen')).toBeVisible()
+  await expect(page.locator('#squares-board')).toBeVisible()
+}
+
 test.describe('SITE-07: Game smoke tests', () => {
+  // Squares
+  test('Squares — start screen is visible', async ({ page }) => {
+    await page.goto('/squares/')
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Squares' })).toBeVisible()
+  })
+
+  test('Squares — game board and runtime controls stay in the viewport on start', async ({ page }) => {
+    await startSquaresGame(page)
+
+    await expect(page.locator('#squares-board')).toBeInViewport()
+    await expect(page.locator('[data-squares-pattern-toggle="true"]')).toBeInViewport()
+    await expect(page.locator('#squares-cell-r0-c0')).toBeInViewport()
+  })
+
+  test('Squares — pointer play counts a move after switching patterns with right click', async ({ page }) => {
+    await startSquaresGame(page)
+
+    const patternToggle = page.locator('[data-squares-pattern-toggle="true"]')
+    await expect(patternToggle).toHaveText(/Pattern: Plus/)
+
+    await page.locator('#squares-cell-r0-c0').click({ button: 'right' })
+    await expect(patternToggle).toHaveText(/Pattern: X/)
+
+    await page.locator('#squares-cell-r0-c0').click()
+    await expect(page.locator('#hud-move-count')).toHaveText('1')
+    await expect(page.locator('#game-status')).toContainText('Move 1.')
+  })
+
+  test('Squares — controller opens the menu on start and starts the game', async ({ page }) => {
+    await installMockGamepad(page)
+    await page.goto('/squares/')
+
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await expect(page.locator('#start-btn')).toBeInViewport()
+
+    await tapGamepadButton(page, 9)
+    await expect(page.locator('#settings-modal')).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(page.locator('#settings-modal')).toBeHidden()
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#game-screen')).toBeVisible()
+    await expect(page.locator('#squares-board')).toBeInViewport()
+    await expect(page.locator('[data-squares-pattern-toggle="true"]')).toBeInViewport()
+  })
+
   // Chompers
   test('Chompers — start screen is visible', async ({ page }) => {
     await page.goto('/chompers/')

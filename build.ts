@@ -21,6 +21,7 @@ const swFiles = [
   'super-word/sw.js',
   'pixel-passport/sw.js',
   'story-trail/sw.js',
+  'squares/sw.js',
 ]
 for (const swFile of swFiles) {
   const swPath = join(outputDir, swFile)
@@ -38,6 +39,7 @@ mkdirSync(join(outputDir, 'client', 'super-word'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'chompers'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'pixel-passport'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'story-trail'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'squares'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -77,6 +79,7 @@ await esbuild.build({
     'games/chompers/main.ts',
     'games/pixel-passport/main.ts',
     'games/story-trail/main.ts',
+    'games/squares/main.ts',
   ],
   bundle: true,
   outbase: 'games',
@@ -103,6 +106,8 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/pixel-passport/info/', outPath: 'pixel-passport/info/index.html' },
   { url: 'http://localhost/story-trail/', outPath: 'story-trail/index.html' },
   { url: 'http://localhost/story-trail/info/', outPath: 'story-trail/info/index.html' },
+  { url: 'http://localhost/squares/', outPath: 'squares/index.html' },
+  { url: 'http://localhost/squares/info/', outPath: 'squares/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -147,6 +152,7 @@ const pages: Record<string, string[]> = {
   chompers: ['chompers/index.html', 'styles/chompers.css', 'client/shell.js', 'client/chompers/main.js'],
   'pixel-passport': ['pixel-passport/index.html', 'styles/pixel-passport.css', 'client/shell.js', 'client/pixel-passport/main.js'],
   'story-trail': ['story-trail/index.html', 'styles/story-trail.css', 'client/shell.js', 'client/story-trail/main.js'],
+  squares: ['squares/index.html', 'styles/squares.css', 'client/shell.js', 'client/squares/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 

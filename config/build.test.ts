@@ -7,10 +7,14 @@ import test from 'node:test'
 
 const buildScript = readFileSync('build.ts', 'utf-8')
 
-test('build budget tracking includes Story Trail', () => {
+test('build budget tracking includes Story Trail and Squares', () => {
   assert.match(
     buildScript,
     /'story-trail': \[\s*'story-trail\/index\.html',\s*'styles\/story-trail\.css',\s*'client\/shell\.js',\s*'client\/story-trail\/main\.js',?\s*\]/s,
+  )
+  assert.match(
+    buildScript,
+    /squares: \[\s*'squares\/index\.html',\s*'styles\/squares\.css',\s*'client\/shell\.js',\s*'client\/squares\/main\.js',?\s*\]/s,
   )
 })
 
@@ -40,12 +44,15 @@ test('build script writes the expected static output', () => {
       'chompers/index.html',
       'story-trail/index.html',
       'story-trail/info/index.html',
+      'squares/index.html',
+      'squares/info/index.html',
       '404.html',
       'styles/main.css',
       'styles/pixel-passport.css',
       'styles/mission-orbit.css',
       'styles/chompers.css',
       'styles/story-trail.css',
+      'styles/squares.css',
       'client/shell.js',
       'client/home.js',
       'client/super-word/main.js',
@@ -53,9 +60,11 @@ test('build script writes the expected static output', () => {
       'client/mission-orbit/main.js',
       'client/chompers/main.js',
       'client/story-trail/main.js',
+      'client/squares/main.js',
       'client/404.js',
       'favicon.svg',
       'favicon-game-super-word.svg',
+      'favicon-game-squares.svg',
       'favicon-game-story-trail.svg',
       'manifest.json',
       'super-word/manifest.json',
@@ -63,12 +72,14 @@ test('build script writes the expected static output', () => {
       'mission-orbit/manifest.json',
       'chompers/manifest.json',
       'story-trail/manifest.json',
+      'squares/manifest.json',
       'sw.js',
       'super-word/sw.js',
       'pixel-passport/sw.js',
       'mission-orbit/sw.js',
       'chompers/sw.js',
       'story-trail/sw.js',
+      'squares/sw.js',
     ]) {
       assert.ok(existsSync(join(outputDir, relativePath)), `Expected ${relativePath} to exist in build output`)
     }
@@ -80,6 +91,9 @@ test('build script writes the expected static output', () => {
     const missionOrbitHtml = readFileSync(join(outputDir, 'mission-orbit/index.html'), 'utf-8')
     const chompersHtml = readFileSync(join(outputDir, 'chompers/index.html'), 'utf-8')
     const storyTrailHtml = readFileSync(join(outputDir, 'story-trail/index.html'), 'utf-8')
+    const squaresHtml = readFileSync(join(outputDir, 'squares/index.html'), 'utf-8')
+    const squaresInfoHtml = readFileSync(join(outputDir, 'squares/info/index.html'), 'utf-8')
+    const squaresServiceWorker = readFileSync(join(outputDir, 'squares/sw.js'), 'utf-8')
     const siteServiceWorker = readFileSync(join(outputDir, 'sw.js'), 'utf-8')
 
     assert.match(homeHtml, /href="\/manifest\.json"/)
@@ -101,6 +115,14 @@ test('build script writes the expected static output', () => {
     assert.match(storyTrailHtml, /href="\/favicon-game-story-trail\.svg"/)
     assert.doesNotMatch(storyTrailHtml, /href="\/styles\/main\.css"/)
     assert.doesNotMatch(storyTrailHtml, /data-service-worker-path=/)
+    assert.match(squaresHtml, /href="\/squares\/manifest\.json"/)
+    assert.match(squaresHtml, /href="\/favicon-game-squares\.svg"/)
+    assert.doesNotMatch(squaresHtml, /href="\/styles\/main\.css"/)
+    assert.match(squaresHtml, /data-service-worker-path="\/squares\/sw\.js"/)
+    assert.match(squaresHtml, /data-service-worker-scope="\/squares\/"/)
+    assert.match(squaresInfoHtml, /Squares/)
+    assert.match(squaresServiceWorker, /self\.registration\.unregister\(\)/)
+    assert.match(squaresServiceWorker, /key\.startsWith\('squares'\)/)
     assert.match(siteServiceWorker, /favicon-game-story-trail\.svg/)
     assert.match(siteServiceWorker, /story-trail\//)
     assert.match(siteServiceWorker, /story-trail\/info\//)

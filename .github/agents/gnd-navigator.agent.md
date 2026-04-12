@@ -1,5 +1,7 @@
 ---
-description: "Dispatch agent. Reads a structured plan from memory, dispatches legs to gnd-diver via runSubagent, reviews results, and runs the project-defined integration gate."
+name: "gnd-navigator"
+description: "Dispatch agent. Use when you want an active .planning plan dispatched end-to-end by sending confirmed legs to gnd-diver, reviewing results, and running the project-defined integration gate."
+user-invocable: true
 argument-hint: "Open a fresh chat and send a short bootstrap like 'start' or 'dispatch'; include a plan title or file if multiple live plans exist."
 agents: ["gnd-diver"]
 contracts:

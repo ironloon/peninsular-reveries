@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 const pages = [
   { name: 'homepage', path: '/', role: 'link', text: 'Open Super Word' },
   { name: 'game page', path: '/super-word/', role: 'button', text: "Let's Go!" },
+  { name: 'Squares game page', path: '/squares/', role: 'button', text: 'Start puzzle' },
   { name: '404 page', path: '/404.html', role: 'link', text: 'Back to the homepage →' },
 ];
 
@@ -43,5 +44,11 @@ test.describe('SITE-03: Semantic HTML', () => {
     // Game page uses h2 headings for complete/win screens
     const heading = page.locator('h1, h2').first();
     await expect(heading).toBeAttached();
+  });
+
+  test('Squares game page has heading hierarchy', async ({ page }) => {
+    await page.goto('/squares/');
+    await expect(page.locator('h1')).toContainText('Squares');
+    await expect(page.locator('h2').first()).toBeAttached();
   });
 });
