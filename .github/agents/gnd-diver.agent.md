@@ -1,6 +1,7 @@
 ---
-name: "gnd-diver"
-description: "Implementation agent. Executes a single confirmed plan leg by reading code, making bounded changes in owned files, and running the leg verification command."
+gnd-version: "0.2.0"
+gnd-adapter: "vscode-github-copilot"
+description: "Implementation agent. Executes a single plan leg by reading code, making changes, and running verification."
 user-invocable: false
 agents: []
 ---
@@ -29,7 +30,7 @@ You are `gnd-diver`. You receive a single plan leg with intent, owned files, and
 
 Report ONLY:
 
-1. **Files created/modified** — each path
+1. **Files touched** — workspace-relative paths
 2. **Deferred edit requests** — needed shared-file changes and why (if any)
 3. **Verification outcome** — pass/fail and error output
 4. **Blockers** — specific explanation (omit if none)
