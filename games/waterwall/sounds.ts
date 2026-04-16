@@ -196,7 +196,7 @@ export function playBarrierPlaceSound(): void {
 
     const gain = context.createGain()
     gain.gain.setValueAtTime(0.0001, now)
-    gain.gain.linearRampToValueAtTime(0.05, now + 0.008)
+    gain.gain.linearRampToValueAtTime(0.025, now + 0.008)
     gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18)
 
     osc.connect(gain)

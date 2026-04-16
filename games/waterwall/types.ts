@@ -47,5 +47,5 @@ export const WATERWALL_DEFAULT_CONFIG: WaterwallConfig = {
 }
 
 export function computeMaxBarriers(columns: number): number {
-  return Math.floor(columns * 0.7)
+  return Math.floor(columns * 1.5)
 }

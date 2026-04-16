@@ -95,8 +95,8 @@ function waterColor(row: number, column: number, timestamp: number, reducedMotio
   // Animated flowing texture: sine wave scrolls downward across cells.
   // Negative row term makes the pattern drift downward over time.
   const alpha = reducedMotion
-    ? 0.68
-    : 0.62 + Math.sin(timestamp * 0.002 - row * 0.45 + column * 0.25) * 0.08
+    ? 0.55
+    : 0.45 + Math.sin(timestamp * 0.003 - row * 0.45 + column * 0.25) * 0.10
 
   return `rgba(${r},${g},${b},${alpha})`
 }

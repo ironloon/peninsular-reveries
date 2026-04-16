@@ -20,7 +20,7 @@ describe('createGrid', () => {
     assert.equal(grid.rows, 5)
     assert.equal(grid.columns, 8)
     assert.equal(grid.barrierCount, 0)
-    assert.equal(grid.maxBarriers, Math.floor(8 * 0.7))
+    assert.equal(grid.maxBarriers, Math.floor(8 * 1.5))
     for (let r = 0; r < 5; r++) {
       for (let c = 0; c < 8; c++) {
         assert.equal(grid.cells[r][c], 'empty')
@@ -113,7 +113,7 @@ describe('simulateTick', () => {
 describe('placeBarrier', () => {
   it('succeeds when budget allows', () => {
     const grid = createGrid(5, 4)
-    // maxBarriers = floor(4 * 0.7) = 2; placing first barrier is fine
+    // maxBarriers = floor(4 * 1.5) = 6; placing first barrier is fine
     const after = placeBarrier(grid, { row: 2, column: 1 })
     assert.notEqual(after, grid)
     assert.equal(after.cells[2][1], 'barrier')
@@ -121,18 +121,18 @@ describe('placeBarrier', () => {
   })
 
   it('evicts the oldest barrier (FIFO) when at max', () => {
-    let grid = createGrid(5, 5) // maxBarriers = floor(5 * 0.7) = 3
+    let grid = createGrid(5, 2) // maxBarriers = floor(2 * 1.5) = 3
     grid = placeBarrier(grid, { row: 0, column: 0 })
     grid = placeBarrier(grid, { row: 0, column: 1 })
-    grid = placeBarrier(grid, { row: 0, column: 2 })
+    grid = placeBarrier(grid, { row: 1, column: 0 })
     assert.equal(grid.barrierCount, 3)
     assert.equal(grid.maxBarriers, 3)
 
     // Placing a 4th evicts the first-placed barrier at (0,0)
-    const after = placeBarrier(grid, { row: 0, column: 3 })
+    const after = placeBarrier(grid, { row: 1, column: 1 })
     assert.notEqual(after, grid, 'should evict and place rather than block')
     assert.equal(after.cells[0][0], 'empty', 'oldest barrier should be evicted')
-    assert.equal(after.cells[0][3], 'barrier', 'new barrier should be placed')
+    assert.equal(after.cells[1][1], 'barrier', 'new barrier should be placed')
     assert.equal(after.barrierCount, 3, 'count stays at max')
   })
 
@@ -154,15 +154,15 @@ describe('placeBarrier', () => {
 })
 
 describe('barrier budget', () => {
-  it('computes Math.floor(columns * 0.7) for various column counts', () => {
+  it('computes Math.floor(columns * 1.5) for various column counts', () => {
     const cases: [number, number][] = [
-      [1, 0],
-      [2, 1],
-      [3, 2],
-      [4, 2],
-      [5, 3],
-      [10, 7],
-      [7, 4],
+      [1, 1],
+      [2, 3],
+      [3, 4],
+      [4, 6],
+      [5, 7],
+      [10, 15],
+      [7, 10],
     ]
     for (const [columns, expected] of cases) {
       assert.equal(computeMaxBarriers(columns), expected, `columns=${columns}`)
@@ -232,7 +232,7 @@ describe('bresenhamLine', () => {
 
 describe('placeBarrierLine', () => {
   it('places all coordinates when line fits within budget', () => {
-    const grid = createGrid(5, 10) // maxBarriers = floor(10 * 0.7) = 7; placing 5 is fine
+    const grid = createGrid(5, 10) // maxBarriers = floor(10 * 1.5) = 15; placing 5 is fine
     const result = placeBarrierLine(grid, { row: 2, column: 0 }, { row: 2, column: 4 })
 
     assert.equal(result.placed.length, 5)
@@ -240,14 +240,14 @@ describe('placeBarrierLine', () => {
   })
 
   it('slides FIFO window when line exceeds budget', () => {
-    const grid = createGrid(10, 5) // maxBarriers = floor(5 * 0.7) = 3
+    const grid = createGrid(10, 5) // maxBarriers = floor(5 * 1.5) = 7
     // Draw a vertical line of 10 cells; FIFO evicts oldest each step past budget
     const result = placeBarrierLine(grid, { row: 0, column: 0 }, { row: 9, column: 0 })
 
     // All 10 were "placed" (each evicted the prior oldest)
     assert.equal(result.placed.length, 10, 'should report all as placed')
-    // Only the last 3 cells of the line remain as barriers
-    assert.equal(result.grid.barrierCount, 3, 'count stays at maxBarriers')
+    // Only the last 7 cells of the line remain as barriers
+    assert.equal(result.grid.barrierCount, 7, 'count stays at maxBarriers')
     assert.equal(result.grid.cells[9][0], 'barrier', 'last cell in line is a barrier')
     assert.equal(result.grid.cells[0][0], 'empty', 'first cell was evicted')
   })
