@@ -88,24 +88,29 @@ function emptyColor(theme: WaterwallThemeId, row: number, column: number): strin
 
 function waterColor(row: number, column: number, timestamp: number, reducedMotion: boolean): string {
   const seed = seededRandom(row, column)
-  const baseR = 25 + Math.floor(seed * 15)
-  const baseG = 140 + Math.floor(seed * 20)
-  const baseB = 230 + Math.floor(seed * 20)
 
   if (reducedMotion) {
-    return `rgba(${baseR},${baseG},${baseB},0.52)`
+    const r = 30 + Math.floor(seed * 15)
+    const g = 130 + Math.floor(seed * 20)
+    const b = 220 + Math.floor(seed * 20)
+    return `rgb(${r},${g},${b})`
   }
 
-  // Animated flowing texture: sine wave scrolls downward across cells.
-  // Negative row term makes the pattern drift downward over time.
-  // Both alpha and color brighten on peaks so bright bands are clearly visible.
-  const flow = Math.sin(timestamp * 0.004 - row * 0.45 + column * 0.25)
-  const alpha = 0.36 + flow * 0.22  // range 0.14–0.58
-  const hl = Math.max(0, flow) * 35  // peaks get brighter, troughs stay base
-  const g = Math.min(255, baseG + Math.floor(hl))
-  const b = Math.min(255, baseB + Math.floor(hl * 0.6))
+  // Animated flowing caustic: a bright wave band scrolls downward across the grid.
+  // Each cell oscillates between a dark-water base and a bright highlighted peak.
+  // Using rgb (fully opaque) so the contrast is cell-color vs cell-color, not
+  // alpha-blend vs background — making the wave bands clearly visible even when
+  // the grid is full of water.
+  const flow = (Math.sin(timestamp * 0.006 - row * 0.55 + column * 0.18) + 1) * 0.5 // 0..1
+  const dark = 80 + Math.floor(seed * 20)    // dark-water trough channel base
+  const bright = 220 + Math.floor(seed * 30) // bright-water peak channel top
+  const lerp = (a: number, b: number, t: number) => Math.round(a + (b - a) * t)
 
-  return `rgba(${baseR},${g},${b},${alpha.toFixed(3)})`
+  const r = lerp(dark - 50, bright - 160, flow)
+  const g = lerp(dark + 20,  bright - 30,  flow)
+  const b = lerp(dark + 80,  bright,       flow)
+
+  return `rgb(${Math.max(0, r)},${Math.min(255, g)},${Math.min(255, b)})`
 }
 
 function barrierColor(row: number, column: number): string {
@@ -248,9 +253,7 @@ export function renderFrame(
           }
           break
         case 'water':
-          // Draw the background theme color first so it shows through the translucent water
-          ctx.fillStyle = emptyColor(theme, row, col)
-          ctx.fillRect(x, y, cw, ch)
+          // Water is fully opaque — color itself carries the flow animation
           ctx.fillStyle = waterColor(row, col, timestamp, reducedMotion)
           ctx.fillRect(x, y, cw, ch)
           break
