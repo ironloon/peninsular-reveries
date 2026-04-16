@@ -1,18 +1,18 @@
 let lastAnnounceTime = 0
 
-export function announceBarrierPlaced(remaining: number): void {
+export function announceBarrierPlaced(): void {
   const el = document.getElementById('game-feedback')
   if (el) {
     el.setAttribute('aria-live', 'assertive')
-    el.textContent = `Barrier placed. ${remaining} remaining.`
+    el.textContent = 'Barrier placed.'
   }
 }
 
-export function announceBarrierRemoved(remaining: number): void {
+export function announceBarrierRemoved(): void {
   const el = document.getElementById('game-feedback')
   if (el) {
     el.setAttribute('aria-live', 'assertive')
-    el.textContent = `Barrier removed. ${remaining} remaining.`
+    el.textContent = 'Barrier removed.'
   }
 }
 

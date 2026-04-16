@@ -1,4 +1,4 @@
-import { bindMusicToggle, bindReduceMotionToggle, bindSfxToggle, isReducedMotionEnabled } from '../../client/preferences.js'
+import { bindReduceMotionToggle, bindSfxToggle, isReducedMotionEnabled } from '../../client/preferences.js'
 import { setupTabbedModal } from '../../client/modal.js'
 
 import { announceBarrierPlaced, announceBarrierRemoved, announceBarriersCleared, announceCursorPosition, updateCanvasLabel } from './accessibility.js'
@@ -22,8 +22,6 @@ import {
   resetEdgeCue,
   playBarrierPlaceSound,
   playBarrierRemoveSound,
-  startAmbientMusic,
-  stopAmbientMusic,
 } from './sounds.js'
 import { setupPointerInput, setupKeyboardInput, startGamepadPolling, getEdgeZone } from './input.js'
 import {
@@ -35,7 +33,7 @@ import {
   type WaterwallThemeId,
 } from './types.js'
 import type { WaterwallAction } from './input.js'
-import { getMusicEnabled, getSfxEnabled } from '../../client/preferences.js'
+import { getSfxEnabled } from '../../client/preferences.js'
 
 const GAME_SLUG = 'waterwall'
 const THEME_STORAGE_KEY = 'waterwall:theme'
@@ -74,13 +72,6 @@ function isSettingsOpen(): boolean {
 
 function syncModalState(): void {
   document.body.classList.toggle('modal-open', isSettingsOpen())
-}
-
-function updateBarrierDisplay(): void {
-  const valueEl = byId<HTMLElement>('waterwall-barrier-value')
-  if (valueEl) {
-    valueEl.textContent = `${grid.barrierCount} / ${grid.maxBarriers}`
-  }
 }
 
 function buildRenderModel(): WaterwallRenderModel {
@@ -134,8 +125,7 @@ function handlePlace(): void {
   if (nextGrid !== grid) {
     grid = nextGrid
     playBarrierPlaceSound()
-    announceBarrierPlaced(grid.maxBarriers - grid.barrierCount)
-    updateBarrierDisplay()
+    announceBarrierPlaced()
     updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
   }
 }
@@ -147,8 +137,7 @@ function handleRemove(): void {
   if (nextGrid !== grid) {
     grid = nextGrid
     playBarrierRemoveSound()
-    announceBarrierRemoved(grid.maxBarriers - grid.barrierCount)
-    updateBarrierDisplay()
+    announceBarrierRemoved()
     updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
   }
 }
@@ -168,8 +157,7 @@ function handleDragExtend(direction: 'up' | 'down' | 'left' | 'right'): void {
   if (result.placed.length > 0) {
     grid = result.grid
     playBarrierPlaceSound()
-    announceBarrierPlaced(grid.maxBarriers - grid.barrierCount)
-    updateBarrierDisplay()
+    announceBarrierPlaced()
     updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
   }
 
@@ -182,8 +170,7 @@ function handlePointerAction(coordinate: { row: number; column: number }, mode: 
     if (nextGrid !== grid) {
       grid = nextGrid
       playBarrierPlaceSound()
-      announceBarrierPlaced(grid.maxBarriers - grid.barrierCount)
-      updateBarrierDisplay()
+      announceBarrierPlaced()
       updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
     }
   } else {
@@ -191,8 +178,7 @@ function handlePointerAction(coordinate: { row: number; column: number }, mode: 
     if (nextGrid !== grid) {
       grid = nextGrid
       playBarrierRemoveSound()
-      announceBarrierRemoved(grid.maxBarriers - grid.barrierCount)
-      updateBarrierDisplay()
+      announceBarrierRemoved()
       updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
     }
   }
@@ -245,9 +231,6 @@ function unlockAudioOnce(): void {
   if (getSfxEnabled(GAME_SLUG)) {
     startWaterTexture()
   }
-  if (getMusicEnabled(GAME_SLUG)) {
-    startAmbientMusic()
-  }
 }
 
 function gameLoop(timestamp: number): void {
@@ -271,7 +254,6 @@ function restart(): void {
   const { rows, columns } = grid
   grid = createGrid(rows, columns)
   grid = spawnWater(grid)
-  updateBarrierDisplay()
   updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
   announceBarriersCleared()
   cursor = null
@@ -287,7 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
   grid = createGrid(result.rows, result.columns)
   grid = spawnWater(grid)
 
-  updateBarrierDisplay()
   updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
 
   // Theme select
@@ -346,20 +327,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Preferences
-  bindMusicToggle(GAME_SLUG, byId<HTMLInputElement>('music-toggle'))
   bindSfxToggle(GAME_SLUG, byId<HTMLInputElement>('sfx-toggle'))
   bindReduceMotionToggle(byId<HTMLInputElement>('reduce-motion-toggle'))
 
-  // Music/SFX preference events
-  window.addEventListener('reveries:music-change', ((e: CustomEvent<{ gameSlug: string; enabled: boolean }>) => {
-    if (e.detail.gameSlug !== GAME_SLUG) return
-    if (e.detail.enabled) {
-      startAmbientMusic()
-    } else {
-      stopAmbientMusic()
-    }
-  }) as EventListener)
-
+  // SFX preference events
   window.addEventListener('reveries:sfx-change', ((e: CustomEvent<{ gameSlug: string; enabled: boolean }>) => {
     if (e.detail.gameSlug !== GAME_SLUG) return
     if (e.detail.enabled) {
@@ -374,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const newDims = handleResize(canvas, ctx, container, config)
     grid = resizeGrid(grid, newDims.rows, newDims.columns)
     grid = spawnWater(grid)
-    updateBarrierDisplay()
     updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
   })
   resizeObserver.observe(container)

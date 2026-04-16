@@ -20,6 +20,7 @@ export function createGrid(rows: number, columns: number): WaterwallGrid {
     cells,
     barrierCount: 0,
     maxBarriers: computeMaxBarriers(columns),
+    barrierOrder: [],
   }
 }
 
@@ -146,17 +147,27 @@ export function placeBarrier(grid: WaterwallGrid, coordinate: WaterwallCoordinat
     return grid
   }
 
+  const nextCells = cloneCells(grid.cells)
+  const nextOrder = [...grid.barrierOrder, { row, column }]
+  let nextCount = grid.barrierCount + 1
+
+  // FIFO eviction: when at budget, remove the oldest barrier before placing
   if (grid.barrierCount >= grid.maxBarriers) {
-    return grid
+    const oldest = grid.barrierOrder[0]
+    if (oldest) {
+      nextCells[oldest.row][oldest.column] = 'empty'
+      nextOrder.shift()
+      nextCount = grid.barrierCount // net zero: evict one, place one
+    }
   }
 
-  const nextCells = cloneCells(grid.cells)
   nextCells[row][column] = 'barrier'
 
   return {
     ...grid,
     cells: nextCells,
-    barrierCount: grid.barrierCount + 1,
+    barrierCount: nextCount,
+    barrierOrder: nextOrder,
   }
 }
 
@@ -173,11 +184,15 @@ export function removeBarrier(grid: WaterwallGrid, coordinate: WaterwallCoordina
 
   const nextCells = cloneCells(grid.cells)
   nextCells[row][column] = 'empty'
+  const nextOrder = grid.barrierOrder.filter(
+    (c) => !(c.row === row && c.column === column),
+  )
 
   return {
     ...grid,
     cells: nextCells,
     barrierCount: grid.barrierCount - 1,
+    barrierOrder: nextOrder,
   }
 }
 
@@ -233,10 +248,6 @@ export function placeBarrierLine(
       placed.push(coordinate)
       currentGrid = nextGrid
     }
-
-    if (currentGrid.barrierCount >= currentGrid.maxBarriers) {
-      break
-    }
   }
 
   return { grid: currentGrid, placed }
@@ -251,6 +262,7 @@ export function clearAllBarriers(grid: WaterwallGrid): WaterwallGrid {
     ...grid,
     cells: nextCells,
     barrierCount: 0,
+    barrierOrder: [],
   }
 }
 
@@ -300,11 +312,17 @@ export function resizeGrid(oldGrid: WaterwallGrid, newRows: number, newColumns: 
     }),
   )
 
+  // Keep order of barriers that still fit in the new dimensions
+  const barrierOrder = oldGrid.barrierOrder.filter(
+    (c) => c.row < newRows && c.column < newColumns && cells[c.row]?.[c.column] === 'barrier',
+  )
+
   return {
     rows: newRows,
     columns: newColumns,
     cells,
     barrierCount,
     maxBarriers: newMaxBarriers,
+    barrierOrder,
   }
 }

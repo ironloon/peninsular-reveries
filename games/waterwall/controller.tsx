@@ -6,7 +6,6 @@ import { withBasePath } from '../../app/site-paths.js'
 import { Document } from '../../app/ui/document.js'
 import {
   GameHeader,
-  GameHeaderPill,
   GameScreen,
   GameTabbedModal,
   InfoAttribution,
@@ -46,7 +45,6 @@ export async function waterwallAction() {
           headingId="waterwall-title"
           leftContent={<>
             <h1 id="waterwall-title" className="waterwall-title">Waterwall</h1>
-            <GameHeaderPill label="Barriers" value={<span id="waterwall-barrier-value">0 / 0</span>} />
           </>}
           rightContent={<button
             type="button"
@@ -78,7 +76,6 @@ export async function waterwallAction() {
           </SettingsSection>
 
           <SettingsSection title="Audio">
-            <SettingsToggle id="music-toggle" label="Music" />
             <SettingsToggle id="sfx-toggle" label="Sound effects" defaultChecked />
           </SettingsSection>
 

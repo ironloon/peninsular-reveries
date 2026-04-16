@@ -13,6 +13,8 @@ export interface WaterwallGrid {
   readonly cells: readonly (readonly WaterwallCellType[])[]
   readonly barrierCount: number
   readonly maxBarriers: number
+  /** Placement order, oldest first. Used for FIFO eviction when budget is full. */
+  readonly barrierOrder: readonly WaterwallCoordinate[]
 }
 
 export interface WaterwallTheme {

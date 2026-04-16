@@ -4,57 +4,8 @@ import assert from 'node:assert/strict'
 import {
   EDGE_CUE_FREQUENCY,
   EDGE_CUE_PAN,
-  profileLoopDurationMs,
-  waterwallAmbientProfile,
   type CursorEdge,
 } from './sounds.js'
-
-describe('waterwallAmbientProfile structure', () => {
-  it('has a valid id and label', () => {
-    assert.equal(waterwallAmbientProfile.id, 'waterwall-ambient')
-    assert.equal(typeof waterwallAmbientProfile.label, 'string')
-    assert.ok(waterwallAmbientProfile.label.length > 0)
-  })
-
-  it('has valid scheduling metadata', () => {
-    assert.ok(waterwallAmbientProfile.tempoBpm > 0)
-    assert.ok(waterwallAmbientProfile.stepsPerBeat > 0)
-    assert.ok(waterwallAmbientProfile.loopBeats > 0)
-    assert.ok(waterwallAmbientProfile.events.length > 0)
-  })
-
-  it('all events have valid frequency, gain ≤ 0.05, and valid oscillator type', () => {
-    const validTypes = new Set(['sine', 'triangle', 'square', 'sawtooth'])
-
-    for (const event of waterwallAmbientProfile.events) {
-      assert.ok(event.frequency > 0, `frequency ${event.frequency} must be > 0`)
-      assert.ok(event.gain > 0, `gain ${event.gain} must be > 0`)
-      assert.ok(event.gain <= 0.05, `gain ${event.gain} must be ≤ 0.05`)
-      assert.ok(validTypes.has(event.type), `type '${event.type}' must be a valid OscillatorType`)
-      assert.ok(Number.isInteger(event.startStep), `startStep ${event.startStep} must be integer`)
-      assert.ok(Number.isInteger(event.durationSteps), `durationSteps ${event.durationSteps} must be integer`)
-      assert.ok(event.startStep >= 0, `startStep ${event.startStep} must be >= 0`)
-      assert.ok(event.durationSteps > 0, `durationSteps ${event.durationSteps} must be > 0`)
-    }
-  })
-
-  it('events are in non-decreasing startStep order', () => {
-    let previousStep = -1
-    for (const event of waterwallAmbientProfile.events) {
-      assert.ok(event.startStep >= previousStep, `event at step ${event.startStep} is before previous step ${previousStep}`)
-      previousStep = event.startStep
-    }
-  })
-})
-
-describe('profile loop duration', () => {
-  it('is calculable from tempo and loop beats', () => {
-    const durationMs = profileLoopDurationMs(waterwallAmbientProfile)
-    const expectedMs = waterwallAmbientProfile.loopBeats * (60 / waterwallAmbientProfile.tempoBpm) * 1000
-    assert.equal(durationMs, expectedMs)
-    assert.ok(durationMs > 0)
-  })
-})
 
 describe('edge cue pan mapping', () => {
   it('left edge maps to pan -1', () => {

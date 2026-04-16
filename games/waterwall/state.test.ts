@@ -120,7 +120,7 @@ describe('placeBarrier', () => {
     assert.equal(after.barrierCount, 1)
   })
 
-  it('fails (returns same grid) when at max', () => {
+  it('evicts the oldest barrier (FIFO) when at max', () => {
     let grid = createGrid(5, 5) // maxBarriers = floor(5 * 0.7) = 3
     grid = placeBarrier(grid, { row: 0, column: 0 })
     grid = placeBarrier(grid, { row: 0, column: 1 })
@@ -128,8 +128,12 @@ describe('placeBarrier', () => {
     assert.equal(grid.barrierCount, 3)
     assert.equal(grid.maxBarriers, 3)
 
+    // Placing a 4th evicts the first-placed barrier at (0,0)
     const after = placeBarrier(grid, { row: 0, column: 3 })
-    assert.equal(after, grid, 'should return same grid when at max barriers')
+    assert.notEqual(after, grid, 'should evict and place rather than block')
+    assert.equal(after.cells[0][0], 'empty', 'oldest barrier should be evicted')
+    assert.equal(after.cells[0][3], 'barrier', 'new barrier should be placed')
+    assert.equal(after.barrierCount, 3, 'count stays at max')
   })
 
   it('no-ops when cell is a barrier', () => {
@@ -227,24 +231,25 @@ describe('bresenhamLine', () => {
 })
 
 describe('placeBarrierLine', () => {
-  it('stops placing when budget exhausted and returns partial line', () => {
-    const grid = createGrid(10, 5) // maxBarriers = floor(5 * 0.7) = 3
-    const result = placeBarrierLine(grid, { row: 0, column: 0 }, { row: 9, column: 0 })
-
-    assert.equal(result.grid.barrierCount, 3, 'should place exactly maxBarriers')
-    assert.equal(result.placed.length, 3, 'should return 3 placed coordinates')
-
-    // The line has 10 points but only 3 should be placed
-    const allLine = bresenhamLine({ row: 0, column: 0 }, { row: 9, column: 0 })
-    assert.equal(allLine.length, 10)
-  })
-
-  it('places all coordinates when budget sufficient', () => {
+  it('places all coordinates when line fits within budget', () => {
     const grid = createGrid(5, 10) // maxBarriers = floor(10 * 0.7) = 7; placing 5 is fine
     const result = placeBarrierLine(grid, { row: 2, column: 0 }, { row: 2, column: 4 })
 
     assert.equal(result.placed.length, 5)
     assert.equal(result.grid.barrierCount, 5)
+  })
+
+  it('slides FIFO window when line exceeds budget', () => {
+    const grid = createGrid(10, 5) // maxBarriers = floor(5 * 0.7) = 3
+    // Draw a vertical line of 10 cells; FIFO evicts oldest each step past budget
+    const result = placeBarrierLine(grid, { row: 0, column: 0 }, { row: 9, column: 0 })
+
+    // All 10 were "placed" (each evicted the prior oldest)
+    assert.equal(result.placed.length, 10, 'should report all as placed')
+    // Only the last 3 cells of the line remain as barriers
+    assert.equal(result.grid.barrierCount, 3, 'count stays at maxBarriers')
+    assert.equal(result.grid.cells[9][0], 'barrier', 'last cell in line is a barrier')
+    assert.equal(result.grid.cells[0][0], 'empty', 'first cell was evicted')
   })
 })
 

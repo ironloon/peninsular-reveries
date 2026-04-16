@@ -86,12 +86,19 @@ function emptyColor(theme: WaterwallThemeId, row: number, column: number): strin
   }
 }
 
-function waterColor(row: number, column: number): string {
+function waterColor(row: number, column: number, timestamp: number, reducedMotion: boolean): string {
   const seed = seededRandom(row, column)
   const r = 25 + Math.floor(seed * 15)
   const g = 140 + Math.floor(seed * 20)
   const b = 230 + Math.floor(seed * 20)
-  return `rgb(${r},${g},${b})`
+
+  // Animated flowing texture: sine wave scrolls downward across cells.
+  // Negative row term makes the pattern drift downward over time.
+  const alpha = reducedMotion
+    ? 0.68
+    : 0.62 + Math.sin(timestamp * 0.002 - row * 0.45 + column * 0.25) * 0.08
+
+  return `rgba(${r},${g},${b},${alpha})`
 }
 
 function barrierColor(row: number, column: number): string {
@@ -234,7 +241,10 @@ export function renderFrame(
           }
           break
         case 'water':
-          ctx.fillStyle = waterColor(row, col)
+          // Draw the background theme color first so it shows through the translucent water
+          ctx.fillStyle = emptyColor(theme, row, col)
+          ctx.fillRect(x, y, cw, ch)
+          ctx.fillStyle = waterColor(row, col, timestamp, reducedMotion)
           ctx.fillRect(x, y, cw, ch)
           break
         case 'barrier':

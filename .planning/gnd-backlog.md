@@ -4,12 +4,8 @@ Items collected from field reviews, critiques, and conversations. The `gnd-criti
 
 ## Waterwall
 
-- **Ambient music / drone removal:** User doesn't want ambient music in this game. Currently off by default so not urgent, but consider removing the toggle entirely in a future polish pass.
-- **Barrier count HUD:** User prefers to remove the `0 / max` count display from the HUD entirely. Design preference — no functional loss.
-- **Barrier eviction model:** When the barrier budget is exhausted, automatically remove the first-placed barrier (FIFO) rather than silently blocking placement. New mechanic — needs charting.
-- **Water translucency:** Allow the background theme color to show through water cells. Likely needs a device-capability budget check before enabling (overdraw cost).
-- **Water running visual texture:** Add per-cell animation/texture variation to water so it looks like running water rather than a solid blue mass. Rendering enhancement.
 - **Pointer barrier placement UX follow-up:** After the barrier-in-water fix, confirm the tap-to-toggle feel is right on device. If water fills too fast, per-cell visual feedback (brief flash on placement) may be needed.
+- **Water running visual texture:** ~~Add per-cell animation/texture variation to water so it looks like running water rather than a solid blue mass.~~ Implemented: time-based sine wave scrolling downward across cells.
 
 ## App / Architecture
 
