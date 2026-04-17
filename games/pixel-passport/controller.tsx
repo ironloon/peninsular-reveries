@@ -37,7 +37,7 @@ export async function pixelPassportAction() {
   const html = await renderToString(
     <Document
       title="Pixel Passport"
-      description="Ride a magic bus around the world, learn simple facts about each place, and collect memories from every destination."
+      description="Ride a magic bus around the world and learn simple facts about each place."
       path="/pixel-passport/"
       includeNav={false}
       includeFooter={false}
@@ -54,27 +54,14 @@ export async function pixelPassportAction() {
             <div className="start-copy">
               <p className="screen-kicker">Magic bus world trip</p>
               <h1 id="passport-title" className="passport-title">Pixel Passport</h1>
-              <p className="passport-subtitle">Spin the world. Find a place. Learn a fact. Save a memory.</p>
-
-              <div className="title-stats" aria-label="Game progress">
-                <span id="title-memory-count" className="passport-pill">0 memories</span>
-              </div>
-
-              <div className="guide-card guide-card-title" aria-live="polite">
-                <div id="title-pip" className="guide-sprite" aria-hidden="true"></div>
-                <p id="title-guide-text" className="guide-text">Pip says: Let's roll!</p>
-              </div>
+              <p className="passport-subtitle">Spin the world. Pick a place. Discover something new.</p>
 
               <div className="start-actions">
-                <button id="start-explore-btn" className="passport-btn passport-btn-primary" type="button">Explore! <span aria-hidden="true">🌍</span></button>
+                <button id="start-explore-btn" className="passport-btn passport-btn-primary" type="button">Start <span aria-hidden="true">🌍</span></button>
                 <button data-settings-open="true" className="passport-btn passport-btn-ghost" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
               </div>
 
-              <ul className="start-notes" aria-label="Quick tips">
-                <li>Pick a place on the globe and ride there.</li>
-                <li>Listen to Pip's short facts at each stop.</li>
-                <li>Collect a memory from every place you visit.</li>
-              </ul>
+              <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Ⓐ to explore · Start for menu</p>
             </div>
 
             <div className="start-stage" aria-hidden="true">
@@ -97,9 +84,7 @@ export async function pixelPassportAction() {
                 <h2 id="globe-heading" className="screen-title">Choose a place</h2>
                 <p id="globe-location-copy" className="screen-copy">Pick a place for your first ride.</p>
               </>}
-              rightContent={<>
-                <GameHeaderPill value={<span id="globe-memory-pill">0 memories</span>} />
-              </>}
+              rightContent={<button data-settings-open="true" className="passport-btn passport-btn-ghost passport-btn-small" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>}
             />
 
             <div className="globe-stage">
@@ -111,15 +96,8 @@ export async function pixelPassportAction() {
               </div>
 
               <div className="globe-side-panel">
-                <div className="guide-card">
-                  <div id="globe-pip" className="guide-sprite" aria-hidden="true"></div>
-                  <p id="globe-selected-copy" className="guide-text">Pick a place on the globe.</p>
-                </div>
-
-                <div className="globe-actions">
-                  <button id="globe-room-btn" className="passport-btn passport-btn-secondary" type="button">My Memories <span aria-hidden="true">🏠</span></button>
-                  <button data-settings-open="true" className="passport-btn passport-btn-ghost" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
-                </div>
+                <p id="globe-selected-copy" className="globe-selected-text">Pick a place on the globe.</p>
+                <button data-settings-open="true" className="passport-btn passport-btn-ghost" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
               </div>
             </div>
           </div>
@@ -146,9 +124,8 @@ export async function pixelPassportAction() {
               <div id="travel-vehicle-halo" className="travel-vehicle-halo" aria-hidden="true"></div>
               <div id="travel-vehicle-shadow" className="travel-vehicle-shadow" aria-hidden="true"></div>
               <div id="travel-vehicle" className="travel-vehicle pixel-art" aria-hidden="true"></div>
-              <div className="travel-guide-card guide-card">
-                <div id="travel-pip" className="guide-sprite" aria-hidden="true"></div>
-                <p id="travel-copy" className="guide-text">The magic bus is on the move!</p>
+              <div className="travel-caption">
+                <p id="travel-copy" className="travel-caption-text">The magic bus is on the move!</p>
               </div>
             </div>
           </div>
@@ -162,81 +139,18 @@ export async function pixelPassportAction() {
               leftContent={<>
                 <p className="screen-kicker">Destination</p>
                 <h2 id="explore-heading" className="screen-title">World stop</h2>
-                <p id="explore-progress" className="screen-copy">1 / 3 facts</p>
+                <p id="explore-progress" className="screen-copy">1 / 3</p>
               </>}
               rightContent={<button data-settings-open="true" className="passport-btn passport-btn-ghost passport-btn-small" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>}
             />
 
             <div className="explore-stage">
               <div id="explore-scene" className="pixel-art scene-art" aria-hidden="true"></div>
-
-              <div className="guide-card explore-guide-card">
-                <div id="explore-pip" className="guide-sprite" aria-hidden="true"></div>
-                <p id="explore-guide-text" className="guide-text">Pip is ready to tell a fact.</p>
-              </div>
+              <p id="explore-fact-text" className="explore-fact">Loading fact…</p>
             </div>
 
             <div className="screen-actions">
-              <button id="explore-next-btn" className="passport-btn passport-btn-primary" type="button">Next fact <span aria-hidden="true">→</span></button>
-            </div>
-          </div>
-        </GameScreen>
-
-        <GameScreen id="memory-screen" labelledBy="memory-heading" padded>
-          <div className="memory-shell passport-panel">
-            <p className="screen-kicker">Memory found</p>
-            <h2 id="memory-heading" className="screen-title">Souvenir time</h2>
-
-            <div className="memory-stage">
-              <div className="memory-token" aria-hidden="true">
-                <span id="memory-emoji">🎒</span>
-              </div>
-              <p id="memory-label" className="memory-label">memory</p>
-            </div>
-
-            <div className="guide-card">
-              <div id="memory-pip" className="guide-sprite" aria-hidden="true"></div>
-              <p id="memory-copy" className="guide-text">Pip found a new memory.</p>
-            </div>
-
-            <div className="screen-actions">
-              <button id="memory-continue-btn" className="passport-btn passport-btn-primary" type="button">Back to globe <span aria-hidden="true">→</span></button>
-              <button data-settings-open="true" className="passport-btn passport-btn-ghost" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
-            </div>
-          </div>
-        </GameScreen>
-
-        <GameScreen id="room-screen" labelledBy="room-heading" padded>
-          <div className="room-shell passport-panel">
-            <GameHeader
-              className="passport-topbar"
-              headingId="room-heading"
-              leftContent={<>
-                <p className="screen-kicker">Your cozy room</p>
-                <h2 id="room-heading" className="screen-title">Memory shelf</h2>
-                <p id="room-count" className="screen-copy">0 memories</p>
-              </>}
-              rightContent={<button data-settings-open="true" className="passport-btn passport-btn-ghost passport-btn-small" type="button" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>}
-            />
-
-            <div className="room-stage">
-              <div id="room-pip" className="guide-sprite room-pip" aria-hidden="true"></div>
-              <div className="room-shelf-grid">
-                {DESTINATIONS.map((destination) => (
-                  <div className="memory-slot" data-memory-slot={destination.id} aria-label={`${destination.name} memory slot`}>
-                    <span className="memory-slot-emoji" aria-hidden="true">☆</span>
-                    <span className="memory-slot-label">{destination.name}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="guide-card">
-              <p id="room-copy" className="guide-text">Pip says: Your keepsakes live here.</p>
-            </div>
-
-            <div className="screen-actions">
-              <button id="room-back-btn" className="passport-btn passport-btn-primary" type="button">Back to globe <span aria-hidden="true">→</span></button>
+              <button id="explore-next-btn" className="passport-btn passport-btn-primary" type="button">Next <span aria-hidden="true">→</span></button>
             </div>
           </div>
         </GameScreen>
@@ -248,14 +162,15 @@ export async function pixelPassportAction() {
         quitHref={homePath}
         settingsContent={<>
           <SettingsSection title="Audio">
-            <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
-            <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
+            <SettingsToggle id="music-enabled-toggle" label="Music" helpText="Music is off until you change it here." helpId="music-enabled-help" />
+            <div id="music-track-picker-slot"></div>
+            <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpText="Sound effects are on until you change it here." helpId="sfx-enabled-help" />
           </SettingsSection>
 
           <SettingsSection title="🗺️ Controls">
             <ul className="settings-list">
               <li>Tap a place on the globe to ride there.</li>
-              <li>Tap the place that says you are here to hear it again.</li>
+              <li>Tap the place that says you are here to discover it again.</li>
               <li>Arrow keys or D-pad move between places.</li>
               <li>Enter, Space, or A picks the highlighted place. Start opens Menu.</li>
             </ul>

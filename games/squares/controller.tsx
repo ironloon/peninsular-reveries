@@ -18,8 +18,7 @@ import {
 
 import { squaresAttribution } from './attributions.js'
 import { squaresInfo } from './info.js'
-import { DEFAULT_SQUARES_MUSIC_PROFILE_ID, SQUARES_MUSIC_PROFILES } from './sounds.js'
-import { SQUARES_BOARD_PRESETS, SQUARES_RULESETS, SQUARES_THEME_PRESETS } from './types.js'
+import { SQUARES_MODES } from './types.js'
 
 const squaresModalOverlayStyles = {
   zIndex: 100,
@@ -73,33 +72,21 @@ export async function squaresAction() {
             />
 
             <div className="squares-hero-copy">
-              <p className="squares-subtitle">Make the whole board match. Switch between plus and X when the rules let you.</p>
-              <p className="squares-start-hint">Menu holds setup, controls, audio, reduce motion, high score reset, and credits. Start keeps the current scramble. Restart replays the same scramble.</p>
+              <p className="squares-subtitle">Make the whole board match. Pick a mode and start playing.</p>
             </div>
 
-            <section className="squares-summary-card" aria-labelledby="start-setup-heading">
-              <div className="squares-summary-row">
-                <div>
-                  <h2 id="start-setup-heading">Current setup</h2>
-                  <p id="start-setup-label" className="squares-summary-value">Pocket 3x3 · Classic Hybrid</p>
+            <div className="squares-mode-cards">
+              {SQUARES_MODES.map((mode) => (
+                <div key={mode.id} className="squares-mode-card">
+                  <h2 className="squares-mode-label">{mode.label}</h2>
+                  <p className="squares-mode-desc">{mode.description}</p>
+                  <p className="squares-mode-best"><span className="squares-mode-best-key">Best</span> <strong id={`start-high-${mode.id}`}>No record yet</strong></p>
+                  <button id={`start-${mode.id}-btn`} type="button" className="squares-primary-btn">{`Play ${mode.label}`}</button>
                 </div>
-                <div>
-                  <h2>Theme pair</h2>
-                  <p id="start-theme-label" className="squares-summary-value">Harbor Dawn</p>
-                </div>
-              </div>
-              <div className="squares-summary-row squares-summary-row-score">
-                <div>
-                  <h2 id="start-high-score-label">High score for Pocket 3x3 · Classic Hybrid</h2>
-                  <p id="start-high-score-value" className="squares-summary-score">No high score yet</p>
-                </div>
-                <p className="squares-summary-note">High score stays on this device only.</p>
-              </div>
-            </section>
-
-            <div className="squares-start-actions">
-              <button id="start-btn" type="button" className="squares-primary-btn" data-squares-restart-button="true">Start puzzle</button>
+              ))}
             </div>
+
+            <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Ⓐ to play · Start for menu</p>
           </div>
         </GameScreen>
 
@@ -110,12 +97,11 @@ export async function squaresAction() {
               className="squares-header squares-header-game"
               leftContent={<>
                 <div className="squares-heading-block squares-heading-block-compact">
-                  <p className="squares-kicker">Calm mode</p>
                   <h2 id="squares-game-heading" className="squares-title squares-title-small">Squares</h2>
                 </div>
                 <div className="squares-hud-pill-row">
-                  <GameHeaderPill value={<span id="hud-setup-label">Pocket 3x3 · Classic Hybrid</span>} />
-                  <GameHeaderPill value={<span><span className="hud-pill-key">High score</span> <strong id="hud-high-score-value">No high score yet</strong></span>} />
+                  <GameHeaderPill value={<span><span className="hud-pill-key">Mode</span> <strong id="hud-mode-label">{SQUARES_MODES[1].label}</strong></span>} />
+                  <GameHeaderPill value={<span><span className="hud-pill-key">Best</span> <strong id="hud-high-score-value">No record yet</strong></span>} />
                   <GameHeaderPill value={<span><span className="hud-pill-key">Moves</span> <strong id="hud-move-count">0</strong></span>} />
                 </div>
               </>}
@@ -162,11 +148,11 @@ export async function squaresAction() {
 
             <div className="squares-win-card">
               <p id="win-summary" className="squares-win-summary">Solved in 0 moves.</p>
-              <p id="win-high-score-context" className="squares-win-context">High score for Pocket 3x3 · Classic Hybrid</p>
-              <p id="win-high-score-value" className="squares-win-score">No high score yet</p>
+              <p id="win-high-score-value" className="squares-win-score">No record yet</p>
               <div className="squares-win-actions">
-                <button id="play-again-btn" type="button" className="squares-primary-btn" data-squares-restart-button="true">Replay this scramble</button>
-                <button id="start-over-btn" type="button" className="squares-secondary-btn">Pick a new setup</button>
+                <button id="replay-btn" type="button" className="squares-primary-btn" data-squares-restart-button="true">Replay this puzzle</button>
+                <button id="new-puzzle-btn" type="button" className="squares-primary-btn">New puzzle</button>
+                <button id="change-mode-btn" type="button" className="squares-secondary-btn">Change mode</button>
                 <a href={homePath} className="squares-secondary-link">Quit</a>
               </div>
             </div>
@@ -178,44 +164,10 @@ export async function squaresAction() {
           overlayStyles={squaresModalOverlayStyles}
           quitHref={homePath}
           settingsContent={<>
-            <SettingsSection title="Setup">
-              <p className="squares-settings-note">Board and rules changes update the high score label right away and apply the next time you start.</p>
-              <label className="squares-field" htmlFor="board-preset-select">
-                <span>Board preset</span>
-                <select id="board-preset-select" defaultValue={SQUARES_BOARD_PRESETS[0].id}>
-                  {SQUARES_BOARD_PRESETS.map((preset) => <option value={preset.id}>{preset.label}</option>)}
-                </select>
-              </label>
-              <label className="squares-field" htmlFor="ruleset-select">
-                <span>Ruleset</span>
-                <select id="ruleset-select" defaultValue={SQUARES_RULESETS[0].id}>
-                  {SQUARES_RULESETS.map((ruleset) => <option value={ruleset.id}>{ruleset.label}</option>)}
-                </select>
-              </label>
-              <label className="squares-field" htmlFor="theme-preset-select">
-                <span>Theme pair</span>
-                <select id="theme-preset-select" defaultValue={SQUARES_THEME_PRESETS[0].id}>
-                  {SQUARES_THEME_PRESETS.map((preset) => <option value={preset.id}>{preset.label}</option>)}
-                </select>
-              </label>
-            </SettingsSection>
-
             <SettingsSection title="Audio">
-              <label className="squares-field" htmlFor="music-profile-select">
-                <span>Music choice</span>
-                <select id="music-profile-select" defaultValue={DEFAULT_SQUARES_MUSIC_PROFILE_ID}>
-                  {SQUARES_MUSIC_PROFILES.map((profile) => <option value={profile.id}>{profile.label}</option>)}
-                </select>
-              </label>
-              <p id="music-profile-help" className="squares-settings-note">Chill is the default. Tense adds a tighter pulse.</p>
-              <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
-              <SettingsToggle id="sfx-enabled-toggle" label="Sound effects" helpId="sfx-enabled-help" defaultChecked={true} />
-            </SettingsSection>
-
-            <SettingsSection title="High score">
-              <p id="settings-high-score-label" className="squares-settings-score-label">High score for Pocket 3x3 · Classic Hybrid</p>
-              <p id="settings-high-score-value" className="squares-settings-score-value">No high score yet</p>
-              <button id="high-score-reset-btn" type="button" className="squares-secondary-btn">Reset high score</button>
+              <SettingsToggle id="music-enabled-toggle" label="Music" helpText="Music is off until you change it here." helpId="music-enabled-help" />
+              <div id="music-track-picker-slot"></div>
+              <SettingsToggle id="sfx-enabled-toggle" label="Sound effects" helpText="Sound effects are on until you change it here." helpId="sfx-enabled-help" />
             </SettingsSection>
 
             <SettingsSection title="Controls">
@@ -234,6 +186,21 @@ export async function squaresAction() {
                 helpText="Defaults to your device setting until you change it here."
                 helpId="reduce-motion-help"
               />
+            </SettingsSection>
+
+            <SettingsSection title="High scores">
+              <div className="squares-high-score-grid">
+                <div>
+                  <p className="squares-settings-score-label">1{'\u00d7'}1 best</p>
+                  <p id="settings-high-1x1" className="squares-settings-score-value">No record yet</p>
+                  <button id="high-score-reset-1x1-btn" type="button" className="squares-secondary-btn squares-secondary-btn-small">Reset</button>
+                </div>
+                <div>
+                  <p className="squares-settings-score-label">+/{'\u00d7'} best</p>
+                  <p id="settings-high-plusx" className="squares-settings-score-value">No record yet</p>
+                  <button id="high-score-reset-plusx-btn" type="button" className="squares-secondary-btn squares-secondary-btn-small">Reset</button>
+                </div>
+              </div>
             </SettingsSection>
           </>}
           infoContent={<>

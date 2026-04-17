@@ -225,13 +225,17 @@ function previewCoordinateFor(model: SquaresRenderModel): SquaresCoordinate | nu
 }
 
 function activePatternFor(state: SquaresState): SquaresPatternId {
-  return state.lockedPatternId ?? state.activePatternId
+  return state.activePatternId
 }
 
 function previewKeysFor(model: SquaresRenderModel): ReadonlySet<string> {
   const previewCoordinate = previewCoordinateFor(model)
   if (!previewCoordinate) {
     return new Set<string>()
+  }
+
+  if (model.state.modeId === '1x1') {
+    return new Set([coordinateKey(previewCoordinate)])
   }
 
   return new Set(
@@ -314,8 +318,8 @@ export function createRenderer(root: HTMLElement): SquaresRenderer {
     root.dataset['reducedMotion'] = String(Boolean(model.reducedMotion))
     boardElement.dataset['activePattern'] = previewPatternId
     patternToggleButton.textContent = `Pattern: ${previewPatternId === 'plus' ? 'Plus' : 'X'}`
-    patternToggleButton.disabled = model.state.lockedPatternId !== null
-    patternToggleButton.setAttribute('aria-pressed', model.state.lockedPatternId === null ? 'false' : 'true')
+    patternToggleButton.disabled = model.state.modeId === '1x1'
+    patternToggleButton.setAttribute('aria-pressed', model.state.modeId === '1x1' ? 'false' : 'true')
     patternToggleButton.setAttribute('aria-label', `Pattern ${previewPatternId === 'plus' ? 'Plus' : 'X'}`)
 
     const rowElements = model.state.board.map((row, rowIndex) => {

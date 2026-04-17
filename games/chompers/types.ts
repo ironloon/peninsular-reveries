@@ -37,40 +37,6 @@ export const AREA_LEVEL_RANGES: Record<Area, Record<AreaLevel, { min: number; ma
 
 export type GamePhase = 'playing' | 'chomping' | 'feedback' | 'gameover'
 
-export type GameMode = 'normal' | 'frenzy'
-export type FrenzyTeamMode = 'ffa' | 'team'
-
-export interface FrenzyConfig {
-  npcCount: 1 | 3 | 5
-  teamMode: FrenzyTeamMode
-  playerColor: string
-  npcColors: string[]
-}
-
-export interface NpcHippo {
-  id: string
-  color: string
-  position: { x: number; y: number }
-  targetFruitIndex: number | null
-  targetIsCorrect: boolean
-  chompProgress: number
-  score: number
-  teamId: 'a' | 'b' | null
-  accuracy: number
-  startDelayMs: number
-}
-
-export interface FrenzyState {
-  config: FrenzyConfig
-  npcs: NpcHippo[]
-  roundTimer: number
-  roundTimerMax: number
-  adaptiveDifficulty: number
-  playerAnswerTimes: number[]
-  playerWins: number[]
-  teamScores: { a: number; b: number }
-}
-
 export interface Problem {
   readonly prompt: string
   readonly correctAnswer: number
@@ -110,10 +76,11 @@ export interface GameState {
   readonly bestStreak: number
   readonly hippo: HippoState
   readonly correctCount: number
+  readonly levelCorrectCount: number
   readonly rngSeed: number
-  readonly mode: GameMode
-  readonly frenzy: FrenzyState | null
 }
+
+export const LEVEL_ADVANCE_THRESHOLD = 8
 
 export interface ScenePosition {
   readonly x: number
@@ -189,5 +156,3 @@ export const BASE_LAYOUTS: Record<number, readonly ScenePosition[]> = {
 }
 
 export const FRUIT_POOL = ['🍒', '🍎', '🍊', '🍇', '🍋', '🍑', '🍓', '🫐', '🥝', '🍌'] as const
-
-export const FRENZY_COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F'] as const

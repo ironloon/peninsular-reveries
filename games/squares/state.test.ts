@@ -1,25 +1,26 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
-  SQUARES_BOARD_PRESETS,
+  SQUARES_BOARD_SIZE,
+  SQUARES_MODES,
   type SquaresBoard,
   type SquaresCoordinate,
-  type SquaresPatternId,
-  type SquaresRulesetId,
+  type SquaresModeId,
 } from './types.js'
 import {
   applyMove,
   applyPatternToBoard,
-  buildBoardFromPreset,
   createInitialState,
   createSolvedBoard,
-  getActiveHighScoreBucketKey,
+  generateRandomBoard,
   getAffectedCells,
-  getHighScoreBucketKey,
+  getHighScoreKey,
+  getModeLabel,
   isSolvedBoard,
   restartState,
   setActivePattern,
   toggleActivePattern,
+  toggleSingleCell,
 } from './state.js'
 
 function boardFor(rows: number, columns: number, fill: 'light' | 'dark' = 'light'): SquaresBoard {
@@ -28,21 +29,6 @@ function boardFor(rows: number, columns: number, fill: 'light' | 'dark' = 'light
 
 function coordinateKey(coordinate: SquaresCoordinate): string {
   return `${coordinate.row}:${coordinate.column}`
-}
-
-function applyMovesFromSolved(
-  presetId: typeof SQUARES_BOARD_PRESETS[number]['id'],
-  moves: readonly { coordinate: SquaresCoordinate; patternId: SquaresPatternId }[],
-): SquaresBoard {
-  const preset = SQUARES_BOARD_PRESETS.find((candidate) => candidate.id === presetId)
-  assert.ok(preset, `missing preset ${presetId}`)
-
-  let board = createSolvedBoard(preset)
-  for (const move of moves) {
-    board = applyPatternToBoard(board, move.coordinate, move.patternId)
-  }
-
-  return board
 }
 
 test('plus pattern toggles the center and orthogonal neighbors', () => {
@@ -91,8 +77,23 @@ test('solved detection accepts all-light and all-dark boards', () => {
   )
 })
 
-test('classic hybrid mode can switch patterns during play', () => {
-  const initialState = createInitialState('pocket-3x3', 'classic-hybrid')
+test('toggleSingleCell toggles only the targeted cell', () => {
+  const board = boardFor(3, 3)
+  const result = toggleSingleCell(board, { row: 1, column: 1 })
+  assert.deepEqual(result, [
+    ['light', 'light', 'light'],
+    ['light', 'dark', 'light'],
+    ['light', 'light', 'light'],
+  ])
+})
+
+test('toggleSingleCell returns same board for out-of-bounds coordinate', () => {
+  const board = boardFor(3, 3)
+  assert.equal(toggleSingleCell(board, { row: 5, column: 5 }), board)
+})
+
+test('plus-x mode allows pattern switching during play', () => {
+  const initialState = createInitialState('plus-x')
   const switchedState = setActivePattern(initialState, 'x')
   const movedState = applyMove(switchedState, { row: 1, column: 1 })
 
@@ -102,54 +103,76 @@ test('classic hybrid mode can switch patterns during play', () => {
   assert.equal(toggleActivePattern(switchedState).activePatternId, 'plus')
 })
 
-test('easy modes keep their pattern locked', () => {
-  const easyPlusState = createInitialState('pocket-3x3', 'easy-plus')
-  const easyXState = createInitialState('pocket-3x3', 'easy-x')
-
-  assert.equal(easyPlusState.lockedPatternId, 'plus')
-  assert.equal(setActivePattern(easyPlusState, 'x').activePatternId, 'plus')
-  assert.equal(toggleActivePattern(easyPlusState).activePatternId, 'plus')
-
-  assert.equal(easyXState.lockedPatternId, 'x')
-  assert.equal(setActivePattern(easyXState, 'plus').activePatternId, 'x')
-  assert.equal(toggleActivePattern(easyXState).activePatternId, 'x')
+test('1x1 mode ignores pattern toggle attempts', () => {
+  const state = createInitialState('1x1')
+  assert.equal(setActivePattern(state, 'x').activePatternId, 'plus')
+  assert.equal(toggleActivePattern(state).activePatternId, 'plus')
 })
 
-test('restart restores the original scramble instead of generating a fresh board', () => {
-  const initialState = createInitialState('courtyard-4x4', 'classic-hybrid')
-  const changedState = applyMove(setActivePattern(initialState, 'x'), { row: 1, column: 1 })
-  const restartedState = restartState(changedState)
+test('1x1 mode moves record null pattern', () => {
+  const state = createInitialState('1x1')
+  const movedState = applyMove(state, { row: 0, column: 0 })
+  assert.equal(movedState.lastMove?.patternId, null)
+  assert.equal(movedState.moveCount, 1)
+})
+
+test('generateRandomBoard produces a non-solved 3x3 board for both modes', () => {
+  const modes: SquaresModeId[] = ['1x1', 'plus-x']
+  for (const modeId of modes) {
+    const board = generateRandomBoard(modeId)
+    assert.equal(board.length, SQUARES_BOARD_SIZE)
+    assert.equal(board[0].length, SQUARES_BOARD_SIZE)
+    assert.equal(isSolvedBoard(board), false)
+  }
+})
+
+test('restart restores the starting board', () => {
+  const initialState = createInitialState('plus-x')
+  const movedState = applyMove(setActivePattern(initialState, 'x'), { row: 1, column: 1 })
+  const restartedState = restartState(movedState)
 
   assert.deepEqual(restartedState.board, initialState.startingBoard)
   assert.equal(restartedState.moveCount, 0)
   assert.equal(restartedState.lastMove, null)
   assert.equal(restartedState.activePatternId, 'plus')
-  assert.notDeepEqual(changedState.board, restartedState.board)
+  assert.notDeepEqual(movedState.board, restartedState.board)
 })
 
-test('easy reverse scrambles are built from legal locked-pattern moves', () => {
-  const presetId: typeof SQUARES_BOARD_PRESETS[number]['id'] = 'garden-5x5'
-  const rulesets: readonly SquaresRulesetId[] = ['easy-plus', 'easy-x']
-
-  for (const rulesetId of rulesets) {
-    const { board, scramblePlan } = buildBoardFromPreset(presetId, rulesetId)
-    const expectedPatternId: SquaresPatternId = rulesetId === 'easy-plus' ? 'plus' : 'x'
-
-    assert.ok(scramblePlan.length > 0)
-    assert.ok(scramblePlan.every((move) => move.patternId === expectedPatternId))
-    assert.deepEqual(board, applyMovesFromSolved(presetId, scramblePlan))
-    assert.equal(isSolvedBoard(board), false)
-  }
+test('high-score keys are separate for each mode', () => {
+  const key1x1 = getHighScoreKey('1x1')
+  const keyPlusX = getHighScoreKey('plus-x')
+  assert.notEqual(key1x1, keyPlusX)
+  assert.equal(key1x1, 'squares-high-1x1')
+  assert.equal(keyPlusX, 'squares-high-plusx')
 })
 
-test('high-score buckets stay separate for each ruleset on the same preset', () => {
-  const presetId: typeof SQUARES_BOARD_PRESETS[number]['id'] = 'pocket-3x3'
-  const classicKey = getHighScoreBucketKey(presetId, 'classic-hybrid')
-  const easyPlusKey = getHighScoreBucketKey(presetId, 'easy-plus')
-  const easyXKey = getHighScoreBucketKey(presetId, 'easy-x')
+test('mode labels are human-readable', () => {
+  assert.equal(getModeLabel('1x1'), '1\u00d71')
+  assert.equal(getModeLabel('plus-x'), '+/\u00d7')
+})
 
-  assert.notEqual(classicKey, easyPlusKey)
-  assert.notEqual(classicKey, easyXKey)
-  assert.notEqual(easyPlusKey, easyXKey)
-  assert.equal(getActiveHighScoreBucketKey(createInitialState(presetId, 'easy-plus')), easyPlusKey)
+test('createSolvedBoard produces a uniform board of the specified size', () => {
+  const board = createSolvedBoard(3)
+  assert.equal(board.length, 3)
+  assert.equal(board[0].length, 3)
+  assert.equal(isSolvedBoard(board), true)
+})
+
+test('createInitialState defaults to plus-x mode', () => {
+  const state = createInitialState()
+  assert.equal(state.modeId, 'plus-x')
+  assert.equal(state.phase, 'ready')
+  assert.equal(isSolvedBoard(state.board), false)
+})
+
+test('applyMove does not advance a solved game', () => {
+  const state = createInitialState('1x1')
+  const solvedState = { ...state, phase: 'solved' as const }
+  assert.equal(applyMove(solvedState, { row: 0, column: 0 }), solvedState)
+})
+
+test('board size is 3 and exactly two modes exist', () => {
+  assert.equal(SQUARES_BOARD_SIZE, 3)
+  assert.equal(SQUARES_MODES.length, 2)
+  assert.deepEqual(SQUARES_MODES.map(m => m.id), ['1x1', 'plus-x'])
 })

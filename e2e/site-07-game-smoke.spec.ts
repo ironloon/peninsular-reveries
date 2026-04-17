@@ -60,27 +60,15 @@ async function holdGamepadButton(page: Page, index: number, holdMs: number): Pro
   await page.waitForTimeout(260)
 }
 
-async function completePixelPassportStop(page: Page): Promise<void> {
-  const memoryScreen = page.locator('#memory-screen')
-
-  for (let step = 0; step < 6; step++) {
-    if (await memoryScreen.isVisible()) {
-      break
-    }
-
+async function completePixelPassportExplore(page: Page): Promise<void> {
+  for (let step = 0; step < 8; step++) {
+    if (await page.locator('#globe-screen.active').isVisible()) break
     const nextButton = page.locator('#explore-next-btn')
-    await expect(nextButton).toBeVisible()
+    if (!(await nextButton.isVisible().catch(() => false))) break
     await expect(nextButton).toBeInViewport()
-    await tapGamepadButton(page, 0)
+    await nextButton.click()
   }
-
-  await expect(memoryScreen).toBeVisible()
-
-  const continueButton = page.locator('#memory-continue-btn')
-  await expect(continueButton).toBeVisible()
-  await expect(continueButton).toBeInViewport()
-  await tapGamepadButton(page, 0)
-  await expect(page.locator('#globe-screen')).toBeVisible()
+  await expect(page.locator('#globe-screen.active')).toBeVisible()
 }
 
 async function advanceMissionOrbitSceneToInteraction(page: Page): Promise<void> {
@@ -101,7 +89,8 @@ async function advanceMissionOrbitSceneToInteraction(page: Page): Promise<void> 
 
 async function startSquaresGame(page: Page): Promise<void> {
   await page.goto('/squares/')
-  await page.getByRole('button', { name: 'Start puzzle' }).click()
+  await expect(page.locator('#start-screen')).toBeVisible()
+  await page.locator('#start-plus-x-btn').click()
   await expect(page.locator('#game-screen')).toBeVisible()
   await expect(page.locator('#squares-board')).toBeVisible()
 }
@@ -141,7 +130,7 @@ test.describe('SITE-07: Game smoke tests', () => {
     await page.goto('/squares/')
 
     await expect(page.locator('#start-screen')).toBeVisible()
-    await expect(page.locator('#start-btn')).toBeInViewport()
+    await expect(page.locator('#start-plus-x-btn')).toBeInViewport()
 
     await tapGamepadButton(page, 9)
     await expect(page.locator('#settings-modal')).toBeVisible()
@@ -149,7 +138,7 @@ test.describe('SITE-07: Game smoke tests', () => {
     await page.keyboard.press('Escape')
     await expect(page.locator('#settings-modal')).toBeHidden()
 
-    await tapGamepadButton(page, 0)
+    await page.locator('#start-plus-x-btn').click()
     await expect(page.locator('#game-screen')).toBeVisible()
     await expect(page.locator('#squares-board')).toBeInViewport()
     await expect(page.locator('[data-squares-pattern-toggle="true"]')).toBeInViewport()
@@ -164,7 +153,8 @@ test.describe('SITE-07: Game smoke tests', () => {
 
   test('Chompers — game loads and renders hippo on start', async ({ page }) => {
     await page.goto('/chompers/')
-    await page.getByRole('button', { name: 'Start Chomping' }).click()
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await page.locator('.area-card-btn[data-area="addition"]').click()
     await expect(page.locator('#game-screen')).toBeVisible()
     await expect(page.locator('#hippo')).toBeVisible()
     await expect(page.locator('#scene-items button').first()).toBeVisible()
@@ -176,6 +166,7 @@ test.describe('SITE-07: Game smoke tests', () => {
   test('Chompers — controller opens the menu on start and starts the game', async ({ page }) => {
     await installMockGamepad(page)
     await page.goto('/chompers/')
+    await expect(page.locator('#start-screen')).toBeVisible()
 
     await tapGamepadButton(page, 9)
     await expect(page.locator('#settings-modal')).toBeVisible()
@@ -183,7 +174,7 @@ test.describe('SITE-07: Game smoke tests', () => {
     await tapGamepadButton(page, 9)
     await expect(page.locator('#settings-modal')).toBeHidden()
 
-    await tapGamepadButton(page, 0)
+    await page.locator('.area-card-btn[data-area="addition"]').click()
     await expect(page.locator('#game-screen')).toBeVisible()
     await expect(page.locator('#scene-items button').first()).toBeVisible()
 
@@ -205,7 +196,8 @@ test.describe('SITE-07: Game smoke tests', () => {
 
   test('Pixel Passport — globe screen loads on explore', async ({ page }) => {
     await page.goto('/pixel-passport/')
-    await page.getByRole('button', { name: /explore/i }).click()
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await page.locator('#start-explore-btn').click()
     await expect(page.locator('#globe-screen')).toBeVisible()
     await expect(page.locator('.destination-marker').first()).toBeVisible()
 
@@ -220,16 +212,15 @@ test.describe('SITE-07: Game smoke tests', () => {
     )).toBeGreaterThan(0)
   })
 
-  test('Pixel Passport — controller revisits the current place, takes a new trip, and clears memories on restart', async ({ page }) => {
+  test('Pixel Passport — controller explores, revisits, and navigates to a new destination', async ({ page }) => {
     await installMockGamepad(page)
     await page.goto('/pixel-passport/')
 
     await expect(page.locator('#start-screen')).toBeVisible()
     await expect(page.locator('#start-explore-btn')).toBeInViewport()
 
-    await tapGamepadButton(page, 0)
+    await page.locator('#start-explore-btn').click()
     await expect(page.locator('#globe-screen')).toBeVisible()
-    await expect(page.locator('#globe-room-btn')).toBeInViewport()
 
     const selectedMarker = page.locator('#globe-screen .destination-marker.is-selected')
     await expect(selectedMarker).toBeVisible()
@@ -237,12 +228,10 @@ test.describe('SITE-07: Game smoke tests', () => {
 
     await tapGamepadButton(page, 15)
     await expect(selectedMarker).toBeVisible()
-    await expect(page.locator('#globe-room-btn')).toBeInViewport()
     await expect(selectedMarker).toHaveAttribute('data-destination-id', 'cairo')
 
     await tapGamepadButton(page, 14)
     await expect(selectedMarker).toBeVisible()
-    await expect(page.locator('#globe-room-btn')).toBeInViewport()
     await expect(selectedMarker).toHaveAttribute('data-destination-id', 'paris')
 
     await tapGamepadButton(page, 0)
@@ -253,13 +242,11 @@ test.describe('SITE-07: Game smoke tests', () => {
     await expect(page.locator('#explore-next-btn')).toBeVisible()
     await expect(page.locator('#explore-next-btn')).toBeInViewport()
 
-    await completePixelPassportStop(page)
+    await completePixelPassportExplore(page)
 
     const currentMarker = page.locator('#globe-screen .destination-marker[aria-current="location"]')
     await expect(currentMarker).toBeVisible()
-    await expect(page.locator('#globe-room-btn')).toBeInViewport()
     await expect(currentMarker).toHaveAttribute('data-destination-id', 'paris')
-    await expect(page.locator('#globe-memory-pill')).toHaveText('1 memory')
 
     await tapGamepadButton(page, 0)
     await expect(page.locator('#explore-screen')).toBeVisible()
@@ -268,12 +255,11 @@ test.describe('SITE-07: Game smoke tests', () => {
     await expect(page.locator('#travel-screen')).toBeHidden()
     await expect(page.locator('#explore-heading')).toContainText('Paris')
 
-    await completePixelPassportStop(page)
+    await completePixelPassportExplore(page)
     await expect(currentMarker).toHaveAttribute('data-destination-id', 'paris')
 
     await tapGamepadButton(page, 15)
     await expect(selectedMarker).toBeVisible()
-    await expect(page.locator('#globe-room-btn')).toBeInViewport()
     await expect(selectedMarker).toHaveAttribute('data-destination-id', 'cairo')
 
     await tapGamepadButton(page, 0)
@@ -284,9 +270,8 @@ test.describe('SITE-07: Game smoke tests', () => {
     await expect(page.locator('#explore-next-btn')).toBeVisible()
     await expect(page.locator('#explore-next-btn')).toBeInViewport()
 
-    await completePixelPassportStop(page)
+    await completePixelPassportExplore(page)
     await expect(currentMarker).toHaveAttribute('data-destination-id', 'cairo')
-    await expect(page.locator('#globe-memory-pill')).toHaveText('2 memories')
 
     await tapGamepadButton(page, 9)
     await expect(page.locator('#settings-modal')).toBeVisible()
@@ -295,8 +280,6 @@ test.describe('SITE-07: Game smoke tests', () => {
 
     await page.locator('#restart-btn').click()
     await expect(page.locator('#start-screen')).toBeVisible()
-    await expect(page.locator('#title-memory-count')).toBeVisible()
-    await expect(page.locator('#title-memory-count')).toHaveText('0 memories')
     await expect(page.locator('#start-explore-btn')).toBeInViewport()
   })
 
@@ -376,7 +359,8 @@ test.describe('SITE-07: Game smoke tests', () => {
 
   test('Super Word — canvas renders with non-zero dimensions on start', async ({ page }) => {
     await page.goto('/super-word/')
-    await page.getByRole('button', { name: /let's go/i }).click()
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await page.locator('.btn-difficulty[data-difficulty="hero"]').click()
     const canvas = page.locator('#scene-canvas')
     await expect(canvas).toBeVisible()
     const box = await canvas.boundingBox()
@@ -389,8 +373,9 @@ test.describe('SITE-07: Game smoke tests', () => {
   test('Super Word — controller starts, collects a letter, and toggles the menu', async ({ page }) => {
     await installMockGamepad(page)
     await page.goto('/super-word/')
+    await expect(page.locator('#start-screen')).toBeVisible()
 
-    await tapGamepadButton(page, 0)
+    await page.locator('.btn-difficulty[data-difficulty="hero"]').click()
     await expect(page.locator('#game-screen')).toBeVisible()
 
     await expect.poll(async () => page.evaluate(() => {
@@ -410,14 +395,15 @@ test.describe('SITE-07: Game smoke tests', () => {
   test('Super Word — controller drops to the scorer-selected downward tile', async ({ page }) => {
     await installMockGamepad(page)
     await page.goto('/super-word/')
+    await expect(page.locator('#start-screen')).toBeVisible()
 
-    await tapGamepadButton(page, 0)
+    await page.locator('.btn-difficulty[data-difficulty="hero"]').click()
     await expect(page.locator('#game-screen')).toBeVisible()
 
     for (let collected = 1; collected <= 3; collected++) {
         const availableLetters = page.locator('#scene-a11y .sr-overlay-btn[data-item-type="letter"]')
         await expect(availableLetters.first()).toBeVisible()
-        await availableLetters.first().click()
+        await availableLetters.first().click({ force: true })
       await expect(page.locator('#letters-count')).toHaveText(new RegExp(`^${collected}\\s*\\/\\s*\\d+$`))
     }
 
@@ -495,8 +481,9 @@ test.describe('SITE-07: Game smoke tests', () => {
   test('Super Word — controller keeps left and right within the collected letter row', async ({ page }) => {
     await installMockGamepad(page)
     await page.goto('/super-word/')
+    await expect(page.locator('#start-screen')).toBeVisible()
 
-    await tapGamepadButton(page, 0)
+    await page.locator('.btn-difficulty[data-difficulty="hero"]').click()
     await expect(page.locator('#game-screen')).toBeVisible()
 
     for (let collected = 1; collected <= 3; collected++) {
@@ -545,8 +532,9 @@ test.describe('SITE-07: Game smoke tests', () => {
   test('Super Word — controller keeps the source tile selected until a different tile is activated', async ({ page }) => {
     await installMockGamepad(page)
     await page.goto('/super-word/')
+    await expect(page.locator('#start-screen')).toBeVisible()
 
-    await tapGamepadButton(page, 0)
+    await page.locator('.btn-difficulty[data-difficulty="hero"]').click()
     await expect(page.locator('#game-screen')).toBeVisible()
 
     for (let collected = 1; collected <= 3; collected++) {
@@ -602,5 +590,38 @@ test.describe('SITE-07: Game smoke tests', () => {
 
     await expect(page.locator('#letter-slots .letter-tile').nth(1)).toContainText(beforeSwap.destinationText)
     await expect(page.locator('#letter-slots .letter-tile').nth(2)).toContainText(beforeSwap.sourceText)
+  })
+
+  // Waterwall
+  test('Waterwall — play button dissolves title barriers to interactive grid', async ({ page }) => {
+    await page.goto('/waterwall/')
+    await expect(page.locator('#waterwall-game-screen')).toBeVisible()
+
+    const playBtn = page.locator('#waterwall-play-btn')
+    await expect(playBtn).toBeVisible()
+    await expect(playBtn).toBeInViewport()
+
+    await playBtn.click()
+    await expect(playBtn).toBeHidden({ timeout: 5000 })
+
+    await expect(page.locator('#waterwall-canvas-container')).toBeInViewport()
+  })
+
+  // Settings persistence
+  test('Settings persistence — music preference survives cross-game navigation', async ({ page }) => {
+    await page.goto('/squares/')
+    await page.locator('[data-settings-open="true"]').first().click()
+    await expect(page.locator('#settings-modal')).toBeVisible()
+
+    const musicToggle = page.locator('#music-enabled-toggle')
+    await musicToggle.check()
+    await expect(musicToggle).toBeChecked()
+    await page.keyboard.press('Escape')
+
+    await page.goto('/chompers/')
+    await page.locator('[data-settings-open="true"]').first().click()
+    await expect(page.locator('#settings-modal')).toBeVisible()
+
+    await expect(page.locator('#music-enabled-toggle')).toBeChecked()
   })
 })

@@ -2,21 +2,16 @@ import type { GameState, Choice, Story, Scene, Item } from './types.js'
 
 export function createInitialState(): GameState {
   return {
-    currentStoryId: null,
     currentSceneId: null,
     inventory: [],
     equippedItemId: null,
-    completedStoryIds: [],
-    earnedBadges: [],
     lastHint: null,
     lastCollectedItem: null,
   }
 }
 
-export function startStory(state: GameState, storyId: string, startSceneId: string): GameState {
+export function startStory(state: GameState, startSceneId: string): GameState {
   return {
-    ...state,
-    currentStoryId: storyId,
     currentSceneId: startSceneId,
     inventory: [],
     equippedItemId: null,
@@ -44,12 +39,10 @@ export function makeChoice(state: GameState, choice: Choice): GameState {
   }
 
   let inventory = state.inventory
-  let equippedItemId = state.equippedItemId
   let lastCollectedItem = state.lastCollectedItem
 
   if (choice.grantsItemId && !inventory.includes(choice.grantsItemId)) {
     inventory = [...inventory, choice.grantsItemId]
-    equippedItemId = choice.grantsItemId
     lastCollectedItem = choice.grantsItemId
   }
 
@@ -57,7 +50,6 @@ export function makeChoice(state: GameState, choice: Choice): GameState {
     ...state,
     currentSceneId: choice.targetSceneId,
     inventory,
-    equippedItemId,
     lastCollectedItem,
     lastHint: null,
   }
@@ -86,42 +78,14 @@ export function collectItem(state: GameState, itemId: string): GameState {
   }
 }
 
-export function completeStory(state: GameState, storyId: string, badgeName: string): GameState {
-  const completedStoryIds = state.completedStoryIds.includes(storyId)
-    ? state.completedStoryIds
-    : [...state.completedStoryIds, storyId]
-
-  const earnedBadges = state.earnedBadges.includes(badgeName)
-    ? state.earnedBadges
-    : [...state.earnedBadges, badgeName]
-
+export function completeStory(_state: GameState): GameState {
   return {
-    ...state,
-    currentStoryId: null,
-    currentSceneId: null,
-    inventory: [],
-    equippedItemId: null,
-    completedStoryIds,
-    earnedBadges,
-    lastHint: null,
-    lastCollectedItem: null,
-  }
-}
-
-export function returnToTrailMap(state: GameState): GameState {
-  return {
-    ...state,
-    currentStoryId: null,
     currentSceneId: null,
     inventory: [],
     equippedItemId: null,
     lastHint: null,
     lastCollectedItem: null,
   }
-}
-
-export function isStoryUnlocked(state: GameState, storyIndex: number): boolean {
-  return storyIndex === 0 || state.completedStoryIds.length >= storyIndex
 }
 
 export function getScene(story: Story, sceneId: string): Scene | undefined {

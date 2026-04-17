@@ -1,16 +1,14 @@
 import {
-  SQUARES_BOARD_PRESETS,
-  SQUARES_RULESETS,
+  SQUARES_BOARD_SIZE,
+  SQUARES_MODES,
+  SQUARES_PATTERN_IDS,
   type SquaresBoard,
-  type SquaresBoardPreset,
-  type SquaresBoardPresetId,
   type SquaresCellValue,
   type SquaresCoordinate,
-  type SquaresHighScoreBucketKey,
+  type SquaresHighScoreKey,
+  type SquaresModeDefinition,
+  type SquaresModeId,
   type SquaresPatternId,
-  type SquaresPatternMove,
-  type SquaresRulesetDefinition,
-  type SquaresRulesetId,
   type SquaresState,
 } from './types.js'
 
@@ -36,42 +34,25 @@ const PATTERN_OFFSETS: Readonly<Record<SquaresPatternId, readonly PatternOffset[
   ],
 }
 
-function cloneCoordinate(coordinate: SquaresCoordinate): SquaresCoordinate {
-  return {
-    row: coordinate.row,
-    column: coordinate.column,
-  }
-}
+const SCRAMBLE_MIN_1X1 = 3
+const SCRAMBLE_MAX_1X1 = 5
+const SCRAMBLE_MIN_PLUS_X = 3
+const SCRAMBLE_MAX_PLUS_X = 4
 
-function clonePatternMove(move: SquaresPatternMove): SquaresPatternMove {
-  return {
-    coordinate: cloneCoordinate(move.coordinate),
-    patternId: move.patternId,
-  }
+function cloneCoordinate(coordinate: SquaresCoordinate): SquaresCoordinate {
+  return { row: coordinate.row, column: coordinate.column }
 }
 
 function cloneBoard(board: SquaresBoard): SquaresBoard {
   return board.map((row) => [...row])
 }
 
-function getBoardPresetDefinition(presetId: SquaresBoardPresetId): SquaresBoardPreset {
-  const preset = SQUARES_BOARD_PRESETS.find((candidate) => candidate.id === presetId)
-
-  if (!preset) {
-    throw new Error(`Unknown Squares board preset: ${presetId}`)
+function getModeDefinition(modeId: SquaresModeId): SquaresModeDefinition {
+  const mode = SQUARES_MODES.find((candidate) => candidate.id === modeId)
+  if (!mode) {
+    throw new Error(`Unknown Squares mode: ${modeId}`)
   }
-
-  return preset
-}
-
-function getRulesetDefinition(rulesetId: SquaresRulesetId): SquaresRulesetDefinition {
-  const ruleset = SQUARES_RULESETS.find((candidate) => candidate.id === rulesetId)
-
-  if (!ruleset) {
-    throw new Error(`Unknown Squares ruleset: ${rulesetId}`)
-  }
-
-  return ruleset
+  return mode
 }
 
 function toggleCellValue(cellValue: SquaresCellValue): SquaresCellValue {
@@ -83,12 +64,12 @@ function isCoordinateInBounds(board: SquaresBoard, coordinate: SquaresCoordinate
   return Boolean(row) && coordinate.column >= 0 && coordinate.column < row.length
 }
 
-function getDefaultPatternId(rulesetId: SquaresRulesetId): SquaresPatternId {
-  return getRulesetDefinition(rulesetId).lockedPatternId ?? 'plus'
+function randomInt(min: number, max: number): number {
+  return min + Math.floor(Math.random() * (max - min + 1))
 }
 
-export function createSolvedBoard(preset: SquaresBoardPreset, cellValue: SquaresCellValue = 'light'): SquaresBoard {
-  return Array.from({ length: preset.rows }, () => Array.from({ length: preset.columns }, () => cellValue))
+export function createSolvedBoard(size: number = SQUARES_BOARD_SIZE, cellValue: SquaresCellValue = 'light'): SquaresBoard {
+  return Array.from({ length: size }, () => Array.from({ length: size }, () => cellValue))
 }
 
 export function getAffectedCells(
@@ -145,6 +126,18 @@ export function applyPatternToBoard(
   )
 }
 
+export function toggleSingleCell(board: SquaresBoard, coordinate: SquaresCoordinate): SquaresBoard {
+  if (!isCoordinateInBounds(board, coordinate)) {
+    return board
+  }
+
+  return board.map((row, rowIndex) =>
+    row.map((cellValue, columnIndex) =>
+      rowIndex === coordinate.row && columnIndex === coordinate.column ? toggleCellValue(cellValue) : cellValue,
+    ),
+  )
+}
+
 export function isSolvedBoard(board: SquaresBoard): boolean {
   if (board.length === 0 || board[0]?.length === 0) {
     return false
@@ -154,59 +147,65 @@ export function isSolvedBoard(board: SquaresBoard): boolean {
   return board.every((row) => row.every((cellValue) => cellValue === firstCellValue))
 }
 
-export function buildBoardFromPreset(
-  presetId: SquaresBoardPresetId,
-  rulesetId: SquaresRulesetId,
-): {
-  readonly board: SquaresBoard
-  readonly scramblePlan: readonly SquaresPatternMove[]
-} {
-  const preset = getBoardPresetDefinition(presetId)
-  const scramblePlan = preset.scramblePlans[rulesetId].map(clonePatternMove)
+export function generateRandomBoard(modeId: SquaresModeId): SquaresBoard {
+  const size = SQUARES_BOARD_SIZE
 
-  let board = createSolvedBoard(preset)
-  for (const move of scramblePlan) {
-    board = applyPatternToBoard(board, move.coordinate, move.patternId)
+  if (modeId === '1x1') {
+    const allCoordinates: SquaresCoordinate[] = []
+    for (let row = 0; row < size; row++) {
+      for (let col = 0; col < size; col++) {
+        allCoordinates.push({ row, column: col })
+      }
+    }
+
+    let board: SquaresBoard
+    do {
+      const count = randomInt(SCRAMBLE_MIN_1X1, SCRAMBLE_MAX_1X1)
+      const shuffled = [...allCoordinates].sort(() => Math.random() - 0.5)
+      const selected = shuffled.slice(0, count)
+      board = createSolvedBoard(size)
+      for (const coord of selected) {
+        board = toggleSingleCell(board, coord)
+      }
+    } while (isSolvedBoard(board))
+
+    return board
   }
 
-  return {
-    board,
-    scramblePlan,
-  }
+  let board: SquaresBoard
+  do {
+    const count = randomInt(SCRAMBLE_MIN_PLUS_X, SCRAMBLE_MAX_PLUS_X)
+    board = createSolvedBoard(size)
+    for (let i = 0; i < count; i++) {
+      const row = Math.floor(Math.random() * size)
+      const col = Math.floor(Math.random() * size)
+      const patternId = SQUARES_PATTERN_IDS[Math.floor(Math.random() * SQUARES_PATTERN_IDS.length)]
+      board = applyPatternToBoard(board, { row, column: col }, patternId)
+    }
+  } while (isSolvedBoard(board))
+
+  return board
 }
 
-export function createInitialState(
-  presetId: SquaresBoardPresetId = SQUARES_BOARD_PRESETS[0].id,
-  rulesetId: SquaresRulesetId = getBoardPresetDefinition(presetId).recommendedRulesetId,
-): SquaresState {
-  const ruleset = getRulesetDefinition(rulesetId)
-  const { board, scramblePlan } = buildBoardFromPreset(presetId, rulesetId)
+export function createInitialState(modeId: SquaresModeId = 'plus-x'): SquaresState {
+  void getModeDefinition(modeId)
+  const board = generateRandomBoard(modeId)
   const startingBoard = cloneBoard(board)
 
   return {
-    phase: isSolvedBoard(board) ? 'solved' : 'ready',
-    presetId,
-    rulesetId,
+    phase: 'ready',
+    modeId,
     board: cloneBoard(board),
     startingBoard,
-    scramblePlan,
-    activePatternId: getDefaultPatternId(rulesetId),
-    lockedPatternId: ruleset.lockedPatternId,
+    activePatternId: 'plus',
     moveCount: 0,
     lastMove: null,
   }
 }
 
 export function setActivePattern(state: SquaresState, patternId: SquaresPatternId): SquaresState {
-  if (state.lockedPatternId !== null) {
-    if (state.activePatternId === state.lockedPatternId) {
-      return state
-    }
-
-    return {
-      ...state,
-      activePatternId: state.lockedPatternId,
-    }
+  if (state.modeId === '1x1') {
+    return state
   }
 
   if (state.activePatternId === patternId) {
@@ -220,7 +219,7 @@ export function setActivePattern(state: SquaresState, patternId: SquaresPatternI
 }
 
 export function toggleActivePattern(state: SquaresState): SquaresState {
-  if (state.lockedPatternId !== null) {
+  if (state.modeId === '1x1') {
     return state
   }
 
@@ -235,8 +234,16 @@ export function applyMove(state: SquaresState, coordinate: SquaresCoordinate): S
     return state
   }
 
-  const patternId = state.lockedPatternId ?? state.activePatternId
-  const nextBoard = applyPatternToBoard(state.board, coordinate, patternId)
+  let nextBoard: SquaresBoard
+  let movePatternId: SquaresPatternId | null
+
+  if (state.modeId === '1x1') {
+    nextBoard = toggleSingleCell(state.board, coordinate)
+    movePatternId = null
+  } else {
+    movePatternId = state.activePatternId
+    nextBoard = applyPatternToBoard(state.board, coordinate, movePatternId)
+  }
 
   if (nextBoard === state.board) {
     return state
@@ -246,11 +253,10 @@ export function applyMove(state: SquaresState, coordinate: SquaresCoordinate): S
     ...state,
     phase: isSolvedBoard(nextBoard) ? 'solved' : 'playing',
     board: nextBoard,
-    activePatternId: patternId,
     moveCount: state.moveCount + 1,
     lastMove: {
       coordinate: cloneCoordinate(coordinate),
-      patternId,
+      patternId: movePatternId,
     },
   }
 }
@@ -263,19 +269,16 @@ export function restartState(state: SquaresState): SquaresState {
     phase: isSolvedBoard(startingBoard) ? 'solved' : 'ready',
     board: startingBoard,
     startingBoard: cloneBoard(state.startingBoard),
-    activePatternId: getDefaultPatternId(state.rulesetId),
+    activePatternId: 'plus',
     moveCount: 0,
     lastMove: null,
   }
 }
 
-export function getHighScoreBucketKey(
-  presetId: SquaresBoardPresetId,
-  rulesetId: SquaresRulesetId,
-): SquaresHighScoreBucketKey {
-  return `squares:${presetId}:${rulesetId}`
+export function getHighScoreKey(modeId: SquaresModeId): SquaresHighScoreKey {
+  return modeId === '1x1' ? 'squares-high-1x1' : 'squares-high-plusx'
 }
 
-export function getActiveHighScoreBucketKey(state: SquaresState): SquaresHighScoreBucketKey {
-  return getHighScoreBucketKey(state.presetId, state.rulesetId)
+export function getModeLabel(modeId: SquaresModeId): string {
+  return getModeDefinition(modeId).label
 }

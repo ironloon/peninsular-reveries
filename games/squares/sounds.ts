@@ -1,13 +1,10 @@
 import {
-  createMusicBus,
-  createSfxBus,
   ensureAudioUnlocked,
-  getAudioContext,
   playNotes,
   playTone,
-  syncBusWithVisibility,
   type NoteSequence,
 } from '../../client/audio.js'
+import { getGameAudioBuses } from '../../client/game-audio.js'
 import { getMusicEnabled, getSfxEnabled } from '../../client/preferences.js'
 
 export { ensureAudioUnlocked }
@@ -68,27 +65,16 @@ export const SQUARES_MUSIC_PROFILES = [
   },
 ] as const satisfies readonly SquaresMusicProfileDefinition[]
 
-let musicBus: GainNode | null = null
-let sfxBus: GainNode | null = null
 let musicLoopTimer: number | null = null
 let activeProfileId: SquaresMusicProfileId = DEFAULT_SQUARES_MUSIC_PROFILE_ID
 let musicRequested = false
-let visibilitySynced = false
 
 function getMusicBusNode(): GainNode {
-  musicBus ??= createMusicBus('squares')
-
-  if (!visibilitySynced) {
-    syncBusWithVisibility(musicBus, 'squares', 'music')
-    visibilitySynced = true
-  }
-
-  return musicBus
+  return getGameAudioBuses('squares').music
 }
 
 function getSfxBusNode(): GainNode {
-  sfxBus ??= createSfxBus('squares')
-  return sfxBus
+  return getGameAudioBuses('squares').sfx
 }
 
 function getProfile(profileId: SquaresMusicProfileId): SquaresMusicProfileDefinition {
@@ -130,12 +116,12 @@ function clearMusicLoop(): void {
 }
 
 function playNoiseBurst(duration = 0.09, peakGain = 0.035): void {
-  if (!getSfxEnabled('squares')) {
+  if (!getSfxEnabled()) {
     return
   }
 
   try {
-    const context = getAudioContext()
+    const context = getGameAudioBuses('squares').ctx
     const bufferSize = Math.ceil(context.sampleRate * duration)
     const buffer = context.createBuffer(1, bufferSize, context.sampleRate)
     const channel = buffer.getChannelData(0)
@@ -171,7 +157,7 @@ function scheduleProfile(profileId: SquaresMusicProfileId): void {
 }
 
 function syncMusicRequest(): void {
-  if (!musicRequested || !getMusicEnabled('squares') || typeof window === 'undefined') {
+  if (!musicRequested || !getMusicEnabled() || typeof window === 'undefined') {
     clearMusicLoop()
     return
   }
@@ -183,11 +169,8 @@ function syncMusicRequest(): void {
 }
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('reveries:music-change', (event) => {
-    const detail = (event as CustomEvent<{ gameSlug: string; enabled: boolean }>).detail
-    if (detail.gameSlug === 'squares') {
-      syncMusicRequest()
-    }
+  window.addEventListener('reveries:music-change', () => {
+    syncMusicRequest()
   })
 }
 
@@ -212,7 +195,7 @@ export function stopSquaresMusic(): void {
 }
 
 export function playMoveConfirmSound(): void {
-  if (!getSfxEnabled('squares')) {
+  if (!getSfxEnabled()) {
     return
   }
 
@@ -241,7 +224,7 @@ export function playMoveConfirmSound(): void {
 }
 
 export function playPatternSwitchSound(): void {
-  if (!getSfxEnabled('squares')) {
+  if (!getSfxEnabled()) {
     return
   }
 
@@ -272,7 +255,7 @@ export function playPatternSwitchSound(): void {
 }
 
 export function playWinCue(): void {
-  if (!getSfxEnabled('squares')) {
+  if (!getSfxEnabled()) {
     return
   }
 

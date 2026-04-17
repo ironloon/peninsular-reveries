@@ -326,3 +326,124 @@ export function resizeGrid(oldGrid: WaterwallGrid, newRows: number, newColumns: 
     barrierOrder,
   }
 }
+
+// ── Title barrier pixel font (5 wide × 7 tall, row-major) ────────────────────
+
+const PIXEL_FONT: Record<string, readonly (readonly number[])[]> = {
+  W: [
+    [1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1],
+    [1, 0, 1, 0, 1],
+    [1, 0, 1, 0, 1],
+    [1, 1, 0, 1, 1],
+    [1, 0, 0, 0, 1],
+  ],
+  A: [
+    [0, 1, 1, 1, 0],
+    [1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1],
+    [1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1],
+  ],
+  T: [
+    [1, 1, 1, 1, 1],
+    [0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0],
+    [0, 0, 1, 0, 0],
+  ],
+  E: [
+    [1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 1, 1, 1, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+  ],
+  R: [
+    [1, 1, 1, 1, 0],
+    [1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1],
+    [1, 1, 1, 1, 0],
+    [1, 0, 1, 0, 0],
+    [1, 0, 0, 1, 0],
+    [1, 0, 0, 0, 1],
+  ],
+  L: [
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 0, 0, 0, 0],
+    [1, 1, 1, 1, 1],
+  ],
+}
+
+const TITLE_TEXT = 'WATERWALL'
+const GLYPH_W = 5
+const GLYPH_H = 7
+const GLYPH_GAP = 1
+
+export function getTitleBarrierCoordinates(rows: number, columns: number): WaterwallCoordinate[] {
+  const baseWidth = TITLE_TEXT.length * GLYPH_W + (TITLE_TEXT.length - 1) * GLYPH_GAP
+  const scale = columns >= baseWidth * 2 + 10 ? 2 : 1
+  const totalW = baseWidth * scale
+  const totalH = GLYPH_H * scale
+
+  if (columns < baseWidth + 4 || rows < totalH + 4) return []
+
+  const startCol = Math.floor((columns - totalW) / 2)
+  const startRow = Math.floor((rows - totalH) * 0.35)
+
+  const coords: WaterwallCoordinate[] = []
+
+  for (let i = 0; i < TITLE_TEXT.length; i++) {
+    const bitmap = PIXEL_FONT[TITLE_TEXT[i]]
+    if (!bitmap) continue
+    const lc = startCol + i * (GLYPH_W + GLYPH_GAP) * scale
+
+    for (let r = 0; r < GLYPH_H; r++) {
+      for (let c = 0; c < GLYPH_W; c++) {
+        if (!bitmap[r][c]) continue
+        for (let sr = 0; sr < scale; sr++) {
+          for (let sc = 0; sc < scale; sc++) {
+            const row = startRow + r * scale + sr
+            const col = lc + c * scale + sc
+            if (row >= 0 && row < rows && col >= 0 && col < columns) {
+              coords.push({ row, column: col })
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return coords
+}
+
+export function placeTitleBarriers(grid: WaterwallGrid, coordinates: readonly WaterwallCoordinate[]): WaterwallGrid {
+  if (coordinates.length === 0) return grid
+  const nextCells = cloneCells(grid.cells)
+  for (const { row, column } of coordinates) {
+    nextCells[row][column] = 'barrier'
+  }
+  return { ...grid, cells: nextCells }
+}
+
+export function dissolveBarrierCells(grid: WaterwallGrid, coordinates: readonly WaterwallCoordinate[]): WaterwallGrid {
+  if (coordinates.length === 0) return grid
+  const nextCells = cloneCells(grid.cells)
+  for (const { row, column } of coordinates) {
+    if (nextCells[row]?.[column] === 'barrier') {
+      nextCells[row][column] = 'empty'
+    }
+  }
+  return { ...grid, cells: nextCells }
+}

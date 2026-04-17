@@ -86,7 +86,7 @@ const MANAGED_TARGET_SELECTORS = [
   SQUARES_MENU_BUTTON_SELECTOR,
   SQUARES_RESTART_BUTTON_SELECTOR,
 ].join(', ')
-const LONG_HOLD_MS = 420
+const LONG_HOLD_MS = 300
 const GAMEPAD_DEBOUNCE_MS = 200
 const GAMEPAD_DEAD_ZONE = 0.5
 
@@ -489,6 +489,12 @@ export function setupInput(callbacks: InputCallbacks, options: SetupInputOptions
   const setTimeoutFn = options.setTimeoutFn ?? setTimeout
   const clearTimeoutFn = options.clearTimeoutFn ?? clearTimeout
 
+  const boardElement = root instanceof HTMLElement ? root : null
+  if (boardElement) {
+    boardElement.style.setProperty('-webkit-touch-callout', 'none')
+    boardElement.style.userSelect = 'none'
+  }
+
   let suppressedClickTargetKey: string | null = null
   let gamepadState: SquaresGamepadState = {
     connected: false,
@@ -611,6 +617,7 @@ export function setupInput(callbacks: InputCallbacks, options: SetupInputOptions
   }
 
   gamepadConnectedHandler = () => {
+    document.body.classList.add('gamepad-active')
     callbacks.onGamepadConnectionChange?.(true)
   }
 

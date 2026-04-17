@@ -28,7 +28,7 @@ export function setupInput(
   const sceneEl = document.getElementById('scene-a11y')!
   const sceneWrapper = document.getElementById('scene-wrapper')!
   const slotsEl = document.getElementById('letter-slots')!
-  const startBtn = document.getElementById('start-btn')!
+  const difficultyBtns = Array.from(document.querySelectorAll<HTMLButtonElement>('.btn-difficulty[data-difficulty]'))
   const checkBtn = document.getElementById('check-btn')!
   const nextBtn = document.getElementById('next-btn')!
   const replayBtn = document.getElementById('replay-btn')!
@@ -250,7 +250,7 @@ export function setupInput(
   })
 
   // ── Button handlers ─────────────────────────────────────
-  startBtn.addEventListener('click', () => callbacks.onStartGame())
+  // Difficulty buttons wired in main.ts
   checkBtn.addEventListener('click', () => {
     if (!checkBtn.hasAttribute('disabled')) {
       callbacks.onCheckAnswer()
@@ -282,7 +282,7 @@ export function setupInput(
   }
 
   function getScreenControls(screen: string | null): HTMLElement[] {
-    if (screen === 'start-screen') return [startBtn]
+    if (screen === 'start-screen') return difficultyBtns
     if (screen === 'win-screen') return [replayBtn]
     return []
   }
@@ -542,7 +542,7 @@ export function setupInput(
 
     const screen = getActiveScreen()
     if (screen === 'start-screen') {
-      startBtn.click()
+      if (difficultyBtns[0]) difficultyBtns[0].click()
       return
     }
 
@@ -566,7 +566,7 @@ export function setupInput(
     }
 
     const screen = getActiveScreen()
-    if (screen === 'start-screen') startBtn.click()
+    if (screen === 'start-screen') { if (difficultyBtns[0]) difficultyBtns[0].click() }
     else if (screen === 'win-screen') replayBtn.click()
     else if (screen === 'game-screen') {
       // Toggle settings modal during gameplay

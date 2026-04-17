@@ -1,7 +1,6 @@
-function announce(message: string, priority: 'polite' | 'assertive'): void {
-  const el = document.getElementById(priority === 'assertive' ? 'game-feedback' : 'game-status')
-  if (el) el.textContent = message
-}
+import { announce, moveFocusAfterTransition } from '../../client/game-accessibility.js'
+
+export { moveFocusAfterTransition }
 
 export function announceLetterCollected(char: string, label: string, collected: number, total: number): void {
   announce(`Collected letter ${char} from ${label}. ${collected} of ${total} letters found.`, 'assertive')
@@ -41,13 +40,6 @@ export function announceGameWin(score: number): void {
 
 export function moveFocus(element: HTMLElement): void {
   requestAnimationFrame(() => element.focus())
-}
-
-export function moveFocusAfterTransition(elementId: string, delayMs: number = 300): void {
-  setTimeout(() => {
-    const el = document.getElementById(elementId)
-    if (el) requestAnimationFrame(() => el.focus())
-  }, delayMs)
 }
 
 export function moveFocusToFirstSceneItem(delayMs: number = 300): void {

@@ -32,6 +32,8 @@ List the candidates briefly with their backlog text. Wait for the user's respons
 
 **One leg per message.** Do not batch multiple legs into a single chat message during Workshop. Present exactly one leg (or one tightly-coupled group explicitly noted as grouped), then stop and wait for the user's explicit response before advancing to the next leg. Do not present the next leg in the same message as the previous leg's approval. **Community Candidate** (for gnd upstream): pure process discipline, no project coupling.
 
+**Use `vscode_askQuestions` for workshop approvals.** Present the leg summary in chat, then use the askQuestions tool for the approval prompt with options (Approve as-is, Remove, plus any leg-specific alternatives). This keeps the approval interaction structured and reduces friction. **Community Candidate** (for gnd upstream): pure UX improvement, no project coupling.
+
 **User Intent confirmation is a hard gate.** During Refinement, present the User Intent summary and wait for explicit confirmation before writing the plan file. Do not skip or combine this step with final plan output. **Community Candidate** (for gnd upstream): pure process discipline, no project coupling.
 
 ## Visual Verification

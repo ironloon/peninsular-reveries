@@ -20,6 +20,62 @@
   position: relative;
 }
 
+/* ── Play button ───────────────────────────────────────────────────────────── */
+
+.waterwall-play-btn {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 56px;
+  min-width: 56px;
+  padding: 0.8rem 2rem;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  color: #fff;
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: manipulation;
+  transition: opacity 0.5s ease, transform 0.2s ease;
+}
+
+.waterwall-play-btn:hover,
+.waterwall-play-btn:focus-visible {
+  background: rgba(0, 0, 0, 0.7);
+  border-color: rgba(255, 255, 255, 0.6);
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+  transform: translate(-50%, -50%) scale(1.05);
+}
+
+.waterwall-play-icon {
+  font-size: 1.4rem;
+}
+
+.waterwall-gamepad-hint {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.waterwall-play-btn.fading {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.waterwall-play-btn[hidden] {
+  display: none;
+}
+
 /* ── Header / Title / Pill ─────────────────────────────────────────────────── */
 
 .waterwall-title {

@@ -1,25 +1,23 @@
 import type { TransportType } from './types.js'
-import { getAudioContext, createSfxBus } from '../../client/audio.js'
+import { getGameAudioBuses } from '../../client/game-audio.js'
 import { getSfxEnabled } from '../../client/preferences.js'
 
-let _sfxBus: GainNode | null = null
 let travelLoopStopper: (() => void) | null = null
 
 function getCtx(): AudioContext | null {
   try {
-    return getAudioContext()
+    return getGameAudioBuses('pixel-passport').ctx
   } catch {
     return null
   }
 }
 
 function getSfxBusNode(): GainNode {
-  if (!_sfxBus) _sfxBus = createSfxBus('pixel-passport')
-  return _sfxBus
+  return getGameAudioBuses('pixel-passport').sfx
 }
 
 function canPlay(): boolean {
-  return getSfxEnabled('pixel-passport')
+  return getSfxEnabled()
 }
 
 function tone(frequency: number, durationMs: number, options?: { type?: OscillatorType; volume?: number; detune?: number }): void {
@@ -143,14 +141,6 @@ export function stopTravelLoop(): void {
 
 export function sfxArrive(): void {
   chord([392, 523, 659], 260, 0.03)
-}
-
-export function sfxPipSpeak(): void {
-  tone(720, 90, { volume: 0.02 })
-}
-
-export function sfxMemoryCollect(): void {
-  chord([392, 523, 784], 300, 0.03)
 }
 
 export function sfxMysteryClue(): void {

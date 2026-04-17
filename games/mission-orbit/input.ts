@@ -1,3 +1,5 @@
+import { isModalOpen, focusableElements } from '../../client/game-input.js'
+
 export interface InputCallbacks {
   onStart: () => void
   onAdvancePhase: () => void
@@ -19,13 +21,18 @@ type Listener = {
 const STICK_THRESHOLD = 0.5
 const NAVIGATION_DEBOUNCE_MS = 200
 
+const HOLD_THRESHOLD_MS = 300
+
 let listeners: Listener[] = []
 let tapDebounceTimer: ReturnType<typeof setTimeout> | null = null
+let tapHoldStartedAt = 0
+let tapHoldSuppressClick = false
 let gamepadFrameId: number | null = null
 let previousButtonStates: boolean[] = []
 let heldDirection: NavigationDirection | null = null
 let lastNavigationAt = 0
 let holdingWithGamepad = false
+let gamepadHoldStartedAt = 0
 let currentGamepadFocus: HTMLElement | null = null
 
 function addListener(target: EventTarget, type: string, fn: EventListenerOrEventListenerObject): void {
@@ -45,30 +52,6 @@ function makeTap(callbacks: InputCallbacks): () => void {
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   return target instanceof HTMLElement && ['BUTTON', 'A', 'INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)
-}
-
-function isModalOpen(): boolean {
-  const modal = document.getElementById('settings-modal')
-  return modal instanceof HTMLElement && !modal.hasAttribute('hidden')
-}
-
-function focusableElements(root: ParentNode | null): HTMLElement[] {
-  if (!root) {
-    return []
-  }
-
-  return Array.from(root.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]')).filter((element) => {
-    if (element.tabIndex < 0) return false
-    if (element.hasAttribute('disabled') || element.hasAttribute('hidden') || element.getAttribute('aria-hidden') === 'true') {
-      return false
-    }
-
-    if (element instanceof HTMLInputElement && element.type === 'hidden') {
-      return false
-    }
-
-    return element.getClientRects().length > 0
-  })
 }
 
 function connectedGamepad(): Gamepad | null {
@@ -214,7 +197,9 @@ export function setupInput(callbacks: InputCallbacks): void {
     }
 
     holdingWithGamepad = false
-    callbacks.onHoldEnd()
+    if (Date.now() - gamepadHoldStartedAt >= HOLD_THRESHOLD_MS) {
+      callbacks.onHoldEnd()
+    }
   }
 
   const syncGamepadCue = (): void => {
@@ -304,6 +289,7 @@ export function setupInput(callbacks: InputCallbacks): void {
       markGamepadFocus(actionButton, false)
       if (isHoldActionButton(actionButton)) {
         holdingWithGamepad = true
+        gamepadHoldStartedAt = Date.now()
         callbacks.onHoldStart()
         return
       }
@@ -330,11 +316,26 @@ export function setupInput(callbacks: InputCallbacks): void {
   }
 
   if (tapBtn) {
-    addListener(tapBtn, 'pointerdown', () => callbacks.onHoldStart())
-    addListener(tapBtn, 'pointerup', () => callbacks.onHoldEnd())
+    addListener(tapBtn, 'pointerdown', () => {
+      tapHoldStartedAt = Date.now()
+      tapHoldSuppressClick = false
+      callbacks.onHoldStart()
+    })
+    addListener(tapBtn, 'pointerup', () => {
+      if (Date.now() - tapHoldStartedAt >= HOLD_THRESHOLD_MS) {
+        tapHoldSuppressClick = true
+        callbacks.onHoldEnd()
+      }
+    })
     addListener(tapBtn, 'pointerleave', () => callbacks.onHoldEnd())
     addListener(tapBtn, 'pointercancel', () => callbacks.onHoldEnd())
-    addListener(tapBtn, 'click', tap)
+    addListener(tapBtn, 'click', () => {
+      if (tapHoldSuppressClick) {
+        tapHoldSuppressClick = false
+        return
+      }
+      tap()
+    })
   }
 
   if (playAgainBtn) {
@@ -468,5 +469,8 @@ export function teardownInput(): void {
   previousButtonStates = []
   heldDirection = null
   holdingWithGamepad = false
+  gamepadHoldStartedAt = 0
+  tapHoldStartedAt = 0
+  tapHoldSuppressClick = false
   clearGamepadMode()
 }

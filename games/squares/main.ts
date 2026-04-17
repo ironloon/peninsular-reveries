@@ -1,8 +1,8 @@
-import { bindMusicToggle, bindReduceMotionToggle, bindSfxToggle, isReducedMotionEnabled } from '../../client/preferences.js'
-import { setupTabbedModal } from '../../client/modal.js'
+import { isReducedMotionEnabled } from '../../client/preferences.js'
+import { setupGameMenu } from '../../client/game-menu.js'
 
 import { announceMove, announcePatternChange, announceRestart, announceSolved } from './accessibility.js'
-import { playMoveFeedback, playSolvedCelebration } from './animations.js'
+import { playMoveFeedback, playSolvedCelebration, randomCelebrationPatternId } from './animations.js'
 import { setupInput } from './input.js'
 import {
   createRenderer,
@@ -11,66 +11,36 @@ import {
   SQUARES_RESTART_BUTTON_SELECTOR,
   type SquaresRenderer,
 } from './renderer.js'
-import { applyMove, createInitialState, getAffectedCells, getHighScoreBucketKey, restartState, toggleActivePattern } from './state.js'
+import { applyMove, createInitialState, getAffectedCells, getHighScoreKey, getModeLabel, restartState, toggleActivePattern } from './state.js'
 import {
-  DEFAULT_SQUARES_MUSIC_PROFILE_ID,
   ensureAudioUnlocked,
   playMoveConfirmSound,
   playPatternSwitchSound,
   playWinCue,
-  setSquaresMusicProfile,
   startSquaresMusic,
-  type SquaresMusicProfileId,
 } from './sounds.js'
 import {
-  SQUARES_BOARD_PRESETS,
-  SQUARES_RULESETS,
-  SQUARES_THEME_PRESETS,
-  type SquaresBoardPresetId,
+  SQUARES_MODES,
   type SquaresCoordinate,
-  type SquaresRulesetId,
+  type SquaresModeId,
   type SquaresState,
-  type SquaresThemePresetId,
 } from './types.js'
 
 type ScreenId = 'start-screen' | 'game-screen' | 'win-screen'
-
-interface PendingSetup {
-  presetId: SquaresBoardPresetId
-  rulesetId: SquaresRulesetId
-  themePresetId: SquaresThemePresetId
-  musicProfileId: SquaresMusicProfileId
-}
 
 interface FocusDescriptor {
   kind: 'cell' | 'pattern-toggle' | 'restart' | 'menu' | 'none'
   coordinate: SquaresCoordinate | null
 }
 
-const GAME_SLUG = 'squares'
-const HIGH_SCORE_PREFIX = 'squares-high-score:'
-const MUSIC_PROFILE_KEY = 'squares-music-profile'
-
-const defaultPreset = SQUARES_BOARD_PRESETS[0]
-
 let currentScreen: ScreenId = 'start-screen'
-let pendingSetup: PendingSetup = {
-  presetId: defaultPreset.id,
-  rulesetId: defaultPreset.recommendedRulesetId,
-  themePresetId: defaultPreset.themePresetId,
-  musicProfileId: loadStoredMusicProfile(),
-}
-let sessionState: SquaresState = createInitialState(pendingSetup.presetId, pendingSetup.rulesetId)
+let activeModeId: SquaresModeId = 'plus-x'
+let sessionState: SquaresState = createInitialState(activeModeId)
 let renderer: SquaresRenderer | null = null
 let settingsModal = { open() {}, close() {}, toggle() {} }
 let hoveredCoordinate: SquaresCoordinate | null = null
 let focusedCoordinate: SquaresCoordinate | null = null
 let celebrationLocked = false
-
-function loadStoredMusicProfile(): SquaresMusicProfileId {
-  const stored = localStorage.getItem(MUSIC_PROFILE_KEY)
-  return stored === 'tense' ? 'tense' : DEFAULT_SQUARES_MUSIC_PROFILE_ID
-}
 
 function byId<T extends HTMLElement>(id: string): T | null {
   const element = document.getElementById(id)
@@ -82,59 +52,36 @@ function isSettingsOpen(): boolean {
   return Boolean(modal && !modal.hidden)
 }
 
-function getPresetLabel(presetId: SquaresBoardPresetId): string {
-  return SQUARES_BOARD_PRESETS.find((preset) => preset.id === presetId)?.label ?? defaultPreset.label
-}
-
-function getRulesetLabel(rulesetId: SquaresRulesetId): string {
-  return SQUARES_RULESETS.find((ruleset) => ruleset.id === rulesetId)?.label ?? SQUARES_RULESETS[0].label
-}
-
-function getThemeLabel(themePresetId: SquaresThemePresetId): string {
-  return SQUARES_THEME_PRESETS.find((preset) => preset.id === themePresetId)?.label ?? SQUARES_THEME_PRESETS[0].label
-}
-
-function bucketLabel(presetId: SquaresBoardPresetId, rulesetId: SquaresRulesetId): string {
-  return `${getPresetLabel(presetId)} · ${getRulesetLabel(rulesetId)}`
-}
-
-function highScoreStorageKey(presetId: SquaresBoardPresetId, rulesetId: SquaresRulesetId): string {
-  return `${HIGH_SCORE_PREFIX}${getHighScoreBucketKey(presetId, rulesetId)}`
-}
-
-function readHighScore(presetId: SquaresBoardPresetId, rulesetId: SquaresRulesetId): number | null {
-  const stored = localStorage.getItem(highScoreStorageKey(presetId, rulesetId))
+function readHighScore(modeId: SquaresModeId): number | null {
+  const stored = localStorage.getItem(getHighScoreKey(modeId))
   if (!stored) {
     return null
   }
-
   const parsed = Number.parseInt(stored, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null
 }
 
-function writeHighScore(presetId: SquaresBoardPresetId, rulesetId: SquaresRulesetId, moveCount: number): boolean {
-  const previous = readHighScore(presetId, rulesetId)
+function writeHighScore(modeId: SquaresModeId, moveCount: number): boolean {
+  const previous = readHighScore(modeId)
   if (previous !== null && previous <= moveCount) {
     return false
   }
-
-  localStorage.setItem(highScoreStorageKey(presetId, rulesetId), String(moveCount))
+  localStorage.setItem(getHighScoreKey(modeId), String(moveCount))
   return true
 }
 
-function resetHighScore(presetId: SquaresBoardPresetId, rulesetId: SquaresRulesetId): void {
-  localStorage.removeItem(highScoreStorageKey(presetId, rulesetId))
+function resetHighScore(modeId: SquaresModeId): void {
+  localStorage.removeItem(getHighScoreKey(modeId))
 }
 
 function formatHighScore(moveCount: number | null): string {
-  return moveCount === null ? 'No high score yet' : `${moveCount} moves`
+  return moveCount === null ? 'No record yet' : `${moveCount} moves`
 }
 
 function sameCoordinate(left: SquaresCoordinate | null, right: SquaresCoordinate | null): boolean {
   if (left === null && right === null) {
     return true
   }
-
   return Boolean(left && right && left.row === right.row && left.column === right.column)
 }
 
@@ -143,15 +90,10 @@ function setStatusMessage(message: string, regionId: 'game-status' | 'game-feedb
   if (!region) {
     return
   }
-
   region.textContent = ''
   requestAnimationFrame(() => {
     region.textContent = message
   })
-}
-
-function applyTheme(themePresetId: SquaresThemePresetId): void {
-  document.body.dataset['squaresTheme'] = themePresetId
 }
 
 function syncModalState(): void {
@@ -241,22 +183,21 @@ function renderGameBoard(): void {
     focusedCoordinate,
     hoveredCoordinate,
     reducedMotion: isReducedMotionEnabled(),
-    highScoreSummary: `High score: ${formatHighScore(readHighScore(sessionState.presetId, sessionState.rulesetId))}`,
+    highScoreSummary: `Best: ${formatHighScore(readHighScore(sessionState.modeId))}`,
   })
   restoreRuntimeFocus(previousFocus)
 }
 
 function updateHud(): void {
-  const setupLabel = bucketLabel(sessionState.presetId, sessionState.rulesetId)
-  const highScoreValue = formatHighScore(readHighScore(sessionState.presetId, sessionState.rulesetId))
+  const modeLabel = getModeLabel(sessionState.modeId)
+  const highScoreValue = formatHighScore(readHighScore(sessionState.modeId))
 
-  const setupNode = byId<HTMLElement>('hud-setup-label')
+  const modeLabelNode = byId<HTMLElement>('hud-mode-label')
   const highScoreNode = byId<HTMLElement>('hud-high-score-value')
   const moveCountNode = byId<HTMLElement>('hud-move-count')
-  const contextNode = byId<HTMLElement>('hud-high-score-context')
 
-  if (setupNode) {
-    setupNode.textContent = setupLabel
+  if (modeLabelNode) {
+    modeLabelNode.textContent = modeLabel
   }
   if (highScoreNode) {
     highScoreNode.textContent = highScoreValue
@@ -264,89 +205,35 @@ function updateHud(): void {
   if (moveCountNode) {
     moveCountNode.textContent = String(sessionState.moveCount)
   }
-  if (contextNode) {
-    contextNode.textContent = `High score bucket: ${setupLabel}`
-  }
 }
 
-function updateStartSummary(): void {
-  const label = bucketLabel(pendingSetup.presetId, pendingSetup.rulesetId)
-  const startSetupLabel = byId<HTMLElement>('start-setup-label')
-  const startThemeLabel = byId<HTMLElement>('start-theme-label')
-  const startHighScoreLabel = byId<HTMLElement>('start-high-score-label')
-  const startHighScoreValue = byId<HTMLElement>('start-high-score-value')
-
-  if (startSetupLabel) {
-    startSetupLabel.textContent = label
+function refreshAllHighScores(): void {
+  for (const mode of SQUARES_MODES) {
+    const value = formatHighScore(readHighScore(mode.id))
+    const startNode = byId<HTMLElement>(`start-high-${mode.id}`)
+    const settingsNode = byId<HTMLElement>(`settings-high-${mode.id === '1x1' ? '1x1' : 'plusx'}`)
+    if (startNode) {
+      startNode.textContent = value
+    }
+    if (settingsNode) {
+      settingsNode.textContent = value
+    }
   }
-  if (startThemeLabel) {
-    startThemeLabel.textContent = getThemeLabel(pendingSetup.themePresetId)
-  }
-  if (startHighScoreLabel) {
-    startHighScoreLabel.textContent = `High score for ${label}`
-  }
-  if (startHighScoreValue) {
-    startHighScoreValue.textContent = formatHighScore(readHighScore(pendingSetup.presetId, pendingSetup.rulesetId))
-  }
-}
-
-function updateSettingsSummary(): void {
-  const label = bucketLabel(pendingSetup.presetId, pendingSetup.rulesetId)
-  const highScoreLabel = byId<HTMLElement>('settings-high-score-label')
-  const highScoreValue = byId<HTMLElement>('settings-high-score-value')
-
-  if (highScoreLabel) {
-    highScoreLabel.textContent = `High score for ${label}`
-  }
-  if (highScoreValue) {
-    highScoreValue.textContent = formatHighScore(readHighScore(pendingSetup.presetId, pendingSetup.rulesetId))
-  }
+  updateHud()
 }
 
 function updateWinSummary(isNewHighScore = false): void {
-  const label = bucketLabel(sessionState.presetId, sessionState.rulesetId)
   const winSummary = byId<HTMLElement>('win-summary')
-  const winHighScoreContext = byId<HTMLElement>('win-high-score-context')
   const winHighScoreValue = byId<HTMLElement>('win-high-score-value')
 
   if (winSummary) {
     winSummary.textContent = isNewHighScore
-      ? `Solved in ${sessionState.moveCount} moves. New high score.`
+      ? `Solved in ${sessionState.moveCount} moves. New record!`
       : `Solved in ${sessionState.moveCount} moves.`
   }
-  if (winHighScoreContext) {
-    winHighScoreContext.textContent = `High score for ${label}`
-  }
   if (winHighScoreValue) {
-    winHighScoreValue.textContent = formatHighScore(readHighScore(sessionState.presetId, sessionState.rulesetId))
+    winHighScoreValue.textContent = formatHighScore(readHighScore(sessionState.modeId))
   }
-}
-
-function syncSelectors(): void {
-  const boardPresetSelect = byId<HTMLSelectElement>('board-preset-select')
-  const rulesetSelect = byId<HTMLSelectElement>('ruleset-select')
-  const themePresetSelect = byId<HTMLSelectElement>('theme-preset-select')
-  const musicProfileSelect = byId<HTMLSelectElement>('music-profile-select')
-
-  if (boardPresetSelect) {
-    boardPresetSelect.value = pendingSetup.presetId
-  }
-  if (rulesetSelect) {
-    rulesetSelect.value = pendingSetup.rulesetId
-  }
-  if (themePresetSelect) {
-    themePresetSelect.value = pendingSetup.themePresetId
-  }
-  if (musicProfileSelect) {
-    musicProfileSelect.value = pendingSetup.musicProfileId
-  }
-}
-
-function refreshHighScoreUi(): void {
-  updateStartSummary()
-  updateSettingsSummary()
-  updateHud()
-  updateWinSummary()
 }
 
 function focusGameBoard(): void {
@@ -360,23 +247,21 @@ function focusGameBoard(): void {
 
 function startSession(): void {
   ensureAudioUnlocked()
-  sessionState = createInitialState(pendingSetup.presetId, pendingSetup.rulesetId)
+  sessionState = createInitialState(activeModeId)
   focusedCoordinate = { row: 0, column: 0 }
   hoveredCoordinate = null
   celebrationLocked = false
-  applyTheme(pendingSetup.themePresetId)
-  setSquaresMusicProfile(pendingSetup.musicProfileId)
-  startSquaresMusic(pendingSetup.musicProfileId)
+  startSquaresMusic()
   showScreen('game-screen')
   renderGameBoard()
-  refreshHighScoreUi()
-  setStatusMessage(`High score for ${bucketLabel(sessionState.presetId, sessionState.rulesetId)} is ${formatHighScore(readHighScore(sessionState.presetId, sessionState.rulesetId))}.`)
+  refreshAllHighScores()
+  setStatusMessage(`${getModeLabel(activeModeId)} mode. Best: ${formatHighScore(readHighScore(activeModeId))}.`)
   requestAnimationFrame(() => {
     focusGameBoard()
   })
 }
 
-function replayCurrentScramble(): void {
+function replayCurrentPuzzle(): void {
   ensureAudioUnlocked()
   sessionState = restartState(sessionState)
   focusedCoordinate = { row: 0, column: 0 }
@@ -394,9 +279,9 @@ function replayCurrentScramble(): void {
 function returnToStart(): void {
   celebrationLocked = false
   showScreen('start-screen')
-  updateStartSummary()
+  refreshAllHighScores()
   requestAnimationFrame(() => {
-    byId<HTMLButtonElement>('start-btn')?.focus({ preventScroll: true })
+    byId<HTMLButtonElement>('start-plus-x-btn')?.focus({ preventScroll: true })
   })
 }
 
@@ -406,14 +291,13 @@ async function settleSolvedState(): Promise<void> {
   }
 
   celebrationLocked = true
-  const isNewHighScore = writeHighScore(sessionState.presetId, sessionState.rulesetId, sessionState.moveCount)
+  const isNewHighScore = writeHighScore(sessionState.modeId, sessionState.moveCount)
   updateHud()
-  updateSettingsSummary()
-  updateStartSummary()
+  refreshAllHighScores()
   playWinCue()
   announceSolved(sessionState.moveCount, isNewHighScore)
 
-  const preset = SQUARES_BOARD_PRESETS.find((candidate) => candidate.id === sessionState.presetId) ?? defaultPreset
+  const celebrationPatternId = randomCelebrationPatternId()
   const cells = Array.from(renderer.boardElement.querySelectorAll<HTMLElement>(SQUARES_CELL_SELECTOR)).map((element) => ({
     coordinate: {
       row: Number.parseInt(element.dataset['row'] ?? '0', 10),
@@ -422,7 +306,7 @@ async function settleSolvedState(): Promise<void> {
     element,
   }))
 
-  await playSolvedCelebration(cells, sessionState.board, preset.celebrationPatternId, {
+  await playSolvedCelebration(cells, sessionState.board, celebrationPatternId, {
     reducedMotion: isReducedMotionEnabled(),
   })
 
@@ -433,7 +317,7 @@ async function settleSolvedState(): Promise<void> {
   showScreen('win-screen')
   celebrationLocked = false
   requestAnimationFrame(() => {
-    byId<HTMLButtonElement>('play-again-btn')?.focus({ preventScroll: true })
+    byId<HTMLButtonElement>('replay-btn')?.focus({ preventScroll: true })
   })
 }
 
@@ -452,14 +336,28 @@ async function handleMove(coordinate: SquaresCoordinate): Promise<void> {
   hoveredCoordinate = coordinate
   renderGameBoard()
 
-  const affectedCoordinates = getAffectedCells(sessionState.board, coordinate, sessionState.lastMove?.patternId ?? sessionState.activePatternId)
-  const affectedCells = affectedCoordinates
-    .map((affectedCoordinate) => renderer?.getCellButton(affectedCoordinate) ?? null)
-    .filter((cell): cell is HTMLButtonElement => cell instanceof HTMLButtonElement)
+  const patternId = sessionState.lastMove?.patternId
+  if (patternId) {
+    const affectedCoordinates = getAffectedCells(sessionState.board, coordinate, patternId)
+    const affectedCells = affectedCoordinates
+      .map((affectedCoordinate) => renderer?.getCellButton(affectedCoordinate) ?? null)
+      .filter((cell): cell is HTMLButtonElement => cell instanceof HTMLButtonElement)
+    await playMoveFeedback(affectedCells, { reducedMotion: isReducedMotionEnabled() })
+  } else {
+    const singleCell = renderer?.getCellButton(coordinate)
+    if (singleCell) {
+      await playMoveFeedback([singleCell], { reducedMotion: isReducedMotionEnabled() })
+    }
+  }
 
   playMoveConfirmSound()
-  await playMoveFeedback(affectedCells, { reducedMotion: isReducedMotionEnabled() })
-  announceMove(sessionState.lastMove?.patternId ?? sessionState.activePatternId, sessionState.moveCount)
+
+  if (sessionState.modeId === '1x1') {
+    setStatusMessage(`Move ${sessionState.moveCount}.`)
+  } else {
+    announceMove(sessionState.lastMove?.patternId ?? sessionState.activePatternId, sessionState.moveCount)
+  }
+
   updateHud()
 
   if (sessionState.phase === 'solved') {
@@ -469,6 +367,10 @@ async function handleMove(coordinate: SquaresCoordinate): Promise<void> {
 
 function handlePatternToggle(): void {
   if (currentScreen !== 'game-screen' || celebrationLocked || isSettingsOpen()) {
+    return
+  }
+
+  if (sessionState.modeId === '1x1') {
     return
   }
 
@@ -489,77 +391,42 @@ function handleManagedRestart(): void {
     return
   }
 
-  replayCurrentScramble()
-}
-
-function handleSetupChange(): void {
-  const boardPresetSelect = byId<HTMLSelectElement>('board-preset-select')
-  const rulesetSelect = byId<HTMLSelectElement>('ruleset-select')
-  const themePresetSelect = byId<HTMLSelectElement>('theme-preset-select')
-  const musicProfileSelect = byId<HTMLSelectElement>('music-profile-select')
-
-  const nextPresetId = (boardPresetSelect?.value as SquaresBoardPresetId | undefined) ?? pendingSetup.presetId
-  const nextRulesetId = (rulesetSelect?.value as SquaresRulesetId | undefined) ?? pendingSetup.rulesetId
-  const nextThemePresetId = (themePresetSelect?.value as SquaresThemePresetId | undefined)
-    ?? (SQUARES_BOARD_PRESETS.find((preset) => preset.id === nextPresetId)?.themePresetId ?? pendingSetup.themePresetId)
-  const nextMusicProfileId = (musicProfileSelect?.value as SquaresMusicProfileId | undefined) ?? pendingSetup.musicProfileId
-
-  pendingSetup = {
-    presetId: nextPresetId,
-    rulesetId: nextRulesetId,
-    themePresetId: nextThemePresetId,
-    musicProfileId: nextMusicProfileId,
-  }
-
-  localStorage.setItem(MUSIC_PROFILE_KEY, pendingSetup.musicProfileId)
-  applyTheme(pendingSetup.themePresetId)
-  setSquaresMusicProfile(pendingSetup.musicProfileId)
-  syncSelectors()
-  updateStartSummary()
-  updateSettingsSummary()
-  setStatusMessage(`High score for ${bucketLabel(pendingSetup.presetId, pendingSetup.rulesetId)} is ${formatHighScore(readHighScore(pendingSetup.presetId, pendingSetup.rulesetId))}.`)
-}
-
-function bindSetupSelectors(): void {
-  const boardPresetSelect = byId<HTMLSelectElement>('board-preset-select')
-  const rulesetSelect = byId<HTMLSelectElement>('ruleset-select')
-  const themePresetSelect = byId<HTMLSelectElement>('theme-preset-select')
-  const musicProfileSelect = byId<HTMLSelectElement>('music-profile-select')
-
-  boardPresetSelect?.addEventListener('change', () => {
-    const selectedPreset = SQUARES_BOARD_PRESETS.find((preset) => preset.id === boardPresetSelect.value)
-    if (selectedPreset) {
-      const themeSelect = byId<HTMLSelectElement>('theme-preset-select')
-      if (themeSelect) {
-        themeSelect.value = selectedPreset.themePresetId
-      }
-    }
-    handleSetupChange()
-  })
-  rulesetSelect?.addEventListener('change', handleSetupChange)
-  themePresetSelect?.addEventListener('change', handleSetupChange)
-  musicProfileSelect?.addEventListener('change', () => {
-    ensureAudioUnlocked()
-    handleSetupChange()
-    if (currentScreen === 'game-screen' || currentScreen === 'win-screen') {
-      startSquaresMusic(pendingSetup.musicProfileId)
-    }
-  })
+  replayCurrentPuzzle()
 }
 
 function bindScreenButtons(): void {
-  byId<HTMLButtonElement>('start-over-btn')?.addEventListener('click', () => {
-    ensureAudioUnlocked()
+  byId<HTMLButtonElement>('start-1x1-btn')?.addEventListener('click', () => {
+    activeModeId = '1x1'
+    startSession()
+  })
+
+  byId<HTMLButtonElement>('start-plus-x-btn')?.addEventListener('click', () => {
+    activeModeId = 'plus-x'
+    startSession()
+  })
+
+  byId<HTMLButtonElement>('replay-btn')?.addEventListener('click', () => {
+    replayCurrentPuzzle()
+  })
+
+  byId<HTMLButtonElement>('new-puzzle-btn')?.addEventListener('click', () => {
+    startSession()
+  })
+
+  byId<HTMLButtonElement>('change-mode-btn')?.addEventListener('click', () => {
     returnToStart()
   })
 
-  byId<HTMLButtonElement>('high-score-reset-btn')?.addEventListener('click', () => {
-    resetHighScore(pendingSetup.presetId, pendingSetup.rulesetId)
-    updateStartSummary()
-    updateSettingsSummary()
-    updateHud()
-    updateWinSummary()
-    setStatusMessage(`High score cleared for ${bucketLabel(pendingSetup.presetId, pendingSetup.rulesetId)}.`, 'game-feedback')
+  byId<HTMLButtonElement>('high-score-reset-1x1-btn')?.addEventListener('click', () => {
+    resetHighScore('1x1')
+    refreshAllHighScores()
+    setStatusMessage('1\u00d71 record cleared.', 'game-feedback')
+  })
+
+  byId<HTMLButtonElement>('high-score-reset-plusx-btn')?.addEventListener('click', () => {
+    resetHighScore('plus-x')
+    refreshAllHighScores()
+    setStatusMessage('+/\u00d7 record cleared.', 'game-feedback')
   })
 
   document.addEventListener('restart', () => {
@@ -568,15 +435,11 @@ function bindScreenButtons(): void {
       return
     }
 
-    replayCurrentScramble()
+    replayCurrentPuzzle()
   })
 }
 
 function bindRuntimeToggles(): void {
-  bindMusicToggle(GAME_SLUG, byId<HTMLInputElement>('music-enabled-toggle'), byId<HTMLElement>('music-enabled-help'))
-  bindSfxToggle(GAME_SLUG, byId<HTMLInputElement>('sfx-enabled-toggle'), byId<HTMLElement>('sfx-enabled-help'))
-  bindReduceMotionToggle(byId<HTMLInputElement>('reduce-motion-toggle'), byId<HTMLElement>('reduce-motion-help'))
-
   window.addEventListener('reveries:reduce-motion-change', () => {
     renderGameBoard()
   })
@@ -597,12 +460,8 @@ function bindModalObservers(): void {
 
 function init(): void {
   renderer = createRenderer(byId<HTMLElement>('squares-runtime-root') ?? document.body)
-  settingsModal = setupTabbedModal()
+  settingsModal = setupGameMenu()
 
-  applyTheme(pendingSetup.themePresetId)
-  setSquaresMusicProfile(pendingSetup.musicProfileId)
-  syncSelectors()
-  bindSetupSelectors()
   bindRuntimeToggles()
   bindScreenButtons()
   bindModalObservers()
@@ -644,12 +503,11 @@ function init(): void {
   })
 
   showScreen('start-screen')
-  renderGameBoard()
-  refreshHighScoreUi()
+  refreshAllHighScores()
   syncModalState()
   syncMenuRestartAvailability()
   requestAnimationFrame(() => {
-    byId<HTMLButtonElement>('start-btn')?.focus({ preventScroll: true })
+    byId<HTMLButtonElement>('start-plus-x-btn')?.focus({ preventScroll: true })
   })
 }
 

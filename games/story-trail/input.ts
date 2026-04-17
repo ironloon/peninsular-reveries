@@ -7,12 +7,11 @@ declare global {
 }
 
 export interface InputCallbacks {
-  onStorySelected: (storyId: string) => void
   onChoiceMade: (choiceIndex: number) => void
   onInventoryOpen: () => void
   onInventoryClose: () => void
   onInventoryItemToggle: (itemId: string) => void
-  onBackToTrail: () => void
+  onRestart: () => void
 }
 
 // ── Module-level gamepad state ───────────────────────────────
@@ -31,14 +30,9 @@ export function setupInput(
   gameArea.style.touchAction = 'manipulation'
 
   // ── Context detection ─────────────────────────────────────
-  function getContext(): 'trail-map' | 'scene-view' | 'completion-view' {
+  function getContext(): 'scene-view' | 'completion-view' {
     const screen = gameArea.dataset.activeScreen
-    if (screen === 'trail-map') return 'trail-map'
     if (screen === 'completion-view') return 'completion-view'
-    if (screen === 'scene-view') return 'scene-view'
-    // Fallback via state
-    const state = getState()
-    if (state.currentStoryId === null) return 'trail-map'
     return 'scene-view'
   }
 
@@ -64,10 +58,6 @@ export function setupInput(
   }
 
   // ── Navigation helpers ────────────────────────────────────
-  function getUnlockedStops(): HTMLElement[] {
-    return Array.from(document.querySelectorAll('.trail-stop-unlocked')) as HTMLElement[]
-  }
-
   function getChoiceButtons(): HTMLElement[] {
     return Array.from(document.querySelectorAll('.choice-btn')) as HTMLElement[]
   }
@@ -116,12 +106,7 @@ export function setupInput(
 
     const context = getContext()
 
-    if (context === 'trail-map') {
-      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        e.preventDefault()
-        navigateList(getUnlockedStops(), e.key)
-      }
-    } else if (context === 'scene-view') {
+    if (context === 'scene-view') {
       if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault()
         navigateList(getSceneFocusables(), e.key)
@@ -132,7 +117,7 @@ export function setupInput(
     } else if (context === 'completion-view') {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
-        callbacks.onBackToTrail()
+        callbacks.onRestart()
       }
     }
   })
@@ -141,8 +126,8 @@ export function setupInput(
   gameArea.addEventListener('click', (e: MouseEvent) => {
     const target = e.target as HTMLElement
 
-    if (target.closest('#back-to-trail-btn')) {
-      callbacks.onBackToTrail()
+    if (target.closest('#play-again-btn')) {
+      callbacks.onRestart()
       return
     }
 
@@ -172,13 +157,6 @@ export function setupInput(
     if (choiceEl) {
       const idx = parseInt(choiceEl.dataset.choiceIndex ?? '-1', 10)
       if (idx >= 0) callbacks.onChoiceMade(idx)
-      return
-    }
-
-    const stopEl = target.closest('[data-story-id]') as HTMLElement | null
-    if (stopEl && stopEl.tagName === 'BUTTON') {
-      const storyId = stopEl.dataset.storyId
-      if (storyId) callbacks.onStorySelected(storyId)
     }
   })
 
@@ -205,7 +183,7 @@ export function setupInput(
     }
 
     if (getContext() === 'completion-view') {
-      callbacks.onBackToTrail()
+      callbacks.onRestart()
     }
   }
 
@@ -218,8 +196,6 @@ export function setupInput(
     const context = getContext()
     if (isInventoryOpen()) {
       navigateList(getOverlayButtons(), dir)
-    } else if (context === 'trail-map') {
-      navigateList(getUnlockedStops(), dir)
     } else if (context === 'scene-view') {
       navigateList(getSceneFocusables(), dir)
     }
@@ -263,7 +239,7 @@ export function setupInput(
             } else if (isInventoryOpen()) {
               callbacks.onInventoryClose()
             } else if (getContext() === 'completion-view') {
-              callbacks.onBackToTrail()
+              callbacks.onRestart()
             }
             break
           case 9: // Start — settings
@@ -309,6 +285,7 @@ export function setupInput(
   }
 
   window.addEventListener('gamepadconnected', () => {
+    document.body.classList.add('gamepad-active')
     if (gamepadFrameId === null) {
       gamepadFrameId = requestAnimationFrame(pollGamepad)
     }

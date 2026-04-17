@@ -1,4 +1,10 @@
-export function setupTabbedModal(modalId: string = 'settings-modal'): { open(): void; close(): void; toggle(): void } {
+export interface ModalControls {
+  open(): void
+  close(): void
+  toggle(): void
+}
+
+export function setupTabbedModal(modalId: string = 'settings-modal'): ModalControls {
   const maybeModal = document.getElementById(modalId)
   const closeBtn = document.getElementById('settings-close-btn')
   const openButtons = Array.from(document.querySelectorAll<HTMLElement>('[data-settings-open="true"]'))

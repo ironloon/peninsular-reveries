@@ -1,16 +1,10 @@
-import { DESTINATION_IDS, type DestinationId, type GameProgress, type GameState, type NavigationDirection, type TransportType } from './types.js'
-
-function uniqueDestinations(ids: readonly DestinationId[]): readonly DestinationId[] {
-  return [...new Set(ids)]
-}
+import { DESTINATION_IDS, type DestinationId, type GameState, type NavigationDirection, type TransportType } from './types.js'
 
 function wrapIndex(value: number, count: number): number {
   return ((value % count) + count) % count
 }
 
-export function createInitialState(progress?: Partial<GameProgress>): GameState {
-  const collectedMemories = uniqueDestinations(progress?.collectedMemories ?? [])
-
+export function createInitialState(): GameState {
   return {
     phase: 'title',
     currentLocation: null,
@@ -18,12 +12,9 @@ export function createInitialState(progress?: Partial<GameProgress>): GameState 
     transportType: null,
     travelProgress: 0,
     factIndex: 0,
-    collectedMemories,
     globeSelectedIndex: 0,
     globeRotationOffset: 0,
-    lastGuessCorrect: null,
-    revealedDestination: false,
-    memoryWasNew: false,
+    visitCounts: {},
   }
 }
 
@@ -35,9 +26,6 @@ export function startExploreMode(state: GameState): GameState {
     transportType: null,
     travelProgress: 0,
     factIndex: 0,
-    lastGuessCorrect: null,
-    revealedDestination: false,
-    memoryWasNew: false,
   }
 }
 
@@ -70,12 +58,11 @@ export function prepareTravel(state: GameState, destinationId: DestinationId, tr
     transportType,
     travelProgress: 0,
     factIndex: 0,
-    lastGuessCorrect: null,
-    revealedDestination: false,
   }
 }
 
 export function revisitDestination(state: GameState, destinationId: DestinationId): GameState {
+  const visitCount = (state.visitCounts[destinationId] ?? 0) + 1
   return {
     ...state,
     phase: 'explore',
@@ -84,9 +71,7 @@ export function revisitDestination(state: GameState, destinationId: DestinationI
     transportType: null,
     travelProgress: 0,
     factIndex: 0,
-    lastGuessCorrect: null,
-    revealedDestination: false,
-    memoryWasNew: false,
+    visitCounts: { ...state.visitCounts, [destinationId]: visitCount },
   }
 }
 
@@ -102,12 +87,14 @@ export function advanceTravelProgress(state: GameState, deltaMs: number, duratio
 export function arriveAtDestination(state: GameState): GameState {
   if (!state.targetDestination) return state
 
+  const visitCount = (state.visitCounts[state.targetDestination] ?? 0) + 1
   return {
     ...state,
     phase: 'explore',
     currentLocation: state.targetDestination,
     factIndex: 0,
     travelProgress: 1,
+    visitCounts: { ...state.visitCounts, [state.targetDestination]: visitCount },
   }
 }
 
@@ -117,28 +104,6 @@ export function advanceFact(state: GameState, factCount: number): GameState {
   return {
     ...state,
     factIndex: Math.min(factCount - 1, state.factIndex + 1),
-  }
-}
-
-export function finishExplore(state: GameState): GameState {
-  if (state.phase !== 'explore') return state
-
-  return {
-    ...state,
-    phase: 'memory-collect',
-  }
-}
-
-export function collectMemory(state: GameState): GameState {
-  if (!state.targetDestination) return state
-
-  const isNew = !state.collectedMemories.includes(state.targetDestination)
-  return {
-    ...state,
-    collectedMemories: isNew
-      ? [...state.collectedMemories, state.targetDestination]
-      : state.collectedMemories,
-    memoryWasNew: isNew,
   }
 }
 
@@ -156,20 +121,17 @@ export function returnToGlobe(state: GameState): GameState {
     factIndex: 0,
     globeSelectedIndex: nextIndex >= 0 ? nextIndex : 0,
     globeRotationOffset: (nextIndex >= 0 ? nextIndex : 0) / DESTINATION_IDS.length,
-    lastGuessCorrect: null,
-    revealedDestination: false,
-    memoryWasNew: false,
   }
-}
-
-export function enterRoom(state: GameState): GameState {
-  return { ...state, phase: 'room' }
-}
-
-export function exitRoom(state: GameState): GameState {
-  return { ...state, phase: 'globe' }
 }
 
 export function resetGame(): GameState {
   return createInitialState()
+}
+
+export function getDisplayFactIndex(state: GameState, factCount: number): number {
+  const destinationId = state.targetDestination ?? state.currentLocation
+  if (!destinationId || factCount === 0) return state.factIndex
+  const visitCount = state.visitCounts[destinationId] ?? 1
+  const offset = (visitCount - 1) % factCount
+  return (state.factIndex + offset) % factCount
 }

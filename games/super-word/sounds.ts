@@ -1,12 +1,11 @@
 // ── Sound Effects (Web Audio API — no external files) ────────
 
-import { getAudioContext, createMusicBus, createSfxBus, ensureAudioUnlocked } from '../../client/audio.js'
+import { ensureAudioUnlocked } from '../../client/audio.js'
+import { getGameAudioBuses } from '../../client/game-audio.js'
 import { getMusicEnabled } from '../../client/preferences.js'
 
 export { ensureAudioUnlocked }
 
-let _musicBus: GainNode | null = null
-let _sfxBus: GainNode | null = null
 let musicLoopHandle: number | null = null
 let musicMeasureIndex = 0
 const AMBIENT_MEASURE_MS = 4200
@@ -30,17 +29,15 @@ const AMBIENT_PROGRESSIONS = [
 ]
 
 function getMusicBusNode(): GainNode {
-  if (!_musicBus) _musicBus = createMusicBus('super-word')
-  return _musicBus
+  return getGameAudioBuses('super-word').music
 }
 
 function getSfxBusNode(): GainNode {
-  if (!_sfxBus) _sfxBus = createSfxBus('super-word')
-  return _sfxBus
+  return getGameAudioBuses('super-word').sfx
 }
 
 function playAmbientPad(freq: number, startTime: number, duration: number, volume: number): void {
-  const c = getAudioContext()
+  const c = getGameAudioBuses('super-word').ctx
   const destination = getMusicBusNode()
   const filter = c.createBiquadFilter()
   const gain = c.createGain()
@@ -74,7 +71,7 @@ function playAmbientPad(freq: number, startTime: number, duration: number, volum
 }
 
 function playAmbientBell(freq: number, startTime: number, duration: number, volume: number): void {
-  const c = getAudioContext()
+  const c = getGameAudioBuses('super-word').ctx
   const destination = getMusicBusNode()
   const osc = c.createOscillator()
   const gain = c.createGain()
@@ -103,14 +100,14 @@ function scheduleAmbientMeasure(startTime: number): void {
 }
 
 function startAmbientMusic(): void {
-  const c = getAudioContext()
+  const c = getGameAudioBuses('super-word').ctx
   if (musicLoopHandle !== null || document.hidden) return
 
   const begin = () => {
     if (musicLoopHandle !== null) return
     scheduleAmbientMeasure(c.currentTime + 0.05)
     musicLoopHandle = window.setInterval(() => {
-      const currentCtx = getAudioContext()
+      const currentCtx = getGameAudioBuses('super-word').ctx
       if (currentCtx.state === 'suspended' || document.hidden) return
       scheduleAmbientMeasure(currentCtx.currentTime + 0.05)
     }, AMBIENT_MEASURE_MS)
@@ -132,7 +129,7 @@ function stopAmbientMusic(): void {
 }
 
 function playTone(freq: number, duration: number, type: OscillatorType = 'sine', volume = 0.15): void {
-  const c = getAudioContext()
+  const c = getGameAudioBuses('super-word').ctx
   const bus = getSfxBusNode()
   const osc = c.createOscillator()
   const gain = c.createGain()
@@ -147,7 +144,7 @@ function playTone(freq: number, duration: number, type: OscillatorType = 'sine',
 }
 
 function playNotes(notes: Array<[number, number]>, type: OscillatorType = 'sine', volume = 0.12): void {
-  const c = getAudioContext()
+  const c = getGameAudioBuses('super-word').ctx
   const bus = getSfxBusNode()
   let offset = 0
   for (const [freq, dur] of notes) {
@@ -166,7 +163,7 @@ function playNotes(notes: Array<[number, number]>, type: OscillatorType = 'sine'
 }
 
 export function syncMusicPlayback(): void {
-  if (!getMusicEnabled('super-word') || document.hidden) {
+  if (!getMusicEnabled() || document.hidden) {
     stopAmbientMusic()
     return
   }

@@ -1,10 +1,5 @@
+import { announce, moveFocusAfterTransition } from '../../client/game-accessibility.js'
 import type { GameState, Problem } from './types.js'
-
-function announce(message: string, priority: 'polite' | 'assertive'): void {
-  const targetId = priority === 'assertive' ? 'game-feedback' : 'game-status'
-  const target = document.getElementById(targetId)
-  if (target) target.textContent = message
-}
 
 function promptToSpeech(prompt: string): string {
   // Counting prompts are already natural language questions
@@ -53,8 +48,4 @@ export function announceGameOver(state: GameState): void {
   )
 }
 
-export function moveFocusAfterTransition(elementId: string, delayMs: number): void {
-  window.setTimeout(() => {
-    document.getElementById(elementId)?.focus()
-  }, delayMs)
-}
+export { moveFocusAfterTransition }

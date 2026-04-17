@@ -1,4 +1,5 @@
 import { findNearestDirectionalTarget, type NavigationDirection } from '../../client/spatial-navigation.js'
+import { isModalOpen } from '../../client/game-input.js'
 
 export interface InputCallbacks {
   onSelectAnswer: (itemId: string) => void
@@ -10,11 +11,6 @@ let keydownHandler: ((event: KeyboardEvent) => void) | null = null
 let gamepadHandle: number | null = null
 let lastGamepadAction = 0
 let clearGamepadModeHandler: (() => void) | null = null
-
-function isModalOpen(): boolean {
-  const modal = document.getElementById('settings-modal')
-  return modal !== null && !modal.hasAttribute('hidden')
-}
 
 function isVisible(element: HTMLElement): boolean {
   return !element.closest('[hidden]') && element.getClientRects().length > 0
@@ -35,7 +31,7 @@ function isManagedFocusTarget(element: HTMLElement): boolean {
 
 function getStartScreenTargets(): HTMLElement[] {
   return Array.from(document.querySelectorAll<HTMLElement>(
-    '#start-screen .area-card, #start-screen .level-selector label, #start-screen .mode-toggle-btn, #start-screen .mode-radio-group label, #start-screen .color-swatch, #start-screen .start-actions .chomp-btn',
+    '#start-screen .area-card, #start-screen .level-selector label, #start-screen .start-actions .chomp-btn',
   )).filter(isVisible)
 }
 

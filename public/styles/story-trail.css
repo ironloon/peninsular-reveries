@@ -31,7 +31,7 @@
 
 /* ── Screen visibility ────────────────────────────────────── */
 
-#trail-map,
+.trail-start-screen,
 #scene-view,
 #completion-view {
   display: none;
@@ -41,14 +41,12 @@
   box-sizing: border-box;
 }
 
-#game-area[data-active-screen="trail-map"] #trail-map {
+#game-area[data-active-screen="start-screen"] .trail-start-screen {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
   min-height: 0;
-  transform: translateX(0);
-  visibility: visible;
 }
 
 #game-area[data-active-screen="scene-view"] #scene-view {
@@ -71,74 +69,79 @@
   visibility: visible;
 }
 
-/* ── Trail map ────────────────────────────────────────────── */
+/* ── Start screen ─────────────────────────────────────────── */
 
-#trail-stops {
+.trail-start-shell {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
-  padding: 1rem 0;
-  max-width: 400px;
-  margin: 0 auto;
+  text-align: center;
+  gap: 0.6rem;
+  width: min(100%, 28rem);
 }
 
-.trail-stop {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+.trail-title {
+  margin: 0;
   font-family: var(--font-title);
-  font-size: 1rem;
-  border: 2px solid transparent;
-  text-align: left;
+  font-size: clamp(2.6rem, 9vw, 4.2rem);
+  line-height: 1;
+  color: var(--trail-accent);
+}
+
+.trail-subtitle {
+  margin: 0;
+  font-size: clamp(1rem, 2.6vw, 1.2rem);
+  line-height: 1.45;
+  color: var(--trail-text);
+}
+
+.trail-start-shell .start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+
+.trail-btn {
+  appearance: none;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: clamp(1rem, 2.4vw, 1.15rem);
+  padding: 0.75rem 2rem;
   min-height: 44px;
   touch-action: manipulation;
-  box-sizing: border-box;
+  transition: transform 100ms ease, opacity 130ms ease;
 }
 
-.trail-stop-unlocked {
+.trail-btn:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
+}
+
+.trail-btn:focus-visible {
+  outline: 3px solid var(--trail-accent);
+  outline-offset: 3px;
+}
+
+.trail-btn-primary {
   background: var(--trail-accent);
-  color: white;
-  cursor: pointer;
-  border-color: transparent;
+  color: #fff;
 }
 
-.trail-stop-unlocked:hover,
-.trail-stop-unlocked:focus-visible {
-  background: #5a7b3d;
-  outline: 2px solid var(--trail-highlight);
-  outline-offset: 2px;
-}
-
-.trail-stop-completed {
-  background: white;
-  border-color: var(--trail-badge);
-  color: var(--trail-text);
-}
-
-.trail-stop-locked {
-  opacity: 0.4;
-  background: #e8e4dc;
+.gamepad-start-hint {
+  margin: 0.6rem 0 0;
+  font-size: 0.9rem;
   color: var(--trail-locked);
-  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.trail-path {
-  font-family: monospace;
-  font-size: 1.2rem;
-  opacity: 0.6;
-  line-height: 1;
-  color: var(--trail-text);
-  user-select: none;
-  padding: 0.2rem 0;
+body.gamepad-active .gamepad-start-hint {
+  opacity: 1;
 }
-
-.stop-icon { font-size: 1.5rem; flex-shrink: 0; }
-.stop-title { font-weight: bold; flex: 1; }
-.stop-badge { font-size: 0.8rem; color: var(--trail-badge); font-style: italic; }
 
 /* ── Scene view ───────────────────────────────────────────── */
 
@@ -308,7 +311,8 @@
 .completion-title { font-size: 1.6rem; font-weight: bold; color: var(--trail-accent); margin: 0; }
 .completion-msg { font-size: 1.1rem; color: var(--trail-text); margin: 0; }
 
-.back-to-trail-btn {
+.back-to-trail-btn,
+.play-again-btn {
   min-height: 48px;
   padding: 0.75rem 2rem;
   border-radius: 12px;
@@ -323,7 +327,9 @@
 }
 
 .back-to-trail-btn:hover,
-.back-to-trail-btn:focus-visible {
+.back-to-trail-btn:focus-visible,
+.play-again-btn:hover,
+.play-again-btn:focus-visible {
   background: #5a7b3d;
   outline: 2px solid var(--trail-highlight);
   outline-offset: 2px;

@@ -1,19 +1,17 @@
 // ── Sound Effects (Web Audio API — no external files) ─────────
 
-import { getAudioContext, createMusicBus, createSfxBus, ensureAudioUnlocked } from '../../client/audio.js'
+import { ensureAudioUnlocked } from '../../client/audio.js'
+import { getGameAudioBuses } from '../../client/game-audio.js'
 import { getMusicEnabled, getSfxEnabled } from '../../client/preferences.js'
 
 export { ensureAudioUnlocked }
 
-let _musicBus: GainNode | null = null
-let _sfxBus: GainNode | null = null
-
 function getMusicBusNode(): GainNode {
-  return _musicBus ??= createMusicBus('story-trail')
+  return getGameAudioBuses('story-trail').music
 }
 
 function getSfxBusNode(): GainNode {
-  return _sfxBus ??= createSfxBus('story-trail')
+  return getGameAudioBuses('story-trail').sfx
 }
 
 // ── Ambient loop state ────────────────────────────────────────
@@ -25,9 +23,9 @@ let ambientChordInterval: number | null = null
 // ── SFX ───────────────────────────────────────────────────────
 
 export function playTypingBlip(): void {
-  if (!getSfxEnabled('story-trail')) return
+  if (!getSfxEnabled()) return
   try {
-    const c = getAudioContext()
+    const c = getGameAudioBuses('story-trail').ctx
     const bus = getSfxBusNode()
     const osc = c.createOscillator()
     const gain = c.createGain()
@@ -46,9 +44,9 @@ export function playTypingBlip(): void {
 }
 
 export function playItemCollect(): void {
-  if (!getSfxEnabled('story-trail')) return
+  if (!getSfxEnabled()) return
   try {
-    const c = getAudioContext()
+    const c = getGameAudioBuses('story-trail').ctx
     const bus = getSfxBusNode()
     const t = c.currentTime
     for (const freq of [523, 659]) {
@@ -70,9 +68,9 @@ export function playItemCollect(): void {
 }
 
 export function playChoiceConfirm(): void {
-  if (!getSfxEnabled('story-trail')) return
+  if (!getSfxEnabled()) return
   try {
-    const c = getAudioContext()
+    const c = getGameAudioBuses('story-trail').ctx
     const bus = getSfxBusNode()
     const t = c.currentTime
     const osc = c.createOscillator()
@@ -91,9 +89,9 @@ export function playChoiceConfirm(): void {
 }
 
 export function playHintNudge(): void {
-  if (!getSfxEnabled('story-trail')) return
+  if (!getSfxEnabled()) return
   try {
-    const c = getAudioContext()
+    const c = getGameAudioBuses('story-trail').ctx
     const bus = getSfxBusNode()
     const t = c.currentTime
     const osc = c.createOscillator()
@@ -113,9 +111,9 @@ export function playHintNudge(): void {
 }
 
 export function playStoryComplete(): void {
-  if (!getSfxEnabled('story-trail')) return
+  if (!getSfxEnabled()) return
   try {
-    const c = getAudioContext()
+    const c = getGameAudioBuses('story-trail').ctx
     const bus = getSfxBusNode()
     const t = c.currentTime
     const notes = [523, 659, 784, 1047] // C5, E5, G5, C6
@@ -143,10 +141,10 @@ export function playStoryComplete(): void {
 // ── Ambient music ─────────────────────────────────────────────
 
 export function playAmbientLoop(): void {
-  if (!getMusicEnabled('story-trail')) return
+  if (!getMusicEnabled()) return
   if (ambientOscillators.length > 0) return
   try {
-    const c = getAudioContext()
+    const c = getGameAudioBuses('story-trail').ctx
     const bus = getMusicBusNode()
     const chordProgression = [
       [130.81, 164.81, 196.0],

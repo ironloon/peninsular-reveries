@@ -1,8 +1,6 @@
-import { isReducedMotionEnabled } from '../../client/preferences.js'
+import { isReducedMotion } from '../../client/game-animations.js'
 
-export function isReducedMotion(): boolean {
-  return isReducedMotionEnabled()
-}
+export { isReducedMotion }
 
 export function pulseElement(element: HTMLElement | null, className: string, durationMs: number = 420): Promise<void> {
   if (!element || isReducedMotion()) {

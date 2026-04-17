@@ -1,4 +1,5 @@
 import { DESTINATION_IDS, type DestinationId, type GameState, type NavigationDirection } from './types.js'
+import { isModalOpen, focusableElements } from '../../client/game-input.js'
 
 declare global {
   interface Window {
@@ -10,19 +11,11 @@ export interface InputCallbacks {
   onStartExplore: () => void
   onSelectDestination: (destinationId: DestinationId) => void
   onAdvanceFact: () => void
-  onContinueMemory: () => void
-  onEnterRoom: () => void
-  onExitRoom: () => void
   onNavigateGlobe: (direction: NavigationDirection) => void
 }
 
 const STICK_THRESHOLD = 0.5
 const NAVIGATION_DEBOUNCE_MS = 200
-
-function isModalOpen(): boolean {
-  const modal = document.getElementById('settings-modal')
-  return modal ? !modal.hasAttribute('hidden') : false
-}
 
 function isInteractiveTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false
@@ -39,26 +32,7 @@ function screenIdForPhase(phase: GameState['phase']): string {
     case 'globe': return 'globe-screen'
     case 'travel': return 'travel-screen'
     case 'explore': return 'explore-screen'
-    case 'memory-collect': return 'memory-screen'
-    case 'room': return 'room-screen'
   }
-}
-
-function focusableElements(root: ParentNode | null): HTMLElement[] {
-  if (!root) return []
-
-  return Array.from(root.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]')).filter((element) => {
-    if (element.tabIndex < 0) return false
-    if (element.hasAttribute('disabled') || element.hasAttribute('hidden') || element.getAttribute('aria-hidden') === 'true') {
-      return false
-    }
-
-    if (element instanceof HTMLInputElement && element.type === 'hidden') {
-      return false
-    }
-
-    return element.getClientRects().length > 0
-  })
 }
 
 function cycleFocus(elements: readonly HTMLElement[], direction: NavigationDirection): void {
@@ -139,10 +113,7 @@ function gamepadDirection(gamepad: Gamepad): NavigationDirection | null {
 
 export function setupInput(getState: () => GameState, callbacks: InputCallbacks): void {
   document.getElementById('start-explore-btn')?.addEventListener('click', callbacks.onStartExplore)
-  document.getElementById('globe-room-btn')?.addEventListener('click', callbacks.onEnterRoom)
-  document.getElementById('room-back-btn')?.addEventListener('click', callbacks.onExitRoom)
   document.getElementById('explore-next-btn')?.addEventListener('click', callbacks.onAdvanceFact)
-  document.getElementById('memory-continue-btn')?.addEventListener('click', callbacks.onContinueMemory)
 
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-destination-id]')) {
     button.addEventListener('click', () => {
@@ -199,18 +170,6 @@ export function setupInput(getState: () => GameState, callbacks: InputCallbacks)
         callbacks.onAdvanceFact()
         return
       }
-
-      if (state.phase === 'memory-collect') {
-        event.preventDefault()
-        callbacks.onContinueMemory()
-        return
-      }
-
-      if (state.phase === 'room') {
-        event.preventDefault()
-        callbacks.onExitRoom()
-        return
-      }
     }
   })
 
@@ -259,16 +218,6 @@ export function setupInput(getState: () => GameState, callbacks: InputCallbacks)
 
     if (state.phase === 'explore') {
       callbacks.onAdvanceFact()
-      return
-    }
-
-    if (state.phase === 'memory-collect') {
-      callbacks.onContinueMemory()
-      return
-    }
-
-    if (state.phase === 'room') {
-      callbacks.onExitRoom()
     }
   }
 
@@ -315,6 +264,7 @@ export function setupInput(getState: () => GameState, callbacks: InputCallbacks)
   }
 
   const ensureGamepadPolling = (): void => {
+    document.body.classList.add('gamepad-active')
     if (gamepadFrameId === null) {
       gamepadFrameId = requestAnimationFrame(pollGamepad)
     }

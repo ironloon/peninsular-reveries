@@ -61,7 +61,7 @@ export async function missionOrbitAction() {
               }
             />
             <p className="mission-subtitle">A guided trip from the pad to the Moon and back home.</p>
-            <p className="start-hint"><kbd>A</kbd> begin or act. <kbd>Start</kbd> opens the menu. <kbd>D-pad</kbd> moves between buttons.</p>
+            <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Ⓐ begin · Start for menu · D-pad to navigate</p>
 
             <section className="crew-picker-panel" aria-labelledby="crew-roster-title">
               <h2 id="crew-roster-title" className="crew-picker-title">Artemis II crew</h2>
@@ -175,8 +175,9 @@ export async function missionOrbitAction() {
           quitHref={homePath}
           settingsContent={<>
             <SettingsSection title="Audio">
-              <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
-              <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
+              <SettingsToggle id="music-enabled-toggle" label="Music" helpText="Music is off until you change it here." helpId="music-enabled-help" />
+              <div id="music-track-picker-slot"></div>
+              <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpText="Sound effects are on until you change it here." helpId="sfx-enabled-help" />
             </SettingsSection>
 
             <SettingsSection title="Controls">

@@ -1,8 +1,6 @@
-import { isReducedMotionEnabled } from '../../client/preferences.js'
+import { isReducedMotion } from '../../client/game-animations.js'
 
-export function isReducedMotion(): boolean {
-  return isReducedMotionEnabled()
-}
+export { isReducedMotion }
 
 export function triggerFadeIn(el: HTMLElement): void {
   if (isReducedMotion()) return

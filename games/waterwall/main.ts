@@ -1,5 +1,5 @@
-import { bindReduceMotionToggle, bindSfxToggle, isReducedMotionEnabled } from '../../client/preferences.js'
-import { setupTabbedModal } from '../../client/modal.js'
+import { isReducedMotionEnabled } from '../../client/preferences.js'
+import { setupGameMenu } from '../../client/game-menu.js'
 
 import { announceBarrierPlaced, announceBarrierRemoved, announceBarriersCleared, announceCursorPosition, updateCanvasLabel } from './accessibility.js'
 import { initCanvas, renderFrame, handleResize, canvasToGrid, type WaterwallRenderModel } from './renderer.js'
@@ -11,6 +11,9 @@ import {
   removeBarrier,
   placeBarrierLine,
   computeWaterDistribution,
+  getTitleBarrierCoordinates,
+  placeTitleBarriers,
+  dissolveBarrierCells,
 } from './state.js'
 import {
   ensureAudioUnlocked,
@@ -34,7 +37,6 @@ import {
 import type { WaterwallAction } from './input.js'
 import { getSfxEnabled } from '../../client/preferences.js'
 
-const GAME_SLUG = 'waterwall'
 const THEME_STORAGE_KEY = 'waterwall:theme'
 
 const config: WaterwallConfig = WATERWALL_DEFAULT_CONFIG
@@ -48,6 +50,19 @@ let container: HTMLElement
 let lastPanUpdate = 0
 let audioUnlocked = false
 let dragAnchor: { row: number; column: number } | null = null
+
+// ── Game phase ────────────────────────────────────────────────────────────────
+
+type GamePhase = 'title' | 'dissolving' | 'playing'
+
+const DISSOLVE_MAX_MS = 3000
+const DISSOLVE_CHANCE = 0.04
+const REDUCED_MOTION_FADE_MS = 1000
+
+let phase: GamePhase = 'title'
+let dissolveStartTime = 0
+let titleCoordSet: Set<string> = new Set()
+let totalTitleBarriers = 0
 
 let settingsModal = { open() {}, close() {}, toggle() {} }
 
@@ -183,8 +198,122 @@ function handlePointerAction(coordinate: { row: number; column: number }, mode: 
   }
 }
 
+// ── Title dissolve ────────────────────────────────────────────────────────────
+
+function initTitleGrid(rows: number, columns: number): void {
+  grid = createGrid(rows, columns)
+  const coords = getTitleBarrierCoordinates(rows, columns)
+  grid = placeTitleBarriers(grid, coords)
+  titleCoordSet = new Set(coords.map((c) => `${c.row},${c.column}`))
+  totalTitleBarriers = coords.length
+}
+
+function startDissolve(): void {
+  if (phase !== 'title') return
+  phase = 'dissolving'
+  dissolveStartTime = performance.now()
+  unlockAudioOnce()
+
+  if (getSfxEnabled() && !isReducedMotionEnabled()) {
+    startWaterTexture()
+  }
+
+  const playBtn = byId<HTMLButtonElement>('waterwall-play-btn')
+  if (playBtn) playBtn.classList.add('fading')
+}
+
+function transitionToPlaying(): void {
+  if (titleCoordSet.size > 0) {
+    const remaining = Array.from(titleCoordSet).map((key) => {
+      const sep = key.indexOf(',')
+      return { row: Number(key.slice(0, sep)), column: Number(key.slice(sep + 1)) }
+    })
+    grid = dissolveBarrierCells(grid, remaining)
+    titleCoordSet.clear()
+  }
+
+  phase = 'playing'
+
+  if (getSfxEnabled() && isReducedMotionEnabled()) {
+    startWaterTexture()
+  }
+
+  const playBtn = byId<HTMLButtonElement>('waterwall-play-btn')
+  if (playBtn) playBtn.hidden = true
+
+  updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
+}
+
+function hasAdjacentWater(row: number, col: number): boolean {
+  const offsets = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]]
+  for (const [dr, dc] of offsets) {
+    const r = row + dr
+    const c = col + dc
+    if (r >= 0 && r < grid.rows && c >= 0 && c < grid.columns && grid.cells[r]?.[c] === 'water') {
+      return true
+    }
+  }
+  return false
+}
+
+function dissolveWaterAdjacent(): void {
+  const toDissolve: { row: number; column: number }[] = []
+  for (const key of titleCoordSet) {
+    const sep = key.indexOf(',')
+    const row = Number(key.slice(0, sep))
+    const col = Number(key.slice(sep + 1))
+    if (hasAdjacentWater(row, col) && Math.random() < DISSOLVE_CHANCE) {
+      toDissolve.push({ row, column: col })
+    }
+  }
+  if (toDissolve.length > 0) {
+    grid = dissolveBarrierCells(grid, toDissolve)
+    for (const coord of toDissolve) {
+      titleCoordSet.delete(`${coord.row},${coord.column}`)
+    }
+  }
+}
+
+function dissolveReducedMotion(elapsed: number): void {
+  const progress = Math.min(elapsed / REDUCED_MOTION_FADE_MS, 1)
+  const targetRemoved = Math.floor(totalTitleBarriers * progress)
+  const currentRemoved = totalTitleBarriers - titleCoordSet.size
+  const toRemoveCount = targetRemoved - currentRemoved
+  if (toRemoveCount > 0) {
+    const keys = Array.from(titleCoordSet).slice(0, toRemoveCount)
+    const coords = keys.map((key) => {
+      const sep = key.indexOf(',')
+      return { row: Number(key.slice(0, sep)), column: Number(key.slice(sep + 1)) }
+    })
+    grid = dissolveBarrierCells(grid, coords)
+    for (const key of keys) titleCoordSet.delete(key)
+  }
+}
+
+// ── Input processing ──────────────────────────────────────────────────────────
+
 function processAction(action: WaterwallAction): void {
   if (isSettingsOpen() && action.type !== 'menu') return
+
+  // Title phase: only menu and play trigger (gamepad A / keyboard Enter)
+  if (phase === 'title') {
+    if (action.type === 'menu') {
+      settingsModal.toggle()
+      syncModalState()
+    } else if (action.type === 'place') {
+      startDissolve()
+    }
+    return
+  }
+
+  // Dissolving phase: only menu
+  if (phase === 'dissolving') {
+    if (action.type === 'menu') {
+      settingsModal.toggle()
+      syncModalState()
+    }
+    return
+  }
 
   switch (action.type) {
     case 'move':
@@ -226,38 +355,82 @@ function unlockAudioOnce(): void {
   audioUnlocked = true
 
   ensureAudioUnlocked()
-
-  if (getSfxEnabled(GAME_SLUG)) {
-    startWaterTexture()
-  }
 }
 
 function gameLoop(timestamp: number): void {
-  for (let i = 0; i < config.ticksPerFrame; i++) {
-    grid = simulateTick(grid)
+  switch (phase) {
+    case 'title':
+      break
+
+    case 'dissolving': {
+      const elapsed = timestamp - dissolveStartTime
+      if (isReducedMotionEnabled()) {
+        if (elapsed >= REDUCED_MOTION_FADE_MS || titleCoordSet.size === 0) {
+          transitionToPlaying()
+          grid = spawnWater(grid)
+        } else {
+          dissolveReducedMotion(elapsed)
+        }
+      } else {
+        for (let i = 0; i < config.ticksPerFrame; i++) {
+          grid = simulateTick(grid)
+        }
+        grid = spawnWater(grid)
+        if (elapsed >= DISSOLVE_MAX_MS || titleCoordSet.size === 0) {
+          transitionToPlaying()
+        } else {
+          dissolveWaterAdjacent()
+        }
+      }
+      break
+    }
+
+    case 'playing':
+      for (let i = 0; i < config.ticksPerFrame; i++) {
+        grid = simulateTick(grid)
+      }
+      grid = spawnWater(grid)
+
+      if (timestamp - lastPanUpdate > 200) {
+        lastPanUpdate = timestamp
+        const dist = computeWaterDistribution(grid)
+        updateWaterPanning(dist.centerOfMass)
+      }
+      break
   }
-  grid = spawnWater(grid)
 
   renderFrame(ctx, buildRenderModel(), timestamp)
-
-  if (timestamp - lastPanUpdate > 200) {
-    lastPanUpdate = timestamp
-    const dist = computeWaterDistribution(grid)
-    updateWaterPanning(dist.centerOfMass)
-  }
-
   requestAnimationFrame(gameLoop)
 }
 
 function restart(): void {
   const { rows, columns } = grid
-  grid = createGrid(rows, columns)
-  grid = spawnWater(grid)
-  updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
-  announceBarriersCleared()
+  initTitleGrid(rows, columns)
+  phase = 'title'
   cursor = null
   dragAnchor = null
+
+  const playBtn = byId<HTMLButtonElement>('waterwall-play-btn')
+  if (playBtn) {
+    playBtn.hidden = false
+    playBtn.classList.remove('fading')
+  }
+
+  stopWaterTexture()
+  updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
+  announceBarriersCleared()
 }
+
+// ── Gamepad hint ──────────────────────────────────────────────────────────────
+
+function updateGamepadHint(): void {
+  const hint = byId<HTMLElement>('waterwall-gamepad-hint')
+  if (!hint) return
+  const gamepads = navigator.getGamepads?.() ?? []
+  hint.hidden = !Array.from(gamepads).some((gp) => gp !== null)
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
   container = byId<HTMLElement>('waterwall-canvas-container')!
@@ -265,10 +438,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const result = initCanvas(container, config)
   canvas = result.canvas
   ctx = result.ctx
-  grid = createGrid(result.rows, result.columns)
-  grid = spawnWater(grid)
+  initTitleGrid(result.rows, result.columns)
 
   updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
+
+  // Play button
+  const playBtn = byId<HTMLButtonElement>('waterwall-play-btn')
+  if (playBtn) {
+    playBtn.addEventListener('click', () => startDissolve())
+  }
 
   // Theme select
   const themeSelect = byId<HTMLSelectElement>('waterwall-theme-select')
@@ -313,37 +491,36 @@ document.addEventListener('DOMContentLoaded', () => {
   )
 
   // Modal
-  settingsModal = setupTabbedModal('settings-modal')
+  settingsModal = setupGameMenu()
 
   // Restart
-  const restartBtn = byId<HTMLButtonElement>('restart-btn')
-  if (restartBtn) {
-    restartBtn.addEventListener('click', () => {
-      restart()
-      settingsModal.close()
-      syncModalState()
-    })
-  }
+  document.addEventListener('restart', () => {
+    restart()
+    syncModalState()
+  })
 
-  // Preferences
-  bindSfxToggle(GAME_SLUG, byId<HTMLInputElement>('sfx-toggle'))
-  bindReduceMotionToggle(byId<HTMLInputElement>('reduce-motion-toggle'))
-
-  // SFX preference events
-  window.addEventListener('reveries:sfx-change', ((e: CustomEvent<{ gameSlug: string; enabled: boolean }>) => {
-    if (e.detail.gameSlug !== GAME_SLUG) return
-    if (e.detail.enabled) {
+  // Preferences — SFX preference events
+  window.addEventListener('reveries:sfx-change', ((e: CustomEvent<{ enabled: boolean }>) => {
+    if (e.detail.enabled && phase !== 'title') {
       startWaterTexture()
-    } else {
+    } else if (!e.detail.enabled) {
       stopWaterTexture()
     }
   }) as EventListener)
 
-  // Resize handling — clear barriers on resize (orientation change acts as a reset)
+  // Gamepad hint
+  window.addEventListener('gamepadconnected', updateGamepadHint)
+  window.addEventListener('gamepaddisconnected', updateGamepadHint)
+
+  // Resize handling
   const resizeObserver = new ResizeObserver(() => {
     const newDims = handleResize(canvas, ctx, container, config)
-    grid = createGrid(newDims.rows, newDims.columns)
-    grid = spawnWater(grid)
+    if (phase === 'title') {
+      initTitleGrid(newDims.rows, newDims.columns)
+    } else {
+      grid = createGrid(newDims.rows, newDims.columns)
+      grid = spawnWater(grid)
+    }
     updateCanvasLabel(canvas, grid.barrierCount, grid.maxBarriers, currentTheme)
   })
   resizeObserver.observe(container)

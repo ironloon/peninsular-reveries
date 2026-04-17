@@ -1,17 +1,14 @@
-import { allStories } from './stories.js'
-import type { GameState } from './types.js'
+import { theStory } from './stories.js'
+import type { GameState, Scene } from './types.js'
 import {
   createInitialState,
   startStory,
   makeChoice,
   toggleEquippedItem,
   completeStory,
-  returnToTrailMap,
-  isStoryUnlocked,
   getScene,
 } from './state.js'
 import {
-  renderTrailMap,
   renderScene,
   renderStoryComplete,
   renderHint,
@@ -31,13 +28,13 @@ import {
   announceChoiceResult,
   announceItemCleared,
   announceItemEquipped,
+  announceItemCollected,
   announceHint,
   announceStoryComplete,
-  announceTrailMap,
   moveFocusToFirstChoice,
   moveFocusToInventoryBarItem,
   moveFocusToInventoryOverlay,
-  moveFocusToTrailMap,
+  moveFocusToPlayAgain,
 } from './accessibility.js'
 import {
   typeText,
@@ -53,54 +50,27 @@ import {
   playAmbientLoop,
   stopAmbientLoop,
 } from './sounds.js'
-import { setupTabbedModal } from '../../client/modal.js'
-import { bindMusicToggle, bindSfxToggle, bindReduceMotionToggle } from '../../client/preferences.js'
+import { setupGameMenu } from '../../client/game-menu.js'
 
 // ── State ─────────────────────────────────────────────────────
 let gameState: GameState = createInitialState()
 
 function getState(): GameState { return gameState }
 
-function currentStory() { return allStories.find(s => s.id === gameState.currentStoryId) }
-
-function setState(s: GameState): void {
-  gameState = s
-  refreshUI()
-}
-
 // ── UI Refresh ────────────────────────────────────────────────
 
-function refreshUI(): void {
-  const badgeCounter = document.getElementById('badge-counter')
-  if (badgeCounter) badgeCounter.textContent = `${gameState.completedStoryIds.length}/5`
 
-  if (gameState.currentStoryId === null) {
-    renderTrailMap(allStories, gameState)
-  } else {
-    const story = currentStory()
-    if (story && gameState.currentSceneId) {
-      const scene = getScene(story, gameState.currentSceneId)
-      if (scene) {
-        renderScene(story, scene, gameState)
-        if (!getInventoryOverlay().hidden) {
-          renderInventoryOverlay(story, gameState)
-        }
-      }
-    }
-  }
-}
 
 function syncSceneSelectionUI(itemId: string, focusTarget: 'bar' | 'overlay'): void {
-  const story = currentStory()
-  if (!story || !gameState.currentSceneId) return
+  if (!gameState.currentSceneId) return
 
-  const scene = getScene(story, gameState.currentSceneId)
+  const scene = getScene(theStory, gameState.currentSceneId)
   if (!scene) return
 
   updateSceneChoices(scene, gameState)
-  updateInventoryBar(story, gameState)
+  updateInventoryBar(theStory, gameState)
   if (!getInventoryOverlay().hidden) {
-    renderInventoryOverlay(story, gameState)
+    renderInventoryOverlay(theStory, gameState)
   }
 
   getHintArea().setAttribute('hidden', '')
@@ -119,31 +89,30 @@ function hideInventoryOverlay(): void {
 
 // ── Game Flow ─────────────────────────────────────────────────
 
-function onStorySelected(storyId: string): void {
-  const storyIndex = allStories.findIndex(s => s.id === storyId)
-  if (storyIndex === -1) return
-  if (!isStoryUnlocked(gameState, storyIndex)) return
-  const story = allStories[storyIndex]
-
-  ensureAudioUnlocked()
-  stopAmbientLoop()
-
-  setState(startStory(gameState, storyId, story.startSceneId))
+function beginStory(): void {
+  hideInventoryOverlay()
+  gameState = startStory(gameState, theStory.startSceneId)
   showScreen('scene-view')
 
-  const scene = getScene(story, story.startSceneId)
+  const scene = getScene(theStory, theStory.startSceneId)
   if (!scene) return
-  renderScene(story, scene, gameState)
+  renderScene(theStory, scene, gameState)
 
   const textEl = getSceneText()
   typeText(textEl, scene.description, playTypingBlip).then(() => moveFocusToFirstChoice())
   announceSceneDescription(scene.description)
 }
 
+function onRestart(): void {
+  ensureAudioUnlocked()
+  stopAmbientLoop()
+  beginStory()
+  playAmbientLoop()
+}
+
 function onChoiceMade(choiceIndex: number): void {
-  const story = currentStory()
-  if (!story || !gameState.currentSceneId) return
-  const scene = getScene(story, gameState.currentSceneId)
+  if (!gameState.currentSceneId) return
+  const scene = getScene(theStory, gameState.currentSceneId)
   if (!scene) return
   const choice = scene.choices[choiceIndex]
   if (!choice) return
@@ -160,20 +129,20 @@ function onChoiceMade(choiceIndex: number): void {
   }
 
   const collectedItem = newState.lastCollectedItem
-    ? story.items.find(item => item.id === newState.lastCollectedItem)
+    ? theStory.items.find(item => item.id === newState.lastCollectedItem)
     : undefined
 
-  setState(newState)
+  gameState = newState
 
-  const newScene = newState.currentSceneId ? getScene(story, newState.currentSceneId) : undefined
+  const newScene = newState.currentSceneId ? getScene(theStory, newState.currentSceneId) : undefined
   if (!newScene) return
 
   if (newScene.isEnd) {
-    onStoryComplete()
+    onStoryComplete(newScene)
     return
   }
 
-  renderScene(story, newScene, gameState)
+  renderScene(theStory, newScene, gameState)
   if (collectedItem) {
     playItemCollect()
     renderItemCollected(collectedItem)
@@ -183,58 +152,38 @@ function onChoiceMade(choiceIndex: number): void {
   const textEl = getSceneText()
   typeText(textEl, newScene.description, playTypingBlip).then(() => moveFocusToFirstChoice())
   if (collectedItem) {
-    announceItemEquipped(collectedItem.name)
+    announceItemCollected(collectedItem.name)
   } else {
     announceChoiceResult(choice.text)
   }
 }
 
-function onStoryComplete(): void {
-  const story = currentStory()!
+function onStoryComplete(endScene: Scene): void {
   playStoryComplete()
   hideInventoryOverlay()
-  setState(completeStory(gameState, story.id, story.badgeName))
-  renderStoryComplete(story)
+  gameState = completeStory(gameState)
+  renderStoryComplete(endScene)
   showScreen('completion-view')
-  announceStoryComplete(story.badgeName)
-  saveProgress()
-}
-
-function onBackToTrail(): void {
-  hideInventoryOverlay()
-  setState(returnToTrailMap(gameState))
-  renderTrailMap(allStories, gameState)
-  showScreen('trail-map')
-  playAmbientLoop()
-  announceTrailMap(gameState.completedStoryIds.length + 1, allStories.length)
-  moveFocusToTrailMap()
+  announceStoryComplete(endScene.description)
+  moveFocusToPlayAgain()
 }
 
 function onInventoryOpen(): void {
-  const story = currentStory()
-  if (!story) return
-
   const overlay = getInventoryOverlay()
   overlay.removeAttribute('hidden')
-  renderInventoryOverlay(story, gameState)
-  updateInventoryBar(story, gameState)
+  renderInventoryOverlay(theStory, gameState)
+  updateInventoryBar(theStory, gameState)
   moveFocusToInventoryOverlay(gameState.equippedItemId ?? undefined)
 }
 
 function onInventoryClose(): void {
   hideInventoryOverlay()
-  const story = currentStory()
-  if (!story) return
-
-  updateInventoryBar(story, gameState)
+  updateInventoryBar(theStory, gameState)
   moveFocusToInventoryBarItem(gameState.equippedItemId ?? undefined)
 }
 
 function onInventoryItemToggle(itemId: string): void {
-  const story = currentStory()
-  if (!story) return
-
-  const item = story.items.find(entry => entry.id === itemId)
+  const item = theStory.items.find(entry => entry.id === itemId)
   if (!item) return
 
   const focusTarget = (document.activeElement as HTMLElement | null)?.closest('#inventory-overlay')
@@ -254,42 +203,27 @@ function onInventoryItemToggle(itemId: string): void {
   }
 }
 
-function saveProgress(): void {
-  localStorage.setItem('story-trail-progress', JSON.stringify({
-    completedStoryIds: gameState.completedStoryIds,
-    earnedBadges: gameState.earnedBadges,
-  }))
-}
-
 // ── Initialization ────────────────────────────────────────────
 
-// Load saved progress
-const saved = localStorage.getItem('story-trail-progress')
-if (saved) {
-  try {
-    const data = JSON.parse(saved) as { completedStoryIds: readonly string[], earnedBadges: readonly string[] }
-    gameState = { ...gameState, completedStoryIds: data.completedStoryIds ?? [], earnedBadges: data.earnedBadges ?? [] }
-  } catch { /* ignore */ }
-}
-
-// Initial render
-renderTrailMap(allStories, gameState)
-showScreen('trail-map')
-playAmbientLoop()
-announceTrailMap(gameState.completedStoryIds.length + 1, allStories.length)
+// Gate story start behind start button click
+const startBtn = document.getElementById('start-btn')
+startBtn?.addEventListener('click', () => {
+  ensureAudioUnlocked()
+  beginStory()
+  playAmbientLoop()
+})
 
 // Wire input
 setupInput(getState, {
-  onStorySelected,
   onChoiceMade,
   onInventoryOpen,
   onInventoryClose,
   onInventoryItemToggle,
-  onBackToTrail,
+  onRestart,
 })
 
 // Wire settings
-setupTabbedModal('settings-modal')
-bindMusicToggle('story-trail', document.getElementById('music-enabled-toggle') as HTMLInputElement | null, document.getElementById('music-enabled-help') as HTMLElement | null)
-bindSfxToggle('story-trail', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
-bindReduceMotionToggle(document.getElementById('reduce-motion-toggle') as HTMLInputElement | null, document.getElementById('reduce-motion-help') as HTMLElement | null)
+setupGameMenu()
+
+// Wire restart
+document.addEventListener('restart', () => { onRestart() })

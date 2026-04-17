@@ -1,6 +1,6 @@
 import { renderToString } from '@remix-run/component/server'
 import { Document } from '../../app/ui/document.js'
-import { GameHeader, GameHeaderPill, GameScreen, GameTabbedModal, InfoSection, SettingsSection, SettingsToggle, SrOnly } from '../../app/ui/game-shell.js'
+import { GameHeader, GameScreen, GameTabbedModal, InfoSection, SettingsSection, SettingsToggle, SrOnly } from '../../app/ui/game-shell.js'
 import { getSiteBasePath } from '../../app/site-config.js'
 import { withBasePath } from '../../app/site-paths.js'
 import { storyTrailInfo } from './info.js'
@@ -11,8 +11,8 @@ export async function storyTrailAction() {
   const infoPagePath = withBasePath('/story-trail/info/', siteBasePath)
   const html = await renderToString(
     <Document
-      title="Story Trail"
-      description="Read, explore, and solve puzzles on five adventure trails."
+      title="Story Trail — The Hidden Garden"
+      description="Explore a secret garden. Collect items, solve puzzles, and discover different endings."
       path="/story-trail/"
       includeNav={false}
       includeFooter={false}
@@ -25,17 +25,23 @@ export async function storyTrailAction() {
       manifestPath="/story-trail/manifest.json"
     >
       <GameHeader
-        leftContent={<GameHeaderPill icon="📖" value={<span id="badge-counter">0/5</span>} />}
+        leftContent={<></>}
         rightContent={
           <button id="menu-btn" className="menu-btn" data-settings-open="true" aria-label="Open menu" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false" type="button">☰</button>
         }
       />
 
-      <div id="game-area" data-active-screen="trail-map">
-        <GameScreen id="trail-map" labelledBy="trail-heading">
-          <h1 id="trail-heading">Story Trail</h1>
-          <div id="trail-stops"></div>
-        </GameScreen>
+      <div id="game-area" data-active-screen="start-screen">
+        <section id="start-screen" className="trail-start-screen" aria-labelledby="trail-title">
+          <div className="trail-start-shell">
+            <h1 id="trail-title" className="trail-title">Story Trail</h1>
+            <p className="trail-subtitle">Five adventure stories for young readers.</p>
+            <div className="start-actions">
+              <button id="start-btn" className="trail-btn trail-btn-primary" type="button">Begin</button>
+            </div>
+            <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Ⓐ to begin · Start for menu</p>
+          </div>
+        </section>
 
         <GameScreen id="scene-view" labelledBy="scene-heading">
           <h2 id="scene-heading" className="sr-only">Scene</h2>
@@ -62,19 +68,21 @@ export async function storyTrailAction() {
         quitHref={homePath}
         settingsContent={<>
           <SettingsSection title="Audio">
-            <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
-            <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
-            <SettingsToggle id="reduce-motion-toggle" label="Reduce Motion" helpId="reduce-motion-help" />
+            <SettingsToggle id="music-enabled-toggle" label="Music" helpText="Music is off until you change it here." helpId="music-enabled-help" />
+            <div id="music-track-picker-slot"></div>
+            <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpText="Sound effects are on until you change it here." helpId="sfx-enabled-help" />
           </SettingsSection>
           <SettingsSection title="Controls">
             <ul className="story-trail-controls-list">
-              <li>Tap any trail stop to start a story.</li>
               <li>Tap a choice to keep reading. Locked choices give hints.</li>
               <li><kbd>Arrow keys</kbd> or <kbd>D-pad</kbd> move. <kbd>Enter</kbd>, <kbd>Space</kbd>, or <kbd>A</kbd> choose.</li>
-                <li>Tap an item in the bar or bag to hold it.</li>
-                <li>Hold the right item, then tap the matching choice.</li>
-                <li>Press <kbd>I</kbd> for your bag. Press <kbd>Start</kbd> for the menu.</li>
+              <li>Tap an item in the bar or bag to hold it.</li>
+              <li>Hold the right item, then tap the matching choice.</li>
+              <li>Press <kbd>I</kbd> for your bag. Press <kbd>Start</kbd> for the menu.</li>
             </ul>
+          </SettingsSection>
+          <SettingsSection title="Accessibility">
+            <SettingsToggle id="reduce-motion-toggle" label="Reduce motion" helpText="Defaults to your device setting until you change it here." helpId="reduce-motion-help" />
           </SettingsSection>
         </>}
         infoContent={<>

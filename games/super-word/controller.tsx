@@ -27,7 +27,7 @@ export async function superWordAction() {
       path="/super-word/"
       includeNav={false}
       includeFooter={false}
-      stylesheets={['/styles/game.css']}
+      stylesheets={['/styles/game.css', '/styles/super-word.css']}
       includeDefaultStyles={false}
       scripts={['/client/super-word/main.js']}
       bodyClass="super-word-game"
@@ -45,10 +45,17 @@ export async function superWordAction() {
             <span className="title-bounce">W</span><span className="title-bounce">O</span><span className="title-bounce">R</span><span className="title-bounce">D</span><span className="title-bounce">!</span>
           </h1>
           <p className="subtitle">Find hidden letters and solve the word puzzle!</p>
-          <div className="start-actions">
-            <button id="start-btn" className="btn btn-primary">Let's Go! 🚀</button>
+          <div className="difficulty-picker">
+            <p className="difficulty-heading">Choose your level:</p>
+            <div className="difficulty-grid">
+              <button className="btn btn-difficulty" data-difficulty="sidekick" type="button">⭐ Sidekick</button>
+              <button className="btn btn-difficulty" data-difficulty="hero" type="button">🦸 Hero</button>
+              <button className="btn btn-difficulty" data-difficulty="super" type="button">💫 Super</button>
+              <button className="btn btn-difficulty" data-difficulty="ultra" type="button">⚡ Ultra</button>
+              <button className="btn btn-difficulty" data-difficulty="legend" type="button">🏆 Legend</button>
+            </div>
           </div>
-          <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Press Ⓐ to Start</p>
+          <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Ⓐ to play · Start for menu</p>
         </GameScreen>
 
         {/* Game Screen */}
@@ -97,18 +104,9 @@ export async function superWordAction() {
           quitHref={homePath}
           settingsContent={<>
             <SettingsSection title="Audio">
-              <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
-              <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
-              <SettingsToggle id="reduce-motion-toggle" label="Reduce Motion" helpId="reduce-motion-help" />
-            </SettingsSection>
-            <SettingsSection title="Level">
-              <select id="difficulty-select" className="puzzle-select" defaultValue="hero" aria-label="Level">
-                <option value="sidekick">⭐ Sidekick</option>
-                <option value="hero">🦸 Hero</option>
-                <option value="super">💫 Super</option>
-                <option value="ultra">⚡ Ultra</option>
-                <option value="legend">🏆 Legend</option>
-              </select>
+              <SettingsToggle id="music-enabled-toggle" label="Music" helpText="Music is off until you change it here." helpId="music-enabled-help" />
+              <div id="music-track-picker-slot"></div>
+              <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpText="Sound effects are on until you change it here." helpId="sfx-enabled-help" />
             </SettingsSection>
             <SettingsSection title="Controls">
               <div className="controls-grid">
@@ -129,6 +127,18 @@ export async function superWordAction() {
                   </ul>
                 </div>
               </div>
+            </SettingsSection>
+            <SettingsSection title="Accessibility">
+              <SettingsToggle id="reduce-motion-toggle" label="Reduce motion" helpText="Defaults to your device setting until you change it here." helpId="reduce-motion-help" />
+            </SettingsSection>
+            <SettingsSection title="Level">
+              <select id="difficulty-select" className="puzzle-select" defaultValue="hero" aria-label="Level">
+                <option value="sidekick">⭐ Sidekick</option>
+                <option value="hero">🦸 Hero</option>
+                <option value="super">💫 Super</option>
+                <option value="ultra">⚡ Ultra</option>
+                <option value="legend">🏆 Legend</option>
+              </select>
             </SettingsSection>
           </>}
           infoContent={<>

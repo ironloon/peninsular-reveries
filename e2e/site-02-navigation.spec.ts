@@ -52,7 +52,8 @@ test.describe('SITE-02: Navigation', () => {
 
   test('game page exposes Quit inside the Menu', async ({ page }) => {
     await page.goto('/super-word/');
-    await page.getByRole('button', { name: /let's go/i }).click();
+    await expect(page.locator('#start-screen')).toBeVisible();
+    await page.locator('.btn-difficulty[data-difficulty="hero"]').click();
     await page.locator('#scene-a11y .sr-overlay-btn[tabindex="0"]').first().waitFor();
     await page.getByRole('button', { name: 'Menu' }).click();
     await expect(page.getByRole('link', { name: 'Quit' })).toBeVisible();
@@ -60,7 +61,8 @@ test.describe('SITE-02: Navigation', () => {
 
   test('Squares game page exposes Quit inside the Menu', async ({ page }) => {
     await page.goto('/squares/');
-    await page.getByRole('button', { name: 'Start puzzle' }).click();
+    await expect(page.locator('#start-screen')).toBeVisible();
+    await page.locator('#start-plus-x-btn').click();
     await expect(page.locator('#squares-board')).toBeVisible();
     await page.locator('#game-screen').getByRole('button', { name: 'Menu' }).first().click();
     await expect(page.getByRole('link', { name: 'Quit' })).toBeVisible();

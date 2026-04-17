@@ -1,13 +1,10 @@
-import { bindReduceMotionToggle, bindMusicToggle, bindSfxToggle } from '../../client/preferences.js'
-import { setupTabbedModal } from '../../client/modal.js'
+import { setupGameMenu } from '../../client/game-menu.js'
 import {
   announceDestination,
   announceFact,
   announceMarkerSelection,
-  announceMemory,
   announcePhase,
   announceRevisit,
-  announceRoom,
   announceTravel,
   moveFocusAfterTransition,
 } from './accessibility.js'
@@ -19,11 +16,8 @@ import {
   advanceFact,
   advanceTravelProgress,
   arriveAtDestination,
-  collectMemory,
   createInitialState,
-  enterRoom,
-  exitRoom,
-  finishExplore,
+  getDisplayFactIndex,
   navigateGlobe,
   prepareTravel,
   resetGame,
@@ -37,25 +31,11 @@ import {
   sfxArrive,
   sfxButton,
   sfxMarkerMove,
-  sfxMemoryCollect,
-  sfxPipSpeak,
   sfxTravelStart,
   startTravelLoop,
   stopTravelLoop,
 } from './sounds.js'
 import type { DestinationId, GameState, NavigationDirection } from './types.js'
-
-const PROGRESS_STORAGE_KEY = 'pixel-passport-progress'
-
-function clearStoredProgress(): void {
-  try {
-    localStorage.removeItem(PROGRESS_STORAGE_KEY)
-  } catch {
-    // Ignore browsers that disallow storage access.
-  }
-}
-
-clearStoredProgress()
 
 let state: GameState = createInitialState()
 let lastFrame = performance.now()
@@ -87,25 +67,8 @@ function animateStateChange(previousState: GameState | undefined, nextState: Gam
     )
   ) {
     void animateClass(element('explore-scene'), 'scene-reveal', 620)
-    void animateClass(element('explore-guide-text'), 'copy-reveal', 460)
+    void animateClass(element('explore-fact-text'), 'copy-reveal', 460)
     void animateClass(element('explore-progress'), 'pill-reveal', 420)
-  }
-
-  if (
-    nextState.phase === 'memory-collect'
-    && (
-      previousState.phase !== 'memory-collect'
-      || previousState.targetDestination !== nextState.targetDestination
-      || previousState.memoryWasNew !== nextState.memoryWasNew
-    )
-  ) {
-    void animateClass(element('memory-stage'), 'memory-stage-reveal', 680)
-    void animateClass(element('memory-copy'), 'copy-reveal', 460)
-  }
-
-  if (nextState.phase === 'room' && previousState.phase !== 'room') {
-    void animateClass(element('room-stage'), 'card-settle', 560)
-    void animateClass(element('room-copy'), 'copy-reveal', 420)
   }
 }
 
@@ -126,7 +89,6 @@ function beginExploreMode(): void {
   state = startExploreMode(state)
   syncView(previousState)
   announcePhase('Spin the globe and pick a place to visit.')
-  moveFocusAfterTransition('globe-room-btn', 220)
   focusSelectedMarker()
 }
 
@@ -143,8 +105,8 @@ function travelToDestination(destinationId: DestinationId): void {
     state = revisitDestination(state, destinationId)
     syncView(previousState)
     announceRevisit(destination.name, destination.country)
-    sfxPipSpeak()
-    announceFact(destination.facts[0])
+    const displayIndex = getDisplayFactIndex(state, destination.facts.length)
+    announceFact(destination.facts[displayIndex])
     moveFocusAfterTransition('explore-next-btn', 220)
     return
   }
@@ -170,51 +132,14 @@ function continueFactSequence(): void {
     const previousState = state
     state = advanceFact(state, destination.facts.length)
     syncView(previousState)
-    sfxPipSpeak()
-    announceFact(destination.facts[state.factIndex])
-    void pulseElement(element('explore-guide-text'), 'guide-bubble-pulse')
+    const displayIndex = getDisplayFactIndex(state, destination.facts.length)
+    announceFact(destination.facts[displayIndex])
+    void pulseElement(element('explore-fact-text'), 'guide-bubble-pulse')
     return
   }
 
   const previousState = state
-  state = finishExplore(state)
-  state = collectMemory(state)
-  syncView(previousState)
-
-  if (state.memoryWasNew) {
-    sfxMemoryCollect()
-  }
-
-  announceMemory(destination.memoryLabel, state.memoryWasNew)
-  moveFocusAfterTransition('memory-continue-btn', 220)
-}
-
-function continueMemorySequence(): void {
-  ensureAudioUnlocked()
-  sfxButton()
-
-  const previousState = state
   state = returnToGlobe(state)
-  syncView(previousState)
-  announcePhase('Back on the globe. Pick a place to visit or read again.')
-  focusSelectedMarker()
-}
-
-function openRoom(): void {
-  ensureAudioUnlocked()
-  sfxButton()
-  const previousState = state
-  state = enterRoom(state)
-  syncView(previousState)
-  announceRoom(state.collectedMemories.length)
-  moveFocusAfterTransition('room-back-btn', 220)
-}
-
-function closeRoom(): void {
-  ensureAudioUnlocked()
-  sfxButton()
-  const previousState = state
-  state = exitRoom(state)
   syncView(previousState)
   announcePhase('Back on the globe. Pick a place to visit or read again.')
   focusSelectedMarker()
@@ -237,9 +162,6 @@ const callbacks: InputCallbacks = {
   onStartExplore: beginExploreMode,
   onSelectDestination: travelToDestination,
   onAdvanceFact: continueFactSequence,
-  onContinueMemory: continueMemorySequence,
-  onEnterRoom: openRoom,
-  onExitRoom: closeRoom,
   onNavigateGlobe: moveSelection,
 }
 
@@ -262,8 +184,8 @@ function tick(now: number): void {
       const destination = getDestination(state.targetDestination)
       if (destination) {
         announceDestination(destination.name, destination.country)
-        sfxPipSpeak()
-        announceFact(destination.facts[0])
+        const displayIndex = getDisplayFactIndex(state, destination.facts.length)
+        announceFact(destination.facts[displayIndex])
       }
 
       moveFocusAfterTransition('explore-next-btn', 220)
@@ -275,7 +197,6 @@ function tick(now: number): void {
 
 document.addEventListener('restart', () => {
   stopTravelLoop()
-  clearStoredProgress()
   const previousState = state
   state = resetGame()
   syncView(previousState)
@@ -283,14 +204,7 @@ document.addEventListener('restart', () => {
   moveFocusAfterTransition('start-explore-btn', 220)
 })
 
-const modal = setupTabbedModal('settings-modal')
-window.__settingsToggle = modal.toggle
-bindMusicToggle('pixel-passport', document.getElementById('music-enabled-toggle') as HTMLInputElement | null, document.getElementById('music-enabled-help') as HTMLElement | null)
-bindSfxToggle('pixel-passport', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
-bindReduceMotionToggle(
-  document.getElementById('reduce-motion-toggle') as HTMLInputElement | null,
-  document.getElementById('reduce-motion-help'),
-)
+setupGameMenu()
 setupInput(getState, callbacks)
 syncView()
 requestAnimationFrame(tick)

@@ -1,9 +1,7 @@
 import { chompersSampleManifest, getBundledChompersSamples, type ChompersSampleDefinition, type ChompersSampleId } from './sample-manifest.js'
-import { getAudioContext, ensureAudioUnlocked as baseEnsureAudioUnlocked, createMusicBus, createSfxBus } from '../../client/audio.js'
-import { getMusicEnabled } from '../../client/preferences.js'
+import { ensureAudioUnlocked as baseEnsureAudioUnlocked } from '../../client/audio.js'
+import { getGameAudioBuses } from '../../client/game-audio.js'
 
-let _musicBus: GainNode | null = null
-let _sfxBus: GainNode | null = null
 let sampleLoadPromise: Promise<void> | null = null
 
 const decodedSamples = new Map<ChompersSampleId, AudioBuffer>()
@@ -20,20 +18,14 @@ interface SamplePlaybackOptions {
 
 function getCtx(): AudioContext | null {
   try {
-    return getAudioContext()
+    return getGameAudioBuses('chompers').ctx
   } catch {
     return null
   }
 }
 
-function getMusicBusNode(): GainNode {
-  if (!_musicBus) _musicBus = createMusicBus('chompers')
-  return _musicBus
-}
-
 function getSfxBusNode(): GainNode {
-  if (!_sfxBus) _sfxBus = createSfxBus('chompers')
-  return _sfxBus
+  return getGameAudioBuses('chompers').sfx
 }
 
 function createEnvelope(
@@ -208,149 +200,12 @@ export function sfxGameOver(): void {
   playTone(131, 0.3, 'triangle', layered ? 0.03 : 0.06, 0.18)
 }
 
-// ── Frenzy sounds ──────────────────────────────────────────────────────────────
+// ── "Snack Break" melody (preserve for shared music catalog — LEG-6) ──────────
+// Pentatonic scale: C D E G A (261, 294, 329, 392, 440 Hz)
+// Melody indices:   [0, 2, 3, 4, 3, 2, 1, 2, 0, 2, 4, 3, 4, 3, 2, 1]
+// Beat duration:    0.25s (8th note at 120 BPM)
+// Lead voice:       sine oscillator, gain envelope 0→0.08→0.0001 per note
+// Bass voice:       triangle oscillator on every 4th note at freq/2,
+//                   gain envelope 0→0.05→0.0001, duration = 4 beats
+// Both routed through music bus.
 
-const PENTATONIC_FREQS = [261, 294, 329, 392, 440] as const
-const FRENZY_MELODY = [0, 2, 3, 4, 3, 2, 1, 2, 0, 2, 4, 3, 4, 3, 2, 1] as const
-const BEAT_DUR = 0.25 // 8th note at 120 BPM
-const SCHEDULE_AHEAD = 0.1 // schedule this many seconds ahead
-const SCHEDULE_INTERVAL = 25 // ms between scheduler checks
-
-let frenzyMusicActive = false
-let frenzyMusicScheduler: number | null = null
-let frenzyNextNoteTime = 0
-let frenzyNoteIndex = 0
-
-function scheduleFrenzyNote(context: AudioContext): void {
-  const freq = PENTATONIC_FREQS[FRENZY_MELODY[frenzyNoteIndex % FRENZY_MELODY.length]]
-  const noteTime = frenzyNextNoteTime
-
-  const osc = context.createOscillator()
-  const gain = context.createGain()
-  osc.type = 'sine'
-  osc.frequency.setValueAtTime(freq, noteTime)
-  gain.gain.setValueAtTime(0.0001, noteTime)
-  gain.gain.linearRampToValueAtTime(0.08, noteTime + 0.01)
-  gain.gain.exponentialRampToValueAtTime(0.0001, noteTime + BEAT_DUR * 0.85)
-  osc.connect(gain)
-  gain.connect(getMusicBusNode())
-  osc.start(noteTime)
-  osc.stop(noteTime + BEAT_DUR)
-
-  // Triangle bass on every 4th note (beat)
-  if (frenzyNoteIndex % 4 === 0) {
-    const bassOsc = context.createOscillator()
-    const bassGain = context.createGain()
-    bassOsc.type = 'triangle'
-    bassOsc.frequency.setValueAtTime(freq / 2, noteTime)
-    bassGain.gain.setValueAtTime(0.0001, noteTime)
-    bassGain.gain.linearRampToValueAtTime(0.05, noteTime + 0.01)
-    bassGain.gain.exponentialRampToValueAtTime(0.0001, noteTime + BEAT_DUR * 4 * 0.9)
-    bassOsc.connect(bassGain)
-    bassGain.connect(getMusicBusNode())
-    bassOsc.start(noteTime)
-    bassOsc.stop(noteTime + BEAT_DUR * 4)
-  }
-
-  frenzyNoteIndex++
-  frenzyNextNoteTime += BEAT_DUR
-}
-
-function frenzySchedulerLoop(): void {
-  const context = getCtx()
-  if (!context || !frenzyMusicActive) return
-
-  while (frenzyNextNoteTime < context.currentTime + SCHEDULE_AHEAD) {
-    scheduleFrenzyNote(context)
-  }
-
-  frenzyMusicScheduler = window.setTimeout(frenzySchedulerLoop, SCHEDULE_INTERVAL)
-}
-
-export function playFrenzyMusic(): void {
-  if (frenzyMusicActive) return
-  if (!getMusicEnabled('chompers')) return
-  const context = getCtx()
-  if (!context) return
-
-  frenzyMusicActive = true
-  frenzyNoteIndex = 0
-  frenzyNextNoteTime = context.currentTime + 0.05
-  frenzySchedulerLoop()
-}
-
-export function stopFrenzyMusic(): void {
-  frenzyMusicActive = false
-  if (frenzyMusicScheduler !== null) {
-    window.clearTimeout(frenzyMusicScheduler)
-    frenzyMusicScheduler = null
-  }
-}
-
-export function playFrenzyCountdown(): void {
-  // 3-2-1 beeps, increasing pitch, 500ms apart
-  playTone(440, 0.15, 'sine', 0.1, 0)
-  playTone(550, 0.15, 'sine', 0.1, 0.5)
-  playTone(660, 0.2, 'sine', 0.12, 1.0)
-}
-
-export function playNpcChomp(): void {
-  // Lower pitch chomp for NPC
-  playTone(120, 0.07, 'triangle', 0.08)
-  playTone(90, 0.1, 'square', 0.04, 0.03)
-}
-
-export function playNpcScore(): void {
-  // Short boop
-  playTone(440, 0.08, 'sine', 0.06)
-  playTone(550, 0.08, 'sine', 0.05, 0.06)
-}
-
-export function playTimerWarning(): void {
-  // 4 rapid ticks
-  for (let i = 0; i < 4; i++) {
-    playTone(880, 0.05, 'square', 0.06, i * 0.15)
-  }
-}
-
-export function playFrenzyWin(): void {
-  // Ascending arpeggio: C E G C' E'
-  const freqs = [261, 329, 392, 523, 659]
-  for (let i = 0; i < freqs.length; i++) {
-    playTone(freqs[i], 0.2, 'sine', 0.1, i * 0.1)
-  }
-}
-
-export function playFrenzyLose(): void {
-  const context = getCtx()
-  if (!context) return
-
-  const startTime = context.currentTime
-
-  const osc1 = context.createOscillator()
-  const gain1 = context.createGain()
-  osc1.type = 'sine'
-  osc1.frequency.setValueAtTime(440, startTime)
-  osc1.frequency.exponentialRampToValueAtTime(110, startTime + 0.8)
-  gain1.gain.setValueAtTime(0.0001, startTime)
-  gain1.gain.linearRampToValueAtTime(0.1, startTime + 0.05)
-  gain1.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.8)
-  osc1.connect(gain1)
-  gain1.connect(getMusicBusNode())
-  osc1.start(startTime)
-  osc1.stop(startTime + 0.8)
-
-  const delay2 = 0.2
-  const osc2 = context.createOscillator()
-  const gain2 = context.createGain()
-  osc2.type = 'sine'
-  osc2.frequency.setValueAtTime(330, startTime + delay2)
-  osc2.frequency.exponentialRampToValueAtTime(82, startTime + delay2 + 0.8)
-  gain2.gain.setValueAtTime(0.0001, startTime + delay2)
-  gain2.gain.linearRampToValueAtTime(0.07, startTime + delay2 + 0.05)
-  gain2.gain.exponentialRampToValueAtTime(0.0001, startTime + delay2 + 0.8)
-  osc2.connect(gain2)
-  gain2.connect(getMusicBusNode())
-  osc2.start(startTime + delay2)
-  osc2.stop(startTime + delay2 + 0.8)
-}

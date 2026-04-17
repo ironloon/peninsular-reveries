@@ -1,10 +1,14 @@
-import type {
-  SquaresBoard,
-  SquaresCelebrationPatternId,
-  SquaresCoordinate,
+import { isReducedMotion } from '../../client/game-animations.js'
+import {
+  SQUARES_CELEBRATION_PATTERNS,
+  type SquaresBoard,
+  type SquaresCelebrationPatternId,
+  type SquaresCoordinate,
 } from './types.js'
 
-export type SquaresCelebrationStyle = 'snake' | 'wave' | 'diagonal-fan'
+export { isReducedMotion }
+
+export type SquaresCelebrationStyle = 'snake' | 'wave' | 'diagonal-fan' | 'checker' | 'column'
 
 export interface SquaresAnimationCell {
   readonly coordinate: SquaresCoordinate
@@ -20,6 +24,8 @@ const CELEBRATION_STYLE_BY_PATTERN: Readonly<Record<SquaresCelebrationPatternId,
   'ripple-ring': 'wave',
   'cross-bloom': 'snake',
   sunburst: 'diagonal-fan',
+  'checker-flash': 'checker',
+  'column-sweep': 'column',
 }
 
 function animateElement(
@@ -73,18 +79,6 @@ function groupBy<T>(items: readonly T[], groupFor: (item: T) => number): readonl
     .map(([, group]) => group)
 }
 
-export function isReducedMotion(): boolean {
-  if (typeof document !== 'undefined' && document.documentElement.dataset['reduceMotion'] === 'true') {
-    return true
-  }
-
-  if (typeof matchMedia !== 'function') {
-    return false
-  }
-
-  return matchMedia('(prefers-reduced-motion: reduce)').matches
-}
-
 export function getCelebrationStyle(patternId: SquaresCelebrationPatternId): SquaresCelebrationStyle {
   return CELEBRATION_STYLE_BY_PATTERN[patternId]
 }
@@ -104,9 +98,18 @@ export function buildCelebrationFrames(
       return groupBy(coordinates, (coordinate) => coordinate.row + coordinate.column)
     case 'diagonal-fan':
       return groupBy(coordinates, (coordinate) => coordinate.column - coordinate.row)
+    case 'checker':
+      return groupBy(coordinates, (coordinate) => (coordinate.row + coordinate.column) % 2)
+    case 'column':
+      return groupBy(coordinates, (coordinate) => coordinate.column)
     default:
       return [coordinates]
   }
+}
+
+export function randomCelebrationPatternId(): SquaresCelebrationPatternId {
+  const patterns = SQUARES_CELEBRATION_PATTERNS
+  return patterns[Math.floor(Math.random() * patterns.length)].id
 }
 
 export async function playMoveFeedback(
@@ -147,7 +150,7 @@ export async function playSolvedCelebration(
   const reducedMotion = options.reducedMotion ?? isReducedMotion()
   const frames = buildCelebrationFrames(board, getCelebrationStyle(patternId))
   const cellByKey = new Map(cells.map((cell) => [coordinateKey(cell.coordinate), cell.element]))
-  const baseDelayMs = options.baseDelayMs ?? (reducedMotion ? 42 : 72)
+  const baseDelayMs = options.baseDelayMs ?? (reducedMotion ? 60 : 110)
   const animations: Promise<void>[] = []
 
   frames.forEach((frame, frameIndex) => {
@@ -175,11 +178,11 @@ export async function playSolvedCelebration(
                   { transform: 'translate3d(0, 0, 0) scale(1)', filter: 'brightness(1)', offset: 1 },
                 ],
               {
-                duration: reducedMotion ? 180 : 320,
+                duration: reducedMotion ? 260 : 480,
                 easing: reducedMotion ? 'ease-out' : 'cubic-bezier(0.22, 1, 0.36, 1)',
                 fill: 'none',
               },
-              360,
+              540,
             ).finally(resolve)
           }, delay)
         }),

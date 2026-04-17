@@ -1,7 +1,6 @@
-import { getAudioContext, createSfxBus } from '../../client/audio.js'
+import { getGameAudioBuses } from '../../client/game-audio.js'
 import { getSfxEnabled } from '../../client/preferences.js'
 
-let _sfxBus: GainNode | null = null
 let holdOscillator: OscillatorNode | null = null
 
 
@@ -35,20 +34,19 @@ let holdOscillator: OscillatorNode | null = null
 
 
 function sfxEnabled(): boolean {
-  return getSfxEnabled('mission-orbit')
+  return getSfxEnabled()
 }
 
 function getCtx(): AudioContext | null {
   try {
-    return getAudioContext()
+    return getGameAudioBuses('mission-orbit').ctx
   } catch {
     return null
   }
 }
 
 function getSfxBusNode(): GainNode {
-  if (!_sfxBus) _sfxBus = createSfxBus('mission-orbit')
-  return _sfxBus
+  return getGameAudioBuses('mission-orbit').sfx
 }
 
 function playOsc(

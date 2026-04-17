@@ -1,12 +1,10 @@
 // ── Waterwall Audio System (Web Audio API — no external files) ────────────────
 
 import {
-  createSfxBus,
   ensureAudioUnlocked,
   fadeBusGain,
-  getAudioContext,
-  syncBusWithVisibility,
 } from '../../client/audio.js'
+import { getGameAudioBuses } from '../../client/game-audio.js'
 import { getSfxEnabled } from '../../client/preferences.js'
 
 export { ensureAudioUnlocked }
@@ -33,14 +31,8 @@ export const EDGE_CUE_FREQUENCY: Record<CursorEdge, number> = {
 
 // ── Bus management ────────────────────────────────────────────────────────────
 
-let sfxBus: GainNode | null = null
-
 function getSfxBusNode(): GainNode {
-  if (!sfxBus) {
-    sfxBus = createSfxBus('waterwall')
-    syncBusWithVisibility(sfxBus, 'waterwall', 'sfx')
-  }
-  return sfxBus
+  return getGameAudioBuses('waterwall').sfx
 }
 
 // ── Water texture (filtered noise loop) ───────────────────────────────────────
@@ -54,7 +46,7 @@ export function createWaterTexture(): void {
   if (noiseSource) return
 
   try {
-    const context = getAudioContext()
+    const context = getGameAudioBuses('waterwall').ctx
     const bus = getSfxBusNode()
 
     const sampleRate = context.sampleRate
@@ -96,7 +88,7 @@ export function createWaterTexture(): void {
 }
 
 export function startWaterTexture(): void {
-  if (!getSfxEnabled('waterwall')) return
+  if (!getSfxEnabled()) return
 
   try {
     createWaterTexture()
@@ -124,7 +116,7 @@ export function updateWaterPanning(pan: number): void {
   if (!noisePanner) return
 
   try {
-    const context = getAudioContext()
+    const context = getGameAudioBuses('waterwall').ctx
     const clamped = Math.max(-1, Math.min(1, pan))
     const now = context.currentTime
     noisePanner.pan.cancelScheduledValues(now)
@@ -140,13 +132,13 @@ export function updateWaterPanning(pan: number): void {
 let lastEdgeCue: CursorEdge | null = null
 
 export function playCursorEdgeCue(edge: CursorEdge): void {
-  if (!getSfxEnabled('waterwall')) return
+  if (!getSfxEnabled()) return
   if (edge === lastEdgeCue) return
 
   lastEdgeCue = edge
 
   try {
-    const context = getAudioContext()
+    const context = getGameAudioBuses('waterwall').ctx
     const bus = getSfxBusNode()
     const now = context.currentTime
 
@@ -181,10 +173,10 @@ export function resetEdgeCue(): void {
 // ── Barrier SFX ───────────────────────────────────────────────────────────────
 
 export function playBarrierPlaceSound(): void {
-  if (!getSfxEnabled('waterwall')) return
+  if (!getSfxEnabled()) return
 
   try {
-    const context = getAudioContext()
+    const context = getGameAudioBuses('waterwall').ctx
     const bus = getSfxBusNode()
     const now = context.currentTime
 
@@ -210,10 +202,10 @@ export function playBarrierPlaceSound(): void {
 }
 
 export function playBarrierRemoveSound(): void {
-  if (!getSfxEnabled('waterwall')) return
+  if (!getSfxEnabled()) return
 
   try {
-    const context = getAudioContext()
+    const context = getGameAudioBuses('waterwall').ctx
     const bus = getSfxBusNode()
     const now = context.currentTime
 
@@ -252,13 +244,11 @@ export function playBarrierRemoveSound(): void {
 
 if (typeof window !== 'undefined') {
   window.addEventListener('reveries:sfx-change', (event) => {
-    const detail = (event as CustomEvent<{ gameSlug: string; enabled: boolean }>).detail
-    if (detail.gameSlug === 'waterwall') {
-      if (!detail.enabled) {
-        stopWaterTexture()
-      } else if (noiseRunning || noiseSource) {
-        startWaterTexture()
-      }
+    const detail = (event as CustomEvent<{ enabled: boolean }>).detail
+    if (!detail.enabled) {
+      stopWaterTexture()
+    } else if (noiseRunning || noiseSource) {
+      startWaterTexture()
     }
   })
 }

@@ -42,14 +42,9 @@ export function announceHint(hint: string): void {
   if (el) el.textContent = hint
 }
 
-export function announceStoryComplete(badgeName: string): void {
+export function announceStoryComplete(endingText: string): void {
   const el = getFeedbackEl()
-  if (el) el.textContent = 'You earned the ' + badgeName + '!'
-}
-
-export function announceTrailMap(unlockedCount: number, totalCount: number): void {
-  const el = getStatusEl()
-  if (el) el.textContent = 'Trail map. ' + unlockedCount + ' of ' + totalCount + ' stories unlocked.'
+  if (el) el.textContent = endingText + ' The End.'
 }
 
 // ── Focus management ──────────────────────────────────────────
@@ -61,13 +56,6 @@ export function moveFocus(element: HTMLElement): void {
 export function moveFocusToFirstChoice(delayMs: number = 100): void {
   setTimeout(() => {
     const el = document.querySelector('.choice-btn') as HTMLElement | null
-    if (el) requestAnimationFrame(() => el.focus())
-  }, delayMs)
-}
-
-export function moveFocusToTrailMap(delayMs: number = 100): void {
-  setTimeout(() => {
-    const el = document.querySelector('.trail-stop-unlocked') as HTMLElement | null
     if (el) requestAnimationFrame(() => el.focus())
   }, delayMs)
 }
@@ -93,5 +81,12 @@ export function moveFocusToInventoryOverlay(itemId?: string, delayMs: number = 0
     const fallbackEl = document.querySelector('#inventory-overlay button') as HTMLElement | null
     const target = el ?? fallbackEl
     if (target) requestAnimationFrame(() => target.focus())
+  }, delayMs)
+}
+
+export function moveFocusToPlayAgain(delayMs: number = 100): void {
+  setTimeout(() => {
+    const el = document.getElementById('play-again-btn') as HTMLElement | null
+    if (el) requestAnimationFrame(() => el.focus())
   }, delayMs)
 }

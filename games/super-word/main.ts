@@ -20,7 +20,7 @@ import {
   renderWinScreen,
   setCheckButtonEnabled,
 } from './renderer.js'
-import { setupTabbedModal } from '../../client/modal.js'
+import { setupGameMenu } from '../../client/game-menu.js'
 import { setupInput } from './input.js'
 import type { InputCallbacks } from './input.js'
 import {
@@ -54,7 +54,6 @@ import {
   ensureAudioUnlocked,
   syncMusicPlayback,
 } from './sounds.js'
-import { bindMusicToggle, bindSfxToggle, bindReduceMotionToggle } from '../../client/preferences.js'
 
 const DEFAULT_DIFFICULTY: Difficulty = 'hero'
 
@@ -107,12 +106,11 @@ function refreshGameScreen(): void {
 
 // ── Game Flow — InputCallbacks ────────────────────────────
 
-function onStartGame(): void {
+function onStartGame(difficulty?: string): void {
   ensureAudioUnlocked()
   sfxButton()
-  const difficultySelect = document.getElementById('difficulty-select') as HTMLSelectElement | null
 
-  activeDifficulty = parseDifficulty(difficultySelect?.value ?? activeDifficulty)
+  activeDifficulty = parseDifficulty(difficulty ?? activeDifficulty)
   activePuzzles = selectPuzzles(activeDifficulty)
 
   // Reset game state for new puzzle set
@@ -323,7 +321,9 @@ function onPlayAgain(): void {
   pendingFlightIndices.clear()
   setState(resetGame(getState()))
   showScreen('start-screen')
-  moveFocusAfterTransition('start-btn', 300)
+  setTimeout(() => requestAnimationFrame(() => {
+    document.querySelector<HTMLButtonElement>('.btn-difficulty')?.focus()
+  }), 300)
 }
 
 // ── Initialization ────────────────────────────────────────
@@ -341,15 +341,17 @@ const callbacks: InputCallbacks = {
 
 syncSettingsForm()
 setupInput(getState, setState, currentPuzzle, callbacks)
-setupTabbedModal('settings-modal')
+setupGameMenu()
 
-bindMusicToggle('super-word', document.getElementById('music-enabled-toggle') as HTMLInputElement | null, document.getElementById('music-enabled-help') as HTMLElement | null)
-bindSfxToggle('super-word', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
-bindReduceMotionToggle(document.getElementById('reduce-motion-toggle') as HTMLInputElement | null, document.getElementById('reduce-motion-help') as HTMLElement | null)
+// Wire difficulty buttons on start screen
+for (const btn of document.querySelectorAll<HTMLButtonElement>('.btn-difficulty[data-difficulty]')) {
+  btn.addEventListener('click', () => {
+    onStartGame(btn.dataset['difficulty'])
+  })
+}
 
 window.addEventListener('reveries:music-change', (e) => {
-  const event = e as CustomEvent<{ gameSlug: string; enabled: boolean }>
-  if (event.detail.gameSlug !== 'super-word') return
+  const event = e as CustomEvent<{ enabled: boolean }>
   if (event.detail.enabled) ensureAudioUnlocked()
   syncMusicPlayback()
 })

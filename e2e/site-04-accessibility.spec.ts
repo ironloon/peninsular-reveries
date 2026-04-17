@@ -14,8 +14,9 @@ const squaresGamePath = '/squares/'
 
 async function startGame(page: Page): Promise<void> {
   await page.goto(gamePath)
+  await expect(page.locator('#start-screen')).toBeVisible()
 
-  const startButton = page.getByRole('button', { name: /let's go/i })
+  const startButton = page.locator('.btn-difficulty[data-difficulty="hero"]')
   await startButton.focus()
   await page.keyboard.press('Enter')
 
@@ -24,16 +25,11 @@ async function startGame(page: Page): Promise<void> {
   await expect(firstSceneItem).toBeFocused()
 }
 
-async function startSquaresGame(page: Page, rulesetId: 'classic-hybrid' | 'easy-plus' = 'classic-hybrid'): Promise<void> {
+async function startSquaresGame(page: Page, modeId: '1x1' | 'plus-x' = 'plus-x'): Promise<void> {
   await page.goto(squaresGamePath)
+  await expect(page.locator('#start-screen')).toBeVisible()
 
-  if (rulesetId !== 'classic-hybrid') {
-    await page.getByRole('button', { name: 'Menu' }).click()
-    await page.locator('#ruleset-select').selectOption(rulesetId)
-    await page.keyboard.press('Escape')
-  }
-
-  await page.getByRole('button', { name: 'Start puzzle' }).click()
+  await page.locator(`#start-${modeId}-btn`).click()
   await expect(page.locator('#game-screen')).toHaveClass(/active/)
   await expect(page.locator('#squares-board')).toBeVisible()
 }
@@ -77,7 +73,7 @@ test.describe('SITE-04: Accessibility', () => {
     await expect(dialog).toContainText('Audio')
     await expect(dialog).toContainText('Level')
     await expect(page.locator('#difficulty-select')).toHaveValue('hero')
-    await expect(page.locator('#music-enabled-toggle')).toBeChecked()
+    await expect(page.locator('#music-enabled-toggle')).not.toBeChecked()
   })
 
   test('settings music toggle is discoverable and controls audio preference', async ({ page }) => {
@@ -86,14 +82,14 @@ test.describe('SITE-04: Accessibility', () => {
     await page.getByRole('button', { name: 'Menu' }).click()
 
     const toggle = page.locator('#music-enabled-toggle')
-    await expect(toggle).toBeChecked()
+    await expect(toggle).not.toBeChecked()
 
     await toggle.click()
-    await expect(toggle).not.toBeChecked()
+    await expect(toggle).toBeChecked()
 
     await page.keyboard.press('Escape')
     await page.getByRole('button', { name: 'Menu' }).click()
-    await expect(toggle).not.toBeChecked()
+    await expect(toggle).toBeChecked()
   })
 
   test('starting the game moves focus into the custom-rendered puzzle scene', async ({ page }) => {
@@ -104,7 +100,7 @@ test.describe('SITE-04: Accessibility', () => {
     await page.setViewportSize({ width: 375, height: 667 })
     await page.goto(gamePath)
 
-    await page.getByRole('button', { name: /let's go/i }).click()
+    await page.locator('.btn-difficulty[data-difficulty="hero"]').click()
 
     const firstSceneItem = page.locator('#scene-a11y .sr-overlay-btn[tabindex="0"]').first()
     await expect(firstSceneItem).toBeAttached()
@@ -269,14 +265,16 @@ test.describe('SITE-04: Accessibility', () => {
   })
 
   test('Squares solving updates the win context and assertive live region', async ({ page }) => {
-    await startSquaresGame(page, 'easy-plus')
+    await startSquaresGame(page, '1x1')
 
-    await page.locator('#squares-cell-r1-c1').click()
-    await page.locator('#squares-cell-r0-c2').click()
+    // In 1×1 mode, click dark cells one at a time until the board is solved
+    const darkCell = page.locator('#squares-board .squares-board-cell[data-cell-value="dark"]')
+    while (await darkCell.count() > 0) {
+      await darkCell.first().click()
+    }
 
     await expect(page.locator('#win-screen')).toHaveClass(/active/)
-    await expect(page.locator('#game-feedback')).toContainText('Solved in 2 moves.')
-    await expect(page.locator('#win-summary')).toContainText('Solved in 2 moves.')
-    await expect(page.locator('#win-high-score-context')).toContainText('Easy Plus')
+    await expect(page.locator('#game-feedback')).toContainText(/Solved in \d+ moves?\.?/)
+    await expect(page.locator('#win-summary')).toContainText(/Solved in \d+ moves?\.?/)
   })
 })

@@ -37,132 +37,65 @@ export async function chompersAction() {
             <h1 id="start-heading" className="start-title">Chompers</h1>
             <p className="start-kicker">Pick the right answer and feed the hippo!</p>
 
-            <fieldset className="area-picker">
-              <legend>Choose a math area:</legend>
+          <div className="area-picker">
+              <h2 className="area-picker-heading">Choose a math area:</h2>
 
               <div className="area-picker-grid">
-                <label className="area-card" htmlFor="area-matching" aria-label="Matching: Find the displayed number">
-                  <input id="area-matching" type="radio" name="area" value="matching" className="area-radio" checked />
+                <button className="area-card-btn" data-area="matching" aria-label="Matching: Find the displayed number">
+                  <span className="area-card-icon" aria-hidden="true">⭐</span>
                   <span className="area-card-copy">
-                    <strong>Matching ⭐</strong>
+                    <strong>Matching</strong>
                     <span>Find the number</span>
                   </span>
-                  <div className="level-selector" role="group" aria-label="Level for Matching">
-                    <label><input type="radio" name="level-matching" value="1" checked /><span>L1</span></label>
-                    <label><input type="radio" name="level-matching" value="2" /><span>L2</span></label>
-                    <label><input type="radio" name="level-matching" value="3" /><span>L3</span></label>
-                  </div>
-                </label>
+                </button>
 
-                <label className="area-card" htmlFor="area-counting" aria-label="Counting: Count the objects">
-                  <input id="area-counting" type="radio" name="area" value="counting" className="area-radio" />
+                <button className="area-card-btn" data-area="counting" aria-label="Counting: Count the objects">
+                  <span className="area-card-icon" aria-hidden="true">🔢</span>
                   <span className="area-card-copy">
-                    <strong>Counting 🔢</strong>
+                    <strong>Counting</strong>
                     <span>Count the objects</span>
                   </span>
-                  <div className="level-selector" role="group" aria-label="Level for Counting">
-                    <label><input type="radio" name="level-counting" value="1" checked /><span>L1</span></label>
-                    <label><input type="radio" name="level-counting" value="2" /><span>L2</span></label>
-                    <label><input type="radio" name="level-counting" value="3" /><span>L3</span></label>
-                  </div>
-                </label>
+                </button>
 
-                <label className="area-card" htmlFor="area-addition" aria-label="Addition: Add numbers together">
-                  <input id="area-addition" type="radio" name="area" value="addition" className="area-radio" />
+                <button className="area-card-btn" data-area="addition" aria-label="Addition: Add numbers together">
+                  <span className="area-card-icon" aria-hidden="true">➕</span>
                   <span className="area-card-copy">
-                    <strong>Addition ➕</strong>
+                    <strong>Addition</strong>
                     <span>Add numbers together</span>
                   </span>
-                  <div className="level-selector" role="group" aria-label="Level for Addition">
-                    <label><input type="radio" name="level-addition" value="1" checked /><span>L1</span></label>
-                    <label><input type="radio" name="level-addition" value="2" /><span>L2</span></label>
-                    <label><input type="radio" name="level-addition" value="3" /><span>L3</span></label>
-                  </div>
-                </label>
+                </button>
 
-                <label className="area-card" htmlFor="area-subtraction" aria-label="Subtraction: Take numbers away">
-                  <input id="area-subtraction" type="radio" name="area" value="subtraction" className="area-radio" />
+                <button className="area-card-btn" data-area="subtraction" aria-label="Subtraction: Take numbers away">
+                  <span className="area-card-icon" aria-hidden="true">➖</span>
                   <span className="area-card-copy">
-                    <strong>Subtraction ➖</strong>
+                    <strong>Subtraction</strong>
                     <span>Take numbers away</span>
                   </span>
-                  <div className="level-selector" role="group" aria-label="Level for Subtraction">
-                    <label><input type="radio" name="level-subtraction" value="1" checked /><span>L1</span></label>
-                    <label><input type="radio" name="level-subtraction" value="2" /><span>L2</span></label>
-                    <label><input type="radio" name="level-subtraction" value="3" /><span>L3</span></label>
-                  </div>
-                </label>
+                </button>
 
-                <label className="area-card" htmlFor="area-multiplication" aria-label="Multiplication: Times tables">
-                  <input id="area-multiplication" type="radio" name="area" value="multiplication" className="area-radio" />
+                <button className="area-card-btn" data-area="multiplication" aria-label="Multiplication: Times tables">
+                  <span className="area-card-icon" aria-hidden="true">✖️</span>
                   <span className="area-card-copy">
-                    <strong>Multiplication ✖️</strong>
+                    <strong>Multiplication</strong>
                     <span>Times tables</span>
                   </span>
-                  <div className="level-selector" role="group" aria-label="Level for Multiplication">
-                    <label><input type="radio" name="level-multiplication" value="1" checked /><span>L1</span></label>
-                    <label><input type="radio" name="level-multiplication" value="2" /><span>L2</span></label>
-                    <label><input type="radio" name="level-multiplication" value="3" /><span>L3</span></label>
-                  </div>
-                </label>
+                </button>
 
-                <label className="area-card" htmlFor="area-division" aria-label="Division: Split numbers up">
-                  <input id="area-division" type="radio" name="area" value="division" className="area-radio" />
+                <button className="area-card-btn" data-area="division" aria-label="Division: Split numbers up">
+                  <span className="area-card-icon" aria-hidden="true">➗</span>
                   <span className="area-card-copy">
-                    <strong>Division ➗</strong>
+                    <strong>Division</strong>
                     <span>Split numbers up</span>
                   </span>
-                  <div className="level-selector" role="group" aria-label="Level for Division">
-                    <label><input type="radio" name="level-division" value="1" checked /><span>L1</span></label>
-                    <label><input type="radio" name="level-division" value="2" /><span>L2</span></label>
-                    <label><input type="radio" name="level-division" value="3" /><span>L3</span></label>
-                  </div>
-                </label>
-              </div>
-            </fieldset>
-
-            {/* Mode selector */}
-            <div className="mode-selector" role="group" aria-label="Game mode">
-              <button id="mode-normal-btn" className="mode-toggle-btn" aria-pressed="true" type="button">Normal</button>
-              <button id="mode-frenzy-btn" className="mode-toggle-btn" aria-pressed="false" type="button">Frenzy ⚡</button>
-            </div>
-
-            {/* Frenzy config — hidden until Frenzy mode selected */}
-            <div id="frenzy-config" hidden>
-              <fieldset className="frenzy-fieldset">
-                <legend>Opponents</legend>
-                <div className="mode-radio-group">
-                  <label><input type="radio" name="npc-count" value="1" checked /><span>1</span></label>
-                  <label><input type="radio" name="npc-count" value="3" /><span>3</span></label>
-                  <label><input type="radio" name="npc-count" value="5" /><span>5</span></label>
-                </div>
-              </fieldset>
-              <fieldset className="frenzy-fieldset">
-                <legend>Match type</legend>
-                <div className="mode-radio-group">
-                  <label><input type="radio" name="team-mode" value="ffa" checked /><span>Free-for-all</span></label>
-                  <label><input type="radio" name="team-mode" value="team" /><span>Teams</span></label>
-                </div>
-              </fieldset>
-              <div className="frenzy-field">
-                <p className="frenzy-field-label">Your color</p>
-                <div id="player-color-picker">
-                  <button className="color-swatch active" data-color="#FF6B6B" style={{ background: '#FF6B6B' }} aria-label="Select color 1" type="button"></button>
-                  <button className="color-swatch" data-color="#4ECDC4" style={{ background: '#4ECDC4' }} aria-label="Select color 2" type="button"></button>
-                  <button className="color-swatch" data-color="#45B7D1" style={{ background: '#45B7D1' }} aria-label="Select color 3" type="button"></button>
-                  <button className="color-swatch" data-color="#96CEB4" style={{ background: '#96CEB4' }} aria-label="Select color 4" type="button"></button>
-                  <button className="color-swatch" data-color="#FFEAA7" style={{ background: '#FFEAA7' }} aria-label="Select color 5" type="button"></button>
-                  <button className="color-swatch" data-color="#DDA0DD" style={{ background: '#DDA0DD' }} aria-label="Select color 6" type="button"></button>
-                  <button className="color-swatch" data-color="#98D8C8" style={{ background: '#98D8C8' }} aria-label="Select color 7" type="button"></button>
-                  <button className="color-swatch" data-color="#F7DC6F" style={{ background: '#F7DC6F' }} aria-label="Select color 8" type="button"></button>
-                </div>
+                </button>
               </div>
             </div>
 
             <div className="start-actions">
-              <button id="start-btn" className="chomp-btn chomp-btn-primary">Start Chomping</button>
               <button data-settings-open="true" className="chomp-btn chomp-btn-secondary" aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false">Menu</button>
             </div>
+
+            <p id="gamepad-start-hint" className="gamepad-start-hint" hidden>Ⓐ choose · Start for menu</p>
           </div>
         </section>
 
@@ -177,7 +110,7 @@ export async function chompersAction() {
               <GameHeaderPill className="hud-pill" value={<span id="round-progress">1 / 10</span>} />
               <GameHeaderPill label="Lives" className="hud-lives" value={<span id="lives">♥♥♥</span>} />
               <span id="streak" className="hud-streak" hidden>🔥0</span>
-              <GameHeaderPill className="hud-chip" value={<span id="area-chip">matching · L1</span>} />
+              <GameHeaderPill className="hud-chip" value={<span id="area-chip">matching · Level 1 ★</span>} />
             </>}
             rightContent={
               <button
@@ -194,96 +127,8 @@ export async function chompersAction() {
 
           <p id="problem-prompt" className="problem-prompt" role="status" aria-live="polite">Loading…</p>
 
-          {/* Frenzy round timer bar */}
-          <div id="round-timer-bar" hidden><div id="round-timer-fill"></div></div>
-
           <div id="game-arena" className="game-arena" role="group" aria-label="Answer choices">
             <div id="scene-items" className="scene-items"></div>
-
-            {/* Frenzy NPC hippos (hidden until frenzy mode active) */}
-            <div className="npc-hippo" id="npc-hippo-0" hidden aria-hidden="true">
-              <div className="hippo-head">
-                <div className="hippo-ear-left"></div>
-                <div className="hippo-ear-right"></div>
-                <div className="hippo-eye-left"></div>
-                <div className="hippo-eye-right"></div>
-                <div className="hippo-nostril-left"></div>
-                <div className="hippo-nostril-right"></div>
-                <div className="hippo-jaw">
-                  <div className="hippo-tooth-left"></div>
-                  <div className="hippo-tooth-right"></div>
-                </div>
-              </div>
-              <div className="hippo-neck"></div>
-              <div className="hippo-body"></div>
-            </div>
-            <div className="npc-hippo" id="npc-hippo-1" hidden aria-hidden="true">
-              <div className="hippo-head">
-                <div className="hippo-ear-left"></div>
-                <div className="hippo-ear-right"></div>
-                <div className="hippo-eye-left"></div>
-                <div className="hippo-eye-right"></div>
-                <div className="hippo-nostril-left"></div>
-                <div className="hippo-nostril-right"></div>
-                <div className="hippo-jaw">
-                  <div className="hippo-tooth-left"></div>
-                  <div className="hippo-tooth-right"></div>
-                </div>
-              </div>
-              <div className="hippo-neck"></div>
-              <div className="hippo-body"></div>
-            </div>
-            <div className="npc-hippo" id="npc-hippo-2" hidden aria-hidden="true">
-              <div className="hippo-head">
-                <div className="hippo-ear-left"></div>
-                <div className="hippo-ear-right"></div>
-                <div className="hippo-eye-left"></div>
-                <div className="hippo-eye-right"></div>
-                <div className="hippo-nostril-left"></div>
-                <div className="hippo-nostril-right"></div>
-                <div className="hippo-jaw">
-                  <div className="hippo-tooth-left"></div>
-                  <div className="hippo-tooth-right"></div>
-                </div>
-              </div>
-              <div className="hippo-neck"></div>
-              <div className="hippo-body"></div>
-            </div>
-            <div className="npc-hippo" id="npc-hippo-3" hidden aria-hidden="true">
-              <div className="hippo-head">
-                <div className="hippo-ear-left"></div>
-                <div className="hippo-ear-right"></div>
-                <div className="hippo-eye-left"></div>
-                <div className="hippo-eye-right"></div>
-                <div className="hippo-nostril-left"></div>
-                <div className="hippo-nostril-right"></div>
-                <div className="hippo-jaw">
-                  <div className="hippo-tooth-left"></div>
-                  <div className="hippo-tooth-right"></div>
-                </div>
-              </div>
-              <div className="hippo-neck"></div>
-              <div className="hippo-body"></div>
-            </div>
-            <div className="npc-hippo" id="npc-hippo-4" hidden aria-hidden="true">
-              <div className="hippo-head">
-                <div className="hippo-ear-left"></div>
-                <div className="hippo-ear-right"></div>
-                <div className="hippo-eye-left"></div>
-                <div className="hippo-eye-right"></div>
-                <div className="hippo-nostril-left"></div>
-                <div className="hippo-nostril-right"></div>
-                <div className="hippo-jaw">
-                  <div className="hippo-tooth-left"></div>
-                  <div className="hippo-tooth-right"></div>
-                </div>
-              </div>
-              <div className="hippo-neck"></div>
-              <div className="hippo-body"></div>
-            </div>
-
-            {/* Frenzy scoreboard */}
-            <div id="frenzy-scoreboard" hidden aria-hidden="true"></div>
 
             <div id="hippo" aria-hidden="true">
               <div className="hippo-head">
@@ -330,12 +175,9 @@ export async function chompersAction() {
               </div>
             </dl>
 
-            {/* Frenzy end results (populated by JS in frenzy mode) */}
-            <div id="frenzy-result" hidden></div>
-
             <div className="start-actions">
               <button id="replay-btn" className="chomp-btn chomp-btn-primary">Play Again</button>
-              <button id="menu-btn" className="chomp-btn chomp-btn-secondary">Change Level</button>
+              <button id="menu-btn" className="chomp-btn chomp-btn-secondary">Choose Area</button>
             </div>
           </div>
         </section>
@@ -347,8 +189,9 @@ export async function chompersAction() {
         quitHref={homePath}
         settingsContent={<>
           <SettingsSection title="Audio">
-            <SettingsToggle id="music-enabled-toggle" label="Music" helpId="music-enabled-help" defaultChecked={true} />
-            <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpId="sfx-enabled-help" defaultChecked={true} />
+            <SettingsToggle id="music-enabled-toggle" label="Music" helpText="Music is off until you change it here." helpId="music-enabled-help" />
+            <div id="music-track-picker-slot"></div>
+            <SettingsToggle id="sfx-enabled-toggle" label="Sound Effects" helpText="Sound effects are on until you change it here." helpId="sfx-enabled-help" />
           </SettingsSection>
 
           <SettingsSection title="Controls">

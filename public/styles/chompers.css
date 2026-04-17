@@ -122,12 +122,10 @@
 
 .area-picker {
   margin: 1.2rem 0 0;
-  padding: 0;
-  border: 0;
 }
 
-.area-picker legend {
-  margin-bottom: 0.5rem;
+.area-picker-heading {
+  margin: 0 0 0.5rem;
   font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.1em;
@@ -141,41 +139,48 @@
   gap: 0.5rem;
 }
 
-.area-card {
-  display: grid;
-  grid-template-rows: auto auto;
-  gap: 0.45rem;
-  padding: 0.6rem 0.75rem;
+.area-card-btn {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 0.75rem;
+  min-height: 44px;
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.05);
+  color: var(--ink);
+  font-family: var(--font);
   cursor: pointer;
-  transition: border-color 140ms ease, background-color 140ms ease;
+  transition: border-color 140ms ease, background-color 140ms ease, transform 100ms ease;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-.area-card:hover,
-.area-card:has(.area-radio:checked) {
+.area-card-btn:hover {
   border-color: rgba(255, 209, 102, 0.5);
   background: rgba(255, 209, 102, 0.08);
+  transform: translateY(-1px);
 }
 
-.area-card.gamepad-focus,
-.area-card:has(.area-radio:focus-visible) {
+.area-card-btn:focus-visible,
+.area-card-btn.gamepad-focus {
   border-color: rgba(255, 209, 102, 0.85);
   background: rgba(255, 209, 102, 0.12);
   box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.24);
+  outline: none;
 }
 
-.area-radio {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
+.area-card-btn:active {
+  transform: translateY(0);
+  background: rgba(255, 209, 102, 0.16);
+}
+
+.area-card-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .area-card-copy {
@@ -195,60 +200,18 @@
   line-height: 1.35;
 }
 
-.level-selector {
-  display: flex;
-  gap: 0.3rem;
-}
+/* ===== GAMEPAD HINT ===== */
 
-.level-selector label {
-  flex: 1;
-  display: flex;
-  cursor: pointer;
-}
-
-.level-selector label input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.level-selector label span {
-  flex: 1;
-  text-align: center;
-  font-size: 0.7rem;
-  font-weight: 800;
-  padding: 0.2rem 0.3rem;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(255, 255, 255, 0.07);
+.gamepad-start-hint {
+  margin: 0.8rem 0 0;
+  font-size: 0.9rem;
   color: var(--ink-muted);
-  transition: border-color 100ms ease, background-color 100ms ease, color 100ms ease;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.level-selector label input:checked + span {
-  border-color: var(--accent-strong);
-  background: rgba(255, 159, 28, 0.22);
-  color: var(--accent);
-}
-
-.level-selector label:hover span {
-  border-color: rgba(255, 209, 102, 0.4);
-}
-
-.level-selector label.gamepad-focus span,
-.level-selector label:has(input:focus-visible) span {
-  border-color: rgba(255, 209, 102, 0.85);
-  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.24);
-}
-
-.area-card:not(:has(.area-radio:checked)) .level-selector {
-  display: none;
+body.gamepad-active .gamepad-start-hint {
+  opacity: 1;
 }
 
 /* ===== COUNTING OBJECTS ===== */
@@ -781,8 +744,7 @@ body.gamepad-active .scene-item.gamepad-focus {
 
 /* Disable neck stretch, slide, and body motion; keep jaw animation for feedback */
 @media (prefers-reduced-motion: reduce) {
-  #hippo,
-  .npc-hippo {
+  #hippo {
     transition: none !important;
   }
 
@@ -804,8 +766,7 @@ body.gamepad-active .scene-item.gamepad-focus {
   }
 }
 
-[data-reduce-motion="reduce"] #hippo,
-[data-reduce-motion="reduce"] .npc-hippo {
+[data-reduce-motion="reduce"] #hippo {
   transition: none !important;
 }
 
@@ -835,7 +796,16 @@ body.gamepad-active .scene-item.gamepad-focus {
   }
 
   .area-picker-grid {
-    grid-template-columns: 1fr;
+    gap: 0.4rem;
+  }
+
+  .area-card-btn {
+    padding: 0.5rem 0.6rem;
+    min-height: 44px;
+  }
+
+  .area-card-icon {
+    font-size: 1.3rem;
   }
 
   .results-grid {
@@ -859,8 +829,7 @@ body.gamepad-active .scene-item.gamepad-focus {
 /* ===== RESPONSIVE: landscape phone (~844x390) ===== */
 
 @media (max-height: 500px) and (orientation: landscape) {
-  #hippo,
-  .npc-hippo {
+  #hippo {
     transform: translateX(-50%) scale(0.6);
     transform-origin: bottom center;
   }
@@ -877,6 +846,37 @@ body.gamepad-active .scene-item.gamepad-focus {
 
   .scene-item .item-emoji {
     font-size: 1.45rem;
+  }
+
+  .start-shell,
+  .end-shell {
+    padding: clamp(0.6rem, 2vw, 1.2rem);
+  }
+
+  .start-title {
+    font-size: clamp(1.4rem, 4vw, 2rem);
+  }
+
+  .area-picker-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.35rem;
+  }
+
+  .area-card-btn {
+    padding: 0.35rem 0.5rem;
+    min-height: 40px;
+  }
+
+  .area-card-icon {
+    font-size: 1.1rem;
+  }
+
+  .area-card-copy strong {
+    font-size: 0.78rem;
+  }
+
+  .area-card-copy span {
+    font-size: 0.68rem;
   }
 }
 
@@ -899,8 +899,11 @@ body.gamepad-active .scene-item.gamepad-focus {
   .area-picker {
     margin-block: 0.5rem;
   }
-  .area-card {
+  .area-card-btn {
     padding: 0.35rem 0.5rem;
+  }
+  .area-card-icon {
+    font-size: 1.2rem;
   }
   .area-card-copy strong {
     font-size: 0.85rem;
@@ -917,185 +920,6 @@ body.gamepad-active .scene-item.gamepad-focus {
   .end-shell {
     max-width: 54rem;
   }
-}
-
-/* ── Frenzy ──────────────────────────────────────────────────────────────── */
-
-/* Mode selector toggle */
-.mode-selector {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-.mode-toggle-btn {
-  flex: 1;
-  padding: 0.5rem 1rem;
-  border-radius: 0.4rem;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  font-family: var(--font);
-  font-size: 0.9rem;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
-}
-
-.mode-toggle-btn[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--bg-0);
-  border-color: var(--accent);
-  font-weight: 700;
-}
-
-.mode-toggle-btn:focus-visible,
-.mode-toggle-btn.gamepad-focus {
-  outline: 3px solid rgba(255, 209, 102, 0.9);
-  outline-offset: 3px;
-}
-
-/* Frenzy config panel */
-#frenzy-config {
-  margin-top: 0.75rem;
-  padding: 0.75rem;
-  background: rgba(255, 255, 255, 0.06);
-  border-radius: 0.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.frenzy-fieldset {
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 0.3rem;
-  padding: 0.4rem 0.6rem;
-  margin: 0;
-}
-
-.frenzy-fieldset legend {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-  padding: 0 0.25rem;
-}
-
-.mode-radio-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  padding-top: 0.3rem;
-}
-
-.mode-radio-group label {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.85rem;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.mode-radio-group label.gamepad-focus,
-.mode-radio-group label:has(input:focus-visible) {
-  color: var(--accent);
-}
-
-.frenzy-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-}
-
-.frenzy-field-label {
-  margin: 0;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--ink-muted);
-}
-
-/* Color picker swatches */
-#player-color-picker {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-}
-
-.color-swatch {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: border-color 0.15s, transform 0.15s;
-}
-
-.color-swatch.active,
-.color-swatch:focus {
-  border-color: #fff;
-  transform: scale(1.15);
-}
-
-.color-swatch.gamepad-focus {
-  border-color: #fff;
-  transform: scale(1.15);
-  box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.28);
-}
-
-/* NPC hippo positioning */
-.npc-hippo {
-  position: absolute;
-  bottom: 0;
-  left: var(--hippo-x, 0%);
-  transform: translateX(-50%);
-  transform-origin: bottom center;
-  z-index: 5;
-  pointer-events: none;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: left 200ms ease-out;
-  --neck-height: 20px;
-  --jaw-angle: 0;
-}
-
-/* NPC animations */
-.npc-hippo.chomping {
-  animation: npcChomp 0.4s ease;
-}
-
-.npc-hippo.disappointed {
-  animation: npcWobble 0.6s ease;
-}
-
-@keyframes npcChomp {
-  0%, 100% { transform: translateX(-50%); }
-  50% { transform: translateX(-50%) scale(1.08); }
-}
-
-@keyframes npcWobble {
-  0%, 100% { transform: translateX(-50%) rotate(0deg); }
-  25% { transform: translateX(-50%) rotate(-10deg); }
-  75% { transform: translateX(-50%) rotate(10deg); }
-}
-
-/* Timer bar */
-#round-timer-bar {
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  position: relative;
-  flex-shrink: 0;
-}
-
-#round-timer-fill {
-  height: 100%;
-  width: 100%;
-  background: #4caf50;
-  transition: width 0.1s linear, background 0.3s;
 }
 
 /* Frenzy scoreboard */

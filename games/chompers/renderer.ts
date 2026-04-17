@@ -1,4 +1,4 @@
-import type { FrenzyState, GameState, NpcHippo } from './types.js'
+import type { GameState } from './types.js'
 
 const EMOJI_NAMES: Record<string, string> = {
   '🍒': 'Cherry',
@@ -60,11 +60,11 @@ export function renderProblem(state: GameState): void {
   }
 }
 
-export function renderHippo(state: GameState): void {
+export function renderHippo(_state: GameState): void {
   const hippoEl = document.getElementById('hippo')
   if (!hippoEl) return
 
-  const color = state.frenzy?.config.playerColor ?? '#8BC34A'
+  const color = '#8BC34A'
   hippoEl.style.setProperty('--hippo-color', color)
   hippoEl.style.setProperty('--neck-height', '20px')
   hippoEl.style.setProperty('--jaw-angle', '0')
@@ -96,7 +96,10 @@ export function renderHUD(state: GameState): void {
   }
 
   const chipEl = document.getElementById('area-chip')
-  if (chipEl) chipEl.textContent = `${state.area} · L${state.level}`
+  if (chipEl) {
+    const stars = '★'.repeat(state.level) + '☆'.repeat(3 - state.level)
+    chipEl.textContent = `${state.area} · Level ${state.level} ${stars}`
+  }
 }
 
 export function renderEndScreen(state: GameState): void {
@@ -122,91 +125,4 @@ export function renderAll(state: GameState): void {
   renderProblem(state)
   renderHUD(state)
   renderScene(state)
-}
-
-// ── Frenzy render helpers ──────────────────────────────────────────────────────
-
-export function renderNpcHippos(npcs: NpcHippo[]): void {
-  for (let i = 0; i < 5; i++) {
-    const el = document.getElementById(`npc-hippo-${i}`)
-    if (!el) continue
-    if (i < npcs.length) {
-      const npc = npcs[i]
-      el.hidden = false
-      el.removeAttribute('aria-hidden')
-      el.style.setProperty('--hippo-color', npc.color)
-      el.style.setProperty('--hippo-x', `${npc.position.x}%`)
-      el.dataset.target = String(npc.targetFruitIndex ?? '')
-    } else {
-      el.hidden = true
-      el.setAttribute('aria-hidden', 'true')
-    }
-  }
-}
-
-export function renderRoundTimer(timerMs: number, maxMs: number): void {
-  const bar = document.getElementById('round-timer-bar')
-  const fill = document.getElementById('round-timer-fill')
-  if (!bar || !fill) return
-
-  if (maxMs <= 0) {
-    bar.hidden = true
-    return
-  }
-
-  bar.hidden = false
-  const pct = Math.max(0, Math.min(100, (timerMs / maxMs) * 100))
-  fill.style.width = `${pct}%`
-
-  if (pct > 50) {
-    fill.style.background = '#4CAF50'
-  } else if (pct > 25) {
-    fill.style.background = '#FFC107'
-  } else {
-    fill.style.background = '#F44336'
-  }
-}
-
-export function renderFrenzyScoreboard(state: FrenzyState, playerScore: number): void {
-  const el = document.getElementById('frenzy-scoreboard')
-  if (!el) return
-  el.hidden = false
-  el.removeAttribute('aria-hidden')
-
-  if (state.config.teamMode === 'team') {
-    el.textContent = `Team A: ${state.teamScores.a}  Team B: ${state.teamScores.b}`
-  } else {
-    const parts: string[] = [`You: ${playerScore}`]
-    for (let i = 0; i < state.npcs.length; i++) {
-      parts.push(`H${i + 1}: ${state.npcs[i].score}`)
-    }
-    el.textContent = parts.join('  \u2022  ')
-  }
-}
-
-export function renderFrenzyEndScreen(frenzy: FrenzyState, playerScore: number): void {
-  const resultEl = document.getElementById('frenzy-result')
-  if (!resultEl) return
-  resultEl.hidden = false
-  resultEl.innerHTML = ''
-
-  const heading = document.getElementById('end-heading')
-
-  const allScores: Array<{ name: string; score: number }> = [
-    { name: 'You', score: playerScore },
-    ...frenzy.npcs.map((n, i) => ({ name: `Hippo ${i + 1}`, score: n.score })),
-  ]
-  allScores.sort((a, b) => b.score - a.score)
-
-  const winner = allScores[0]
-  if (heading) {
-    heading.textContent = winner.name === 'You' ? 'You Win! \ud83c\udfc6' : `${winner.name} Wins!`
-  }
-
-  for (const entry of allScores) {
-    const row = document.createElement('div')
-    row.className = 'frenzy-score-row'
-    row.textContent = `${entry.name}: ${entry.score}`
-    resultEl.appendChild(row)
-  }
 }

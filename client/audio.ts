@@ -44,7 +44,7 @@ export function fadeBusGain(bus: GainNode, targetGain: number, durationMs: numbe
 
 // ── Music bus ─────────────────────────────────────────────────────────────────
 
-export function createMusicBus(gameSlug: string): GainNode {
+export function createMusicBus(): GainNode {
   const context = getAudioContext()
   const bus = context.createGain()
   const comp = context.createDynamicsCompressor()
@@ -58,13 +58,11 @@ export function createMusicBus(gameSlug: string): GainNode {
   bus.connect(comp)
   comp.connect(context.destination)
 
-  bus.gain.value = getMusicEnabled(gameSlug) ? 0.20 : 0.0001
+  bus.gain.value = getMusicEnabled() ? 0.20 : 0.0001
 
   window.addEventListener('reveries:music-change', (e) => {
-    const event = e as CustomEvent<{ gameSlug: string; enabled: boolean }>
-    if (event.detail.gameSlug === gameSlug) {
-      fadeBusGain(bus, event.detail.enabled ? 0.20 : 0.0001, 300)
-    }
+    const event = e as CustomEvent<{ enabled: boolean }>
+    fadeBusGain(bus, event.detail.enabled ? 0.20 : 0.0001, 300)
   })
 
   return bus
@@ -72,7 +70,7 @@ export function createMusicBus(gameSlug: string): GainNode {
 
 // ── SFX bus ───────────────────────────────────────────────────────────────────
 
-export function createSfxBus(gameSlug: string): GainNode {
+export function createSfxBus(): GainNode {
   const context = getAudioContext()
   const bus = context.createGain()
   const comp = context.createDynamicsCompressor()
@@ -86,13 +84,11 @@ export function createSfxBus(gameSlug: string): GainNode {
   bus.connect(comp)
   comp.connect(context.destination)
 
-  bus.gain.value = getSfxEnabled(gameSlug) ? 0.12 : 0.0001
+  bus.gain.value = getSfxEnabled() ? 0.12 : 0.0001
 
   window.addEventListener('reveries:sfx-change', (e) => {
-    const event = e as CustomEvent<{ gameSlug: string; enabled: boolean }>
-    if (event.detail.gameSlug === gameSlug) {
-      fadeBusGain(bus, event.detail.enabled ? 0.12 : 0.0001, 300)
-    }
+    const event = e as CustomEvent<{ enabled: boolean }>
+    fadeBusGain(bus, event.detail.enabled ? 0.12 : 0.0001, 300)
   })
 
   return bus
@@ -185,7 +181,6 @@ export function playNotes(bus: GainNode, notes: NoteSequence): void {
 
 export function syncBusWithVisibility(
   bus: GainNode,
-  gameSlug: string,
   channel: 'music' | 'sfx',
 ): void {
   document.addEventListener('visibilitychange', () => {
@@ -193,7 +188,7 @@ export function syncBusWithVisibility(
       fadeBusGain(bus, 0.0001, 200)
     } else {
       const enabled =
-        channel === 'music' ? getMusicEnabled(gameSlug) : getSfxEnabled(gameSlug)
+        channel === 'music' ? getMusicEnabled() : getSfxEnabled()
       const targetGain = channel === 'music' ? 0.20 : 0.12
       fadeBusGain(bus, enabled ? targetGain : 0.0001, 400)
     }

@@ -17,7 +17,7 @@
     "dev": "tsx --tsconfig config/tsconfig.json server.ts",
     "test": "pnpm test:unit && pnpm test:e2e",
     "test:local": "pnpm check && pnpm test",
-    "test:unit": "node --import tsx --test app/**/*.test.ts client/**/*.test.ts config/**/*.test.ts",
+    "test:unit": "node --import tsx --test app/**/*.test.ts client/**/*.test.ts config/**/*.test.ts games/**/*.test.ts",
     "test:e2e": "pnpm exec playwright test --config config/playwright.config.ts --reporter=list",
     "test:report": "pnpm test:unit && pnpm exec playwright test --config config/playwright.config.ts",
     "prepare": "node scripts/install-git-hooks.mjs"

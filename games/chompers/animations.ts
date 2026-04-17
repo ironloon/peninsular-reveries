@@ -1,8 +1,6 @@
-import { isReducedMotionEnabled } from '../../client/preferences.js'
+import { isReducedMotion } from '../../client/game-animations.js'
 
-export function isReducedMotion(): boolean {
-  return isReducedMotionEnabled()
-}
+export { isReducedMotion }
 
 export function animateHippoChomp(
   hippoEl: HTMLElement,
@@ -165,57 +163,4 @@ export function spawnPointsPopup(
   popup.addEventListener('animationend', cleanup, { once: true })
   window.setTimeout(cleanup, 1000)
 }
-
-// ── Frenzy NPC animations ─────────────────────────────────────────────────────
-
-export function animateNpcChomp(npcId: string, targetEl: HTMLElement | null): void {
-  const npcEl = document.getElementById(npcId)
-  if (!npcEl) return
-
-  const arenaEl = document.getElementById('game-arena')
-  let targetXPct = parseFloat(npcEl.style.getPropertyValue('--hippo-x') || '50')
-  let neckH = 20
-
-  if (arenaEl && targetEl) {
-    const arenaRect = arenaEl.getBoundingClientRect()
-    const targetRect = targetEl.getBoundingClientRect()
-    const targetCenterX = targetRect.left + targetRect.width / 2
-    const targetCenterY = targetRect.top + targetRect.height / 2
-    targetXPct = ((targetCenterX - arenaRect.left) / arenaRect.width) * 100
-
-    const bodyEl = npcEl.querySelector<HTMLElement>('.hippo-body')
-    const headEl = npcEl.querySelector<HTMLElement>('.hippo-head')
-    const bodyH = bodyEl?.offsetHeight ?? 40
-    const headH = headEl?.offsetHeight ?? 48
-    const maxNeck = Math.max(20, arenaRect.height * 0.55 - bodyH - headH)
-    neckH = Math.min(Math.max(20, arenaRect.bottom - targetCenterY - bodyH - headH / 2), maxNeck)
-  }
-
-  // Slide to target
-  npcEl.style.setProperty('--hippo-x', `${targetXPct}%`)
-
-  // Extend neck + open jaw after slide
-  window.setTimeout(() => {
-    npcEl.style.setProperty('--neck-height', `${neckH}px`)
-    npcEl.style.setProperty('--jaw-angle', '1')
-  }, 200)
-
-  // Close jaw
-  window.setTimeout(() => {
-    npcEl.style.setProperty('--jaw-angle', '0')
-  }, 500)
-
-  // Retract neck
-  window.setTimeout(() => {
-    npcEl.style.setProperty('--neck-height', '20px')
-  }, 700)
-
-  if (targetEl) {
-    targetEl.classList.remove('shrink-claimed')
-    void targetEl.offsetWidth
-    targetEl.classList.add('shrink-claimed')
-    window.setTimeout(() => targetEl.classList.remove('shrink-claimed'), 300)
-  }
-}
-
 

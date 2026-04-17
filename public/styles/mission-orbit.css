@@ -299,6 +299,18 @@
   font-size: 0.8rem;
 }
 
+.gamepad-start-hint {
+  margin: 0.8rem 0 0;
+  font-size: 0.9rem;
+  color: var(--mission-muted);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+body.gamepad-active .gamepad-start-hint {
+  opacity: 1;
+}
+
 .mission-orbit-game .gamepad-focus {
   outline: 3px solid rgba(255, 209, 102, 0.92);
   outline-offset: 3px;

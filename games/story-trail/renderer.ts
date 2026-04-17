@@ -1,10 +1,6 @@
 import type { Story, Scene, Item, GameState } from './types.js'
 
 // ── Lazy element cache ───────────────────────────────────────
-let trailMapEl: HTMLElement | null = null
-function getTrailMap(): HTMLElement { return trailMapEl ??= document.getElementById('trail-map')! }
-let trailStopsEl: HTMLElement | null = null
-function getTrailStops(): HTMLElement { return trailStopsEl ??= document.getElementById('trail-stops')! }
 let sceneViewEl: HTMLElement | null = null
 function getSceneView(): HTMLElement { return sceneViewEl ??= document.getElementById('scene-view')! }
 let sceneIllustrationEl: HTMLElement | null = null
@@ -32,30 +28,6 @@ export { getSceneText, getItemFlash, getHintArea, getInventoryOverlay }
 
 export function showScreen(screenId: string): void {
   getGameArea().dataset['activeScreen'] = screenId
-}
-
-// ── Trail map ────────────────────────────────────────────────
-
-export function renderTrailMap(stories: readonly Story[], state: GameState): void {
-  let html = ''
-  for (let i = 0; i < stories.length; i++) {
-    const story = stories[i]
-    const isCompleted = state.completedStoryIds.includes(story.id)
-    const isUnlocked = i === 0 || state.completedStoryIds.length >= i
-
-    if (isCompleted) {
-      html += `<div class="trail-stop trail-stop-completed" data-story-id="${story.id}" aria-label="${story.title} — completed"><span class="stop-icon">${story.badgeEmoji}</span> <span class="stop-title">${story.title}</span> <span class="stop-badge">${story.badgeName}</span></div>`
-    } else if (isUnlocked) {
-      html += `<button class="trail-stop trail-stop-unlocked" data-story-id="${story.id}" aria-label="Play ${story.title}"><span class="stop-icon">${story.icon}</span> <span class="stop-title">${story.title}</span></button>`
-    } else {
-      html += `<div class="trail-stop trail-stop-locked" data-story-id="${story.id}" aria-disabled="true"><span class="stop-icon">🔒</span> <span class="stop-title">${story.title}</span></div>`
-    }
-
-    if (i < stories.length - 1) {
-      html += `<div class="trail-path" aria-hidden="true">│</div>`
-    }
-  }
-  getTrailStops().innerHTML = html
 }
 
 // ── Scene view ───────────────────────────────────────────────
@@ -119,11 +91,11 @@ export function renderInventoryOverlay(story: Story, state: GameState): void {
 
 // ── Story completion ─────────────────────────────────────────
 
-export function renderStoryComplete(story: Story): void {
-  getCompletionView().innerHTML = `<div class="completion-badge">${story.badgeEmoji}</div>
-<p class="completion-title">You got the ${story.badgeName}!</p>
-<p class="completion-msg">Great job! You learned about ${story.theme}.</p>
-<button id="back-to-trail-btn" class="back-to-trail-btn" type="button">Back to Trail</button>`
+export function renderStoryComplete(endScene: Scene): void {
+  getCompletionView().innerHTML = `<div class="completion-badge">${endScene.illustration ?? ''}</div>
+<p class="completion-title">${endScene.description}</p>
+<p class="completion-msg">The End</p>
+<button id="play-again-btn" class="play-again-btn" type="button">Play Again</button>`
 }
 
 // ── Hint and item flash ──────────────────────────────────────
@@ -184,7 +156,5 @@ export function updateInventoryBar(story: Story, state: GameState): void {
   }
 }
 
-// Suppress unused variable warnings for getters that are wired up but referenced
-// only via the lazy-cache export path.
-void getTrailMap
+// Suppress unused variable warnings for getters wired via the lazy-cache export path.
 void getSceneView

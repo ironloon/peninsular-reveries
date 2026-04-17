@@ -59,24 +59,27 @@ export async function waterwallAction() {
           </button>}
         />
 
-        <div id="waterwall-canvas-container"></div>
+        <div id="waterwall-canvas-container">
+          <button
+            type="button"
+            id="waterwall-play-btn"
+            className="waterwall-play-btn"
+          >
+            <span className="waterwall-play-icon" aria-hidden="true">&#x25B6;</span>
+            <span className="waterwall-play-label">Play</span>
+            <span id="waterwall-gamepad-hint" className="waterwall-gamepad-hint" aria-hidden="true" hidden>&#x24B6;</span>
+          </button>
+        </div>
       </GameScreen>
 
       <GameTabbedModal
         title="Waterwall"
         quitHref={homePath}
         settingsContent={<>
-          <SettingsSection title="Background theme">
-            <label className="waterwall-field" htmlFor="waterwall-theme-select">
-              <span>Theme</span>
-              <select id="waterwall-theme-select" defaultValue={WATERWALL_THEMES[0].id}>
-                {WATERWALL_THEMES.map((theme) => <option value={theme.id}>{theme.label}</option>)}
-              </select>
-            </label>
-          </SettingsSection>
-
           <SettingsSection title="Audio">
-            <SettingsToggle id="sfx-toggle" label="Sound effects" defaultChecked />
+            <SettingsToggle id="music-enabled-toggle" label="Music" helpText="Music is off until you change it here." helpId="music-enabled-help" />
+            <div id="music-track-picker-slot"></div>
+            <SettingsToggle id="sfx-enabled-toggle" label="Sound effects" helpText="Sound effects are on until you change it here." helpId="sfx-enabled-help" />
           </SettingsSection>
 
           <SettingsSection title="Accessibility">
@@ -86,6 +89,15 @@ export async function waterwallAction() {
               helpText="Defaults to your device setting until you change it here."
               helpId="reduce-motion-help"
             />
+          </SettingsSection>
+
+          <SettingsSection title="Background theme">
+            <label className="waterwall-field" htmlFor="waterwall-theme-select">
+              <span>Theme</span>
+              <select id="waterwall-theme-select" defaultValue={WATERWALL_THEMES[0].id}>
+                {WATERWALL_THEMES.map((theme) => <option value={theme.id}>{theme.label}</option>)}
+              </select>
+            </label>
           </SettingsSection>
         </>}
         infoContent={<>

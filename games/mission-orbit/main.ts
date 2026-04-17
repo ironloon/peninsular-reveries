@@ -28,8 +28,7 @@ import {
   playSceneChime,
   playMissionCompleteSound,
 } from './sounds.js'
-import { setupTabbedModal } from '../../client/modal.js'
-import { bindMusicToggle, bindSfxToggle, bindReduceMotionToggle } from '../../client/preferences.js'
+import { setupGameMenu } from '../../client/game-menu.js'
 import { setupInput, type InputCallbacks } from './input.js'
 import { renderCinematic } from './cinematic.js'
 
@@ -262,7 +261,7 @@ document.addEventListener('keydown', (e) => {
   }
 })
 
-settingsModal = setupTabbedModal()
+settingsModal = setupGameMenu()
 const settingsModalEl = el('settings-modal')
 if (settingsModalEl) {
   const observer = new MutationObserver(() => {
@@ -272,10 +271,6 @@ if (settingsModalEl) {
 }
 
 document.addEventListener('visibilitychange', syncLoopState)
-
-bindMusicToggle('mission-orbit', document.getElementById('music-enabled-toggle') as HTMLInputElement | null, document.getElementById('music-enabled-help') as HTMLElement | null)
-bindSfxToggle('mission-orbit', document.getElementById('sfx-enabled-toggle') as HTMLInputElement | null, document.getElementById('sfx-enabled-help') as HTMLElement | null)
-bindReduceMotionToggle(document.getElementById('reduce-motion-toggle') as HTMLInputElement | null, document.getElementById('reduce-motion-help'))
 
 showScreen('start-screen')
 syncControllerAffordances()

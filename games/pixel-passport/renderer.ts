@@ -1,6 +1,7 @@
-import { GLOBE_ART, PIP_SPRITES, VEHICLE_SPRITES } from './art.js'
+import { GLOBE_ART, VEHICLE_SPRITES } from './art.js'
 import { DESTINATIONS, getDestination } from './destinations.js'
-import type { Destination, DestinationVisualTheme, GamePhase, GameState, PixelArt, PipPose, VehiclePose } from './types.js'
+import type { Destination, DestinationVisualTheme, GamePhase, GameState, PixelArt, VehiclePose } from './types.js'
+import { getDisplayFactIndex } from './state.js'
 
 let activeScreenId = 'start-screen'
 
@@ -22,16 +23,7 @@ function screenIdForPhase(phase: GamePhase): string {
     case 'globe': return 'globe-screen'
     case 'travel': return 'travel-screen'
     case 'explore': return 'explore-screen'
-    case 'memory-collect': return 'memory-screen'
-    case 'room': return 'room-screen'
-
   }
-}
-
-function formatCount(count: number, noun: string): string {
-  if (count === 1) return `${count} ${noun}`
-  if (noun === 'memory') return `${count} memories`
-  return `${count} ${noun}s`
 }
 
 function renderPixelArt(art: PixelArt, container: HTMLElement, cacheKey: string): void {
@@ -68,10 +60,6 @@ function ensureGlobeTrack(trackId: string): void {
   track.dataset.ready = 'true'
 }
 
-function renderPip(containerId: string, pose: PipPose): void {
-  renderPixelArt(PIP_SPRITES[pose], element(containerId), `pip-${pose}`)
-}
-
 function renderVehicle(containerId: string, pose: VehiclePose): void {
   const container = element(containerId)
   container.dataset.vehicle = pose
@@ -93,7 +81,6 @@ function syncDestinationTheme(destination: Destination | null): void {
 
   applyVisualTheme(element('travel-stage'), theme, destinationId)
   applyVisualTheme(element('explore-screen'), theme, destinationId)
-  applyVisualTheme(element('memory-screen'), theme, destinationId)
 }
 
 function easeInOutSine(value: number): number {
@@ -118,7 +105,7 @@ function updateMarkerGroup(group: 'globe' | 'mystery', state: GameState): void {
   for (const destination of DESTINATIONS) {
     const button = element<HTMLButtonElement>(markerId(group, destination.id))
     const label = button.querySelector<HTMLElement>('.destination-marker-label')
-    const visited = state.collectedMemories.includes(destination.id)
+    const visited = (state.visitCounts[destination.id] ?? 0) > 0
     const current = state.currentLocation === destination.id
     const isSelected = selected.id === destination.id
 
@@ -146,21 +133,12 @@ function updateMarkerGroup(group: 'globe' | 'mystery', state: GameState): void {
   }
 }
 
-function renderTitle(state: GameState): void {
+function renderTitle(): void {
   ensureGlobeTrack('title-map-track')
-  renderPip('title-pip', 'wave')
-
-  element('title-memory-count').textContent = formatCount(state.collectedMemories.length, 'memory')
-
-  const guideText = state.collectedMemories.length > 0
-    ? 'Pip says: Ready for another trip?'
-    : 'Pip says: Let\'s roll!'
-  element('title-guide-text').textContent = guideText
 }
 
 function renderGlobe(state: GameState): void {
   ensureGlobeTrack('globe-map-track')
-  renderPip('globe-pip', 'guide')
   updateMarkerGroup('globe', state)
 
   const currentLocation = getDestination(state.currentLocation)
@@ -171,7 +149,6 @@ function renderGlobe(state: GameState): void {
   element('globe-selected-copy').textContent = currentLocation?.id === selected.id
     ? `${selected.name}, ${selected.country}. You are here. Pick it again to read it again.`
     : `${selected.name}, ${selected.country}`
-  element('globe-memory-pill').textContent = formatCount(state.collectedMemories.length, 'memory')
 }
 
 function renderTravel(state: GameState): void {
@@ -212,7 +189,6 @@ function renderTravel(state: GameState): void {
   const vehicleLeft = 8 + easedProgress * 68
 
   renderVehicle('travel-vehicle', vehiclePose)
-  renderPip('travel-pip', state.travelProgress < 0.5 ? 'wave' : 'guide')
 
   const travelStage = element<HTMLElement>('travel-stage')
   const travelBackground = element<HTMLElement>('travel-background')
@@ -254,7 +230,7 @@ function renderTravel(state: GameState): void {
   } else if (state.travelProgress < 0.35) {
     travelCopy.textContent = `${originName} is fading behind us.`
   } else if (state.travelProgress < 0.72) {
-    travelCopy.textContent = `Pip spots ${destination.name} on the horizon.`
+    travelCopy.textContent = `${destination.name} is on the horizon.`
   } else {
     travelCopy.textContent = `Almost there in ${destination.name}.`
   }
@@ -267,59 +243,21 @@ function renderExplore(state: GameState): void {
   syncDestinationTheme(destination)
 
   renderPixelArt(destination.scene, element('explore-scene'), `scene-${destination.id}`)
-  renderPip('explore-pip', 'guide')
   element('explore-heading').textContent = `${destination.name}, ${destination.country}`
-  element('explore-progress').textContent = `${state.factIndex + 1} / ${destination.facts.length} facts`
-  element('explore-guide-text').textContent = destination.facts[state.factIndex] ?? destination.facts[0]
+  element('explore-progress').textContent = `${state.factIndex + 1} / ${destination.facts.length}`
+
+  const displayIndex = getDisplayFactIndex(state, destination.facts.length)
+  element('explore-fact-text').textContent = destination.facts[displayIndex] ?? destination.facts[0]
   element<HTMLButtonElement>('explore-next-btn').textContent = state.factIndex >= destination.facts.length - 1
-    ? 'Find memory →'
-    : 'Next fact →'
-}
-
-function renderMemory(state: GameState): void {
-  const destination = getDestination(state.targetDestination)
-  if (!destination) return
-
-  syncDestinationTheme(destination)
-
-  renderPip('memory-pip', 'cheer')
-  element('memory-emoji').textContent = destination.memoryEmoji
-  element('memory-label').textContent = destination.memoryLabel
-
-  element('memory-copy').textContent = state.memoryWasNew
-    ? `Pip says: We found a ${destination.memoryLabel}!`
-    : `Pip says: We still remember the ${destination.memoryLabel}.`
-
-  element<HTMLButtonElement>('memory-continue-btn').textContent = 'Back to globe →'
-}
-
-function renderRoom(state: GameState): void {
-  renderPip('room-pip', state.collectedMemories.length > 0 ? 'cheer' : 'think')
-  element('room-count').textContent = formatCount(state.collectedMemories.length, 'memory')
-  element('room-copy').textContent = state.collectedMemories.length > 0
-    ? 'Pip says: Every trip leaves a little keepsake.'
-    : 'Pip says: Your shelf is ready for memories.'
-
-  for (const destination of DESTINATIONS) {
-    const slot = document.querySelector<HTMLElement>(`[data-memory-slot="${destination.id}"]`)
-    if (!slot) continue
-
-    const filled = state.collectedMemories.includes(destination.id)
-    slot.classList.toggle('is-filled', filled)
-    const emoji = slot.querySelector<HTMLElement>('.memory-slot-emoji')
-    if (emoji) {
-      emoji.textContent = filled ? destination.memoryEmoji : '☆'
-    }
-  }
+    ? 'Back to globe →'
+    : 'Next →'
 }
 
 export function renderGame(state: GameState): void {
-  renderTitle(state)
+  renderTitle()
   renderGlobe(state)
   renderTravel(state)
   renderExplore(state)
-  renderMemory(state)
-  renderRoom(state)
 }
 
 export function showScreen(screenId: string): void {

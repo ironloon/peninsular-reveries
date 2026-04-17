@@ -191,6 +191,14 @@ This repo uses a hybrid CSS model.
 3. Controllers render HTML via `renderToString()` into `dist/`.
 4. Performance budget checks run per page.
 
+## Input Timing Conventions
+
+- **Hold threshold**: ≥300ms. Any press held longer than 300ms is a hold, not a tap.
+- **Press cancellation on hold**: When a hold threshold is reached, the corresponding press/tap callback must not fire on release. Track hold start time on pointerdown; suppress the click handler when the elapsed time exceeds the threshold.
+- **iOS touch-callout suppression**: Any game board or interactive surface that supports long-hold gestures must apply `-webkit-touch-callout: none` and `user-select: none` to prevent the iOS context menu from hijacking the hold.
+- **Gamepad hold pattern**: `createGamepadPoller` in `client/game-input.ts` supports optional `onButtonAHold(durationMs)` and `onButtonARelease()` callbacks. When provided, button A press is deferred — a short press (< 300ms) fires `onButtonA()` on release, while a hold fires `onButtonAHold()` once at threshold and `onButtonARelease()` on release without triggering `onButtonA()`.
+- **Hold-release must never trigger a press**: After a completed hold interaction (pointer or gamepad), the release event path must not dispatch the press/tap action. Use a suppression flag set when the hold threshold is crossed and cleared after the next click or release is consumed.
+
 ## Dev Flow
 
 1. `server.ts` starts esbuild in watch mode to `.dev-client/`.

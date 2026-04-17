@@ -11,10 +11,9 @@ export const DESTINATION_IDS = [
 ] as const
 
 export type DestinationId = (typeof DESTINATION_IDS)[number]
-export type GamePhase = 'title' | 'globe' | 'travel' | 'explore' | 'memory-collect' | 'room'
+export type GamePhase = 'title' | 'globe' | 'travel' | 'explore'
 export type TransportType = 'bus' | 'train' | 'boat' | 'plane'
 export type NavigationDirection = 'next' | 'previous'
-export type PipPose = 'wave' | 'guide' | 'cheer' | 'think'
 export type VehiclePose = 'bus' | 'train' | 'boat' | 'plane'
 
 export interface PixelArt {
@@ -51,10 +50,6 @@ export interface Destination {
   readonly memoryLabel: string
 }
 
-export interface GameProgress {
-  readonly collectedMemories: readonly DestinationId[]
-}
-
 export interface GameState {
   readonly phase: GamePhase
   readonly currentLocation: DestinationId | null
@@ -62,19 +57,9 @@ export interface GameState {
   readonly transportType: TransportType | null
   readonly travelProgress: number
   readonly factIndex: number
-  readonly collectedMemories: readonly DestinationId[]
   readonly globeSelectedIndex: number
   readonly globeRotationOffset: number
-  readonly lastGuessCorrect: boolean | null
-  readonly revealedDestination: boolean
-  readonly memoryWasNew: boolean
-}
-
-export interface SpriteSheet {
-  readonly wave: PixelArt
-  readonly guide: PixelArt
-  readonly cheer: PixelArt
-  readonly think: PixelArt
+  readonly visitCounts: Readonly<Record<string, number>>
 }
 
 export interface VehicleSpriteSheet {

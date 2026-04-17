@@ -1,4 +1,4 @@
-import type { PixelArt, SpriteSheet, VehicleSpriteSheet } from './types.js'
+import type { PixelArt, VehicleSpriteSheet } from './types.js'
 
 export interface PixelOverlay {
   readonly x: number
@@ -119,53 +119,9 @@ function createGlobeArt(): PixelArt {
   }
 }
 
-const pipPalette = ['transparent', '#2f2242', '#f8c8a8', '#ffde73', '#ef6f6c', '#5d8ff1', '#ffffff']
 const vehiclePalette = ['transparent', '#22304a', '#f15f5c', '#ffd166', '#8ed1fc', '#ffffff', '#6ecb63']
 
 export const GLOBE_ART = createGlobeArt()
-
-export const PIP_SPRITES: SpriteSheet = {
-  wave: buildSceneArt(pipPalette, [
-    '001100',
-    '012210',
-    '011110',
-    '043340',
-    '045540',
-    '405504',
-    '046640',
-    '040040',
-  ]),
-  guide: buildSceneArt(pipPalette, [
-    '001100',
-    '012210',
-    '011110',
-    '043340',
-    '045540',
-    '045540',
-    '046640',
-    '040040',
-  ]),
-  cheer: buildSceneArt(pipPalette, [
-    '001100',
-    '012210',
-    '011110',
-    '403304',
-    '045540',
-    '405504',
-    '040040',
-    '440044',
-  ]),
-  think: buildSceneArt(pipPalette, [
-    '001100',
-    '012210',
-    '011110',
-    '043340',
-    '045540',
-    '005540',
-    '046040',
-    '040040',
-  ]),
-}
 
 export const VEHICLE_SPRITES: VehicleSpriteSheet = {
   bus: buildSceneArt(vehiclePalette, [

@@ -1,0 +1,63 @@
+/* Super Word — supplemental styles (difficulty picker) */
+
+.difficulty-picker {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 22rem;
+  margin-top: var(--game-space-sm, 0.5rem);
+}
+
+.difficulty-heading {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--game-yellow);
+}
+
+.difficulty-grid {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.btn-difficulty {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.55rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--game-white, #fff);
+  font-family: inherit;
+  font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease, transform 100ms ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-difficulty:hover {
+  border-color: var(--game-yellow);
+  background: rgba(255, 217, 61, 0.1);
+  transform: translateY(-1px);
+}
+
+.btn-difficulty:focus-visible,
+.btn-difficulty.gamepad-focus {
+  border-color: var(--game-yellow);
+  background: rgba(255, 217, 61, 0.14);
+  box-shadow: 0 0 0 3px rgba(255, 217, 61, 0.28);
+  outline: none;
+}
+
+.btn-difficulty:active {
+  transform: translateY(0);
+  background: rgba(255, 217, 61, 0.18);
+}
