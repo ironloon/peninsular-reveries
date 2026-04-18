@@ -434,3 +434,7 @@ Sequential via runSubagent (navigator reviews between each):
 7. LEG-7 (Visual Polish) - depends on LEG-3
 8. LEG-8 (Tests & Attributions) - depends on all prior
 After all complete: deferred shared edits → `pnpm sync:attributions` → `pnpm test:local` → delivery verification → commit → push.
+
+## Implementation
+Commit: 0298781
+Pushed: 2026-04-17
