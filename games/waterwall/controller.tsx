@@ -83,12 +83,7 @@ export async function waterwallAction() {
           </SettingsSection>
 
           <SettingsSection title="Accessibility">
-            <SettingsToggle
-              id="reduce-motion-toggle"
-              label="Reduce motion"
-              helpText="Defaults to your device setting until you change it here."
-              helpId="reduce-motion-help"
-            />
+            <p className="settings-help">Waterwall uses calm visuals by default. The reduce-motion device setting does not change gameplay.</p>
           </SettingsSection>
 
           <SettingsSection title="Background theme">

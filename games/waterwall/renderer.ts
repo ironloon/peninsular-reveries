@@ -45,7 +45,6 @@ export interface WaterwallRenderModel {
   readonly grid: WaterwallGrid
   readonly cursor: WaterwallCursor | null
   readonly theme: WaterwallThemeId
-  readonly reducedMotion: boolean
   readonly barrierCount: number
   readonly maxBarriers: number
 }
@@ -86,19 +85,9 @@ function emptyColor(theme: WaterwallThemeId, row: number, column: number): strin
   }
 }
 
-function waterColor(row: number, column: number, timestamp: number, reducedMotion: boolean): string {
-  if (reducedMotion) {
-    const seed = seededRandom(row, column)
-    return `rgb(${30 + Math.floor(seed * 20)},${130 + Math.floor(seed * 30)},${210 + Math.floor(seed * 20)})`
-  }
-
-  // Caustic wave: bright bands scroll downward.
-  // Large amplitude so trough (dark navy) and peak (bright cyan) are unmistakable.
-  const wave = (Math.sin(timestamp * 0.008 - row * 0.6 + column * 0.15) + 1) * 0.5 // 0..1
-  const r = Math.round(10  + wave * 60)
-  const g = Math.round(80  + wave * 160)
-  const b = Math.round(160 + wave * 90)
-  return `rgb(${r},${Math.min(255, g)},${Math.min(255, b)})`
+function waterColor(row: number, column: number): string {
+  const seed = seededRandom(row, column)
+  return `rgb(${30 + Math.floor(seed * 20)},${130 + Math.floor(seed * 30)},${210 + Math.floor(seed * 20)})`
 }
 
 function barrierColor(row: number, column: number): string {
@@ -208,9 +197,9 @@ export function canvasToGrid(
 export function renderFrame(
   ctx: CanvasRenderingContext2D,
   model: WaterwallRenderModel,
-  timestamp: number,
+  _timestamp: number,
 ): void {
-  const { grid, cursor, theme, reducedMotion } = model
+  const { grid, cursor, theme } = model
 
   // Derive cell size from canvas CSS dimensions divided by grid dimensions
   const canvasWidth = parseFloat(ctx.canvas.style.width) || ctx.canvas.width
@@ -242,7 +231,7 @@ export function renderFrame(
           break
         case 'water':
           // Water is fully opaque — color itself carries the flow animation
-          ctx.fillStyle = waterColor(row, col, timestamp, reducedMotion)
+          ctx.fillStyle = waterColor(row, col)
           ctx.fillRect(x, y, cw, ch)
           break
         case 'barrier':
@@ -255,7 +244,7 @@ export function renderFrame(
 
   // Cursor overlay
   if (cursor && cursor.row >= 0 && cursor.row < grid.rows && cursor.column >= 0 && cursor.column < grid.columns) {
-    const alpha = cursorPulseAlpha(timestamp, reducedMotion)
+    const alpha = cursorPulseAlpha()
     ctx.strokeStyle = `rgba(255,255,255,${alpha})`
     ctx.lineWidth = 2
     ctx.strokeRect(

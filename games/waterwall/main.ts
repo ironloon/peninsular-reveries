@@ -94,7 +94,6 @@ function buildRenderModel(): WaterwallRenderModel {
     grid,
     cursor,
     theme: currentTheme,
-    reducedMotion: true,
     barrierCount: grid.barrierCount,
     maxBarriers: grid.maxBarriers,
   }
@@ -306,13 +305,14 @@ function processAction(action: WaterwallAction): void {
     return
   }
 
-  // Dissolving phase: only menu
+  // Dissolving phase: allow barrier placement + menu
   if (phase === 'dissolving') {
     if (action.type === 'menu') {
       settingsModal.toggle()
       syncModalState()
+      return
     }
-    return
+    // Fall through to normal input handling so players can place barriers
   }
 
   switch (action.type) {
