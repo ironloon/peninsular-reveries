@@ -1,0 +1,483 @@
+/* Music Pad — neon drum pad instrument
+ * Viewport checkpoints: 390x844, 844x390, 1024x768, 1280x800.
+ *
+ * @font-face placeholder: a retro display font may be added in a later leg.
+ * Today the game uses the system stack to keep the scaffold dependency-free.
+ */
+
+body.music-pad {
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-title: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #0a0a1a;
+  --text: #e0e0e0;
+  --panel: rgba(20, 20, 38, 0.78);
+  --panel-strong: rgba(28, 28, 48, 0.92);
+  --line: rgba(224, 224, 224, 0.14);
+  --muted: rgba(224, 224, 224, 0.65);
+  --pad-0: #ff2d78;
+  --pad-1: #00e5ff;
+  --pad-2: #76ff03;
+  --pad-3: #ff9100;
+  --pad-4: #d500f9;
+  --pad-5: #ffea00;
+  --pad-6: #ff1744;
+  --pad-7: #2979ff;
+
+  min-height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+}
+
+body.music-pad main {
+  overflow: hidden;
+}
+
+body.music-pad .screen {
+  /* Default to the shared screen transition; reduced-motion overrides below. */
+}
+
+.scene-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(255, 45, 120, 0.08), transparent 40%),
+    radial-gradient(circle at bottom right, rgba(0, 229, 255, 0.08), transparent 40%),
+    var(--bg);
+}
+
+.music-pad-screen-panel {
+  width: min(100%, 78rem);
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  padding:
+    max(1rem, env(safe-area-inset-top, 0px))
+    max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+.music-pad-start-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+.music-pad-game-panel {
+  min-height: 100dvh;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+}
+
+.music-pad-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.music-pad-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.music-pad-start-panel .music-pad-title {
+  color: var(--pad-1);
+  text-shadow:
+    0 0 6px color-mix(in srgb, var(--pad-1) 70%, transparent),
+    0 0 18px color-mix(in srgb, var(--pad-1) 50%, transparent),
+    0 0 38px color-mix(in srgb, var(--pad-4) 35%, transparent);
+}
+
+.music-pad-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+}
+
+.music-pad-mode-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.8rem;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+}
+
+.music-pad-mode-indicator,
+.music-pad-tempo-display {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.music-pad-grid-wrap {
+  display: grid;
+  place-items: center;
+  min-height: 0;
+}
+
+.music-pad-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  gap: clamp(0.5rem, 1.6vw, 1rem);
+  width: min(100%, 60rem);
+  aspect-ratio: 4 / 2;
+}
+
+.pad {
+  appearance: none;
+  border: 0;
+  border-radius: 1.2rem;
+  min-height: 80px;
+  cursor: pointer;
+  color: var(--pad-color, var(--text));
+  font-family: var(--font);
+  font-weight: 700;
+  font-size: clamp(1rem, 2vw, 1.4rem);
+  letter-spacing: 0.06em;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--pad-color, #444) 22%, #08080f) 0%, color-mix(in srgb, var(--pad-color, #444) 14%, #06060c) 100%);
+  box-shadow:
+    0 0 15px 3px var(--pad-color, transparent),
+    inset 0 0 10px 2px color-mix(in srgb, var(--pad-color, #444) 35%, transparent);
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition: transform 120ms ease-out, box-shadow 160ms ease-out, filter 120ms ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.pad .pad-name {
+  font-size: clamp(0.7rem, 1.4vw, 0.95rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--pad-color, var(--text));
+  text-shadow: 0 0 6px color-mix(in srgb, var(--pad-color, #444) 60%, transparent), 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.pad .pad-key {
+  font-size: clamp(1.2rem, 2.6vw, 1.8rem);
+  font-weight: 800;
+  color: var(--pad-color, var(--text));
+  text-shadow: 0 0 8px color-mix(in srgb, var(--pad-color, #444) 70%, transparent), 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+.pad:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.pad[data-pad="0"] { --pad-color: var(--pad-0); }
+.pad[data-pad="1"] { --pad-color: var(--pad-1); }
+.pad[data-pad="2"] { --pad-color: var(--pad-2); }
+.pad[data-pad="3"] { --pad-color: var(--pad-3); }
+.pad[data-pad="4"] { --pad-color: var(--pad-4); }
+.pad[data-pad="5"] { --pad-color: var(--pad-5); }
+.pad[data-pad="6"] { --pad-color: var(--pad-6); }
+.pad[data-pad="7"] { --pad-color: var(--pad-7); }
+
+.pad:active,
+.pad[data-active="true"] {
+  transform: scale(0.96);
+  filter: brightness(1.4);
+}
+
+.pad.hit {
+  animation: pad-hit 120ms ease-out;
+}
+
+@keyframes pad-hit {
+  0% {
+    transform: scale(1);
+    box-shadow:
+      0 0 15px 3px var(--pad-color, transparent),
+      inset 0 0 10px 2px color-mix(in srgb, var(--pad-color, #444) 35%, transparent);
+  }
+  50% {
+    transform: scale(0.92);
+    box-shadow:
+      0 0 30px 8px var(--pad-color, transparent),
+      inset 0 0 16px 4px color-mix(in srgb, var(--pad-color, #444) 60%, transparent);
+    filter: brightness(1.6);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 15px 3px var(--pad-color, transparent),
+      inset 0 0 10px 2px color-mix(in srgb, var(--pad-color, #444) 35%, transparent);
+  }
+}
+
+.music-pad-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+  align-items: center;
+  padding: 0.6rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.music-pad-btn {
+  appearance: none;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.7rem 1.2rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 160ms ease-out, transform 120ms ease-out;
+}
+
+.music-pad-btn:hover { background: rgba(40, 40, 64, 0.92); }
+.music-pad-btn:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
+.music-pad-btn:active { transform: scale(0.97); }
+
+.music-pad-btn[aria-pressed="true"] {
+  background: var(--pad-0);
+  color: var(--bg);
+  border-color: var(--pad-0);
+}
+
+#record-btn {
+  border-color: color-mix(in srgb, var(--pad-6) 70%, transparent);
+  color: var(--pad-6);
+  box-shadow: inset 0 0 0 1px transparent;
+}
+
+#record-btn.recording {
+  background: var(--pad-6);
+  color: var(--bg);
+  border-color: var(--pad-6);
+  animation: record-pulse 1s ease-in-out infinite;
+}
+
+#play-btn {
+  border-color: color-mix(in srgb, var(--pad-2) 70%, transparent);
+  color: var(--pad-2);
+}
+
+#play-btn[aria-pressed="true"],
+#play-btn.active {
+  background: var(--pad-2);
+  color: var(--bg);
+  border-color: var(--pad-2);
+}
+
+#clear-btn {
+  border-color: rgba(224, 224, 224, 0.6);
+  color: var(--text);
+}
+
+#tempo-btn {
+  border-color: color-mix(in srgb, var(--pad-1) 70%, transparent);
+  color: var(--pad-1);
+}
+
+@keyframes record-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px 2px var(--pad-6);
+  }
+  50% {
+    box-shadow: 0 0 22px 6px var(--pad-6);
+  }
+}
+
+.music-pad-progress-track {
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--line);
+  overflow: hidden;
+  margin: 0 0.4rem;
+}
+
+.music-pad-progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--pad-1), var(--pad-4), var(--pad-0));
+  box-shadow: 0 0 10px 2px color-mix(in srgb, var(--pad-1) 50%, transparent);
+  transition: width 60ms linear;
+}
+
+.music-pad-layer-indicator {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.06em;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pad-1) 50%, transparent);
+  color: var(--pad-1);
+  background: rgba(0, 229, 255, 0.06);
+}
+
+.music-pad-primary-btn {
+  appearance: none;
+  font-family: var(--font-title);
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.9rem 2rem;
+  border-radius: 1rem;
+  border: 0;
+  cursor: pointer;
+  color: var(--bg);
+  background: var(--pad-1);
+  box-shadow: 0 0 1.4rem var(--pad-1);
+  transition: transform 120ms ease-out, filter 160ms ease-out;
+}
+
+.music-pad-primary-btn:hover { filter: brightness(1.15); }
+.music-pad-primary-btn:focus-visible { outline: 3px solid #ffffff; outline-offset: 3px; }
+.music-pad-primary-btn:active { transform: scale(0.97); }
+
+.music-pad-menu-btn {
+  appearance: none;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.music-pad-menu-btn:focus-visible { outline: 3px solid #ffffff; outline-offset: 2px; }
+
+.music-pad-controls-help {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+
+.music-pad-controls-help kbd {
+  font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+  font-size: 0.9em;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.noscript-message {
+  margin: 2rem auto;
+  max-width: 36rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--panel);
+  color: var(--text);
+  text-align: center;
+}
+
+@media (orientation: landscape) and (max-height: 480px) {
+  .music-pad-grid {
+    width: min(100%, 50rem);
+    aspect-ratio: 4 / 1.2;
+    gap: 0.5rem;
+  }
+
+  .pad {
+    min-height: 60px;
+    border-radius: 0.9rem;
+  }
+
+  .music-pad-game-panel {
+    gap: 0.4rem;
+  }
+
+  .music-pad-header,
+  .music-pad-mode-bar,
+  .music-pad-controls {
+    padding: 0.4rem 0.7rem;
+  }
+}
+
+@media (orientation: portrait) and (min-width: 360px) {
+  .music-pad-grid {
+    aspect-ratio: 4 / 3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.music-pad .screen {
+    transition-duration: 0ms;
+  }
+
+  .pad,
+  .music-pad-btn,
+  .music-pad-primary-btn {
+    transition: none;
+  }
+
+  .pad.hit {
+    animation: none;
+    filter: brightness(1.6);
+  }
+
+  #record-btn.recording {
+    animation: none;
+    box-shadow: 0 0 12px 3px var(--pad-6);
+  }
+
+  .music-pad-progress-bar {
+    transition: none;
+  }
+}
+
+body.music-pad[data-reduce-motion="true"] .screen {
+  transition-duration: 0ms;
+}
+
+body.music-pad[data-reduce-motion="true"] .pad,
+body.music-pad[data-reduce-motion="true"] .music-pad-btn,
+body.music-pad[data-reduce-motion="true"] .music-pad-primary-btn {
+  transition: none;
+}
+
+body.music-pad[data-reduce-motion="true"] .pad.hit {
+  animation: none;
+  filter: brightness(1.6);
+}
+
+body.music-pad[data-reduce-motion="true"] #record-btn.recording {
+  animation: none;
+  box-shadow: 0 0 12px 3px var(--pad-6);
+}
+
+body.music-pad[data-reduce-motion="true"] .music-pad-progress-bar {
+  transition: none;
+}

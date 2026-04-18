@@ -11,6 +11,7 @@ import { squaresAction } from '../games/squares/controller.js'
 import { superWordAction } from '../games/super-word/controller.js'
 import { storyTrailAction } from '../games/story-trail/controller.js'
 import { waterwallAction } from '../games/waterwall/controller.js'
+import { musicPadAction } from '../games/music-pad/controller.js'
 
 export function createAppRouter() {
   const router = createRouter()
@@ -24,6 +25,7 @@ export function createAppRouter() {
   router.get(routes.storyTrailInfo, () => gameInfoAction('story-trail'))
   router.get(routes.squaresInfo, () => gameInfoAction('squares'))
   router.get(routes.waterwallInfo, () => gameInfoAction('waterwall'))
+  router.get(routes.musicPadInfo, () => gameInfoAction('music-pad'))
   router.get(routes.missionOrbit, () => missionOrbitAction())
   router.get(routes.superWord, () => superWordAction())
   router.get(routes.chompers, () => chompersAction())
@@ -31,6 +33,7 @@ export function createAppRouter() {
   router.get(routes.storyTrail, () => storyTrailAction())
   router.get(routes.squares, () => squaresAction())
   router.get(routes.waterwall, () => waterwallAction())
+  router.get(routes.musicPad, () => musicPadAction())
   router.get(routes.notFound, () => notFoundAction())
 
   return router

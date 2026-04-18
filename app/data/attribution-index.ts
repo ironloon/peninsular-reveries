@@ -12,6 +12,8 @@ import { storyTrailAttribution } from '../../games/story-trail/attributions.js'
 import { storyTrailInfo } from '../../games/story-trail/info.js'
 import { waterwallAttribution } from '../../games/waterwall/attributions.js'
 import { waterwallInfo } from '../../games/waterwall/info.js'
+import { musicPadAttribution } from '../../games/music-pad/attributions.js'
+import { musicPadInfo } from '../../games/music-pad/info.js'
 import type { GameAttribution, GameInfo } from './attribution-types.js'
 import { attributionsPagePath, repositoryCodeLicense } from './attribution-types.js'
 
@@ -30,6 +32,7 @@ const gameEntries: readonly { attribution: GameAttribution; info: GameInfo }[] =
   { attribution: storyTrailAttribution, info: storyTrailInfo },
   { attribution: squaresAttribution, info: squaresInfo },
   { attribution: waterwallAttribution, info: waterwallInfo },
+  { attribution: musicPadAttribution, info: musicPadInfo },
 ]
 
 export const gameAttributions: readonly GameAttributionWithInfo[] = gameEntries.map(

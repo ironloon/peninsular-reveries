@@ -23,6 +23,7 @@ const swFiles = [
   'story-trail/sw.js',
   'squares/sw.js',
   'waterwall/sw.js',
+  'music-pad/sw.js',
 ]
 for (const swFile of swFiles) {
   const swPath = join(outputDir, swFile)
@@ -42,6 +43,7 @@ mkdirSync(join(outputDir, 'client', 'pixel-passport'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'story-trail'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'squares'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'waterwall'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'music-pad'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -83,6 +85,7 @@ await esbuild.build({
     'games/story-trail/main.ts',
     'games/squares/main.ts',
     'games/waterwall/main.ts',
+    'games/music-pad/main.ts',
   ],
   bundle: true,
   outbase: 'games',
@@ -113,6 +116,8 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/squares/info/', outPath: 'squares/info/index.html' },
   { url: 'http://localhost/waterwall/', outPath: 'waterwall/index.html' },
   { url: 'http://localhost/waterwall/info/', outPath: 'waterwall/info/index.html' },
+  { url: 'http://localhost/music-pad/', outPath: 'music-pad/index.html' },
+  { url: 'http://localhost/music-pad/info/', outPath: 'music-pad/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -159,6 +164,7 @@ const pages: Record<string, string[]> = {
   'story-trail': ['story-trail/index.html', 'styles/story-trail.css', 'client/shell.js', 'client/story-trail/main.js'],
   squares: ['squares/index.html', 'styles/squares.css', 'client/shell.js', 'client/squares/main.js'],
   waterwall: ['waterwall/index.html', 'styles/waterwall.css', 'client/shell.js', 'client/waterwall/main.js'],
+  'music-pad': ['music-pad/index.html', 'styles/music-pad.css', 'client/shell.js', 'client/music-pad/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 

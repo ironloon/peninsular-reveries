@@ -11,6 +11,7 @@ export const routes = route({
   storyTrailInfo: '/story-trail/info/',
   squaresInfo: '/squares/info/',
   waterwallInfo: '/waterwall/info/',
+  musicPadInfo: '/music-pad/info/',
   missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
   chompers: '/chompers/',
@@ -18,5 +19,6 @@ export const routes = route({
   storyTrail: '/story-trail/',
   squares: '/squares/',
   waterwall: '/waterwall/',
+  musicPad: '/music-pad/',
   notFound: '/404.html',
 })

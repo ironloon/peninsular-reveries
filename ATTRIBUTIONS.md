@@ -349,3 +349,41 @@
 - License: GPL-3.0
 - Modifications: Not applicable
 - Notes: All sound effects are synthesized at runtime. No bundled audio files ship with the game.
+
+### Music Pad
+
+- Slug: music-pad
+- Code license: GPL-3.0
+- Summary: Music Pad is a neon drum pad instrument. Tap eight color-coded pads to trigger percussion sounds, record loops, and layer up to three parts with adjustable tempo. All sounds are synthesized in the browser at runtime.
+
+#### Entries
+
+##### Music Pad synthesized drum sounds
+
+- Type: sound effect
+- Used in: Music Pad pad triggers across all eight color-coded pads
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Drum and percussion voices are synthesized at runtime with deterministic envelopes. No bundled audio files ship with the game.
+
+##### Music Pad synthesized sound effects
+
+- Type: sound effect
+- Used in: Music Pad UI feedback for record, play, stop, and clear
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: All UI sound effects are synthesized at runtime unless a future implementation proves external media necessary.
+
+##### Music Pad CC0 sample placeholder
+
+- Type: sound effect
+- Used in: Reserved slot for future CC0 percussion samples if needed
+- Creator: To be determined
+- Source: Sourcing deferred to a later leg
+- License: CC0
+- Modifications: To be determined
+- Notes: Placeholder entry. No external samples ship today; sourcing is deferred and will be replaced with a real attribution if a CC0 sample is later adopted.
