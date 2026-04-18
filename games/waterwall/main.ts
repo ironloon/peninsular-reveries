@@ -212,13 +212,7 @@ function initTitleGrid(rows: number, columns: number): void {
     coords.map((c) => [`${c.row},${c.column}`, DISSOLVE_EROSION_BASE + (Math.random() - 0.5) * 2 * DISSOLVE_EROSION_VARIANCE]),
   )
   totalTitleBarriers = coords.length
-
-  // Staggered water spawn: each column gets a random delay (0–600ms)
   spawnMask = Array.from({ length: columns }, () => false)
-  const delays = Array.from({ length: columns }, () => Math.random() * 600)
-  for (let col = 0; col < columns; col++) {
-    setTimeout(() => { spawnMask[col] = true }, delays[col])
-  }
 }
 
 function startDissolve(): void {
@@ -226,6 +220,14 @@ function startDissolve(): void {
   phase = 'dissolving'
   dissolveStartTime = performance.now()
   unlockAudioOnce()
+
+  // Staggered water spawn: each column activates after a random delay (0–1000ms)
+  // so water doesn't fall perfectly evenly across the top
+  spawnMask = Array.from({ length: grid.columns }, () => false)
+  for (let col = 0; col < grid.columns; col++) {
+    const delay = Math.random() * 1000
+    setTimeout(() => { spawnMask[col] = true }, delay)
+  }
 
   if (getSfxEnabled() && !isReducedMotionEnabled()) {
     startWaterTexture()
