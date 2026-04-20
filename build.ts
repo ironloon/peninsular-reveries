@@ -24,6 +24,7 @@ const swFiles = [
   'squares/sw.js',
   'waterwall/sw.js',
   'music-pad/sw.js',
+  'train-sounds/sw.js',
 ]
 for (const swFile of swFiles) {
   const swPath = join(outputDir, swFile)
@@ -44,6 +45,7 @@ mkdirSync(join(outputDir, 'client', 'story-trail'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'squares'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'waterwall'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'music-pad'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'train-sounds'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -86,6 +88,7 @@ await esbuild.build({
     'games/squares/main.ts',
     'games/waterwall/main.ts',
     'games/music-pad/main.ts',
+    'games/train-sounds/main.ts',
   ],
   bundle: true,
   outbase: 'games',
@@ -118,6 +121,8 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/waterwall/info/', outPath: 'waterwall/info/index.html' },
   { url: 'http://localhost/music-pad/', outPath: 'music-pad/index.html' },
   { url: 'http://localhost/music-pad/info/', outPath: 'music-pad/info/index.html' },
+  { url: 'http://localhost/train-sounds/', outPath: 'train-sounds/index.html' },
+  { url: 'http://localhost/train-sounds/info/', outPath: 'train-sounds/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -165,6 +170,7 @@ const pages: Record<string, string[]> = {
   squares: ['squares/index.html', 'styles/squares.css', 'client/shell.js', 'client/squares/main.js'],
   waterwall: ['waterwall/index.html', 'styles/waterwall.css', 'client/shell.js', 'client/waterwall/main.js'],
   'music-pad': ['music-pad/index.html', 'styles/music-pad.css', 'client/shell.js', 'client/music-pad/main.js'],
+  'train-sounds': ['train-sounds/index.html', 'styles/train-sounds.css', 'client/shell.js', 'client/train-sounds/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 

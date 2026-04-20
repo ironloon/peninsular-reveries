@@ -12,6 +12,7 @@ export const routes = route({
   squaresInfo: '/squares/info/',
   waterwallInfo: '/waterwall/info/',
   musicPadInfo: '/music-pad/info/',
+  trainSoundsInfo: '/train-sounds/info/',
   missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
   chompers: '/chompers/',
@@ -20,5 +21,6 @@ export const routes = route({
   squares: '/squares/',
   waterwall: '/waterwall/',
   musicPad: '/music-pad/',
+  trainSounds: '/train-sounds/',
   notFound: '/404.html',
 })

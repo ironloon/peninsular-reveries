@@ -387,3 +387,129 @@
 - License: CC0
 - Modifications: To be determined
 - Notes: Placeholder entry. No external samples ship today; sourcing is deferred and will be replaced with a real attribution if a CC0 sample is later adopted.
+
+### Train Sounds
+
+- Slug: train-sounds
+- Code license: GPL-3.0
+- Summary: Train Sounds is a playful rail yard display. Switch between trains and tap the parts to hear horns, wheels, bells, and doors.
+
+#### Entries
+
+##### Train Sounds hotspot routing and electric hum brightener
+
+- Type: sound effect
+- Used in: Train Sounds shared hotspot playback bus and the quiet harmonic layer tucked under the electric commuter hum route
+- Creator: Peninsular Reveries
+- Source: Generated in-browser with the Web Audio API
+- License: GPL-3.0
+- Modifications: Not applicable.
+- Notes: The recorded electric hum remains the primary sound. The synth layer only adds a faint harmonic edge so the cue reads more reliably on small speakers.
+
+##### steam-train-whistle.wav
+
+- Type: sound effect
+- Used in: Train Sounds Steam Flyer whistle hotspot
+- Creator: gadzooks
+- Source: Freesound (https://freesound.org/people/gadzooks/sounds/188240/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed to a 1.42 second mono 60 kbps OGG whistle with light band-limiting and short fades.
+
+##### EMD Steel Bell
+
+- Type: sound effect
+- Used in: Train Sounds Steam Flyer bell hotspot
+- Creator: chungus43A
+- Source: Freesound (https://freesound.org/people/chungus43A/sounds/705377/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed from the bell strike into a compact 0.82 second mono OGG and filtered to keep the ring clear.
+
+##### single steam train chuff
+
+- Type: sound effect
+- Used in: Train Sounds Steam Flyer drive-rod hotspot
+- Creator: birdOfTheNorth
+- Source: Freesound (https://freesound.org/people/birdOfTheNorth/sounds/623817/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed into a 0.66 second mono OGG chuff with tight fades and mid-band focus.
+
+##### Diesel Locomotive Horn - 2300 Class.wav
+
+- Type: sound effect
+- Used in: Train Sounds Diesel Hauler horn hotspot
+- Creator: JotrainG
+- Source: Freesound (https://freesound.org/people/JotrainG/sounds/662553/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed to a 0.84 second mono OGG horn burst with modest band-limiting and fade shaping.
+
+##### Diesel engine idling
+
+- Type: sound effect
+- Used in: Train Sounds Diesel Hauler engine-hum and wheel hotspots
+- Creator: chungus43A
+- Source: Freesound (https://freesound.org/people/chungus43A/sounds/705386/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed into a 0.92 second mono OGG idle looplet and reused at a faster playback rate for the diesel wheel texture.
+
+##### Air (or steam) pressure release
+
+- Type: sound effect
+- Used in: Train Sounds diesel, electric, and high-speed brake hotspots
+- Creator: brunoboselli
+- Source: Freesound (https://freesound.org/people/brunoboselli/sounds/457294/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed into a 0.96 second mono OGG hiss and reused with slight playback-rate offsets across the brake cues.
+
+##### Moscow Metro 81-717 two chime horn
+
+- Type: sound effect
+- Used in: Train Sounds Electric Commuter horn hotspot
+- Creator: chungus43A
+- Source: Freesound (https://freesound.org/people/chungus43A/sounds/783760/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed from the recorded preview into a 0.52 second mono OGG horn hit with short fades.
+
+##### 200/300Hz 81-717 BPSN hum sound
+
+- Type: sound effect
+- Used in: Train Sounds Electric Commuter power-hum hotspot and the electric wheel variant
+- Creator: chungus43A
+- Source: Freesound (https://freesound.org/people/chungus43A/sounds/733740/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed to a 0.96 second mono OGG hum with stronger mid-band filtering; the base clip remains primary while a very low-gain harmonic layer supports only the electric power-hum route.
+
+##### Old Toronto Subway Chime
+
+- Type: sound effect
+- Used in: Train Sounds Steam Flyer, Electric Commuter, and High-Speed Arrow passenger-door hotspots
+- Creator: chungus43A
+- Source: Freesound (https://freesound.org/people/chungus43A/sounds/720572/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed into a 0.68 second mono OGG chime and reused with small playback-rate changes across the passenger-door cues.
+
+##### Train horn, Departs
+
+- Type: sound effect
+- Used in: Train Sounds High-Speed Arrow horn hotspot
+- Creator: OroborosNZ
+- Source: Freesound (https://freesound.org/people/OroborosNZ/sounds/141273/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed into a 0.82 second mono OGG horn cue with light band-limiting and quick fades.
+
+##### TRNHspd_High Speed, Pass-By, Passenger Train, Mono Mix, Recording_02_JW Audio
+
+- Type: sound effect
+- Used in: Train Sounds High-Speed Arrow wheel and power-hum hotspots
+- Creator: JW_Audio
+- Source: Freesound (https://freesound.org/people/JW_Audio/sounds/844230/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed into a 1.34 second mono OGG pass-by and reused at a slower rate for the high-speed power-hum cue.
+
+##### R20-33-Train Cars Coupling.wav
+
+- Type: sound effect
+- Used in: Train Sounds Steam Flyer coupler hotspot and Diesel Hauler cargo-latch hotspot
+- Creator: craigsmith
+- Source: Freesound (https://freesound.org/people/craigsmith/sounds/480819/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed into a 0.64 second mono OGG clank and reused with a slightly slower playback rate for the cargo latch.

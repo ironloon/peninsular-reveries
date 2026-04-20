@@ -10,6 +10,8 @@ import { superWordAttribution } from '../../games/super-word/attributions.js'
 import { superWordInfo } from '../../games/super-word/info.js'
 import { storyTrailAttribution } from '../../games/story-trail/attributions.js'
 import { storyTrailInfo } from '../../games/story-trail/info.js'
+import { trainSoundsAttribution } from '../../games/train-sounds/attributions.js'
+import { trainSoundsInfo } from '../../games/train-sounds/info.js'
 import { waterwallAttribution } from '../../games/waterwall/attributions.js'
 import { waterwallInfo } from '../../games/waterwall/info.js'
 import { musicPadAttribution } from '../../games/music-pad/attributions.js'
@@ -33,6 +35,7 @@ const gameEntries: readonly { attribution: GameAttribution; info: GameInfo }[] =
   { attribution: squaresAttribution, info: squaresInfo },
   { attribution: waterwallAttribution, info: waterwallInfo },
   { attribution: musicPadAttribution, info: musicPadInfo },
+  { attribution: trainSoundsAttribution, info: trainSoundsInfo },
 ]
 
 export const gameAttributions: readonly GameAttributionWithInfo[] = gameEntries.map(

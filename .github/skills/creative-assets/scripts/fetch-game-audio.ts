@@ -12,6 +12,9 @@ import {
   type MissionOrbitSampleDefinition,
   type MissionOrbitSampleProcessingPlan,
 } from '../../../../games/mission-orbit/sample-manifest.js'
+import {
+  getDownloadableTrainSoundsSamples,
+} from '../../../../games/train-sounds/sample-manifest.js'
 
 interface FreesoundPreviewSet {
   readonly 'preview-hq-ogg'?: string
@@ -60,6 +63,10 @@ const gameAudioConfigs: Record<string, GameAudioConfig> = {
   'mission-orbit': {
     outputDir: join(repoRoot, 'public', 'mission-orbit', 'audio'),
     getDownloadableSamples: () => getDownloadableMissionOrbitSamples() as readonly GenericGameAudioSampleDefinition[],
+  },
+  'train-sounds': {
+    outputDir: join(repoRoot, 'public', 'train-sounds', 'audio'),
+    getDownloadableSamples: () => getDownloadableTrainSoundsSamples() as readonly GenericGameAudioSampleDefinition[],
   },
 }
 

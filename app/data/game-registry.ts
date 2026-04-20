@@ -63,4 +63,11 @@ export const games: GameEntry[] = [
     icon: '🥁',
     status: 'live',
   },
+  {
+    slug: 'train-sounds',
+    name: 'Train Sounds',
+    description: 'Tap different parts of a train to hear it come alive.',
+    icon: '🚆',
+    status: 'live',
+  },
 ]

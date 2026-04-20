@@ -1,0 +1,1248 @@
+/* Train Sounds uses rounded station-sign lettering and clean UI text to keep the page playful and readable on small screens. */
+body.train-sounds {
+  --font: "Avenir Next", "Segoe UI", "Trebuchet MS", sans-serif;
+  --font-title: "Trebuchet MS", "Avenir Next Condensed", "Arial Rounded MT Bold", sans-serif;
+  --ink-strong: #13324d;
+  --ink-soft: #46657e;
+  --paper: rgba(255, 251, 242, 0.84);
+  --paper-strong: #fffdf7;
+  --line: rgba(20, 54, 81, 0.16);
+  --shadow-soft: 0 18px 48px rgba(13, 34, 52, 0.16);
+  --shadow-strong: 0 26px 72px rgba(8, 26, 40, 0.2);
+  --button-ink: #0d4f82;
+  --button-ink-strong: #0a3e68;
+  --button-wash: #dff4ff;
+  --button-wash-strong: #b8e7ff;
+  --scene-sky-top: #9ed9ff;
+  --scene-sky-mid: #dff5ff;
+  --scene-ground-top: #f7d59d;
+  --scene-ground-bottom: #efb36f;
+  --train-body: linear-gradient(180deg, #c4422d 0%, #9d2b1b 100%);
+  --train-metal: #304254;
+  --train-cab: #ffe7a8;
+  --train-window: #f7fbff;
+  --train-accent: #ffd154;
+  --train-track: #6d503f;
+  --train-wheel: #243543;
+  --train-outline: rgba(18, 42, 62, 0.18);
+  --locomotive-radius: 28% 16% 16% 22%;
+  margin: 0;
+  min-height: 100svh;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--ink-strong);
+  font-family: var(--font);
+  background:
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.8), transparent 20%),
+    radial-gradient(circle at 82% 18%, rgba(255, 249, 219, 0.72), transparent 17%),
+    linear-gradient(180deg, #86cff9 0%, #dff4ff 43%, #f8ddad 43%, #ebb66e 100%);
+}
+
+body.train-sounds *,
+body.train-sounds *::before,
+body.train-sounds *::after {
+  box-sizing: border-box;
+}
+
+body.train-sounds button,
+body.train-sounds input,
+body.train-sounds a {
+  font: inherit;
+}
+
+body.train-sounds main {
+  position: relative;
+}
+
+.train-shell {
+  position: relative;
+  width: 100%;
+  min-height: 100svh;
+  min-height: 100dvh;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.48), transparent 24%),
+    radial-gradient(circle at 86% 14%, rgba(255, 232, 171, 0.55), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+}
+
+.train-shell::before,
+.train-shell::after {
+  content: '';
+  position: absolute;
+  inset: auto;
+  pointer-events: none;
+}
+
+.train-shell::before {
+  width: clamp(14rem, 24vw, 22rem);
+  height: clamp(14rem, 24vw, 22rem);
+  top: clamp(3rem, 8vh, 5rem);
+  right: clamp(-4rem, -2vw, -1rem);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 246, 203, 0.65) 0%, rgba(255, 246, 203, 0) 72%);
+}
+
+.train-shell::after {
+  inset: auto 5% 2.25rem auto;
+  width: clamp(9rem, 16vw, 14rem);
+  height: clamp(9rem, 16vw, 14rem);
+  border-radius: 32% 68% 50% 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0));
+  opacity: 0.48;
+}
+
+.train-sounds-screen {
+  padding:
+    max(0.9rem, env(safe-area-inset-top, 0px))
+    max(0.9rem, env(safe-area-inset-right, 0px))
+    max(0.9rem, env(safe-area-inset-bottom, 0px))
+    max(0.9rem, env(safe-area-inset-left, 0px));
+  overflow: hidden;
+}
+
+.train-panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: clamp(0.8rem, 2vw, 1.3rem);
+  width: min(100%, 78rem);
+  min-height: 100%;
+  margin: 0 auto;
+}
+
+.train-panel--start {
+  grid-template-rows: auto 1fr;
+}
+
+.train-panel--game {
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.train-header {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 253, 247, 0.92), rgba(255, 247, 234, 0.82));
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-soft);
+}
+
+.train-title {
+  margin: 0;
+  color: var(--ink-strong);
+  font-family: var(--font-title);
+  font-size: clamp(1.65rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.train-title--small {
+  font-size: clamp(1.15rem, 2.8vw, 1.7rem);
+}
+
+.train-start-body {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: clamp(1rem, 2.8vw, 1.6rem);
+  min-height: 100%;
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: clamp(1.6rem, 4vw, 2.4rem);
+  background:
+    radial-gradient(circle at 16% 18%, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0) 26%),
+    linear-gradient(180deg, rgba(255, 254, 248, 0.94), rgba(255, 244, 227, 0.84));
+  box-shadow: var(--shadow-strong);
+  text-align: center;
+  overflow: hidden;
+}
+
+.train-start-body::before,
+.train-start-body::after {
+  content: '';
+  position: absolute;
+  width: clamp(5rem, 16vw, 8rem);
+  height: clamp(5rem, 16vw, 8rem);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 210, 107, 0.28) 0%, rgba(255, 210, 107, 0) 70%);
+  pointer-events: none;
+}
+
+.train-start-body::before {
+  top: -1.5rem;
+  left: -1.5rem;
+}
+
+.train-start-body::after {
+  right: -1.5rem;
+  bottom: -1.5rem;
+}
+
+.train-subtitle {
+  margin: 0;
+  max-width: 18rem;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 2.5vw, 1.4rem);
+  line-height: 1.4;
+}
+
+.train-menu-btn,
+.train-primary-btn,
+.train-switch-btn,
+.train-hotspot,
+.train-sounds .tab-btn,
+.train-sounds .modal-close,
+.train-sounds .settings-restart-btn,
+.train-sounds .settings-quit-link {
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.train-menu-btn,
+.train-primary-btn,
+.train-switch-btn,
+.train-sounds .tab-btn,
+.train-sounds .settings-restart-btn,
+.train-sounds .settings-quit-link,
+.train-sounds .modal-close {
+  border: 0;
+  border-radius: 999px;
+  color: var(--button-ink-strong);
+  background: linear-gradient(180deg, var(--button-wash) 0%, var(--button-wash-strong) 100%);
+  box-shadow: 0 10px 24px rgba(13, 79, 130, 0.18);
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease,
+    filter 180ms ease;
+}
+
+.train-menu-btn,
+.train-switch-btn,
+.train-sounds .tab-btn,
+.train-sounds .settings-restart-btn,
+.train-sounds .settings-quit-link,
+.train-sounds .modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.8rem 1rem;
+}
+
+.train-menu-btn:hover,
+.train-primary-btn:hover,
+.train-switch-btn:hover,
+.train-sounds .tab-btn:hover,
+.train-sounds .settings-restart-btn:hover,
+.train-sounds .settings-quit-link:hover,
+.train-sounds .modal-close:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(13, 79, 130, 0.22);
+}
+
+.train-menu-btn:active,
+.train-primary-btn:active,
+.train-switch-btn:active,
+.train-sounds .tab-btn:active,
+.train-sounds .settings-restart-btn:active,
+.train-sounds .settings-quit-link:active,
+.train-sounds .modal-close:active,
+.train-hotspot:active,
+.train-hotspot[aria-pressed='true'],
+.train-hotspot.is-pressed,
+.train-switch-btn[aria-pressed='true'],
+.train-switch-btn.is-active {
+  transform: translateY(2px);
+  box-shadow: 0 5px 12px rgba(13, 79, 130, 0.2);
+  filter: saturate(1.08);
+}
+
+.train-menu-btn:focus-visible,
+.train-primary-btn:focus-visible,
+.train-switch-btn:focus-visible,
+.train-hotspot:focus-visible,
+.train-sounds .tab-btn:focus-visible,
+.train-sounds .settings-restart-btn:focus-visible,
+.train-sounds .settings-quit-link:focus-visible,
+.train-sounds .modal-close:focus-visible,
+.train-sounds input:focus-visible {
+  outline: 3px solid rgba(10, 62, 104, 0.42);
+  outline-offset: 3px;
+}
+
+.train-primary-btn {
+  padding: 0.95rem 1.8rem;
+  font-family: var(--font-title);
+  font-size: 1.02rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.train-selector-bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.6rem;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 1.4rem;
+  background: linear-gradient(180deg, rgba(255, 252, 245, 0.92), rgba(255, 245, 229, 0.82));
+  box-shadow: var(--shadow-soft);
+}
+
+.train-name {
+  display: grid;
+  place-items: center;
+  min-height: 3.2rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid rgba(13, 79, 130, 0.14);
+  border-radius: 1rem;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), rgba(243, 249, 255, 0.92));
+  color: var(--ink-strong);
+  font-family: var(--font-title);
+  font-size: clamp(1.02rem, 2.6vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    letter-spacing 220ms ease,
+    color 220ms ease,
+    background-color 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.train-name.is-switching,
+#train-scene.is-switching + .train-name,
+#train-scene[data-scene-state='switching'] + .train-name {
+  letter-spacing: 0.12em;
+}
+
+.train-switch-btn {
+  justify-self: stretch;
+  padding-inline: 0.95rem;
+}
+
+.train-switch-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: rgba(13, 79, 130, 0.12);
+  font-family: var(--font-title);
+  font-size: 0.95rem;
+}
+
+.train-scene {
+  position: relative;
+  min-height: clamp(19rem, 54vh, 34rem);
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: clamp(1.4rem, 3.8vw, 2.2rem);
+  background:
+    linear-gradient(180deg, var(--scene-sky-top) 0%, var(--scene-sky-mid) 55%, var(--scene-ground-top) 55%, var(--scene-ground-bottom) 100%);
+  box-shadow: var(--shadow-strong);
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 280ms ease,
+    box-shadow 280ms ease,
+    filter 280ms ease,
+    background 280ms ease,
+    outline-color 280ms ease;
+}
+
+.train-scene::before,
+.train-scene::after {
+  content: '';
+  position: absolute;
+  inset: auto;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.train-scene::before {
+  left: -10%;
+  right: -10%;
+  bottom: 22%;
+  height: 9%;
+  background: linear-gradient(180deg, rgba(255, 231, 181, 0), rgba(255, 231, 181, 0.28));
+}
+
+.train-scene::after {
+  inset: auto -8% -12% -8%;
+  height: 28%;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 236, 184, 0.28), rgba(255, 236, 184, 0) 60%);
+}
+
+.train-scene.is-switching,
+.train-scene[data-scene-state='switching'] {
+  transform: scale(1.012);
+  box-shadow: 0 26px 76px rgba(8, 26, 40, 0.26), 0 0 0 8px rgba(255, 249, 222, 0.24);
+  animation: train-scene-switch 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.train-scene.is-switched,
+.train-scene[data-scene-state='switched'] {
+  outline: 3px solid rgba(255, 245, 205, 0.55);
+  outline-offset: -10px;
+}
+
+.train-scene.is-pressed .train-display,
+.train-scene[data-scene-state='pressed'] .train-display,
+.train-display.is-pressed {
+  transform: translateY(4px) scale(0.992);
+  filter: saturate(1.05);
+}
+
+.train-scene-sky {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.train-sun,
+.train-cloud,
+.train-hill {
+  position: absolute;
+}
+
+.train-sun {
+  top: 9%;
+  right: 10%;
+  width: clamp(4.4rem, 10vw, 6.8rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 246, 198, 0.96) 0%, rgba(255, 210, 92, 0.92) 44%, rgba(255, 210, 92, 0) 72%);
+  box-shadow: 0 0 0 20px rgba(255, 243, 184, 0.14);
+}
+
+.train-cloud {
+  height: clamp(2rem, 5vw, 3.2rem);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    1.4rem -0.5rem 0 0 rgba(255, 255, 255, 0.72),
+    3rem 0.2rem 0 0 rgba(255, 255, 255, 0.72),
+    1.7rem 0.6rem 0 0 rgba(255, 255, 255, 0.72);
+  animation: train-cloud-drift 24s linear infinite;
+}
+
+.train-cloud--one {
+  top: 12%;
+  left: 8%;
+  width: clamp(3rem, 8vw, 4.8rem);
+}
+
+.train-cloud--two {
+  top: 22%;
+  right: 28%;
+  width: clamp(2.6rem, 7vw, 4.2rem);
+  animation-duration: 32s;
+}
+
+.train-hill {
+  border-radius: 50% 50% 0 0;
+  background: linear-gradient(180deg, rgba(105, 164, 97, 0.92), rgba(82, 133, 77, 0.98));
+}
+
+.train-hill--far {
+  left: -6%;
+  right: 28%;
+  bottom: 27%;
+  height: 18%;
+}
+
+.train-hill--near {
+  left: 24%;
+  right: -8%;
+  bottom: 21%;
+  height: 22%;
+  background: linear-gradient(180deg, rgba(124, 178, 100, 0.94), rgba(86, 136, 78, 0.98));
+}
+
+.train-display-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  align-items: end;
+  padding: clamp(1rem, 3vw, 1.5rem) clamp(1rem, 4vw, 2rem) clamp(2.4rem, 8vh, 4.4rem);
+}
+
+.train-display {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 52rem);
+  height: clamp(9rem, 30vw, 16rem);
+  transition: transform 220ms ease, filter 220ms ease;
+  animation: train-bob 5.2s ease-in-out infinite;
+}
+
+.train-locomotive,
+.train-car,
+.train-coupler,
+.train-track {
+  position: absolute;
+}
+
+.train-locomotive,
+.train-car {
+  bottom: 3rem;
+  border: 1px solid var(--train-outline);
+  background: var(--train-body);
+  box-shadow: inset 0 -0.5rem 0 rgba(0, 0, 0, 0.08);
+}
+
+.train-locomotive {
+  left: 6%;
+  width: 34%;
+  height: 42%;
+  border-radius: var(--locomotive-radius);
+}
+
+.train-locomotive::before,
+.train-car::before {
+  content: '';
+  position: absolute;
+  inset: 22% 10% 40% 14%;
+  border-radius: 0.55rem;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.9) 0 0.8rem,
+      rgba(120, 168, 204, 0.92) 0.8rem 1.22rem
+    );
+}
+
+.train-locomotive::after,
+.train-car::after {
+  content: '';
+  position: absolute;
+  left: 0.7rem;
+  right: 0.7rem;
+  bottom: -1.15rem;
+  height: 2.3rem;
+  background:
+    radial-gradient(circle at 15% 48%, var(--train-wheel) 0 0.72rem, transparent 0.74rem),
+    radial-gradient(circle at 50% 48%, var(--train-wheel) 0 0.72rem, transparent 0.74rem),
+    radial-gradient(circle at 85% 48%, var(--train-wheel) 0 0.72rem, transparent 0.74rem);
+}
+
+.train-stack {
+  position: absolute;
+  left: 18%;
+  bottom: 84%;
+  width: 0.9rem;
+  height: 2.2rem;
+  border-radius: 0.45rem 0.45rem 0.2rem 0.2rem;
+  background: linear-gradient(180deg, rgba(48, 66, 84, 0.84), rgba(30, 42, 55, 0.98));
+}
+
+.train-stack::after {
+  content: '';
+  position: absolute;
+  top: -0.55rem;
+  left: -0.12rem;
+  width: 1.14rem;
+  height: 0.52rem;
+  border-radius: 999px;
+  background: var(--train-metal);
+}
+
+.train-headlight {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 1.55rem;
+  width: 1rem;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 247, 189, 1) 0%, rgba(255, 223, 112, 1) 54%, rgba(255, 223, 112, 0.36) 55%, rgba(255, 223, 112, 0) 100%);
+}
+
+.train-cab {
+  position: absolute;
+  right: 10%;
+  bottom: 72%;
+  width: 28%;
+  height: 38%;
+  border-radius: 0.9rem 0.9rem 0.2rem 0.2rem;
+  border: 1px solid var(--train-outline);
+  background: linear-gradient(180deg, var(--train-cab), #efc66e);
+}
+
+.train-cab::before {
+  content: '';
+  position: absolute;
+  inset: 0.35rem;
+  border-radius: 0.5rem 0.5rem 0.1rem 0.1rem;
+  background: linear-gradient(180deg, rgba(250, 252, 255, 0.92), rgba(184, 215, 242, 0.84));
+}
+
+.train-car {
+  width: 24%;
+  height: 34%;
+  border-radius: 1rem;
+}
+
+.train-car--first {
+  left: 45%;
+}
+
+.train-car--second {
+  left: 72%;
+  width: 18%;
+}
+
+.train-coupler {
+  bottom: 4.1rem;
+  height: 0.58rem;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(76, 92, 107, 0.9), rgba(38, 52, 67, 0.98));
+}
+
+.train-coupler--one {
+  left: 40.5%;
+  width: 4.3%;
+}
+
+.train-coupler--two {
+  left: 69.6%;
+  width: 2.8%;
+}
+
+.train-track {
+  left: 1%;
+  right: 1%;
+  bottom: 0.55rem;
+  height: 2.2rem;
+  border-radius: 1rem;
+  background:
+    linear-gradient(180deg, rgba(129, 104, 84, 0), rgba(129, 104, 84, 0.12)),
+    linear-gradient(180deg, rgba(109, 80, 63, 0.72), rgba(88, 62, 49, 0.92));
+}
+
+.train-track::before,
+.train-track::after {
+  content: '';
+  position: absolute;
+  left: 0.4rem;
+  right: 0.4rem;
+  height: 0.24rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(230, 234, 240, 0.94), rgba(180, 190, 202, 0.98));
+}
+
+.train-track::before {
+  top: 0.45rem;
+}
+
+.train-track::after {
+  bottom: 0.45rem;
+}
+
+.train-sleeper {
+  position: absolute;
+  top: 50%;
+  width: 10%;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(90, 62, 47, 0.76);
+  transform: translateY(-50%);
+}
+
+.train-sleeper:nth-child(1) { left: 3%; }
+.train-sleeper:nth-child(2) { left: 20%; }
+.train-sleeper:nth-child(3) { left: 37%; }
+.train-sleeper:nth-child(4) { left: 54%; }
+.train-sleeper:nth-child(5) { left: 71%; }
+.train-sleeper:nth-child(6) { left: 88%; }
+
+.train-hotspots {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.train-hotspot {
+  position: absolute;
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.55rem 0.8rem;
+  border: 2px solid rgba(12, 79, 130, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 10px 28px rgba(13, 79, 130, 0.16);
+  color: var(--button-ink-strong);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: auto;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+.train-hotspot::after {
+  content: '';
+  position: absolute;
+  inset: -0.45rem;
+  border-radius: inherit;
+  border: 1px dashed rgba(12, 79, 130, 0.18);
+  pointer-events: none;
+}
+
+.train-hotspot.is-hidden,
+.train-hotspot[hidden] {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.train-hotspot--front,
+.train-hotspot[data-anchor='front'] {
+  left: 18%;
+  top: 38%;
+}
+
+.train-hotspot--roof,
+.train-hotspot[data-anchor='roof'] {
+  left: 24%;
+  top: 18%;
+}
+
+.train-hotspot--cab,
+.train-hotspot[data-anchor='cab'] {
+  left: 36%;
+  top: 28%;
+}
+
+.train-hotspot--mid,
+.train-hotspot[data-anchor='mid'] {
+  left: 54%;
+  top: 40%;
+}
+
+.train-hotspot--wheel,
+.train-hotspot[data-anchor='wheel'] {
+  left: 41%;
+  top: 69%;
+}
+
+.train-hotspot--rear,
+.train-hotspot[data-anchor='rear'] {
+  left: 78%;
+  top: 42%;
+}
+
+.train-hotspot--door,
+.train-hotspot[data-anchor='door'] {
+  left: 68%;
+  top: 36%;
+}
+
+.train-hotspot--coupler,
+.train-hotspot[data-anchor='coupler'] {
+  left: 64%;
+  top: 59%;
+}
+
+.train-sounds .settings-modal {
+  backdrop-filter: blur(10px);
+}
+
+.train-sounds .settings-content {
+  width: min(100%, 34rem);
+  padding: clamp(1.1rem, 3vw, 1.6rem);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 1.7rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.52), rgba(255, 255, 255, 0) 36%),
+    linear-gradient(180deg, rgba(255, 253, 247, 0.96), rgba(255, 243, 224, 0.92));
+  box-shadow: var(--shadow-strong);
+  color: var(--ink-strong);
+}
+
+.train-sounds .settings-heading,
+.train-sounds .info-section-title,
+.train-sounds .settings-section-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.train-sounds .settings-heading {
+  font-size: clamp(1.25rem, 3vw, 1.6rem);
+}
+
+.train-sounds .tab-bar {
+  gap: 0.3rem;
+  padding: 0.26rem;
+  border: 1px solid rgba(12, 79, 130, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.train-sounds .tab-btn {
+  flex: 1 1 auto;
+  color: var(--button-ink-strong);
+}
+
+.train-sounds .tab-btn--active {
+  background: linear-gradient(180deg, #ffffff 0%, #d8f0ff 100%);
+}
+
+.train-sounds .tab-panel {
+  gap: 1rem;
+}
+
+.train-sounds .info-section,
+.train-sounds .settings-section {
+  border: 1px solid rgba(12, 79, 130, 0.1);
+  border-radius: 1.1rem;
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.train-sounds .info-section p,
+.train-sounds .settings-help {
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.train-sounds .settings-toggle-row {
+  min-height: 44px;
+  color: var(--ink-strong);
+}
+
+.train-sounds .settings-toggle-row input {
+  accent-color: var(--button-ink);
+}
+
+.train-sounds .settings-actions {
+  gap: 0.7rem;
+}
+
+.train-sounds .settings-quit-link {
+  border: 0;
+}
+
+.train-sounds .modal-close {
+  width: 44px;
+  padding: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.train-credits {
+  min-height: 4.5rem;
+  padding: 0.9rem 1rem;
+  border: 1px dashed rgba(13, 79, 130, 0.22);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.54);
+}
+
+.train-credits:empty::before {
+  content: 'Credits will appear here.';
+  color: rgba(70, 101, 126, 0.9);
+}
+
+.train-sounds-noscript {
+  position: fixed;
+  left: max(1rem, env(safe-area-inset-left, 0px));
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+  z-index: 12;
+  max-width: 30rem;
+  margin: 0 auto;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(13, 79, 130, 0.16);
+  border-radius: 1rem;
+  background: rgba(255, 251, 242, 0.96);
+  box-shadow: var(--shadow-soft);
+  color: var(--ink-strong);
+}
+
+.train-sounds-noscript p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.train-scene--steam,
+#train-scene[data-train-preset='steam'] {
+  --scene-sky-top: #9ed9ff;
+  --scene-sky-mid: #e4f7ff;
+  --scene-ground-top: #f8d59d;
+  --scene-ground-bottom: #edb36f;
+  --train-body: linear-gradient(180deg, #c4422d 0%, #9d2b1b 100%);
+  --train-metal: #324455;
+  --train-cab: #ffe1a0;
+  --train-accent: #ffd45f;
+  --locomotive-radius: 28% 16% 16% 22%;
+}
+
+.train-scene--diesel,
+#train-scene[data-train-preset='diesel'] {
+  --scene-sky-top: #8fd1dc;
+  --scene-sky-mid: #dff5f2;
+  --scene-ground-top: #e6d9a4;
+  --scene-ground-bottom: #c6b36f;
+  --train-body: linear-gradient(180deg, #2f7d68 0%, #1f604f 100%);
+  --train-metal: #44535f;
+  --train-cab: #f6cf7a;
+  --train-accent: #ffb44c;
+  --locomotive-radius: 18% 12% 12% 18%;
+}
+
+.train-scene--diesel .train-stack,
+#train-scene[data-train-preset='diesel'] .train-stack {
+  height: 1.5rem;
+  border-radius: 0.2rem;
+}
+
+.train-scene--electric,
+#train-scene[data-train-preset='electric'] {
+  --scene-sky-top: #8fc7ff;
+  --scene-sky-mid: #edf8ff;
+  --scene-ground-top: #f0dcb1;
+  --scene-ground-bottom: #c7a274;
+  --train-body: linear-gradient(180deg, #2f5d95 0%, #1f4470 100%);
+  --train-metal: #2a445f;
+  --train-cab: #c8ecff;
+  --train-accent: #62d3ff;
+  --locomotive-radius: 16% 12% 12% 18%;
+}
+
+.train-scene--electric .train-stack,
+#train-scene[data-train-preset='electric'] .train-stack {
+  width: 1.35rem;
+  height: 0.65rem;
+  left: 32%;
+  bottom: 98%;
+  border-radius: 999px;
+}
+
+.train-scene--electric .train-stack::after,
+#train-scene[data-train-preset='electric'] .train-stack::after {
+  width: 2.4rem;
+  height: 0.22rem;
+  top: -0.28rem;
+  left: -0.52rem;
+  border-radius: 999px;
+}
+
+.train-scene--high-speed,
+#train-scene[data-train-preset='high-speed'] {
+  --scene-sky-top: #86c7ff;
+  --scene-sky-mid: #e8f6ff;
+  --scene-ground-top: #f0d3bf;
+  --scene-ground-bottom: #d89b86;
+  --train-body: linear-gradient(180deg, #f6f8fb 0%, #d6dde8 100%);
+  --train-metal: #566371;
+  --train-cab: #f0f3f8;
+  --train-window: #dff7ff;
+  --train-accent: #ff4e67;
+  --locomotive-radius: 44% 14% 16% 32%;
+}
+
+.train-scene--high-speed .train-locomotive,
+#train-scene[data-train-preset='high-speed'] .train-locomotive {
+  height: 38%;
+}
+
+.train-scene--high-speed .train-headlight,
+#train-scene[data-train-preset='high-speed'] .train-headlight {
+  right: 0.45rem;
+  width: 0.75rem;
+  height: 1.35rem;
+  border-radius: 999px;
+}
+
+@media (max-width: 420px) {
+  .train-title {
+    font-size: clamp(1.45rem, 7vw, 2rem);
+  }
+
+  .train-selector-bar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .train-switch-label {
+    display: none;
+  }
+
+  .train-switch-btn {
+    min-width: 3.25rem;
+    padding-inline: 0.85rem;
+  }
+
+  .train-name {
+    padding-inline: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .train-display {
+    height: clamp(8.6rem, 40vw, 12rem);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 540px) {
+  .train-sounds-screen {
+    padding:
+      max(0.6rem, env(safe-area-inset-top, 0px))
+      max(0.75rem, env(safe-area-inset-right, 0px))
+      max(0.7rem, env(safe-area-inset-bottom, 0px))
+      max(0.75rem, env(safe-area-inset-left, 0px));
+  }
+
+  .train-panel {
+    gap: 0.65rem;
+  }
+
+  .train-header {
+    padding: 0.42rem 0.62rem;
+  }
+
+  .train-title {
+    font-size: clamp(1rem, 3.2vw, 1.5rem);
+  }
+
+  .train-start-body {
+    gap: 0.75rem;
+    padding: 1.15rem 1.4rem;
+  }
+
+  .train-primary-btn,
+  .train-menu-btn,
+  .train-switch-btn {
+    padding-block: 0.7rem;
+  }
+
+  .train-name {
+    min-height: 2.8rem;
+    font-size: 0.95rem;
+  }
+
+  .train-scene {
+    min-height: 13.5rem;
+  }
+
+  .train-display-frame {
+    padding-bottom: 2.15rem;
+  }
+
+  .train-display {
+    height: clamp(7.4rem, 26vh, 10.8rem);
+  }
+
+  .train-locomotive,
+  .train-car {
+    bottom: 2.45rem;
+  }
+
+  .train-coupler {
+    bottom: 3.5rem;
+  }
+
+  .train-track {
+    bottom: 0.35rem;
+  }
+}
+
+@media (min-width: 720px) {
+  .train-panel {
+    width: min(100%, 64rem);
+  }
+
+  .train-start-body {
+    padding: clamp(2rem, 5vw, 3.4rem);
+  }
+
+  .train-subtitle {
+    max-width: 22rem;
+    font-size: clamp(1.15rem, 2vw, 1.5rem);
+  }
+
+  .train-selector-bar {
+    gap: 0.9rem;
+    padding: 0.75rem;
+  }
+
+  .train-switch-btn {
+    min-width: 8.5rem;
+  }
+
+  .train-name {
+    min-height: 3.5rem;
+    font-size: clamp(1.1rem, 2vw, 1.65rem);
+  }
+
+  .train-scene {
+    min-height: clamp(22rem, 48vw, 29rem);
+  }
+
+  .train-display {
+    height: clamp(10rem, 26vw, 17rem);
+  }
+
+  .train-hotspot {
+    font-size: 0.96rem;
+  }
+
+  .train-sounds .settings-content {
+    width: min(100%, 37rem);
+  }
+}
+
+@media (min-width: 1100px) and (min-height: 700px) {
+  .train-panel {
+    width: min(100%, 74rem);
+  }
+
+  .train-title {
+    font-size: clamp(1.8rem, 2.4vw, 2.7rem);
+  }
+
+  .train-title--small {
+    font-size: clamp(1.3rem, 1.8vw, 1.8rem);
+  }
+
+  .train-selector-bar {
+    padding: 0.8rem;
+  }
+
+  .train-name {
+    min-height: 3.8rem;
+  }
+
+  .train-scene {
+    min-height: 32rem;
+  }
+
+  .train-display {
+    width: min(100%, 57rem);
+    height: clamp(11rem, 24vw, 18rem);
+  }
+}
+
+html[data-reduce-motion='reduce'] .train-sounds .train-cloud,
+html[data-reduce-motion='reduce'] .train-sounds .train-display,
+html[data-reduce-motion='reduce'] .train-sounds .train-scene,
+html[data-reduce-motion='reduce'] .train-sounds .train-hotspot,
+html[data-reduce-motion='reduce'] .train-sounds .train-menu-btn,
+html[data-reduce-motion='reduce'] .train-sounds .train-primary-btn,
+html[data-reduce-motion='reduce'] .train-sounds .train-switch-btn,
+html[data-reduce-motion='reduce'] .train-sounds .tab-btn,
+html[data-reduce-motion='reduce'] .train-sounds .settings-restart-btn,
+html[data-reduce-motion='reduce'] .train-sounds .settings-quit-link,
+html[data-reduce-motion='reduce'] .train-sounds .modal-close {
+  animation: none !important;
+  transition-duration: 0.01ms !important;
+}
+
+html[data-reduce-motion='reduce'] .train-sounds .train-scene.is-switching,
+html[data-reduce-motion='reduce'] .train-sounds .train-scene[data-scene-state='switching'] {
+  transform: none;
+  filter: saturate(1.05);
+  box-shadow: 0 0 0 6px rgba(255, 245, 205, 0.26), var(--shadow-strong);
+}
+
+html[data-reduce-motion='reduce'] .train-sounds .train-scene.is-pressed .train-display,
+html[data-reduce-motion='reduce'] .train-sounds .train-scene[data-scene-state='pressed'] .train-display,
+html[data-reduce-motion='reduce'] .train-sounds .train-display.is-pressed,
+html[data-reduce-motion='reduce'] .train-sounds .train-hotspot.is-pressed,
+html[data-reduce-motion='reduce'] .train-sounds .train-hotspot[aria-pressed='true'] {
+  transform: none;
+  filter: saturate(1.08) brightness(0.99);
+  box-shadow: 0 0 0 4px rgba(255, 214, 93, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-cloud,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-display,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-scene,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-hotspot,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-menu-btn,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-primary-btn,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-switch-btn,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .tab-btn,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .settings-restart-btn,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .settings-quit-link,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .modal-close {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-scene.is-switching,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-scene[data-scene-state='switching'] {
+    transform: none;
+    filter: saturate(1.05);
+    box-shadow: 0 0 0 6px rgba(255, 245, 205, 0.26), var(--shadow-strong);
+  }
+
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-scene.is-pressed .train-display,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-scene[data-scene-state='pressed'] .train-display,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-display.is-pressed,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-hotspot.is-pressed,
+  html:not([data-reduce-motion='no-preference']) .train-sounds .train-hotspot[aria-pressed='true'] {
+    transform: none;
+    filter: saturate(1.08) brightness(0.99);
+    box-shadow: 0 0 0 4px rgba(255, 214, 93, 0.2);
+  }
+}
+
+@keyframes train-cloud-drift {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(10%);
+  }
+}
+
+@keyframes train-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-0.22rem);
+  }
+}
+
+@keyframes train-scene-switch {
+  0% {
+    filter: saturate(0.96) brightness(0.98);
+  }
+
+  35% {
+    filter: saturate(1.08) brightness(1.03);
+  }
+
+  100% {
+    filter: saturate(1) brightness(1);
+  }
+}

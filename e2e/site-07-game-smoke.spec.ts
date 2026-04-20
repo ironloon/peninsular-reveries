@@ -651,4 +651,47 @@ test.describe('SITE-07: Game smoke tests', () => {
     await tapGamepadButton(page, 9)
     await expect(page.locator('#settings-modal')).toBeVisible()
   })
+
+  // Train Sounds
+  test('Train Sounds — start screen is visible', async ({ page }) => {
+    await page.goto('/train-sounds/')
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Train Sounds' })).toBeVisible()
+  })
+
+  test('Train Sounds — controller starts the game, switches trains, keeps the scene in view, and opens the menu', async ({ page }, testInfo) => {
+    await installMockGamepad(page)
+    await page.goto('/train-sounds/')
+
+    await expect(page.locator('#start-screen')).toBeVisible()
+    await expect(page.locator('#start-btn')).toBeInViewport()
+
+    await tapGamepadButton(page, 9)
+    await expect(page.locator('#settings-modal')).toBeVisible()
+
+    await page.keyboard.press('Escape')
+    await expect(page.locator('#settings-modal')).toBeHidden()
+
+    await tapGamepadButton(page, 0)
+    await expect(page.locator('#game-screen.active')).toBeVisible()
+
+    const scene = page.locator('#train-scene')
+    const trainName = page.locator('#train-name')
+
+    await expect(scene).toBeVisible()
+    await expect(scene).toBeInViewport()
+    await expect(trainName).not.toHaveText('')
+
+    await page.screenshot({ path: testInfo.outputPath('train-sounds-active-scene.png') })
+
+    const initialTrainName = ((await trainName.textContent()) ?? '').trim()
+    expect(initialTrainName).not.toBe('')
+
+    await page.keyboard.press('ArrowRight')
+    await expect(trainName).not.toHaveText(initialTrainName)
+    await expect(scene).toBeInViewport()
+
+    await tapGamepadButton(page, 9)
+    await expect(page.locator('#settings-modal')).toBeVisible()
+  })
 })
