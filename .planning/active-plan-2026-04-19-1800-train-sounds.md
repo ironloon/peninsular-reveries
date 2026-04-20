@@ -263,3 +263,7 @@ After all complete: deferred edits → `pnpm sync:attributions` → `pnpm test:l
 
 ## Manual Verification
 - Remaining human-only check: listen to the Train Sounds one-shots on real speakers or headphones after landing to confirm final audibility and quality.
+
+## Implementation
+Commit: 07d0019
+Pushed: 2026-04-20
