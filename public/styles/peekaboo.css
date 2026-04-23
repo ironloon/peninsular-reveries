@@ -402,7 +402,8 @@ body.peekaboo-game .screen {
 }
 
 .peekaboo-fog-cell--revealed {
-  opacity: 0;
+  opacity: 0 !important;
+  animation: none !important;
   pointer-events: none;
   cursor: default;
   background-color: transparent;
