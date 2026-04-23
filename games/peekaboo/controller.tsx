@@ -99,44 +99,14 @@ export async function peekabooAction() {
               </button>}
             />
 
-            <div className="peekaboo-enter-scene" aria-hidden="true"></div>
+            <div id="peekaboo-enter-scene" className="peekaboo-enter-scene" aria-hidden="true"></div>
             <div className="peekaboo-enter-content">
               <div className="peekaboo-enter-body">
-                <p>Someone is hiding in the scene...</p>
+                <p id="peekaboo-enter-hint">Someone is hiding in the scene...</p>
               </div>
 
               <button type="button" className="peekaboo-primary-btn peekaboo-proceed-btn">Find them!</button>
             </div>
-          </div>
-        </GameScreen>
-
-        <GameScreen id="peekaboo-fog-screen" labelledBy="peekaboo-fog-heading">
-          <div className="peekaboo-screen-panel peekaboo-fog-panel">
-            <GameHeader
-              headingId="peekaboo-fog-heading"
-              className="peekaboo-header"
-              leftContent={<>
-                <div className="peekaboo-heading-block">
-                  <h2 id="peekaboo-fog-heading" className="peekaboo-title peekaboo-title-small">Peekaboo</h2>
-                </div>
-              </>}
-              rightContent={<button
-                type="button"
-                className="peekaboo-menu-btn"
-                data-settings-open="true"
-                aria-haspopup="dialog"
-                aria-controls="settings-modal"
-                aria-expanded="false"
-              >
-                Menu
-              </button>}
-            />
-
-            <div className="peekaboo-fog-body">
-              <p>Fog rolls in!</p>
-            </div>
-
-            <button type="button" className="peekaboo-primary-btn peekaboo-proceed-btn">Peek through</button>
           </div>
         </GameScreen>
 

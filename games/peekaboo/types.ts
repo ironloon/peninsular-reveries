@@ -1,4 +1,4 @@
-export type GamePhase = 'meet' | 'enter' | 'fog' | 'playing' | 'found'
+export type GamePhase = 'meet' | 'enter' | 'playing' | 'found'
 
 export interface Target {
   readonly emoji: string

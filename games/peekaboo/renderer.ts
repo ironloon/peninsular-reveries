@@ -130,6 +130,11 @@ export function renderEnterAnimation(target: Target): void {
 
 // ── Scene layer ───────────────────────────────────────────────
 
+let enterSceneEl: HTMLElement | null = null
+function getEnterScene(): HTMLElement {
+  return enterSceneEl ??= document.getElementById('peekaboo-enter-scene')!
+}
+
 function buildSceneLayer(state: PeekabooState): void {
   const scene = getSceneLayer()
   scene.innerHTML = ''
@@ -166,6 +171,50 @@ function buildSceneLayer(state: PeekabooState): void {
   }
 }
 
+// ── Enter scene ───────────────────────────────────────────────
+
+export function renderEnterScene(state: PeekabooState): void {
+  const scene = getEnterScene()
+  scene.innerHTML = ''
+  scene.style.gridTemplateColumns = `repeat(${state.cols}, 1fr)`
+  scene.style.gridTemplateRows = `repeat(${state.rows}, 1fr)`
+
+  const targetEl = document.createElement('span')
+  targetEl.className = 'peekaboo-scene-target'
+  targetEl.textContent = state.currentTarget.emoji
+  targetEl.style.gridRow = String(state.targetRow + 1)
+  targetEl.style.gridColumn = String(state.targetCol + 1)
+  scene.appendChild(targetEl)
+
+  const occupied = new Set<string>()
+  occupied.add(`${state.targetRow},${state.targetCol}`)
+
+  for (let i = 0; i < Math.min(state.rows * state.cols, 12); i++) {
+    let row: number
+    let col: number
+    let key: string
+    do {
+      row = Math.floor(Math.random() * state.rows)
+      col = Math.floor(Math.random() * state.cols)
+      key = `${row},${col}`
+    } while (occupied.has(key))
+    occupied.add(key)
+
+    const sceneryEl = document.createElement('span')
+    sceneryEl.className = 'peekaboo-scene-scenery'
+    sceneryEl.textContent = randomScenery()
+    sceneryEl.style.gridRow = String(row + 1)
+    sceneryEl.style.gridColumn = String(col + 1)
+    scene.appendChild(sceneryEl)
+  }
+
+  // Update the hint text with target name
+  const hintEl = document.getElementById('peekaboo-enter-hint')
+  if (hintEl) {
+    hintEl.textContent = `The ${state.currentTarget.name} is hiding in the scene...`
+  }
+}
+
 // ── Fog grid ──────────────────────────────────────────────────
 
 export function renderGrid(state: PeekabooState): void {
@@ -190,6 +239,12 @@ export function renderGrid(state: PeekabooState): void {
         revealed ? `Revealed, row ${row + 1}, column ${col + 1}` : `Fog, row ${row + 1}, column ${col + 1}`,
       )
       cell.style.animationDelay = `${(row * state.cols + col) * 40}ms`
+      // Slightly varied border-radius for organic look
+      const tl = 30 + Math.random() * 40
+      const tr = 30 + Math.random() * 40
+      const br = 30 + Math.random() * 40
+      const bl = 30 + Math.random() * 40
+      cell.style.setProperty('--peekaboo-cell-br', `${tl}% ${tr}% ${br}% ${bl}%`)
       if (revealed) {
         cell.classList.add('peekaboo-fog-cell--revealed')
       }
@@ -206,6 +261,11 @@ export function revealCellVisual(row: number, col: number): void {
     `[data-peekaboo-row="${row}"][data-peekaboo-col="${col}"]`,
   )
   if (!cell) return
+  // Set reveal origin to where the user clicked (or center as fallback)
+  const revealX = cell.dataset['peekabooRevealX'] ?? '50%'
+  const revealY = cell.dataset['peekabooRevealY'] ?? '50%'
+  cell.style.setProperty('--peekaboo-reveal-x', revealX)
+  cell.style.setProperty('--peekaboo-reveal-y', revealY)
   cell.dataset['revealed'] = 'true'
   cell.classList.add('peekaboo-fog-cell--revealed')
   cell.setAttribute('aria-label', `Revealed, row ${row + 1}, column ${col + 1}`)
@@ -250,6 +310,7 @@ export interface PeekabooRenderer {
   showScreen: (screenId: string) => void
   renderMeetScreen: (target: Target) => void
   renderEnterAnimation: (target: Target) => void
+  renderEnterScene: (state: PeekabooState) => void
   renderGrid: (state: PeekabooState) => void
   revealCellVisual: (row: number, col: number) => void
   renderFoundCelebration: (target: Target) => void
@@ -279,6 +340,7 @@ export function createRenderer(root: HTMLElement): PeekabooRenderer {
     // Clear element cache
     gameAreaEl = null
     enterScreenEl = null
+    enterSceneEl = null
     foundScreenEl = null
     sceneLayerEl = null
     fogGridEl = null
@@ -292,6 +354,7 @@ export function createRenderer(root: HTMLElement): PeekabooRenderer {
     root,
     showScreen,
     renderMeetScreen,
+    renderEnterScene,
     renderEnterAnimation: (target: Target) => {
       // Clear any previous timer
       const screen = getEnterScreen()

@@ -57,19 +57,15 @@ function handleAdvancePhase(): void {
 
   if (phase === 'enter') {
     showScreen('enter-screen')
+    renderer?.renderEnterScene(sessionState)
     renderer?.renderEnterAnimation(sessionState.currentTarget)
     requestAnimationFrame(() => {
       manageFocus('enter')
     })
-  } else if (phase === 'fog') {
-    showScreen('fog-screen')
-    playFogSound()
-    requestAnimationFrame(() => {
-      manageFocus('fog')
-    })
   } else if (phase === 'playing') {
     showScreen('playing-screen')
     renderer?.renderGrid(sessionState)
+    playFogSound()
     requestAnimationFrame(() => {
       // Animate fog roll-in on cells
       const cells = Array.from(

@@ -13,10 +13,10 @@ test('initState returns a valid initial state', () => {
 
   assert.equal(state.phase, 'meet')
   assert.equal(state.round, 1)
-  assert.equal(state.cols, 8)
-  assert.equal(state.rows, 6)
-  assert.equal(state.grid.length, 6)
-  assert.equal(state.grid[0].length, 8)
+  assert.equal(state.cols, 6)
+  assert.equal(state.rows, 4)
+  assert.equal(state.grid.length, 4)
+  assert.equal(state.grid[0].length, 6)
   assert.ok(TARGET_POOL.some((t) => t.emoji === state.currentTarget.emoji && t.name === state.currentTarget.name))
   assert.ok(state.targetRow >= 0 && state.targetRow < state.rows)
   assert.ok(state.targetCol >= 0 && state.targetCol < state.cols)
@@ -38,14 +38,8 @@ test('advancePhase transitions meet to enter', () => {
   assert.equal(next.phase, 'enter')
 })
 
-test('advancePhase transitions enter to fog', () => {
+test('advancePhase transitions enter to playing', () => {
   const state = makeState({ phase: 'enter' })
-  const next = advancePhase(state)
-  assert.equal(next.phase, 'fog')
-})
-
-test('advancePhase transitions fog to playing', () => {
-  const state = makeState({ phase: 'fog' })
   const next = advancePhase(state)
   assert.equal(next.phase, 'playing')
 })
@@ -98,8 +92,8 @@ test('revealCell out of bounds returns same state', () => {
   const state = makeState({ phase: 'playing' })
   assert.equal(revealCell(state, -1, 0), state)
   assert.equal(revealCell(state, 0, -1), state)
-  assert.equal(revealCell(state, 6, 0), state)
-  assert.equal(revealCell(state, 0, 8), state)
+  assert.equal(revealCell(state, 4, 0), state)
+  assert.equal(revealCell(state, 0, 6), state)
 })
 
 test('revealCell does not mutate other cells', () => {

@@ -278,6 +278,12 @@ export function setupInput(
     if (button.matches(CELL_SELECTOR)) {
       const rc = toRowCol(button)
       if (rc) {
+        // Store click position relative to the cell for organic reveal animation
+        const rect = button.getBoundingClientRect()
+        const relX = ((event.clientX - rect.left) / rect.width * 100).toFixed(1)
+        const relY = ((event.clientY - rect.top) / rect.height * 100).toFixed(1)
+        button.dataset['peekabooRevealX'] = `${relX}%`
+        button.dataset['peekabooRevealY'] = `${relY}%`
         callbacks.onRevealCell(rc.row, rc.col)
       }
       return

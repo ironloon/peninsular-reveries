@@ -44,9 +44,6 @@ export function announcePhase(phase: GamePhase, target: Target): void {
     case 'enter':
       writeLiveRegion(`The ${target.name} is hiding!`, 'polite')
       break
-    case 'fog':
-      writeLiveRegion('Fog covers the scene!', 'polite')
-      break
     case 'playing':
       writeLiveRegion(`Find the ${target.name}!`, 'polite')
       break
@@ -65,8 +62,7 @@ export function announceRound(round: number): void {
 export function manageFocus(phase: GamePhase): void {
   switch (phase) {
     case 'meet':
-    case 'enter':
-    case 'fog': {
+    case 'enter': {
       const proceedBtn = document.querySelector<HTMLButtonElement>('.peekaboo-proceed-btn')
       if (proceedBtn) {
         proceedBtn.focus()

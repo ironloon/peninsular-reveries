@@ -6,8 +6,8 @@ import {
   type PeekabooState,
 } from './types.js'
 
-const GRID_COLS = 8
-const GRID_ROWS = 6
+const GRID_COLS = 6
+const GRID_ROWS = 4
 
 function randomInt(min: number, max: number): number {
   return min + Math.floor(Math.random() * (max - min + 1))
@@ -38,7 +38,7 @@ export function initState(): PeekabooState {
   }
 }
 
-const PHASE_SEQUENCE: readonly GamePhase[] = ['meet', 'enter', 'fog', 'playing']
+const PHASE_SEQUENCE: readonly GamePhase[] = ['meet', 'enter', 'playing']
 
 export function advancePhase(state: PeekabooState): PeekabooState {
   const currentIndex = PHASE_SEQUENCE.indexOf(state.phase)
