@@ -368,7 +368,6 @@ body.peekaboo-game .screen {
   margin-inline: auto;
   overflow: hidden;
   border-radius: var(--peekaboo-cell-radius);
-  background-color: var(--peekaboo-fog);
 }
 
 .peekaboo-fog-cell {
