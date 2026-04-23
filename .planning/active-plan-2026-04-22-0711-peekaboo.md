@@ -1,0 +1,233 @@
+# Plan: Peekaboo
+
+## Project Context
+- Sources:
+  - `README.md` - game principles (all inputs, all screens; offline-first; accessibility; synthesized sound; no accounts/tracking; heart in, pixels out)
+  - `AGENTS.md` - project guidelines, styling model, session expectations, environment
+  - `.github/skills/review/references/architecture.md` - per-game file structure, registration steps, rendering approaches, build pipeline
+  - `.github/skills/review/references/game-quality.md` - layout, pacing, visual rules, reading level ~1, calm pacing
+  - `.github/skills/review/references/testing.md` - validation gates, test conventions
+  - `games/squares/` - reference DOM game with overlay patterns (preview cells via data attributes + CSS ::after)
+  - `games/story-trail/` - reference exploration/reveal game with scene transitions
+  - `client/spatial-navigation.ts` - shared spatial navigation for directional focus
+  - `client/game-menu.ts` - shared tabbed modal (Settings + Info)
+  - `client/game-screens.ts` - shared screen transition helpers
+  - `client/audio.ts` - shared AudioContext, ensureAudioUnlocked, resolveAssetUrl
+  - `client/game-audio.ts` - per-game audio bus management
+  - `client/preferences.ts` - shared music/SFX toggle, reduced-motion
+  - `app/ui/document.tsx` - SSR document shell
+  - `app/ui/game-shell.tsx` - shared game UI components (GameScreen, GameHeader, GameTabbedModal, SrOnly)
+- Constraints:
+  - DOM-first rendering (canvas only as exception); vanilla TypeScript, no framework
+  - Pure state functions in state.ts (no DOM, no side effects)
+  - CSS-first animation with reduced-motion static fallbacks
+  - Three input methods: keyboard, touch/pointer, gamepad
+  - All tappable elements must be `<button>` or `<a>` (iOS Safari)
+  - `touch-action: manipulation` everywhere; 44px minimum targets
+  - Synthesized audio only (Web Audio API oscillators); no audio files
+  - Reading level ~1; calm, non-punitive pacing
+  - File size: .ts/.tsx under 300 lines (ceiling 600), .css under 800 lines (ceiling ~1000)
+  - Game slug: `peekaboo`, body class: `peekaboo-game`
+  - Base path awareness: use `resolveAssetUrl()` for runtime asset fetches
+  - Every game needs GameTabbedModal with Settings/Info tabs, Restart, Quit
+  - Click-to-proceed transitions (no timed auto-advance) for accessibility
+- Full validation:
+  - `pnpm check` (lint + typecheck)
+  - `pnpm test:local` (full local validation gate)
+- Delivery verification:
+  - deployed URL on GitHub Pages at `/peekaboo/`
+
+## User Intent
+Peekaboo is a cozy find-the-hidden-character game where a fog-of-war covers a scene and the player clicks to reveal cells until they find the target. Each round introduces a character (from a rotating emoji cast) on a "meet" screen, then the character flies into the scene and vanishes — the player sees the environment briefly but never the target's hiding spot. Fog rolls in, and the player pokes holes in it by clicking cells until they uncover the target, triggering a celebration. Difficulty stays flat across rounds, and all transitions are click-to-proceed (no timed auto-advance) for accessibility.
+
+## Legs
+
+### LEG-1: Core - Types & state
+- Status: done
+- Confirmed: yes
+- Goal link: Defines the game's entire state machine — phases, target pool, reveal grid, round progression — that every other module reads from.
+- Depends on: none
+- Owned files:
+  - `games/peekaboo/types.ts`
+  - `games/peekaboo/state.ts`
+- Read-only:
+  - `games/squares/types.ts` - reference for state shape conventions
+  - `games/squares/state.ts` - reference for pure state transition patterns
+- Deferred shared edits: none
+- Verification: `pnpm exec tsc --noEmit games/peekaboo/types.ts games/peekaboo/state.ts`
+- Intent:
+  1. Define `GamePhase` union: `'meet' | 'enter' | 'fog' | 'playing' | 'found'`.
+  2. Define `Target` type: `{ readonly emoji: string; readonly name: string }`.
+  3. Define `TARGET_POOL: readonly Target[]` with at least 6 entries (dog 🐶, cat 🐱, dragon 🐉, person 🧑, frog 🐸, owl 🦉).
+  4. Define `PeekabooState` with `readonly phase`, `readonly currentTarget: Target`, `readonly targetRow`, `readonly targetCol`, `readonly grid: readonly (readonly boolean[])[]` (true = revealed), `readonly round`, `readonly cols`, `readonly rows`.
+  5. Grid dimensions: 8×6 (48 cells) — fits comfortably on mobile and desktop without scrolling.
+  6. Implement `initState(): PeekabooState` — picks a random target from pool, places it at random grid cell, all cells unrevealed, phase `'meet'`.
+  7. Implement `advancePhase(state): PeekabooState` — transitions: meet→enter, enter→fog, fog→playing. No auto-timers.
+  8. Implement `revealCell(state, row, col): PeekabooState` — sets grid cell to revealed. If cell contains target, phase becomes `'found'`.
+  9. Implement `nextRound(state): PeekabooState` — picks new target, new random position, resets grid, phase `'meet'`.
+  10. All functions pure: return new state objects, no DOM, no side effects.
+  11. Co-locate unit tests in `games/peekaboo/state.test.ts` covering: round init, phase advance, cell reveal, found detection, next round, edge cases (reveal already-revealed cell, reveal at target position).
+
+### LEG-2: Rendering & CSS
+- Status: done
+- Confirmed: yes
+- Goal link: Renders the fog grid, cell reveal, all game screens, celebration — the visual heart of the game.
+- Depends on: LEG-1
+- Owned files:
+  - `games/peekaboo/renderer.ts`
+  - `public/styles/peekaboo.css`
+- Read-only:
+  - `games/peekaboo/types.ts` - state and type definitions
+  - `games/squares/renderer.ts` - reference for DOM rendering + runtime style injection
+  - `games/story-trail/renderer.ts` - reference for scene/transition rendering
+  - `app/ui/game-shell.tsx` - shared GameScreen, GameHeader, SrOnly components (SSR-rendered, read to understand HTML structure)
+- Deferred shared edits: none
+- Verification: `pnpm exec tsc --noEmit games/peekaboo/renderer.ts`
+- Intent:
+  1. **Screen sections** (rendered in controller.tsx SSR, renderer manipulates classes/content):
+     - Meet screen: large target emoji centered, "Find the [name]!" heading, proceed `<button>`.
+     - Enter screen: scene background visible, animated target emoji flies in from top-left and vanishes (CSS animation `@keyframes peekaboo-enter`), proceed `<button>`.
+     - Fog screen: same scene, fog grid cells animate in (staggered opacity), proceed `<button>`.
+     - Playing screen: fog grid covers scene. Each cell is a `<button>` with `data-peekaboo-row` and `data-peekaboo-col` attributes. Revealed cells are transparent; unrevealed cells are opaque fog color.
+     - Found screen: target emoji enlarged with celebration animation, "You found [name]!" heading, play-again `<button>`.
+  2. **Fog grid**: CSS grid with `grid-template-columns: repeat(8, 1fr)`. Each cell is a `<button>` sized to fill its grid area. Unrevealed cells have `background-color: var(--peekaboo-fog)` and `opacity: 1`. Revealed cells transition to `opacity: 0` (CSS transition). The scene layer is positioned behind the grid with the target emoji placed at the target cell's grid position.
+  3. **Scene layer**: positioned behind the fog grid (`position: absolute; inset: 0`). Contains the target emoji at its grid position and decorative scene elements (emoji scenery like trees 🌳, clouds ☁️, etc.) placed randomly for visual interest. The target emoji is only visible when fog cells above it are revealed.
+  4. **Meet screen rendering**: `renderMeetScreen(target)` — updates DOM content for current target.
+  5. **Enter screen animation**: `renderEnterAnimation(target)` — creates a temporary flying element, CSS animation handles movement and fade. After animation, element is removed from DOM.
+  6. **Fog grid rendering**: `renderGrid(state)` — creates/updates the grid buttons. Uses `data-revealed="true|false"` on cells. Applies `aria-label` per cell: "Fog, row X, column Y" or "Revealed, row X, column Y".
+  7. **Cell reveal**: `revealCellVisual(row, col)` — updates cell data attribute and class to trigger CSS opacity transition.
+  8. **Found celebration**: `renderFoundCelebration(target)` — enlarges target, adds confetti particles via CSS `::after` pseudo-elements or multiple small `<span>` elements with staggered CSS animations.
+  9. **CSS custom properties** on `body.peekaboo-game`:
+     - `--peekaboo-fog`: fog overlay color (dark, matches theme)
+     - `--peekaboo-fog-transition`: opacity transition duration (0.3s)
+     - `--peekaboo-cell-radius`: border-radius for fog cells
+     - `--peekaboo-celebration-scale`: celebration emoji scale
+     - `--peekaboo-reveal-radius`: reveal visual spread (via box-shadow)
+  10. **Reduced-motion**: `@media (prefers-reduced-motion: reduce)` — disable fly-in animation (show static), disable fog stagger (all cells appear at once), disable confetti (static sparkle), all transitions set to `0s` or `none`. Static end-states must show correct positioning.
+  11. **Responsive**: grid cells min 44px for touch targets. On narrow screens, reduce columns or adjust cell size. Use `clamp()` or container queries if needed.
+  12. **Theme support**: dark/light via existing theme system. Fog color adapts (darker fog in light theme, lighter fog in dark theme, or vice versa for contrast).
+
+### LEG-3: Input & accessibility
+- Status: done
+- Confirmed: yes
+- Goal link: Makes the game playable via keyboard, touch, and gamepad, and ensures screen readers know what's happening.
+- Depends on: LEG-1
+- Owned files:
+  - `games/peekaboo/input.ts`
+  - `games/peekaboo/accessibility.ts`
+- Read-only:
+  - `games/peekaboo/types.ts` - state and type definitions
+  - `games/squares/input.ts` - reference for input callback patterns
+  - `games/squares/accessibility.ts` - reference for ARIA patterns
+  - `client/spatial-navigation.ts` - shared findNearestDirectionalTarget
+  - `client/preferences.ts` - reduced-motion detection
+- Deferred shared edits: none
+- Verification: `pnpm exec tsc --noEmit games/peekaboo/input.ts games/peekaboo/accessibility.ts`
+- Intent:
+  1. **Input callbacks**: define `InputCallbacks` with `onRevealCell(row, col)`, `onAdvancePhase()`, `onNextRound()`, `onOpenMenu()`.
+  2. **Click/tap**: bind `click` on fog grid `<button>` cells to `onRevealCell`. Bind proceed/play-again buttons to `onAdvancePhase`/`onNextRound`. Use `touch-action: manipulation` on all cells.
+  3. **Keyboard**:
+     - Arrow keys: move focus across grid cells using `findNearestDirectionalTarget()` from `client/spatial-navigation.ts`.
+     - Enter/Space on focused grid cell: call `onRevealCell`.
+     - Enter on proceed/play-again buttons: call `onAdvancePhase`/`onNextRound`.
+     - Escape: open game menu.
+  4. **Gamepad**:
+     - Poll `navigator.getGamepads()` via `requestAnimationFrame` loop.
+     - D-pad/left stick: navigate grid cells (debounce 200ms, dead zone 0.5).
+     - A button (index 0): reveal focused cell.
+     - Start button: open menu.
+     - Follow existing gamepad patterns from `games/squares/input.ts`.
+  5. **Accessibility** (`accessibility.ts`):
+     - `announceReveal(row, col)` — polite announcement via `#game-status` live region: "Revealed, row X, column Y".
+     - `announceFound(target)` — assertive announcement via `#game-feedback` live region: "You found the [name]! 🎉".
+     - `announcePhase(phase, target)` — polite announcement for phase transitions: "Find the [name]!", "The [name] is hiding!", "Fog covers the scene!", "[Name] found!".
+     - `announceRound(round)` — "Round X" on new round.
+     - `manageFocus(phase)` — move focus to the proceed button on meet/enter/fog screens, to the grid on playing, to the play-again button on found.
+     - Grid cells have `aria-label`: unrevealed = "Hidden, row X, column Y", revealed = "Revealed, row X, column Y", target = "[Name], row X, column Y" (only set when cell is revealed and contains target).
+  6. **setupInput(callbacks, gridContainer, buttons)**: main entry point that wires all three input methods. Returns cleanup function.
+  7. **cleanup()**: removes all event listeners and stops gamepad polling.
+
+### LEG-4: Audio & animation
+- Status: done
+- Confirmed: yes
+- Goal link: Synth sounds and CSS animations make reveals satisfying and celebrations rewarding.
+- Depends on: LEG-1
+- Owned files:
+  - `games/peekaboo/sounds.ts`
+  - `games/peekaboo/animations.ts`
+- Read-only:
+  - `games/peekaboo/types.ts` - state and type definitions
+  - `client/audio.ts` - shared AudioContext, ensureAudioUnlocked, playTone, createSfxBus
+  - `client/game-audio.ts` - per-game audio bus setup
+  - `client/preferences.ts` - SFX/music toggle state and events
+  - `games/squares/sounds.ts` - reference for synth sound patterns
+  - `games/squares/animations.ts` - reference for Web Animations API patterns
+- Deferred shared edits: none
+- Verification: `pnpm exec tsc --noEmit games/peekaboo/sounds.ts games/peekaboo/animations.ts`
+- Intent:
+  1. **Audio bus setup**: call `createGameAudioBuses('peekaboo')` from `client/game-audio.ts` on init. Listen for `reveries:sfx-change` and `reveries:music-change` events to mute/unmute.
+  2. **Synth sounds** (all via Web Audio API oscillators, no audio files):
+     - `playRevealSound()`: short soft sine tone, pitch slightly random (400-500Hz), duration 0.1s, quick fade-out. Feels like gently lifting a curtain.
+     - `playFoundSound()`: bright ascending arpeggio (3-4 notes, major chord, triangle wave), duration 0.6s. Celebration fanfare.
+     - `playAdvanceSound()`: gentle click/pop (short square wave burst, 800Hz, 0.05s). Proceeding to next phase.
+     - `playFogSound()`: low rumble pad (sine wave 80-120Hz with slow LFO, duration 0.8s). Fog rolling in.
+     - `playNewRoundSound()`: pleasant chime (sine wave, 660Hz, 0.15s, gentle attack/decay). New round starting.
+  3. **All sounds check `isReducedMotionEnabled()`**: if reduced motion, skip celebratory/fancy sounds, keep functional feedback minimal.
+  4. **Animations** (`animations.ts`):
+     - `animateCellReveal(cellElement)`: triggers CSS class `peekaboo-cell--revealing` on the cell. CSS handles opacity transition. If reduced motion, just set final state immediately.
+     - `animateFogRollIn(gridCells)`: staggered delay on each cell's opacity transition (30ms between cells, row-by-row). If reduced motion, all cells appear simultaneously.
+     - `animateFlyIn(targetElement)`: CSS animation — target emoji translates from off-screen (top-left) to center, then fades out. Duration ~1s. If reduced motion, skip animation (character shown briefly at center then hidden).
+     - `animateCelebration(targetElement)`: scale-up + confetti particles. Confetti: 8-12 small `<span>` elements with random positions, colors, rotation, and fall animation via CSS. If reduced motion, static scale-up only, no confetti.
+     - All animations use Web Animations API or CSS classes (CSS-first). JS only triggers/coordinates and cleans up DOM elements after animation.
+  5. **Cleanup**: `stopAllAnimations()` removes any in-flight animation elements and CSS classes.
+
+### LEG-5: Shell integration
+- Status: done
+- Confirmed: yes
+- Goal link: Wires the game into the site — routes, build, PWA, page shell — so it's actually playable.
+- Depends on: LEG-2, LEG-3, LEG-4
+- Owned files:
+  - `games/peekaboo/main.ts`
+  - `games/peekaboo/controller.tsx`
+  - `games/peekaboo/info.ts`
+  - `games/peekaboo/attributions.ts`
+  - `public/peekaboo/manifest.json`
+  - `public/peekaboo/sw.js`
+  - `public/favicon-game-peekaboo.svg`
+- Read-only:
+  - `games/squares/main.ts` - reference for client entry point wiring
+  - `games/squares/controller.tsx` - reference for SSR page controller
+  - `games/squares/info.ts` - reference for info text
+  - `games/squares/attributions.ts` - reference for attribution entries
+  - `app/ui/document.tsx` - SSR Document component props
+  - `app/ui/game-shell.tsx` - shared UI components
+  - `public/squares/manifest.json` - reference for PWA manifest
+  - `public/squares/sw.js` - reference for service worker
+- Deferred shared edits:
+  - `app/data/game-registry.ts` - add Peekaboo GameEntry
+  - `app/data/attribution-index.ts` - register peekaboo attribution and info
+  - `app/routes.ts` - add `peekabooInfo: '/peekaboo/info/'` and `peekaboo: '/peekaboo/'`
+  - `app/router.ts` - import controller, wire `router.get()` for both routes
+  - `build.ts` - add to swFiles, mkdirSync, esbuild entry, static routes, budget map
+  - `server.ts` - add esbuild watch entry for `games/peekaboo/main.ts`
+- Verification: `pnpm check && pnpm test:local`
+- Intent:
+  1. **controller.tsx**: SSR page using `Document` and `GameScreen`/`GameTabbedModal`/`GameHeader`/`SrOnly` from shared UI. Body class `peekaboo-game`. Five `GameScreen` sections (meet, enter, fog, playing, found). `GameTabbedModal` with Settings tab (SFX toggle, music toggle, reduce-motion toggle) and Info tab (how to play, credits via `InfoSection`/`InfoAttribution`). Live regions `#game-status` (polite) and `#game-feedback` (assertive). `includeNav={false}`, `includeFooter={false}`, `includeDefaultStyles={false}`. Stylesheets: `['/styles/peekaboo.css']`. Scripts: `['/client/peekaboo/main.js']`. Favicon, manifest, service worker paths.
+  2. **main.ts**: Client entry point. Imports and calls all game modules. On `DOMContentLoaded`: call `initState()`, `renderMeetScreen()`, `setupInput()`, `setupGameAudioBuses()`, `setupGameMenu()`. Wire proceed buttons to `advancePhase()` + `renderEnterAnimation()`/`renderGrid()`/etc. Wire grid cell clicks to `revealCell()` + `revealCellVisual()` + `playRevealSound()`. Wire found detection to `renderFoundCelebration()` + `playFoundSound()` + `announceFound()`. Listen for `restart` event (from shared menu) to call `nextRound()`. Listen for `quit` to navigate home. Call `ensureAudioUnlocked()` on first user gesture.
+  3. **info.ts**: export `{ summary: "Peekaboo — find the hidden character! Look through the fog to discover who's hiding." }`.
+  4. **attributions.ts**: minimal entries (game concept + any emoji attribution if needed; likely just project attribution since emoji are Unicode).
+  5. **PWA manifest**: `public/peekaboo/manifest.json` with `"name": "Peekaboo"`, `"short_name": "Peekaboo"`, `"start_url": "./"`, `"scope": "./"`, `"display": "standalone"`, icons referencing favicon SVG.
+  6. **Service worker**: `public/peekaboo/sw.js` — cleanup/unregister script matching existing pattern.
+  7. **Favicon**: `public/favicon-game-peekaboo.svg` — simple SVG with fog/eye motif or emoji-based.
+  8. **Deferred shared edits**: follow exact patterns from existing game registrations. Add `peekaboo` entry to game-registry with `slug: 'peekaboo'`, `name: 'Peekaboo'`, description, icon, `status: 'active'`. Wire routes and router. Add build entries (swFiles, mkdirSync, esbuild entry, static routes, budget). Add server watch entry. Register attribution and info in attribution-index.
+  9. After all edits: run `pnpm sync:attributions` to regenerate `ATTRIBUTIONS.md`.
+
+## Implementation
+Commit: b5bb877 | none (local-only)
+Pushed: 2026-04-22
+Sequential via runSubagent (navigator reviews between each):
+1. LEG-1 (Core types & state) - no dependencies
+2. LEG-2 (Rendering & CSS) + LEG-3 (Input & accessibility) + LEG-4 (Audio & animation) - parallel, each depends on LEG-1
+3. LEG-5 (Shell integration) - depends on LEG-2, LEG-3, LEG-4
+
+After all complete: deferred edits → `## Project Context` full-validation (`pnpm check && pnpm test:local`) → delivery verification (deployed URL at `/peekaboo/`) → commit → push.
