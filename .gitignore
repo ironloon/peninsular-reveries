@@ -6,5 +6,5 @@ playwright-report/
 test-results/
 copilot-check.jsonl
 .env
-.claude/skills/creative-assets/.sound-staging/
+.agents/skills/creative-assets/.sound-staging/
 .claude/settings.local.json

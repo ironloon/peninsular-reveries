@@ -114,10 +114,10 @@ Gather Context → Interactive Review → Analysis → Findings → Apply
 5. **Inspect real surface** when applicable.
 
 6. **Read process files.** Targeted reads of:
-   - `.github/skills/gnd-chart/SKILL.md` (and `LOCAL.md` in the same directory if it exists)
-   - `.github/skills/gnd-critique/SKILL.md` (and `LOCAL.md` in the same directory if it exists)
-   - `.github/agents/gnd-navigator.agent.md` (and `gnd-navigator.local.md` in the same directory if it exists)
-   - `.github/agents/gnd-diver.agent.md` (and `gnd-diver.local.md` in the same directory if it exists)
+   - `.agents/skills/gnd-chart/SKILL.md` (and `LOCAL.md` in the same directory if it exists)
+   - `.agents/skills/gnd-critique/SKILL.md` (and `LOCAL.md` in the same directory if it exists)
+   - `.agents/agents/gnd-navigator.agent.md` (and `.agents/agents/gnd-navigator.local.md` in the same directory if it exists)
+   - `.agents/agents/gnd-diver.agent.md` (and `.agents/agents/gnd-diver.local.md` in the same directory if it exists)
 
 
 ### PC Phase 2 — Interactive Review

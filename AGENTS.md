@@ -4,7 +4,7 @@
 
 `README.md` is the source of truth for game principles and site values.
 
-For project architecture, game quality standards, and testing conventions, load the `review` skill in `.github/skills/review/` before doing substantial repo work.
+For project architecture, game quality standards, and testing conventions, load the `review` skill in `.agents/skills/review/` before doing substantial repo work.
 
 ## Planning Overlays
 
@@ -18,9 +18,9 @@ For project architecture, game quality standards, and testing conventions, load 
 
 - Do not write reusable project knowledge to Copilot memory paths. Record it in the appropriate in-repo file instead.
 - When you learn something reusable about this project, record it in the appropriate in-repo file instead:
-  - Architecture, conventions, build and deploy patterns -> `.github/skills/review/references/architecture.md`
-  - Game quality, layout, pacing, visual rules -> `.github/skills/review/references/game-quality.md`
-  - Testing conventions, validation gates, CI behavior -> `.github/skills/review/references/testing.md`
+  - Architecture, conventions, build and deploy patterns -> `.agents/skills/review/references/architecture.md`
+  - Game quality, layout, pacing, visual rules -> `.agents/skills/review/references/game-quality.md`
+  - Testing conventions, validation gates, CI behavior -> `.agents/skills/review/references/testing.md`
   - Workflow, session expectations, environment -> `AGENTS.md`
 - Keep additions concise. If the insight is game-specific rather than project-wide, note the game slug inline.
 

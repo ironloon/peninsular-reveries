@@ -44,5 +44,5 @@ If either is missing, the script will fail. There is no in-script diagnostic for
 
 ## Generic Fetching
 
-- The generic fetch script stages raw previews under `.github/skills/creative-assets/.sound-staging/<game>/`
+- The generic fetch script stages raw previews under `.agents/skills/creative-assets/.sound-staging/<game>/`
 - The game slug determines the destination folder and which sample manifest is loaded
