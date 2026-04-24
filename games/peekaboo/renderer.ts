@@ -1,4 +1,5 @@
 import type { Target, PeekabooState } from './types.js'
+import { SCENE_SCENERY } from './types.js'
 
 // ── Lazy element cache ───────────────────────────────────────
 let gameAreaEl: HTMLElement | null = null
@@ -79,7 +80,6 @@ function ensureRuntimeStyles(documentRef: Document): void {
 }
 
 // ── Decorative scene emojis ────────────────────────────────────
-const SCENE_SCENERY = ['🌳', '☁️', '🌿', '🪨', '🌸', '🍄', '🍃', '⛰️'] as const
 
 function randomScenery(): string {
   return SCENE_SCENERY[Math.floor(Math.random() * SCENE_SCENERY.length)]
@@ -139,35 +139,34 @@ function buildSceneLayer(state: PeekabooState): void {
   const scene = getSceneLayer()
   scene.innerHTML = ''
 
-  // Place the target emoji at its grid position
-  const targetEl = document.createElement('span')
-  targetEl.className = 'peekaboo-scene-target'
-  targetEl.textContent = state.currentTarget.emoji
-  targetEl.style.gridRow = String(state.targetRow + 1)
-  targetEl.style.gridColumn = String(state.targetCol + 1)
-  scene.appendChild(targetEl)
+  // Place scenery as interactive buttons; target is NOT rendered (hides behind scenery)
+  for (let row = 0; row < state.rows; row++) {
+    for (let col = 0; col < state.cols; col++) {
+      const cell = state.scenery[row][col]
+      if (cell === null) continue
 
-  // Place decorative scenery at random positions (avoiding the target cell)
-  const occupied = new Set<string>()
-  occupied.add(`${state.targetRow},${state.targetCol}`)
+      const sceneryEl = document.createElement('button')
+      sceneryEl.type = 'button'
+      sceneryEl.className = 'peekaboo-scene-scenery'
+      sceneryEl.textContent = cell.emoji
+      sceneryEl.style.gridRow = String(row + 1)
+      sceneryEl.style.gridColumn = String(col + 1)
+      sceneryEl.dataset['peekabooRow'] = String(row)
+      sceneryEl.dataset['peekabooCol'] = String(col)
+      sceneryEl.dataset['scenery'] = 'true'
+      sceneryEl.setAttribute('aria-label', `Scenery: ${cell.emoji}, row ${row + 1}, column ${col + 1}`)
 
-  for (let i = 0; i < Math.min(state.rows * state.cols, 12); i++) {
-    let row: number
-    let col: number
-    let key: string
-    do {
-      row = Math.floor(Math.random() * state.rows)
-      col = Math.floor(Math.random() * state.cols)
-      key = `${row},${col}`
-    } while (occupied.has(key))
-    occupied.add(key)
+      // Disabled until fog is cleared; also disabled if already peeked
+      const revealed = state.grid[row][col]
+      const peeked = state.peeked[row][col]
+      sceneryEl.disabled = !revealed || peeked
 
-    const sceneryEl = document.createElement('span')
-    sceneryEl.className = 'peekaboo-scene-scenery'
-    sceneryEl.textContent = randomScenery()
-    sceneryEl.style.gridRow = String(row + 1)
-    sceneryEl.style.gridColumn = String(col + 1)
-    scene.appendChild(sceneryEl)
+      if (peeked) {
+        sceneryEl.classList.add('peekaboo-scenery--peeked')
+      }
+
+      scene.appendChild(sceneryEl)
+    }
   }
 }
 
@@ -253,6 +252,34 @@ export function revealCellVisual(row: number, col: number): void {
   cell.setAttribute('aria-label', `Revealed, row ${row + 1}, column ${col + 1}`)
 }
 
+// ── Scenery interaction ───────────────────────────────────────
+
+export function revealSceneryInteractive(row: number, col: number): void {
+  const scene = getSceneLayer()
+  const sceneryBtn = scene.querySelector<HTMLButtonElement>(
+    `[data-peekaboo-row="${row}"][data-peekaboo-col="${col}"][data-scenery="true"]`,
+  )
+  if (!sceneryBtn) return
+  sceneryBtn.disabled = false
+}
+
+export function peekBehindVisual(row: number, col: number, found: boolean, target?: Target): void {
+  const scene = getSceneLayer()
+  const sceneryBtn = scene.querySelector<HTMLButtonElement>(
+    `[data-peekaboo-row="${row}"][data-peekaboo-col="${col}"][data-scenery="true"]`,
+  )
+  if (!sceneryBtn) return
+
+  sceneryBtn.disabled = true
+
+  if (found && target) {
+    sceneryBtn.textContent = target.emoji
+    sceneryBtn.classList.add('peekaboo-scenery--found')
+  } else {
+    sceneryBtn.classList.add('peekaboo-scenery--peeked')
+  }
+}
+
 // ── Found celebration ─────────────────────────────────────────
 
 const CONFETTI_COUNT = 12
@@ -295,6 +322,8 @@ export interface PeekabooRenderer {
   renderEnterScene: (state: PeekabooState) => void
   renderGrid: (state: PeekabooState) => void
   revealCellVisual: (row: number, col: number) => void
+  revealSceneryInteractive: (row: number, col: number) => void
+  peekBehindVisual: (row: number, col: number, found: boolean, target?: Target) => void
   renderFoundCelebration: (target: Target) => void
   getCellButton: (row: number, col: number) => HTMLButtonElement | null
   cleanup: () => void
@@ -348,6 +377,8 @@ export function createRenderer(root: HTMLElement): PeekabooRenderer {
     },
     renderGrid,
     revealCellVisual,
+    revealSceneryInteractive,
+    peekBehindVisual,
     renderFoundCelebration,
     getCellButton: (row, col) =>
       root.querySelector<HTMLButtonElement>(

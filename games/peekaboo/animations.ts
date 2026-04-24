@@ -139,6 +139,38 @@ export function animateCelebration(targetElement: HTMLElement): void {
   }
 }
 
+// ── Peek behind scenery ────────────────────────────────────────────────────────
+
+export function animatePeekBehind(element: HTMLElement, found: boolean): void {
+  if (isReducedMotion()) {
+    return
+  }
+
+  if (found) {
+    const animation = element.animate([
+      { transform: 'scale(1)', opacity: 1 },
+      { transform: 'scale(1.4)', opacity: 1, offset: 0.3 },
+      { transform: 'scale(1.2)', opacity: 1 },
+    ], {
+      duration: 500,
+      easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+    })
+    activeAnimations.push(animation)
+  } else {
+    const animation = element.animate([
+      { transform: 'translateX(0)' },
+      { transform: 'translateX(-3px)', offset: 0.2 },
+      { transform: 'translateX(3px)', offset: 0.4 },
+      { transform: 'translateX(-2px)', offset: 0.6 },
+      { transform: 'translateX(0)' },
+    ], {
+      duration: 300,
+      easing: 'ease-out',
+    })
+    activeAnimations.push(animation)
+  }
+}
+
 // ── Cleanup ──────────────────────────────────────────────────────────────────────
 
 /** Removes any in-flight animation elements and CSS classes. */
@@ -171,5 +203,11 @@ export function stopAllAnimations(): void {
   })
   document.querySelectorAll('.peekaboo-cell--fog').forEach((el) => {
     el.classList.remove('peekaboo-cell--fog')
+  })
+  document.querySelectorAll('.peekaboo-scenery--peeked').forEach((el) => {
+    el.classList.remove('peekaboo-scenery--peeked')
+  })
+  document.querySelectorAll('.peekaboo-scenery--found').forEach((el) => {
+    el.classList.remove('peekaboo-scenery--found')
   })
 }

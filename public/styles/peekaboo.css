@@ -337,21 +337,80 @@ body.peekaboo-game .screen {
   overflow: hidden;
 }
 
-.peekaboo-scene-target {
-  font-family: var(--peekaboo-emoji-font);
-  font-size: clamp(1.8rem, 5vw, 2.5rem);
-  line-height: 1;
-  place-self: center;
-  z-index: 2;
-}
-
 .peekaboo-scene-scenery {
+  appearance: none;
   font-family: var(--peekaboo-emoji-font);
   font-size: clamp(1.2rem, 3vw, 1.6rem);
   line-height: 1;
   place-self: center;
-  opacity: 0.6;
+  position: relative;
+  opacity: 0.7;
   z-index: 1;
+  border: none;
+  background: none;
+  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+  user-select: none;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.peekaboo-scene-scenery:not(:disabled) {
+  pointer-events: auto;
+}
+
+.peekaboo-scene-scenery:not(:disabled):hover {
+  transform: scale(1.15);
+  opacity: 1;
+}
+
+.peekaboo-scene-scenery:not(:disabled):focus-visible {
+  outline: 3px solid var(--peekaboo-accent);
+  outline-offset: 3px;
+  opacity: 1;
+}
+
+.peekaboo-scenery--peeked {
+  opacity: 0.4 !important;
+  pointer-events: none !important;
+  cursor: default !important;
+}
+
+.peekaboo-scenery--peeked::after {
+  content: '\00d7';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 0.7em;
+  color: var(--peekaboo-muted);
+  opacity: 0.6;
+  font-family: var(--peekaboo-font);
+}
+
+.peekaboo-scenery--found {
+  opacity: 1 !important;
+  pointer-events: none !important;
+  cursor: default !important;
+  z-index: 3 !important;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  animation: peekaboo-scenery-found 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes peekaboo-scenery-found {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1.2);
+  }
 }
 
 /* ── Fog grid ──────────────────────────────────────────────── */
@@ -368,6 +427,7 @@ body.peekaboo-game .screen {
   margin-inline: auto;
   overflow: hidden;
   border-radius: var(--peekaboo-cell-radius);
+  pointer-events: none;
 }
 
 .peekaboo-fog-cell {
@@ -385,6 +445,7 @@ body.peekaboo-game .screen {
   touch-action: manipulation;
   -webkit-touch-callout: none;
   user-select: none;
+  pointer-events: auto;
   opacity: 1;
   transition: opacity 0.35s ease;
   animation: peekaboo-fog-appear 0.4s ease both;

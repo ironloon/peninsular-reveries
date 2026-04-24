@@ -194,7 +194,7 @@ export async function peekabooAction() {
               <p>{peekabooInfo.summary}</p>
             </InfoSection>
             <InfoSection title="How to play">
-              <p>Look at the character, then watch the fog roll in. Tap cells to peek through the fog and find who's hiding!</p>
+              <p>Look at the character, then watch the fog roll in. Tap fog cells to clear them. If you see scenery, tap it to peek behind — the character might be hiding there!</p>
             </InfoSection>
             <InfoSection title="Credits">
               {peekabooAttribution.entries.map((entry) => <InfoAttribution attribution={{

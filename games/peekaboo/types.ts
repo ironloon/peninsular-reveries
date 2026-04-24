@@ -14,7 +14,18 @@ export const TARGET_POOL = [
   { emoji: '🦉', name: 'Owl' },
 ] as const satisfies readonly Target[]
 
+export const SCENE_SCENERY = ['🌳', '☁️', '🌿', '🪨', '🌸', '🍄', '🍃', '⛰️'] as const
+
 export type PeekabooGrid = readonly (readonly boolean[])[]
+
+export interface SceneryCell {
+  readonly emoji: string
+  readonly hasTarget: boolean
+}
+
+export type SceneryGrid = readonly (readonly (SceneryCell | null)[])[]
+
+export type PeekedGrid = readonly (readonly boolean[])[]
 
 export interface PeekabooState {
   readonly phase: GamePhase
@@ -22,6 +33,8 @@ export interface PeekabooState {
   readonly targetRow: number
   readonly targetCol: number
   readonly grid: PeekabooGrid
+  readonly scenery: SceneryGrid
+  readonly peeked: PeekedGrid
   readonly round: number
   readonly cols: number
   readonly rows: number

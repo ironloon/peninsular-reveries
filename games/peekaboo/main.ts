@@ -1,10 +1,10 @@
 import { setupGameMenu } from '../../client/game-menu.js'
 
-import { announceFound, announcePhase, announceReveal, announceRound, manageFocus } from './accessibility.js'
-import { animateCellReveal, animateCelebration, animateFogRollIn, stopAllAnimations } from './animations.js'
+import { announceFound, announcePeekBehind, announcePhase, announceReveal, announceRound, announceSceneryRevealed, manageFocus } from './accessibility.js'
+import { animateCellReveal, animateCelebration, animateFogRollIn, animatePeekBehind, stopAllAnimations } from './animations.js'
 import { setupInput } from './input.js'
 import { createRenderer, type PeekabooRenderer } from './renderer.js'
-import { advancePhase, initState, nextRound, revealCell } from './state.js'
+import { advancePhase, initState, nextRound, peekBehind, revealCell } from './state.js'
 import {
   ensureAudioUnlocked,
   initPeekabooAudio,
@@ -12,6 +12,7 @@ import {
   playFogSound,
   playFoundSound,
   playNewRoundSound,
+  playPeekSound,
   playRevealSound,
 } from './sounds.js'
 import type { PeekabooState } from './types.js'
@@ -69,7 +70,7 @@ function handleAdvancePhase(): void {
     requestAnimationFrame(() => {
       // Animate fog roll-in on cells
       const cells = Array.from(
-        document.querySelectorAll<HTMLElement>('[data-peekaboo-row][data-peekaboo-col]'),
+        document.querySelectorAll<HTMLElement>('[data-peekaboo-row][data-peekaboo-col]:not([data-scenery])'),
       )
       animateFogRollIn(cells)
       manageFocus('playing')
@@ -89,7 +90,7 @@ function handleRevealCell(row: number, col: number): void {
 
   sessionState = nextState
 
-  // Visual + audio feedback
+  // Visual + audio feedback for fog clear
   renderer?.revealCellVisual(row, col)
   animateCellReveal(
     renderer?.getCellButton(row, col) ?? document.body,
@@ -97,9 +98,44 @@ function handleRevealCell(row: number, col: number): void {
   playRevealSound()
   announceReveal(row, col)
 
-  // Check for found
-  if (sessionState.phase === 'found') {
-    handleFound()
+  // If this cell has scenery, enable it for clicking
+  const sceneryCell = sessionState.scenery[row][col]
+  if (sceneryCell !== null) {
+    renderer?.revealSceneryInteractive(row, col)
+    announceSceneryRevealed(row, col, sceneryCell.emoji)
+  }
+}
+
+// ── Peek behind scenery ──────────────────────────────────────────────────────
+
+function handlePeekBehind(row: number, col: number): void {
+  if (sessionState.phase !== 'playing' || isSettingsOpen()) return
+
+  ensureAudioUnlocked()
+
+  const nextState = peekBehind(sessionState, row, col)
+  if (nextState === sessionState) return
+
+  sessionState = nextState
+
+  const found = nextState.phase === 'found'
+  renderer?.peekBehindVisual(row, col, found, sessionState.currentTarget)
+  playPeekSound()
+
+  const sceneryEl = document.querySelector<HTMLElement>(
+    `[data-peekaboo-row="${row}"][data-peekaboo-col="${col}"][data-scenery="true"]`,
+  )
+  if (sceneryEl) {
+    animatePeekBehind(sceneryEl, found)
+  }
+
+  announcePeekBehind(row, col, found, sessionState.currentTarget)
+
+  if (found) {
+    // Brief delay before found screen so player sees the reveal
+    window.setTimeout(() => {
+      handleFound()
+    }, 600)
   }
 }
 
@@ -176,6 +212,9 @@ function init(): void {
     {
       onRevealCell: (row, col) => {
         handleRevealCell(row, col)
+      },
+      onPeekBehind: (row, col) => {
+        handlePeekBehind(row, col)
       },
       onAdvancePhase: () => {
         handleAdvancePhase()

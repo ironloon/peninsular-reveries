@@ -518,6 +518,6 @@
 
 - Slug: peekaboo
 - Code license: GPL-3.0
-- Summary: Peekaboo — find the hidden character! Look through the fog to discover who's hiding.
+- Summary: Peekaboo — find the hidden character! Clear the fog, peek behind scenery to discover who's hiding.
 
 - No attribution entries recorded.

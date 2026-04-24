@@ -145,3 +145,46 @@ export function playNewRoundSound(): void {
     // Audio is non-critical.
   }
 }
+
+/** Short filtered noise burst (0.15s, bandpass 2kHz). Peeking behind scenery.
+ *  Functional feedback — plays even with reduced motion. */
+export function playPeekSound(): void {
+  if (!getSfxEnabled()) return
+
+  try {
+    const { ctx, sfx } = getGameAudioBuses('peekaboo')
+    if (sfx.gain.value < 0.001) return
+
+    const now = ctx.currentTime
+    const duration = 0.15
+
+    const bufferSize = ctx.sampleRate * duration
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+    const data = buffer.getChannelData(0)
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * 0.3
+    }
+
+    const source = ctx.createBufferSource()
+    source.buffer = buffer
+
+    const filter = ctx.createBiquadFilter()
+    filter.type = 'bandpass'
+    filter.frequency.value = 2000
+    filter.Q.value = 1.5
+
+    const env = ctx.createGain()
+    env.gain.setValueAtTime(0.001, now)
+    env.gain.linearRampToValueAtTime(0.12, now + 0.02)
+    env.gain.exponentialRampToValueAtTime(0.001, now + duration)
+
+    source.connect(filter)
+    filter.connect(env)
+    env.connect(sfx)
+
+    source.start(now)
+    source.stop(now + duration)
+  } catch {
+    // Audio is non-critical.
+  }
+}

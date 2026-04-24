@@ -3,12 +3,14 @@ import { findNearestDirectionalTarget, type NavigationDirection } from '../../cl
 // ── Selectors ─────────────────────────────────────────────────────────────────
 
 const CELL_SELECTOR = '[data-peekaboo-row][data-peekaboo-col]'
+const SCENERY_SELECTOR = '[data-scenery="true"]'
 const PROCEED_BTN_SELECTOR = '.peekaboo-proceed-btn'
 const PLAY_AGAIN_BTN_SELECTOR = '.peekaboo-play-again-btn'
 const MENU_BTN_SELECTOR = '.peekaboo-menu-btn'
 
 const MANAGED_TARGET_SELECTORS = [
   CELL_SELECTOR,
+  SCENERY_SELECTOR + ':not([disabled])',
   PROCEED_BTN_SELECTOR,
   PLAY_AGAIN_BTN_SELECTOR,
   MENU_BTN_SELECTOR,
@@ -18,6 +20,7 @@ const MANAGED_TARGET_SELECTORS = [
 
 export interface InputCallbacks {
   onRevealCell: (row: number, col: number) => void
+  onPeekBehind: (row: number, col: number) => void
   onAdvancePhase: () => void
   onNextRound: () => void
   onOpenMenu: () => void
@@ -149,6 +152,7 @@ function axisDirection(snapshot: GamepadSnapshot): NavigationDirection | null {
 type GamepadAction =
   | { readonly type: 'move-focus'; readonly direction: NavigationDirection }
   | { readonly type: 'reveal-cell' }
+  | { readonly type: 'peek-behind' }
   | { readonly type: 'advance-phase' }
   | { readonly type: 'next-round' }
   | { readonly type: 'open-menu' }
@@ -194,7 +198,9 @@ function readGamepadAction(
     action = { type: 'open-menu' }
   } else if (canAct && buttonPressed(snapshot, 0) && !previousState.previousButtons[0]) {
     // A button (index 0): activate focused element
-    if (focusedElement?.matches(CELL_SELECTOR)) {
+    if (focusedElement?.matches(SCENERY_SELECTOR) && !(focusedElement as HTMLButtonElement).disabled) {
+      action = { type: 'peek-behind' }
+    } else if (focusedElement?.matches(CELL_SELECTOR)) {
       action = { type: 'reveal-cell' }
     } else if (focusedElement?.matches(PROCEED_BTN_SELECTOR)) {
       action = { type: 'advance-phase' }
@@ -272,8 +278,17 @@ export function setupInput(
 
   clickHandler = (event: MouseEvent) => {
     const target = event.target instanceof HTMLElement ? event.target : null
-    const button = target?.closest<HTMLElement>('button') ?? null
+    const button = target?.closest<HTMLButtonElement>('button') ?? null
     if (!button) return
+
+    // Scenery click (peek behind) — check before CELL_SELECTOR since scenery also has row/col
+    if (button.matches(SCENERY_SELECTOR) && !button.disabled) {
+      const rc = toRowCol(button)
+      if (rc) {
+        callbacks.onPeekBehind(rc.row, rc.col)
+      }
+      return
+    }
 
     if (button.matches(CELL_SELECTOR)) {
       const rc = toRowCol(button)
@@ -325,6 +340,16 @@ export function setupInput(
 
     // Enter/Space on focused grid cell: reveal
     if (key === 'Enter' || key === 'Space' || key === 'Spacebar' || event.key === ' ') {
+      // Scenery button: peek behind
+      if (target?.matches(SCENERY_SELECTOR) && !(target as HTMLButtonElement).disabled) {
+        event.preventDefault()
+        const rc = toRowCol(target)
+        if (rc) {
+          callbacks.onPeekBehind(rc.row, rc.col)
+        }
+        return
+      }
+
       if (target?.matches(CELL_SELECTOR)) {
         event.preventDefault()
         const rc = toRowCol(target)
@@ -421,6 +446,11 @@ export function setupInput(
       const rc = focusedElement ? toRowCol(focusedElement) : null
       if (rc) {
         callbacks.onRevealCell(rc.row, rc.col)
+      }
+    } else if (result.action?.type === 'peek-behind') {
+      const rc = focusedElement ? toRowCol(focusedElement) : null
+      if (rc) {
+        callbacks.onPeekBehind(rc.row, rc.col)
       }
     } else if (result.action?.type === 'advance-phase') {
       callbacks.onAdvancePhase()

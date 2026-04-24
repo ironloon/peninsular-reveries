@@ -32,8 +32,20 @@ export function announceReveal(row: number, col: number): void {
   writeLiveRegion(`Revealed, row ${row + 1}, column ${col + 1}`, 'polite')
 }
 
+export function announceSceneryRevealed(row: number, col: number, emoji: string): void {
+  writeLiveRegion(`Scenery revealed: ${emoji} at row ${row + 1}, column ${col + 1}. Tap to peek behind.`, 'polite')
+}
+
+export function announcePeekBehind(row: number, col: number, found: boolean, target: Target): void {
+  if (found) {
+    writeLiveRegion(`You found the ${target.name}!`, 'assertive')
+  } else {
+    writeLiveRegion(`Nothing behind this scenery at row ${row + 1}, column ${col + 1}.`, 'polite')
+  }
+}
+
 export function announceFound(target: Target): void {
-  writeLiveRegion(`You found the ${target.name}! 🎉`, 'assertive')
+  writeLiveRegion(`You found the ${target.name}!`, 'assertive')
 }
 
 export function announcePhase(phase: GamePhase, target: Target): void {
@@ -70,7 +82,7 @@ export function manageFocus(phase: GamePhase): void {
       break
     }
     case 'playing': {
-      const firstCell = document.querySelector<HTMLButtonElement>('[data-peekaboo-row][data-peekaboo-col]')
+      const firstCell = document.querySelector<HTMLButtonElement>('[data-peekaboo-row][data-peekaboo-col]:not([data-scenery])')
       if (firstCell) {
         firstCell.focus()
       }
@@ -84,22 +96,4 @@ export function manageFocus(phase: GamePhase): void {
       break
     }
   }
-}
-
-// ── ARIA labels ────────────────────────────────────────────────────────────────
-
-export function cellAriaLabel(
-  row: number,
-  col: number,
-  revealed: boolean,
-  isTarget: boolean,
-  targetName?: string,
-): string {
-  if (revealed && isTarget && targetName) {
-    return `${targetName}, row ${row + 1}, column ${col + 1}`
-  }
-  if (revealed) {
-    return `Revealed, row ${row + 1}, column ${col + 1}`
-  }
-  return `Hidden, row ${row + 1}, column ${col + 1}`
 }
