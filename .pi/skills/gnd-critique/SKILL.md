@@ -1,18 +1,13 @@
 ---
-gnd-version: "0.3.0"
-gnd-adapter: "vscode-github-copilot"
-name: "gnd-critique"
-description: "Evaluate completed work against intent and delivered behavior. Two modes: plan critique (evaluates an implemented live plan after @gnd-navigator execution) and field review (--field-review / --fr, triages runtime or workflow observations, implements fixes, and archives findings)."
+name: gnd-critique
+description: "Evaluate completed work against intent and delivered behavior. Two modes: plan critique (evaluates an implemented live plan after gnd-navigator execution) and field review (--field-review / --fr, triages runtime or workflow observations, implements fixes, and archives findings)."
 user-invocable: true
 disable-model-invocation: true
 ---
+
 # Critique
 
 Evaluate delivered work against the plan. Validation and delivery checks come from the plan's `## Project Context`, workspace instructions, READMEs, and skills.
-
-## Project-Local Overrides
-
-If `LOCAL.md` exists in this skill's directory, read it and apply its contents as project-specific extensions or overrides to these instructions. Local overrides take precedence when they conflict with base instructions.
 
 Two modes — detect from invocation:
 
@@ -32,8 +27,8 @@ User tests the delivered system and reports observations.
 For process-only reviews (memory-path conflicts, workflow bugs), skip inapplicable delivery checks — read workflow files and `.planning/` state instead.
 
 1. **Determine evaluation surface.** Use the user's report plus `## Project Context`, workspace instructions, READMEs, and skills to decide: deployed web, local runtime, package/artifact, or pure workflow.
-2. **Verify delivery** when the evaluation surface (step 1) is deployed, published, or has a preview — check the live surface. If the surface is local-only, workflow-only, or has no delivery verification defined, mark not applicable.
-3. **Inspect real surface** when applicable via `fetch_webpage` or similar.
+2. **Verify delivery** when the evaluation surface (step 1) is deployed, published, or has a preview — check the live surface. If the surface is local-only, workflow-only, or has no delivery verification defined, mark not applicable. If no deployed URL is found in the standard context sources, ask the user: *"I couldn't find a deployed URL in the project docs — is there one I should check, or is this local-only?"* Proceed with their answer. If the URL is confirmed, note where it should be recorded (e.g. `README.md`) so future reviews find it automatically.
+3. **Inspect real surface** when applicable.
 4. **Read relevant code/process files** based on user observations. Enough to form hypotheses, not the whole codebase.
 5. **Check archived plans.** Skim `.planning/archive/` for recent plans touching affected areas.
 
@@ -86,13 +81,13 @@ Fix bugs and UX issues in severity order (blockers first). Design questions → 
 4. Tell user any needed refresh/update step only if the surface requires it.
 5. User re-verifies. Persistent findings → another Phase 4 round.
 6. **Archive.** Create `.planning/archive/<YYYY-MM-DD>-<HHmm>-field-review-<slug>.md` with findings + implementation + verification.
-7. Update process files if findings reveal a gap. Write corrections to supplementary local files (`LOCAL.md` for skills, `.local.md` for agents) rather than editing base managed files.
+7. Update process files if findings reveal a gap. Write corrections to the appropriate skill/agent files in `.pi/`.
 
 ---
 
 ## Mode: Plan Critique
 
-After `@gnd-navigator` implements and validates a plan.
+After `gnd-navigator` implements and validates a plan.
 
 ```text
 Gather Context → Interactive Review → Analysis → Findings → Apply
@@ -114,11 +109,10 @@ Gather Context → Interactive Review → Analysis → Findings → Apply
 5. **Inspect real surface** when applicable.
 
 6. **Read process files.** Targeted reads of:
-   - `.agents/skills/gnd-chart/SKILL.md` (and `LOCAL.md` in the same directory if it exists)
-   - `.agents/skills/gnd-critique/SKILL.md` (and `LOCAL.md` in the same directory if it exists)
-   - `.agents/agents/gnd-navigator.agent.md` (and `.agents/agents/gnd-navigator.local.md` in the same directory if it exists)
-   - `.agents/agents/gnd-diver.agent.md` (and `.agents/agents/gnd-diver.local.md` in the same directory if it exists)
-
+   - `.pi/skills/gnd-chart/SKILL.md`
+   - `.pi/skills/gnd-critique/SKILL.md`
+   - `.pi/agents/gnd-navigator.md`
+   - `.pi/agents/gnd-diver.md`
 
 ### PC Phase 2 — Interactive Review
 
@@ -142,6 +136,8 @@ Anchor to plan scope. Off-topic observations → triage (below).
 | Relates to User Intent but no leg covers it | Chart gap | Flag as `gnd-chart` correction |
 | Unrelated area plan didn't touch | Out of scope | Add to Field Review Holding List |
 | Ambiguous | Clarify | Ask user, then classify |
+
+**Holding List Cross-Check:** Before routing any Beat 3 (or Beat 2) observation to the Field Review Holding List, cross-check it against every leg's intent in the plan. If the observation matches something a leg was supposed to deliver, it is a missed delivery — classify it under **What Didn't** and fix it in PC Phase 5, not the holding list. The holding list is only for observations that genuinely have no leg covering them.
 
 ### PC Phase 3 — Analysis
 
@@ -182,7 +178,7 @@ Present structured findings before applying:
 - [Out-of-scope observations from Phase 2]
 
 ### Process File Updates
-- [Each supplementary local file + what changes]
+- [Each skill/agent file + what changes]
 ```
 
 Get user approval before applying.
@@ -190,10 +186,12 @@ Get user approval before applying.
 ### PC Phase 5 — Apply
 
 1. **Append** `## Critique` section to the plan file.
-2. **Update process files** with approved changes. Write corrections to supplementary local files (`LOCAL.md` for skills, `.local.md` for agents) rather than editing base managed files. Base files are overwritten on package update; local files are preserved. Create the local file if it doesn't yet exist. Only where findings warrant it.
+2. **Update process files** with approved changes. Write corrections to the appropriate skill/agent files in `.pi/`. Only where findings warrant it.
 3. **Archive** the plan → `.planning/archive/<YYYY-MM-DD>-<HHmm>-<slug>.md`.
-4. **Report** what was updated and the archive path.
-5. **Field review handoff** if the holding list is non-empty.
+4. **Transfer Holding List items** to `.planning/gnd-backlog.md`. Append them under the appropriate game or area section (create the section if it doesn't exist). Remove them from the plan's Critique section after transfer — they live in the backlog now, not the archive. If `.planning/gnd-backlog.md` does not exist, create it.
+5. **Report** what was updated and the archive path.
+6. **Field review handoff** if the holding list is non-empty.
+7. **Land critique artifacts.** Prefer to land all critique-related artifacts (plan archive, backlog transfer, process-file updates) in a single commit at the end of the completed critique cycle, mirroring the navigator's wrap-up behavior. Commit and push unless the user explicitly says to keep them local or the working tree is too risky to land safely.
 
 ---
 
@@ -204,3 +202,4 @@ Get user approval before applying.
 - **Actionable corrections only.** "Be more specific" is not actionable. "Include viewport checkpoints for CSS layout legs" is.
 - **Don't over-correct.** If most legs executed cleanly, the process works. Focus on the gaps.
 - **Respect scope.** Plan critique evaluates what shipped. It doesn't redesign the product or start a new plan.
+- **Community contribution flags.** When a finding or correction surfaces an idea that seems broadly useful beyond this project, flag it explicitly: **Community Candidate:** [brief description of the insight and which base skill/agent it would extend].

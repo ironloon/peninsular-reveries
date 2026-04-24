@@ -4,7 +4,6 @@ dist/
 node_modules/
 playwright-report/
 test-results/
-copilot-check.jsonl
 .env
-.agents/skills/creative-assets/.sound-staging/
+.pi/skills/creative-assets/.sound-staging/
 .claude/settings.local.json

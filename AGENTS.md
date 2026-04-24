@@ -4,7 +4,7 @@
 
 `README.md` is the source of truth for game principles and site values.
 
-For project architecture, game quality standards, and testing conventions, load the `review` skill in `.agents/skills/review/` before doing substantial repo work.
+For project architecture, game quality standards, and testing conventions, load the `review` skill in `.pi/skills/review/` before doing substantial repo work.
 
 ## Planning Overlays
 
@@ -16,11 +16,11 @@ For project architecture, game quality standards, and testing conventions, load 
 
 ## Knowledge Persistence
 
-- Do not write reusable project knowledge to Copilot memory paths. Record it in the appropriate in-repo file instead.
+- Record reusable project knowledge in the appropriate in-repo file. Do not rely on editor-specific memory paths.
 - When you learn something reusable about this project, record it in the appropriate in-repo file instead:
-  - Architecture, conventions, build and deploy patterns -> `.agents/skills/review/references/architecture.md`
-  - Game quality, layout, pacing, visual rules -> `.agents/skills/review/references/game-quality.md`
-  - Testing conventions, validation gates, CI behavior -> `.agents/skills/review/references/testing.md`
+  - Architecture, conventions, build and deploy patterns -> `.pi/skills/review/references/architecture.md`
+  - Game quality, layout, pacing, visual rules -> `.pi/skills/review/references/game-quality.md`
+  - Testing conventions, validation gates, CI behavior -> `.pi/skills/review/references/testing.md`
   - Workflow, session expectations, environment -> `AGENTS.md`
 - Keep additions concise. If the insight is game-specific rather than project-wide, note the game slug inline.
 
@@ -51,8 +51,10 @@ For project architecture, game quality standards, and testing conventions, load 
 - Node: `24.14.1`
 - pnpm: `10.33.0`
 - npm: `11.12.1` (bootstrap only)
-- Editor: VS Code with GitHub Copilot
+- Editor: Pi terminal coding agent with pi-subagents extension
 - GitHub CLI: `gh` is available and should be assumed authenticated. If auth fails, help the user recover and use `gh --help` for command discovery.
+- Pi agents: `.pi/agents/gnd-navigator.md` (dispatch) and `.pi/agents/gnd-diver.md` (implementation). Use `/run gnd-navigator` or `/run gnd-diver` to invoke.
+- Pi skills: `.pi/skills/` — `review`, `creative-assets`, `gnd-chart`, `gnd-critique`. Load via `/skill:name`.
 - No Docker or container workflow is expected. Use direct Node execution.
 
 ## Key Commands

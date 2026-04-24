@@ -87,18 +87,18 @@ The fetch script stages raw previews and renders final OGG variants per game.
 
 ```
 # List approved samples for a game
-pnpm exec tsx .agents/skills/creative-assets/scripts/fetch-game-audio.ts --game <slug> --list
+pnpm exec tsx .pi/skills/creative-assets/scripts/fetch-game-audio.ts --game <slug> --list
 
 # Regenerate one approved sample
-pnpm exec tsx .agents/skills/creative-assets/scripts/fetch-game-audio.ts --game <slug> --only <sample-id> --yes
+pnpm exec tsx .pi/skills/creative-assets/scripts/fetch-game-audio.ts --game <slug> --only <sample-id> --yes
 
 # Regenerate all approved samples for a game
-pnpm exec tsx .agents/skills/creative-assets/scripts/fetch-game-audio.ts --game <slug> --yes
+pnpm exec tsx .pi/skills/creative-assets/scripts/fetch-game-audio.ts --game <slug> --yes
 ```
 
 Requires `FREESOUND_API_KEY` in `.env` and `ffmpeg` on `PATH`.
 
-Staged raw previews accumulate under `.agents/skills/creative-assets/.sound-staging/<game>/`.
+Staged raw previews accumulate under `.pi/skills/creative-assets/.sound-staging/<game>/`.
 
 Currently routes:
 - `mission-orbit` → `public/mission-orbit/audio/`

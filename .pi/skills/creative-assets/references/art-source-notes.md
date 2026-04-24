@@ -36,7 +36,7 @@ Agents **cannot** save binary PNG/JPG files to disk. Any workflow step that says
 **Handoff convention:** When the agent has found a suitable asset but cannot download it, write a handoff note file at:
 
 ```
-.agents/skills/creative-assets/.art-staging/<game>-pending.md
+.pi/skills/creative-assets/.art-staging/<game>-pending.md
 ```
 
 The handoff note must include:
