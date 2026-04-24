@@ -10,10 +10,27 @@ Items collected from field reviews, critiques, and conversations. The `gnd-criti
 
 - **Inventory feel refinement (iPhone portrait):** The equip loop is mechanically correct but the feel isn't settled — visual weight/density of selection state and interaction pacing on phone portrait may need tuning. (From plan critique 2026-04-17.)
 
-## Music Pad
+## Drum Pad
 
-- **Potential rename after live use:** "Drum Pad" may land better than "Music Pad" after seeing it shipped; revisit the public title on the live surface before planning any rename pass. (From plan critique 2026-04-20.)
 - **Low-end workshop:** Some players may expect more low bass range than the current percussion-only kit provides. Workshop options before implementation: deepen the existing kick/tom voices, add a visible `Kit / Bass` bank, or explore a larger secondary low-end pad treatment on bigger screens. Also pressure-test whether hidden extra hit zones or sustained drones are discoverable enough to be worth keeping in scope. (From field review 2026-04-20.)
+- **Audio sourcing needed:** All 8 drum pad samples are `bundled: false` with placeholder Freesound IDs and no audio files on disk. The game is playable but completely silent. Needs creative-assets workflow pass to fetch and convert CC0 samples. (From plan critique 2026-04-24.)
+
+## Spot On
+
+- **Room scene too narrow on phone portrait:** 25%+ gap on each side of the room scene on iPhone portrait. Playfield should fill available width. (From plan critique 2026-04-24.)
+- **Freeform/grid placement redesign:** The 1:1 item-to-spot mapping is too rigid. User wants freeform placement — anything anywhere, on believable surfaces (bookshelf, desk, counter), maybe grid-based. Fundamental mechanic change. (From plan critique 2026-04-24.)
+- **Procedural room generation:** Instead of fixed 3-room cycle, generate rooms procedurally (Diablo-style) for more replay variety — different layouts, items, furniture each time. (From plan critique 2026-04-24.)
+- **Audio files missing:** Sample manifest claims `bundled: true` for all 4 sounds but no `.ogg` files exist on disk. Game is completely silent. Needs creative-assets workflow pass. (From plan critique 2026-04-24.)
+- **CSS class gaps:** `.room-scene--complete` and `.room-spot--highlight` referenced by JS but undefined in CSS. (From plan critique 2026-04-24.)
+- **Drop sound reuses pickup whoosh:** Same audio for "lift" and "let go" — should have distinct sounds. (From plan critique 2026-04-24.)
+
+## Train Sounds
+
+- **Hotspots invisible on touch:** No hover state on mobile. Need persistent visible indicator (circle overlay or similar) so players can find clickable spots. (From plan critique 2026-04-24.)
+- **Rainbow doesn't look like a rainbow:** CSS `conic-gradient` produces a fan/quarter-circle, not a believable rainbow arc. Needs real arc rendering with ROYGBIV band order. (From plan critique 2026-04-24.)
+- **Simplify to one car per train:** Multiple cars crowd the scene; one car per train gives larger hotspot targets and more space. (From plan critique 2026-04-24.)
+- **Track should span full viewport width:** Train track currently doesn't cover the full screen side-to-side. (From plan critique 2026-04-24.)
+- **Audio audibility unverified:** Gain values were raised but the diver skill's OfflineAudioContext loudness probe was never actually run. Some sounds may still be too quiet on phone speakers. (From plan critique 2026-04-24.)
 
 ## Cross-Game
 
