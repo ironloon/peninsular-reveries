@@ -2,6 +2,14 @@
 
 Project-specific extensions that apply in addition to the base instructions above.
 
+## ⚠️ Investigation Needed: LOCAL.md Not Merging at Runtime
+
+Observed 2025-04-24: Ran `gnd-navigator` with task `"dive"` — one of the extended bootstrap cues defined below. The navigator did NOT treat it as a bootstrap cue. Instead it performed a full codebase reconnaissance (725k tokens, 3m14s) and never dispatched a single `gnd-diver` or read the plan in `.planning/`.
+
+The base `gnd-navigator.md` lists only base cues (`cue`, `start`, `run`, `dispatch`, `go`, `begin`, `active plan`). The extended cues (`dive`, `submerge`, `🤿`, etc.) are only in this LOCAL.md file. It appears **this LOCAL.md was not merged into the effective system prompt at runtime**, so the model never saw the extended cue list.
+
+Suspected cause: The agent config uses `systemPromptMode: replace` and `inheritSkills: false`. The base prompt says "Project-local extensions are merged," but pi-subagents may not actually perform that merge for agent LOCAL.md files. Needs confirmation of how pi-subagents handles LOCAL.md merging for agents vs. skills.
+
 ## Do Not Edit This Agent File Directly
 
 Do not edit `gnd-navigator.md` directly. All project-local overrides go in this file. The base agent file may be updated via npm and any local edits would be overwritten. If you need to change the base behavior, propose it as a community candidate instead.
