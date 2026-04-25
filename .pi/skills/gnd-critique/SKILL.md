@@ -1,6 +1,6 @@
 ---
 name: gnd-critique
-description: "Evaluate completed work against intent and delivered behavior. Two modes: plan critique (evaluates an implemented live plan after gnd-navigator execution) and field review (--field-review / --fr, triages runtime or workflow observations, implements fixes, and archives findings)."
+description: "Evaluate completed work against intent and delivered behavior. Two modes: plan critique (evaluates an implemented live plan after gnd-navigate skill execution) and field review (--field-review / --fr, triages runtime or workflow observations, implements fixes, and archives findings)."
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -87,7 +87,7 @@ Fix bugs and UX issues in severity order (blockers first). Design questions → 
 
 ## Mode: Plan Critique
 
-After `gnd-navigator` implements and validates a plan.
+After `gnd-navigate` (skill) implements and validates a plan.
 
 ```text
 Gather Context → Interactive Review → Analysis → Findings → Apply
@@ -111,7 +111,7 @@ Gather Context → Interactive Review → Analysis → Findings → Apply
 6. **Read process files.** Targeted reads of:
    - `.pi/skills/gnd-chart/SKILL.md`
    - `.pi/skills/gnd-critique/SKILL.md`
-   - `.pi/agents/gnd-navigator.md`
+   - `.pi/skills/gnd-navigate/SKILL.md`
    - `.pi/agents/gnd-diver.md`
 
 ### PC Phase 2 — Interactive Review

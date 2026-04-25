@@ -53,8 +53,8 @@ For project architecture, game quality standards, and testing conventions, load 
 - npm: `11.12.1` (bootstrap only)
 - Editor: Pi terminal coding agent with pi-subagents extension
 - GitHub CLI: `gh` is available and should be assumed authenticated. If auth fails, help the user recover and use `gh --help` for command discovery.
-- Pi agents: `.pi/agents/gnd-navigator.md` (dispatch) and `.pi/agents/gnd-diver.md` (implementation). Use `/run gnd-navigator` or `/run gnd-diver` to invoke.
-- Pi skills: `.pi/skills/` — `review`, `creative-assets`, `gnd-chart`, `gnd-critique`. Load via `/skill:name`.
+- Pi agents: `.pi/agents/gnd-diver.md` (implementation). Use `/run gnd-diver` to invoke.
+- Pi skills: `.pi/skills/` — `review`, `creative-assets`, `gnd-chart`, `gnd-critique`, `gnd-navigate`. Load via `/skill:name`. Use `/skill:gnd-navigate` to dispatch a plan to gnd-diver subagents.
 - No Docker or container workflow is expected. Use direct Node execution.
 
 ## Key Commands

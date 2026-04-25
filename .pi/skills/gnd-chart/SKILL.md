@@ -1,13 +1,13 @@
 ---
 name: gnd-chart
-description: "Structured plan format for manual planning and navigator-led execution. Use when charting multi-step plans intended for gnd-navigator to dispatch as legs via the subagent tool in any project."
+description: "Structured plan format for manual planning and skill-driven execution. Use when charting multi-step plans intended for gnd-navigate skill dispatch to gnd-diver subagents in any project."
 user-invocable: true
 disable-model-invocation: true
 ---
 
 # Chart
 
-Plan multi-step work as structured legs for `gnd-navigator` to dispatch to `gnd-diver`.
+Plan multi-step work as structured legs for `gnd-navigate` (skill) to dispatch to `gnd-diver` (subagent).
 
 ## Workflow Role
 

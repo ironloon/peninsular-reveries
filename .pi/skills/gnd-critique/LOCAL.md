@@ -8,7 +8,7 @@ Do not edit `SKILL.md` directly. All project-local overrides go in this file. Th
 
 ## Critique Fixes Process, Not Product
 
-Critique is for process fixes and information gathering for future work. It does not make product code changes — not even minor bug fixes. All implementation work goes through gnd-chart → gnd-navigator → gnd-diver.
+Critique is for process fixes and information gathering for future work. It does not make product code changes — not even minor bug fixes. All implementation work goes through gnd-chart → gnd-navigate → gnd-diver.
 
 What critique *does* change:
 - Process files via their LOCAL.md overrides — never edit the base SKILL.md or agent .md files directly
@@ -57,7 +57,7 @@ Only after all three beats have real responses should you proceed to Phase 3 (An
 
 When the plan was dispatched using parallel batches, add these checks during Phase 3 (Analysis):
 
-1. **Batch correctness.** Were conflict-free sub-batches respected? If any two legs in the same parallel batch shared an owned file, that is a navigator protocol violation — flag it as a correction for `gnd-navigator-LOCAL.md`.
+1. **Batch correctness.** Were conflict-free sub-batches respected? If any two legs in the same parallel batch shared an owned file, that is a navigator protocol violation — flag it as a correction for `gnd-navigate` skill.
 
 2. **Review order effectiveness.** Did the navigator review legs that unblock dependents first? If a downstream leg was unnecessarily delayed because its dependency was reviewed late in the batch, note the pattern for improvement.
 
