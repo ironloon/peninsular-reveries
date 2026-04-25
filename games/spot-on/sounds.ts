@@ -140,7 +140,7 @@ export function playSpotOnSfx(name: string): boolean {
   const validNames: Record<string, SpotOnSampleId> = {
     'pickup': 'pick-up-whoosh',
     'place': 'place-thunk',
-    'drop': 'pick-up-whoosh',
+    'drop': 'drop-put-down',
     'completion': 'completion-chime',
     'new-room': 'room-transition',
   }

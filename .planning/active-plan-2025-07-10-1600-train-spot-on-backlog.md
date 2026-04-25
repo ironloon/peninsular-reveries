@@ -36,7 +36,7 @@ Address all backlog items for Train Sounds and Spot On in one plan. For Train So
 ## Legs
 
 ### LEG-1: Train Sounds — One car per train
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Backlog says "multiple cars crowd the scene; one car gives larger hotspot targets and more space." Simplifying to 1 car frees scene space and enables LEG-2's visible indicators.
 - Depends on: none
@@ -59,7 +59,7 @@ Address all backlog items for Train Sounds and Spot On in one plan. For Train So
   5. In `state.test.ts`, verify no test assertion references the removed hotspot IDs (`steam-coupler`, `diesel-wheels`, `electric-wheels`, `high-speed-wheels`). The existing tests use `steam-whistle`, `steam-bell`, `high-speed-brake`, and `diesel-horn` — all still valid. If any removed ID appears, update the test to use a valid hotspot.
 
 ### LEG-2: Train Sounds — Visible hotspot indicators on touch
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Backlog says "no hover state on mobile, need persistent visible indicator." Hotspot buttons are currently fully invisible (`background: transparent; color: transparent; border: transparent`) — the primary usability blocker on phone.
 - Depends on: LEG-1
@@ -80,7 +80,7 @@ Address all backlog items for Train Sounds and Spot On in one plan. For Train So
   7. Verify density: 4 hotspots per train at 390×844, targets ≥44px, ≥8px horizontal padding. With one car (LEG-1), the scene has more room — check that all 4 indicator dots are visible without overlap after the car/coupler simplification. If the carriage-zone hotspot (passenger door / cargo latch) is too close to a engine-zone hotspot after the car width increase, adjust its `bounds` in `catalog.ts` (this is the only case where LEG-2 should touch catalog — document the adjustment).
 
 ### LEG-3: Train Sounds — Rainbow arc + track full-width
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Backlog says the rainbow "doesn't look like a rainbow" (conic-gradient produces a fan), and the track "doesn't cover the full screen side-to-side." Both are CSS-only visual fixes.
 - Depends on: none
@@ -96,7 +96,7 @@ Address all backlog items for Train Sounds and Spot On in one plan. For Train So
   4. Verify the rainbow in `prefers-reduced-motion` rule: the existing `.train-sounds .train-scene--rainbow::after { display: none !important; }` already hides it under reduced motion — no change needed, just confirm it still applies after the gradient swap.
 
 ### LEG-4: Train Sounds — Audio audibility verification
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Backlog says "gain values were raised but the diver skill's OfflineAudioContext loudness probe was never actually run." Making the check real rather than aspirational.
 - Depends on: none
@@ -115,7 +115,7 @@ Address all backlog items for Train Sounds and Spot On in one plan. For Train So
   4. If the probe cannot run due to tooling limitations (no Node audio decode available), fall back to manual calculation: for each sample, multiply `sample.gain × bus.gain (0.12)` and check that the product reaches at least 0.12 (the level where peaks would hit the compressor). Since all current gains are ≥2.8, `2.8 × 0.12 = 0.336`, which in dB is ≈ −9.5 dB — well above the −18 dB threshold. If this manual check confirms all samples pass, document the result and close the leg without changes to the manifest.
 
 ### LEG-5: Spot On — CSS gaps + room scene width
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Backlog says the room scene is dramatically narrowed on iPhone portrait (nearly letterboxed) and two CSS classes toggled by JS have no rules. This is the CSS baseline fix before LEG-6.
 - Depends on: none
@@ -133,7 +133,7 @@ Address all backlog items for Train Sounds and Spot On in one plan. For Train So
   5. Under `@media (prefers-reduced-motion: reduce), (data-reduce-motion: reduce)`, add `.room-spot--highlight { transition: none; }` and `.room-scene--complete { transition: none; }` to keep reduced-motion consistency.
 
 ### LEG-6: Spot On — Grid-based placement
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Backlog says "1:1 item-to-spot mapping is too rigid." User confirmed grid-based: items can be placed on any cell on any surface. This is the core mechanic redesign.
 - Depends on: LEG-5
@@ -161,7 +161,7 @@ Address all backlog items for Train Sounds and Spot On in one plan. For Train So
   7. In `spot-on.css`, replace `.room-spot` rules with `.room-surface` and `.room-cell` rules. `.room-surface`: positioned container with label, subtle background, rounded corners. `.room-cell`: grid cell within surface, 44px minimum touch target, dashed outline when empty, solid background when occupied. `.room-scene--carrying .room-cell:not(.room-cell--occupied)`: highlight animation for empty cells while carrying. `.room-cell--occupied`: solid subtle zone with item emoji. Keep `.room-item` rules for floor items. Update `.room-item--placed` to apply to items inside cells. Add reduce-motion overrides for cell highlight animation. Remove all `.room-spot` selectors.
 
 ### LEG-7: Spot On — Procedural room generation
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Backlog says "instead of fixed 3-room cycle, generate rooms procedurally for more replay variety." User confirmed. This replaces the fixed ROOMS array with a generator.
 - Depends on: LEG-6
@@ -185,7 +185,7 @@ Address all backlog items for Train Sounds and Spot On in one plan. For Train So
   6. Verify the density cap: each generated room has 4–6 items and 4–6 surfaces, each surface with cells totaling at most 8 cells. At 390×844, targets ≥44px, ≤8 interactive elements visible without overlap, horizontal padding ≥8px. The `generateRoom()` function should enforce minimum surface dimensions and spacing.
 
 ### LEG-8: Spot On — Distinct drop sound + missing audio files
-- Status: pending
+- Status: done
 - Confirmed: yes
 - Goal link: Backlog says "same audio for lift and let go" and "no .ogg files exist on disk, game is completely silent." This leg gives Spot On distinct feedback per action and makes audio actually play.
 - Depends on: none
@@ -231,3 +231,13 @@ Parallel via subagent (navigator dispatches conflict-free batches, reviews betwe
 8. LEG-7 (Procedural room generation) — depends on LEG-6
 
 After all complete: deferred shared edits (`ATTRIBUTIONS.md` sync) → `pnpm build` → `pnpm test` → `pnpm sync:attributions` → delivery verification → commit → push.
+
+## Boundary Notes
+- **LEG-1 bridge edit:** Removed 4 dead hotspot route entries (`steam-coupler`, `diesel-wheels`, `electric-wheels`, `high-speed-wheels`) from `games/train-sounds/sounds.ts` — this file was read-only for LEG-1 but the entries referenced removed type members.
+- **LEG-4 blocker:** `electric-horn.ogg` is completely silent (all-zero samples, 3.2KB). The file must be regenerated from its Freesound source (soundId 783760). Gain is 2.9 with a comment noting the issue.
+- **LEG-4 gain adjustments:** `highspeed-passby` gain raised from 3.2 → 7.2; `coupler-clank` gain raised from 3.1 → 22. Both documented with comments in the manifest.
+- **LEG-8 gap:** Only 1/5 spot-on audio files exists on disk (`drop-put-down.ogg`). The 4 pre-existing samples (`pick-up-whoosh`, `place-thunk`, `completion-chime`, `room-transition`) have Freesound source IDs that are either non-CC0 licensed or deleted. Replacement CC0 sources need to be found and the audio re-fetched.
+
+## Implementation
+Commit: pending | none (local-only)
+Pushed: pending

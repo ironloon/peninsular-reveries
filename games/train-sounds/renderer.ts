@@ -124,31 +124,14 @@ function createLocomotive(preset: TrainPresetDefinition): HTMLElement {
   return locomotive
 }
 
-function createCoupler(carIndex: number): HTMLElement {
-  const classNames = ['train-coupler']
-
-  if (carIndex === 0) {
-    classNames.push('train-coupler--one')
-  } else if (carIndex === 1) {
-    classNames.push('train-coupler--two')
-  }
-
-  return createElement('span', classNames)
+function createCoupler(): HTMLElement {
+  return createElement('span', ['train-coupler'])
 }
 
-function createCar(preset: TrainPresetDefinition, carIndex: number): HTMLElement {
-  const classNames = ['train-car', `train-car--${preset.art.carriage}`]
-
-  if (carIndex === 0) {
-    classNames.push('train-car--first')
-  } else if (carIndex === 1) {
-    classNames.push('train-car--second')
-  }
-
-  const car = createElement('div', classNames)
+function createCar(preset: TrainPresetDefinition): HTMLElement {
+  const car = createElement('div', ['train-car', `train-car--${preset.art.carriage}`])
   car.dataset.carriage = preset.art.carriage
   car.dataset.livery = preset.art.livery
-  car.dataset.carIndex = String(carIndex)
   return car
 }
 
@@ -170,12 +153,8 @@ function createDisplay(preset: TrainPresetDefinition): HTMLElement {
   display.dataset.livery = preset.art.livery
   display.dataset.carCount = String(preset.art.carCount)
   display.appendChild(createLocomotive(preset))
-
-  for (let carIndex = 0; carIndex < preset.art.carCount; carIndex += 1) {
-    display.appendChild(createCoupler(carIndex))
-    display.appendChild(createCar(preset, carIndex))
-  }
-
+  display.appendChild(createCoupler())
+  display.appendChild(createCar(preset))
   display.appendChild(createTrack())
   return display
 }
@@ -200,7 +179,9 @@ function createHotspotButton(
   button.style.minWidth = `${HOTSPOT_TOUCH_TARGET_PX}px`
   button.style.minHeight = `${HOTSPOT_TOUCH_TARGET_PX}px`
   button.style.maxWidth = `${HOTSPOT_MAX_WIDTH_PX}px`
-  button.style.overflow = 'hidden'
+  const indicator = createElement('span', ['train-hotspot__indicator'])
+  indicator.setAttribute('aria-hidden', 'true')
+  button.appendChild(indicator)
 
   return button
 }

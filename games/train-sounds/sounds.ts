@@ -59,7 +59,6 @@ const TRAIN_PRESET_HOTSPOT_SOUND_ROUTES: Readonly<
       volumeScale: 1.04,
       release: 0.08,
     },
-    'steam-coupler': { sampleId: 'coupler-clank', playbackRate: 0.94 },
     'steam-passenger-door': {
       sampleId: 'passenger-door-chime',
       playbackRate: 0.94,
@@ -73,12 +72,6 @@ const TRAIN_PRESET_HOTSPOT_SOUND_ROUTES: Readonly<
       sampleId: 'air-brake-hiss',
       playbackRate: 0.98,
       volumeScale: 0.94,
-    },
-    'diesel-wheels': {
-      sampleId: 'diesel-idle',
-      playbackRate: 1.08,
-      volumeScale: 0.84,
-      release: 0.12,
     },
     'diesel-cargo-latch': {
       sampleId: 'coupler-clank',
@@ -95,12 +88,6 @@ const TRAIN_PRESET_HOTSPOT_SOUND_ROUTES: Readonly<
       sampleId: 'air-brake-hiss',
       playbackRate: 1.06,
       volumeScale: 0.86,
-    },
-    'electric-wheels': {
-      sampleId: 'electric-hum',
-      playbackRate: 1.18,
-      volumeScale: 0.76,
-      release: 0.1,
     },
     'electric-passenger-door': {
       sampleId: 'passenger-door-chime',
@@ -120,11 +107,6 @@ const TRAIN_PRESET_HOTSPOT_SOUND_ROUTES: Readonly<
       sampleId: 'air-brake-hiss',
       playbackRate: 1.12,
       volumeScale: 0.84,
-    },
-    'high-speed-wheels': {
-      sampleId: 'highspeed-passby',
-      playbackRate: 1.02,
-      volumeScale: 0.98,
     },
     'high-speed-passenger-door': {
       sampleId: 'passenger-door-chime',

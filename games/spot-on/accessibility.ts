@@ -11,8 +11,12 @@ export function announceItemPickedUp(itemName: string): void {
   announce(`Picked up ${itemName}.`, 'assertive')
 }
 
-export function announceItemPlaced(itemName: string, spotName: string): void {
-  announce(`Placed ${itemName} on ${spotName}.`, 'assertive')
+export function announceItemPickedUpFromSurface(itemName: string, surfaceLabel: string): void {
+  announce(`Picked up ${itemName} from ${surfaceLabel}.`, 'assertive')
+}
+
+export function announceItemPlaced(itemName: string, surfaceLabel: string): void {
+  announce(`Placed ${itemName} on ${surfaceLabel}.`, 'assertive')
 }
 
 export function announceItemDropped(itemName: string): void {

@@ -13,6 +13,9 @@ import {
   type MissionOrbitSampleProcessingPlan,
 } from '../../../../games/mission-orbit/sample-manifest.js'
 import {
+  getDownloadableSpotOnSamples,
+} from '../../../../games/spot-on/sample-manifest.js'
+import {
   getDownloadableTrainSoundsSamples,
 } from '../../../../games/train-sounds/sample-manifest.js'
 
@@ -63,6 +66,10 @@ const gameAudioConfigs: Record<string, GameAudioConfig> = {
   'mission-orbit': {
     outputDir: join(repoRoot, 'public', 'mission-orbit', 'audio'),
     getDownloadableSamples: () => getDownloadableMissionOrbitSamples() as readonly GenericGameAudioSampleDefinition[],
+  },
+  'spot-on': {
+    outputDir: join(repoRoot, 'public', 'spot-on', 'audio'),
+    getDownloadableSamples: () => getDownloadableSpotOnSamples() as readonly GenericGameAudioSampleDefinition[],
   },
   'train-sounds': {
     outputDir: join(repoRoot, 'public', 'train-sounds', 'audio'),

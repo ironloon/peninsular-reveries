@@ -1,5 +1,5 @@
-import type { ItemState, SpotOnState, SpotState } from './types.js'
-import { ROOMS, countPlaced, getRoomDefinition } from './state.js'
+import type { ItemState, SpotOnState, SurfaceState } from './types.js'
+import { countPlaced, getRoomDefinition } from './state.js'
 
 // ── Renderer refs ────────────────────────────────────────────────────────────
 
@@ -20,8 +20,6 @@ export interface SpotOnRenderer {
   dispose(): void
 }
 
-const ROOM_THEME_CLASSES: readonly string[] = ROOMS.map((r) => r.theme)
-
 function byId<T extends HTMLElement>(id: string): T | null {
   const el = document.getElementById(id)
   return el instanceof HTMLElement ? (el as T) : null
@@ -35,30 +33,16 @@ function requireElement<T extends HTMLElement>(id: string): T {
   return el
 }
 
-function getItemPosition(item: ItemState, spots: readonly SpotState[]): { x: number; y: number } {
-  if (item.placed && item.spotId) {
-    const spot = spots.find((s) => s.id === item.spotId)
-    if (spot) return { x: spot.x, y: spot.y }
-  }
-  return { x: item.floorX, y: item.floorY }
-}
-
-function createItemButton(item: ItemState, carried: boolean, spots: readonly SpotState[]): HTMLButtonElement {
+function createItemButton(item: ItemState, carried: boolean): HTMLButtonElement {
   const button = document.createElement('button')
   button.type = 'button'
   button.className = 'room-item'
   button.dataset.itemId = item.id
-  button.setAttribute('aria-label', `${item.name}${item.placed ? ' (placed)' : ''}${carried ? ' (carrying)' : ''}`)
+  button.setAttribute('aria-label', `${item.name}${carried ? ' (carrying)' : ''}`)
   button.textContent = item.emoji
 
-  const pos = getItemPosition(item, spots)
-  button.style.left = `${pos.x}%`
-  button.style.top = `${pos.y}%`
-
-  if (item.placed) {
-    button.classList.add('room-item--placed')
-    button.disabled = true
-  }
+  button.style.left = `${item.floorX}%`
+  button.style.top = `${item.floorY}%`
 
   if (carried) {
     button.classList.add('room-item--carried')
@@ -67,33 +51,78 @@ function createItemButton(item: ItemState, carried: boolean, spots: readonly Spo
   return button
 }
 
-function createSpotDiv(spot: SpotState, carrying: boolean): HTMLDivElement {
-  const div = document.createElement('div')
-  div.className = 'room-spot'
-  div.dataset.spotId = spot.id
-  div.setAttribute('role', 'button')
-  div.setAttribute('tabindex', '0')
-  div.setAttribute('aria-label', `${spot.label}${spot.itemId ? ' (occupied)' : ''}`)
+function createSurfaceElement(
+  surface: SurfaceState,
+  carrying: boolean,
+  items: readonly ItemState[],
+): HTMLDivElement {
+  const container = document.createElement('div')
+  container.className = 'room-surface'
+  container.dataset.surfaceId = surface.id
+  container.setAttribute('aria-label', surface.label)
 
-  if (spot.itemId) {
-    div.classList.add('room-spot--occupied')
-    // When occupied, show the placed item's emoji instead of the spot emoji
-    const itemEl = document.createElement('span')
-    itemEl.className = 'room-spot__item-emoji'
-    itemEl.setAttribute('aria-hidden', 'true')
-    // The item emoji will be found from state; for now show spot emoji and overlay via item
-    div.textContent = spot.emoji
+  container.style.left = `${surface.x}%`
+  container.style.top = `${surface.y}%`
+  container.style.width = `${surface.width}%`
+  container.style.height = `${surface.height}%`
+
+  // Label
+  const label = document.createElement('div')
+  label.className = 'room-surface__label'
+  label.textContent = surface.emoji
+  label.setAttribute('aria-hidden', 'true')
+  container.appendChild(label)
+
+  // Grid
+  const grid = document.createElement('div')
+  grid.className = 'room-surface__grid'
+  grid.style.setProperty('--cols', String(surface.cols))
+  grid.style.setProperty('--rows', String(surface.rows))
+
+  for (let i = 0; i < surface.cells.length; i++) {
+    const cellState = surface.cells[i]
+    const cellEl = createCellElement(surface, i, cellState.itemId, items, carrying)
+    grid.appendChild(cellEl)
+  }
+
+  container.appendChild(grid)
+  return container
+}
+
+function createCellElement(
+  surface: SurfaceState,
+  cellIndex: number,
+  itemId: string | null,
+  items: readonly ItemState[],
+  carrying: boolean,
+): HTMLDivElement {
+  const cell = document.createElement('div')
+  cell.className = 'room-cell'
+  cell.dataset.surfaceId = surface.id
+  cell.dataset.cellIndex = String(cellIndex)
+  cell.setAttribute('role', 'button')
+  cell.setAttribute('tabindex', '0')
+
+  const row = surface.cells[cellIndex].row
+  const col = surface.cells[cellIndex].col
+
+  if (itemId !== null) {
+    cell.classList.add('room-cell--occupied')
+    cell.dataset.itemId = itemId
+    const item = items.find((i) => i.id === itemId)
+    cell.setAttribute('aria-label', item
+      ? `${surface.label}, row ${row + 1}, col ${col + 1} — ${item.name}`
+      : `${surface.label}, row ${row + 1}, col ${col + 1} — occupied`,
+    )
+    cell.textContent = item ? item.emoji : ''
   } else {
-    div.textContent = spot.emoji
+    cell.setAttribute('aria-label', `${surface.label}, row ${row + 1}, col ${col + 1} — empty`)
     if (carrying) {
-      div.classList.add('room-spot--highlight')
+      cell.classList.add('room-cell--highlight')
     }
   }
 
-  div.style.left = `${spot.x}%`
-  div.style.top = `${spot.y}%`
-
-  return div
+  return cell
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
@@ -128,7 +157,7 @@ export function initSpotOnRenderer(): SpotOnRenderer {
   resizeObserver.observe(refs.scene)
 
   function syncLayout(): void {
-    // Responsive layout pass — items and spots are positioned via percentages
+    // Responsive layout pass — items and surfaces are positioned via percentages
     // so they automatically rescale. No dynamic layout adjustments needed.
   }
 
@@ -136,11 +165,12 @@ export function initSpotOnRenderer(): SpotOnRenderer {
     const room = getRoomDefinition(state.currentRoomId)
     const carrying = state.carriedItemId !== null
 
-    // Toggle room theme class
-    for (const cls of ROOM_THEME_CLASSES) {
-      refs.scene.classList.remove(cls)
-    }
-    refs.scene.classList.add(room.theme)
+    // Set dynamic CSS custom properties for room theming
+    refs.scene.style.setProperty('--spot-on-room-wall', room.wallColor)
+    refs.scene.style.setProperty('--spot-on-room-floor', room.floorColor)
+
+    // Set data attribute for debugging (not used for CSS rules)
+    refs.scene.dataset.roomTheme = room.theme
 
     // Toggle carrying class on scene
     if (carrying) {
@@ -159,19 +189,21 @@ export function initSpotOnRenderer(): SpotOnRenderer {
     // Clear scene children
     refs.scene.replaceChildren()
 
-    // Render spots first (lower z-index)
-    const spotFrag = document.createDocumentFragment()
-    for (const spot of state.spots) {
-      const div = createSpotDiv(spot, carrying)
-      spotFrag.appendChild(div)
+    // Render surfaces first (lower z-index)
+    const surfaceFrag = document.createDocumentFragment()
+    for (const surface of state.surfaces) {
+      const el = createSurfaceElement(surface, carrying, state.items)
+      surfaceFrag.appendChild(el)
     }
-    refs.scene.appendChild(spotFrag)
+    refs.scene.appendChild(surfaceFrag)
 
-    // Render items on top (higher z-index)
+    // Render floor items and carried item (higher z-index)
     const itemFrag = document.createDocumentFragment()
     for (const item of state.items) {
+      // Skip items that are placed on a surface (shown inside cells)
+      if (item.surfaceId !== null) continue
       const carried = state.carriedItemId === item.id
-      const button = createItemButton(item, carried, state.spots)
+      const button = createItemButton(item, carried)
       itemFrag.appendChild(button)
     }
     refs.scene.appendChild(itemFrag)

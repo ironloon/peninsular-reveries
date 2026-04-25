@@ -3,8 +3,6 @@
 :root {
   --spot-on-bg: #faf6ee;
   --spot-on-ink: #3a2f28;
-  --spot-on-room-wall: #c5d5e4;
-  --spot-on-room-floor: #d4a76a;
   --spot-on-paper: rgba(255, 252, 245, 0.92);
   --spot-on-shadow: rgba(58, 47, 40, 0.12);
   --spot-on-shadow-strong: rgba(58, 47, 40, 0.24);
@@ -110,6 +108,9 @@ body.spot-on {
   overflow: hidden;
   min-height: 50%;
   flex: 1 1 auto;
+  /* Default custom property values (bedroom), overridden by renderer */
+  --spot-on-room-wall: #c5d5e4;
+  --spot-on-room-floor: #d4a76a;
   background: var(--spot-on-room-wall);
   border-radius: var(--spot-on-radius);
   margin: 0.5rem;
@@ -117,7 +118,7 @@ body.spot-on {
   transition: background 320ms ease, box-shadow 320ms ease, opacity 300ms ease;
 }
 
-/* Floor gradient — base (bedroom default) */
+/* Floor gradient — uses CSS custom property for floor color */
 .room-scene::after {
   content: '';
   position: absolute;
@@ -130,74 +131,7 @@ body.spot-on {
   z-index: 0;
 }
 
-/* Furniture silhouettes via ::before */
-.room-scene::before {
-  content: '';
-  position: absolute;
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* ── Room themes ───────────────────────────────────────────────────────────── */
-
-/* Bedroom: soft blue walls, warm wood floor, bed silhouette */
-.room-bedroom {
-  --spot-on-room-wall: #c5d5e4;
-  --spot-on-room-floor: #d4a76a;
-  background: var(--spot-on-room-wall);
-  box-shadow: inset 0 -40px 60px -20px var(--spot-on-room-floor);
-}
-.room-bedroom::before {
-  bottom: 8%;
-  left: 5%;
-  width: 40%;
-  height: 18%;
-  background: rgba(139, 115, 85, 0.25);
-  border-radius: 6px 6px 2px 2px;
-}
-.room-bedroom::after {
-  background: linear-gradient(to bottom, transparent, #d4a76a);
-}
-
-/* Kitchen: warm cream walls, light wood floor, counter silhouette */
-.room-kitchen {
-  --spot-on-room-wall: #f5f0e0;
-  --spot-on-room-floor: #e8dcc8;
-  background: var(--spot-on-room-wall);
-  box-shadow: inset 0 -40px 60px -20px var(--spot-on-room-floor);
-}
-.room-kitchen::before {
-  bottom: 20%;
-  right: 10%;
-  width: 20%;
-  height: 32%;
-  background: rgba(180, 160, 130, 0.25);
-  border-radius: 4px;
-}
-.room-kitchen::after {
-  background: linear-gradient(to bottom, transparent, #e8dcc8);
-}
-
-/* Study: soft green walls, dark wood floor, desk silhouette */
-.room-study {
-  --spot-on-room-wall: #a8c5a0;
-  --spot-on-room-floor: #8b7355;
-  background: var(--spot-on-room-wall);
-  box-shadow: inset 0 -40px 60px -20px var(--spot-on-room-floor);
-}
-.room-study::before {
-  bottom: 18%;
-  left: 3%;
-  width: 38%;
-  height: 12%;
-  background: rgba(139, 115, 85, 0.25);
-  border-radius: 3px;
-}
-.room-study::after {
-  background: linear-gradient(to bottom, transparent, #8b7355);
-}
-
-/* ── Room items ────────────────────────────────────────────────────────────── */
+/* ── Room items (floor items) ──────────────────────────────────────────────── */
 
 .room-item {
   position: absolute;
@@ -245,16 +179,6 @@ body.spot-on {
   animation: spot-on-pulse 800ms infinite ease-in-out;
 }
 
-/* Placed item: settled appearance */
-.room-item--placed {
-  opacity: 0.85;
-  cursor: default;
-  box-shadow: 0 1px 2px var(--spot-on-shadow);
-  border: 2px solid rgba(255, 210, 120, 0.5);
-  background: rgba(255, 252, 245, 0.96);
-  outline: none;
-}
-
 /* Pickup animation class */
 .room-item--anim-pickup {
   transform: scale(1.1);
@@ -266,60 +190,97 @@ body.spot-on {
   animation: spot-on-place-bounce 200ms ease-out;
 }
 
-/* ── Room spots ────────────────────────────────────────────────────────────── */
+/* ── Room surfaces ─────────────────────────────────────────────────────────── */
 
-.room-spot {
+.room-surface {
   position: absolute;
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
+  z-index: 2;
+  border-radius: 8px;
+  background: rgba(255, 252, 245, 0.15);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.room-surface__label {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  line-height: 1;
+  text-align: center;
+  padding: 2px 4px;
+  opacity: 0.65;
+  pointer-events: none;
+  color: var(--spot-on-ink);
+}
+
+.room-surface__grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-rows: repeat(var(--rows), 1fr);
+  min-height: 0;
+}
+
+/* ── Room cells ────────────────────────────────────────────────────────────── */
+
+.room-cell {
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
-  height: 52px;
   min-width: 44px;
   min-height: 44px;
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   line-height: 1;
-  background: rgba(255, 252, 245, 0.35);
   border: 2px dashed rgba(58, 47, 40, 0.2);
-  border-radius: 10px;
+  border-radius: 6px;
   cursor: pointer;
-  z-index: 2;
-  /* Center on position point */
-  margin-left: -26px;
-  margin-top: -26px;
-  transition: border-color 160ms ease, transform 120ms ease, background 160ms ease, box-shadow 160ms ease;
+  transition: border-color 160ms ease, background 160ms ease, transform 120ms ease, box-shadow 160ms ease;
+  background: rgba(255, 252, 245, 0.2);
 }
 
-.room-spot:hover {
-  border-color: rgba(58, 47, 40, 0.45);
-  transform: scale(1.05);
-  background: rgba(255, 252, 245, 0.55);
+.room-cell:hover {
+  border-color: rgba(58, 47, 40, 0.4);
+  background: rgba(255, 252, 245, 0.4);
 }
 
-.room-spot:focus-visible {
+.room-cell:focus-visible {
   outline: 2px dashed var(--spot-on-ink);
   outline-offset: 2px;
 }
 
-/* Occupied spot: solid subtle zone */
-.room-spot--occupied {
+/* Occupied cell: solid subtle zone with item emoji */
+.room-cell--occupied {
   border-style: solid;
-  border-color: rgba(58, 47, 40, 0.12);
-  background: rgba(255, 252, 245, 0.2);
-  opacity: 0.6;
-  cursor: default;
+  border-color: rgba(58, 47, 40, 0.15);
+  background: rgba(255, 252, 245, 0.35);
+  cursor: pointer;
+  font-size: 1.5rem;
 }
 
-/* Carrying mode: all empty spots get highlight pulse */
-.room-scene--carrying .room-spot:not(.room-spot--occupied) {
+.room-cell--occupied:hover {
+  background: rgba(255, 252, 245, 0.55);
+  border-color: rgba(58, 47, 40, 0.3);
+}
+
+/* Carrying mode: empty cells get highlight pulse */
+.room-scene--carrying .room-cell:not(.room-cell--occupied) {
   border-color: rgba(58, 47, 40, 0.4);
   background: var(--spot-on-highlight);
-  animation: spot-on-spot-highlight 1.2s infinite ease-in-out;
+  animation: spot-on-cell-highlight 1.2s infinite ease-in-out;
 }
 
-/* Item emoji inside occupied spots */
-.room-spot__item-emoji {
-  font-size: 1.5rem;
+/* Cell highlight standalone (focus, reduce-motion-compatible) */
+.room-cell--highlight {
+  border-color: rgba(58, 47, 40, 0.5);
+  border-style: solid;
+  background: rgba(255, 248, 220, 0.6);
+}
+
+/* ── Completion glow ─────────────────────────────────────────────────────── */
+
+.room-scene--complete {
+  box-shadow: inset 0 0 40px rgba(255, 210, 120, 0.2);
 }
 
 /* ── Completion message ─────────────────────────────────────────────────────── */
@@ -466,7 +427,7 @@ body.spot-on {
   100% { transform: translateY(0); }
 }
 
-@keyframes spot-on-spot-highlight {
+@keyframes spot-on-cell-highlight {
   0%, 100% {
     border-color: rgba(58, 47, 40, 0.4);
     background: rgba(255, 248, 220, 0.6);
@@ -482,7 +443,8 @@ body.spot-on {
 @media (prefers-reduced-motion: reduce),
        (data-reduce-motion: reduce) {
   .room-item,
-  .room-spot,
+  .room-cell,
+  .room-surface,
   .spot-on-primary-btn,
   .spot-on-new-room-btn,
   .spot-on-menu-btn,
@@ -510,7 +472,7 @@ body.spot-on {
     transition: none;
   }
 
-  .room-scene--carrying .room-spot:not(.room-spot--occupied) {
+  .room-scene--carrying .room-cell:not(.room-cell--occupied) {
     animation: none;
     border-color: rgba(58, 47, 40, 0.4);
     background: rgba(255, 248, 220, 0.7);
@@ -523,6 +485,14 @@ body.spot-on {
   .completion-msg--animating {
     transition: none;
   }
+
+  .room-cell--highlight {
+    transition: none;
+  }
+
+  .room-scene--complete {
+    transition: none;
+  }
 }
 
 /* ── Responsive: narrow phone portrait (390×844) ──────────────────────────── */
@@ -533,33 +503,31 @@ body.spot-on {
   }
 
   .room-scene {
-    margin: 0.25rem;
-  }
-
-  .room-item,
-  .room-spot {
-    min-width: 44px;
-    min-height: 44px;
+    margin: 0.15rem 0.1rem;
   }
 
   .room-item {
-    width: 44px;
-    height: 44px;
     min-width: 44px;
     min-height: 44px;
+    width: 44px;
+    height: 44px;
     font-size: 1.35rem;
     margin-left: -22px;
     margin-top: -22px;
   }
 
-  .room-spot {
-    width: 48px;
-    height: 48px;
+  .room-cell {
     min-width: 44px;
     min-height: 44px;
-    font-size: 1.15rem;
-    margin-left: -24px;
-    margin-top: -24px;
+    font-size: 1.1rem;
+  }
+
+  .room-cell--occupied {
+    font-size: 1.35rem;
+  }
+
+  .room-surface__label {
+    font-size: 0.65rem;
   }
 
   .spot-on-subtitle {
@@ -600,10 +568,8 @@ body.spot-on {
     margin-top: -22px;
   }
 
-  .room-spot {
-    width: 46px;
-    height: 46px;
-    margin-left: -23px;
-    margin-top: -23px;
+  .room-cell {
+    min-width: 44px;
+    min-height: 44px;
   }
 }

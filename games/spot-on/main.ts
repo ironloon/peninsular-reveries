@@ -1,9 +1,9 @@
 import { setupGameMenu } from '../../client/game-menu.js'
 import { showScreen } from '../../client/game-screens.js'
 
-import { announceItemPickedUp, announceItemPlaced, announceItemDropped, announceRoomChange, announceAllPlaced } from './accessibility.js'
+import { announceItemPickedUp, announceItemPlaced, announceItemDropped, announceItemPickedUpFromSurface, announceRoomChange, announceAllPlaced } from './accessibility.js'
 import { createInitialState, pickUpItem, placeItem, dropItem, selectNextRoom, getRoomDefinition } from './state.js'
-import type { ItemId, SpotId, SpotOnState } from './types.js'
+import type { ItemId, SpotOnState } from './types.js'
 import { initSpotOnRenderer, type SpotOnRenderer } from './renderer.js'
 import { setupSpotOnInput, cleanupSpotOnInput, updateSpotOnInputState, type SpotOnInputCallbacks } from './input.js'
 import { playSpotOnSfx, ensureSpotOnAudioUnlocked } from './sounds.js'
@@ -56,38 +56,49 @@ function handlePickUpItem(itemId: ItemId): void {
     return
   }
 
+  // Look up item surface info before state change (for accessibility announcements)
+  const prevItem = state.items.find((i) => i.id === itemId)
+  const prevSurface = prevItem?.surfaceId
+    ? state.surfaces.find((s) => s.id === prevItem.surfaceId)
+    : null
+
   state = pickUpItem(state, itemId)
   if (state.phase !== previousPhase && state.carriedItemId !== null) {
     playSpotOnSfx('pickup')
     ensureSpotOnAudioUnlocked()
     const item = state.items.find((i) => i.id === state.carriedItemId)
     if (item) {
-      announceItemPickedUp(item.name)
+      if (prevSurface) {
+        announceItemPickedUpFromSurface(item.name, prevSurface.label)
+      } else {
+        announceItemPickedUp(item.name)
+      }
     }
 
     // Animate the pick-up element
-    const carriedEl = renderer?.scene.querySelector<HTMLButtonElement>(`[data-item-id="${itemId}"]`)
+    const carriedEl = renderer?.scene.querySelector<HTMLElement>(`[data-item-id="${itemId}"]`)
     animateItemPickup(carriedEl ?? null)
   }
   renderState()
 }
 
-function handlePlaceItem(spotId: SpotId): void {
+function handlePlaceItem(surfaceId: string, cellIndex: number): void {
   if (state.phase !== 'carrying' || state.carriedItemId === null) return
 
   const carriedItem = state.items.find((i) => i.id === state.carriedItemId)
-  const spot = state.spots.find((s) => s.id === spotId)
-  if (!carriedItem || !spot) return
+  const surface = state.surfaces.find((s) => s.id === surfaceId)
+  if (!carriedItem || !surface) return
 
-  // Don't allow placing on an occupied spot
-  if (spot.itemId !== null) return
+  // Don't allow placing on an occupied cell
+  if (cellIndex < 0 || cellIndex >= surface.cells.length) return
+  if (surface.cells[cellIndex].itemId !== null) return
 
-  state = placeItem(state, spotId)
+  state = placeItem(state, surfaceId, cellIndex)
   playSpotOnSfx('place')
-  announceItemPlaced(carriedItem.name, spot.label)
+  announceItemPlaced(carriedItem.name, surface.label)
 
   // Animate the placed element
-  const placedEl = renderer?.scene.querySelector<HTMLButtonElement>(`[data-item-id="${carriedItem.id}"]`)
+  const placedEl = renderer?.scene.querySelector<HTMLElement>(`[data-item-id="${carriedItem.id}"]`)
   animateItemPlace(placedEl ?? null)
 
   if (state.phase === 'complete') {

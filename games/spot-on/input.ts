@@ -1,16 +1,16 @@
-import type { ItemId, SpotId, SpotOnState } from './types.js'
+import type { ItemId, SpotOnState } from './types.js'
 
 // ── Input callbacks ──────────────────────────────────────────────────────────
 
 export interface SpotOnInputCallbacks {
   onStart?: () => void
   onPickUpItem?: (itemId: ItemId) => void
-  onPlaceItem?: (spotId: SpotId) => void
+  onPlaceItem?: (surfaceId: string, cellIndex: number) => void
   onDropItem?: () => void
   onNewRoom?: () => void
   onToggleMenu?: () => void
-  /** Called to request focus on the nearest empty spot (for keyboard accessibility while carrying) */
-  onFocusNearestEmptySpot?: () => void
+  /** Called to request focus on the nearest empty cell (for keyboard accessibility while carrying) */
+  onFocusNearestEmptyCell?: () => void
 }
 
 // ── Keyboard input ───────────────────────────────────────────────────────────
@@ -20,17 +20,17 @@ function isModalOpen(): boolean {
   return Boolean(modal && !modal.hidden)
 }
 
-function getFocusableItemsAndSpots(): HTMLElement[] {
+function getFocusableItemsAndCells(): HTMLElement[] {
   const items = Array.from(document.querySelectorAll<HTMLElement>('.room-item:not(.room-item--placed)'))
-  const spots = Array.from(document.querySelectorAll<HTMLElement>('.room-spot'))
-  return [...items, ...spots].filter((el) => {
+  const cells = Array.from(document.querySelectorAll<HTMLElement>('.room-cell'))
+  return [...items, ...cells].filter((el) => {
     if (!el || el.closest('[hidden]')) return false
     return el.getClientRects().length > 0
   })
 }
 
-function getEmptySpots(): HTMLElement[] {
-  return Array.from(document.querySelectorAll<HTMLElement>('.room-spot:not(.room-spot--occupied)'))
+function getEmptyCells(): HTMLElement[] {
+  return Array.from(document.querySelectorAll<HTMLElement>('.room-cell:not(.room-cell--occupied)'))
     .filter((el) => el.getClientRects().length > 0)
 }
 
@@ -58,16 +58,16 @@ function moveFocusToNext(elements: HTMLElement[], direction: 'forward' | 'backwa
   }
 }
 
-function focusNearestEmptySpot(): void {
-  const emptySpots = getEmptySpots()
-  if (emptySpots.length > 0) {
-    emptySpots[0].focus({ preventScroll: true })
+function focusNearestEmptyCell(): void {
+  const emptyCells = getEmptyCells()
+  if (emptyCells.length > 0) {
+    emptyCells[0].focus({ preventScroll: true })
   }
 }
 
 let keydownHandler: ((event: KeyboardEvent) => void) | null = null
 let itemClickHandler: ((event: Event) => void) | null = null
-let spotClickHandler: ((event: Event) => void) | null = null
+let cellClickHandler: ((event: Event) => void) | null = null
 let newRoomClickHandler: (() => void) | null = null
 let startClickHandler: (() => void) | null = null
 let gamepadTimer: ReturnType<typeof setInterval> | null = null
@@ -110,30 +110,38 @@ export function setupSpotOnInput(callbacks: SpotOnInputCallbacks = {}): void {
           callbacks.onPickUpItem?.(itemId as ItemId)
           return
         }
-        const spotId = target.dataset?.spotId
-        if (spotId) {
+        const surfaceId = target.dataset?.surfaceId
+        const cellIndexStr = target.dataset?.cellIndex
+        if (surfaceId !== undefined && cellIndexStr !== undefined) {
           event.preventDefault()
-          callbacks.onPlaceItem?.(spotId as SpotId)
+          const cellIndex = Number(cellIndexStr)
+          // If cell is occupied, pick up the item from the cell
+          if (target.dataset.itemId) {
+            callbacks.onPickUpItem?.(target.dataset.itemId as ItemId)
+            return
+          }
+          // Empty cell: place carried item
+          callbacks.onPlaceItem?.(surfaceId, cellIndex)
           return
         }
       }
     }
 
     if (event.key === 'Tab') {
-      const elements = getFocusableItemsAndSpots()
+      const elements = getFocusableItemsAndCells()
       moveFocusToNext(elements, event.shiftKey ? 'backward' : 'forward')
       event.preventDefault()
       return
     }
 
     if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      const elements = getFocusableItemsAndSpots()
+      const elements = getFocusableItemsAndCells()
       moveFocusToNext(elements, 'forward')
       event.preventDefault()
       return
     }
     if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      const elements = getFocusableItemsAndSpots()
+      const elements = getFocusableItemsAndCells()
       moveFocusToNext(elements, 'backward')
       event.preventDefault()
       return
@@ -157,24 +165,36 @@ export function setupSpotOnInput(callbacks: SpotOnInputCallbacks = {}): void {
     }
 
     callbacks.onPickUpItem?.(itemId as ItemId)
-    // After picking up, move focus to nearest empty spot
+    // After picking up, move focus to nearest empty cell
     requestAnimationFrame(() => {
-      focusNearestEmptySpot()
+      focusNearestEmptyCell()
     })
   }
 
-  // Spot click handling
-  spotClickHandler = (event: Event): void => {
+  // Cell click handling
+  cellClickHandler = (event: Event): void => {
     const target = event.target
     if (!(target instanceof Element)) return
-    const div = target.closest<HTMLElement>('.room-spot')
-    const spotId = div?.dataset.spotId
-    if (!spotId) return
-    callbacks.onPlaceItem?.(spotId as SpotId)
+    const cell = target.closest<HTMLElement>('.room-cell')
+    if (!cell) return
+    const surfaceId = cell.dataset.surfaceId
+    const cellIndexStr = cell.dataset.cellIndex
+    if (surfaceId === undefined || cellIndexStr === undefined) return
+
+    const cellIndex = Number(cellIndexStr)
+
+    // If cell is occupied, pick up the item
+    if (cell.dataset.itemId) {
+      callbacks.onPickUpItem?.(cell.dataset.itemId as ItemId)
+      return
+    }
+
+    // Empty cell: place carried item if carrying
+    callbacks.onPlaceItem?.(surfaceId, cellIndex)
   }
 
   document.addEventListener('click', itemClickHandler)
-  document.addEventListener('click', spotClickHandler)
+  document.addEventListener('click', cellClickHandler)
 
   // Gamepad polling (basic)
   const GAMEPAD_POLL_INTERVAL = 200
@@ -212,9 +232,9 @@ export function cleanupSpotOnInput(): void {
     itemClickHandler = null
   }
 
-  if (spotClickHandler) {
-    document.removeEventListener('click', spotClickHandler)
-    spotClickHandler = null
+  if (cellClickHandler) {
+    document.removeEventListener('click', cellClickHandler)
+    cellClickHandler = null
   }
 
   if (newRoomClickHandler) {

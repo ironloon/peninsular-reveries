@@ -8,7 +8,7 @@ const STEAM_PRESET = {
     locomotive: 'steam-classic',
     carriage: 'coach',
     livery: 'burgundy-gold',
-    carCount: 2,
+    carCount: 1,
   },
   hotspots: [
     {
@@ -54,7 +54,7 @@ const DIESEL_PRESET = {
     locomotive: 'diesel-freight',
     carriage: 'boxcar',
     livery: 'pine-cream',
-    carCount: 2,
+    carCount: 1,
   },
   hotspots: [
     {
@@ -100,7 +100,7 @@ const ELECTRIC_PRESET = {
     locomotive: 'electric-commuter',
     carriage: 'metro',
     livery: 'amber-slate',
-    carCount: 2,
+    carCount: 1,
   },
   hotspots: [
     {
@@ -146,7 +146,7 @@ const HIGH_SPEED_PRESET = {
     locomotive: 'streamliner',
     carriage: 'streamlined-coach',
     livery: 'silver-crimson',
-    carCount: 2,
+    carCount: 1,
   },
   hotspots: [
     {

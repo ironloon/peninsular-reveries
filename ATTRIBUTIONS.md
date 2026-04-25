@@ -530,7 +530,17 @@
 - Source: Freesound (https://freesound.org/people/patchywolf/sounds/414/)
 - License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
 - Modifications: Trimmed, normalized, high-pass and low-pass filtered, converted to OGG.
-- Notes: CC0 whoosh sample used for picking up items.
+- Notes: CC0 whoosh sample used exclusively for picking up items (pickup-only sound, no longer shared with drop action).
+
+##### drop-put-down
+
+- Type: sound effect
+- Used in: Spot On item drop/put-down sound
+- Creator: qubodup
+- Source: Freesound (https://freesound.org/people/qubodup/sounds/171939/)
+- License: Creative Commons 0 (https://creativecommons.org/publicdomain/zero/1.0/)
+- Modifications: Trimmed to ~0.4s, normalized, high-pass filtered at 80Hz, low-pass filtered at 2800Hz, converted to mono OGG.
+- Notes: CC0 recording of putting down a glass object on a surface. Distinct downward-motion sound, differentiated from the upward whoosh of pick-up-whoosh.
 
 ##### place-thunk
 

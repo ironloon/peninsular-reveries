@@ -3,6 +3,7 @@ import type { MissionOrbitSampleProcessingPlan } from '../mission-orbit/sample-m
 export type SpotOnSampleId =
   | 'pick-up-whoosh'
   | 'place-thunk'
+  | 'drop-put-down'
   | 'completion-chime'
   | 'room-transition'
 
@@ -104,6 +105,32 @@ export const spotOnSampleManifest: Record<SpotOnSampleId, SpotOnSampleDefinition
       fadeInSeconds: 0.01,
       fadeOutStartSeconds: 0.8,
       fadeOutSeconds: 0.4,
+    },
+  },
+  'drop-put-down': {
+    id: 'drop-put-down',
+    url: '/spot-on/audio/drop-put-down.ogg',
+    fileName: 'drop-put-down.ogg',
+    gain: 2.6,
+    loop: false,
+    bundled: true,
+    source: {
+      provider: 'freesound',
+      soundId: 171939,
+      title: 'Put Down Glass Object.flac',
+      creator: 'qubodup',
+      sourceUrl: 'https://freesound.org/people/qubodup/sounds/171939/',
+      license: 'Creative Commons 0',
+      licenseUrl: 'https://creativecommons.org/publicdomain/zero/1.0/',
+    },
+    processing: {
+      durationSeconds: 0.4,
+      mono: true,
+      bitrateKbps: 48,
+      filters: ['highpass=f=80', 'lowpass=f=2800', 'volume=0.9'],
+      fadeInSeconds: 0.005,
+      fadeOutStartSeconds: 0.2,
+      fadeOutSeconds: 0.2,
     },
   },
   'room-transition': {
