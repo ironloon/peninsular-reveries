@@ -239,5 +239,5 @@ After all complete: deferred shared edits (`ATTRIBUTIONS.md` sync) → `pnpm bui
 - **LEG-8 gap:** Only 1/5 spot-on audio files exists on disk (`drop-put-down.ogg`). The 4 pre-existing samples (`pick-up-whoosh`, `place-thunk`, `completion-chime`, `room-transition`) have Freesound source IDs that are either non-CC0 licensed or deleted. Replacement CC0 sources need to be found and the audio re-fetched.
 
 ## Implementation
-Commit: pending | none (local-only)
-Pushed: pending
+Commit: d39ec7d | none (local-only)
+Pushed: 2025-07-10
