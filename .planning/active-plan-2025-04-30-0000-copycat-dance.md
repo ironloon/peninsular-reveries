@@ -1,0 +1,265 @@
+# Plan: Copycat Dance
+
+## Project Context
+- Sources:
+  - `README.md` - game principles (offline-first, every input every screen, accessibility, no accounts, synthesized audio)
+  - `.pi/skills/review/references/architecture.md` - project layout, build flow, DOM-first game architecture, canvas policy, iOS Safari rules
+  - `.pi/skills/review/references/game-quality.md` - layout checkpoints, pacing, input coverage, in-game menu standard, reduce-motion rules
+  - `.pi/skills/review/references/testing.md` - e2e smoke test patterns, asset 404 gate, gamepad mock
+  - `games/beat-pad/controller.tsx` - reference for `GameTabbedModal`, `GameScreen`, `GameHeader` usage
+  - `client/audio.ts` - reference for `getGameAudioBuses`, `createMusicBus`, `createSfxBus`
+  - `client/music-catalog.ts` - reference for synthesized music loop patterns
+- Constraints:
+  - PixiJS v8 with `preference: 'webgpu'` and no fallback. If WebGPU is unavailable, show a graceful message in the canvas container.
+  - Camera motion detection must be lightweight and fully offline - frame differencing on a downsized offscreen canvas, no external ML model downloads.
+  - Cats are procedurally drawn with PixiJS `Graphics`; no downloaded sprite assets.
+  - Music and SFX are synthesized via Web Audio API; no sample manifest needed.
+  - The game is a calm toy/experience - no failure states, no scoring pressure.
+  - **Camera is the sole dance input.** There is no keyboard/gamepad pose fallback. If camera is unavailable the dance cannot proceed, but keyboard/gamepad still navigates UI (menus, start, quit).
+  - Reduce-motion path: instant pose snaps, no ticker tweening.
+  - iOS Safari: `-webkit-touch-callout: none; user-select: none` on the PixiJS canvas container.
+  - Touch targets ≥44px on any overlaid DOM buttons.
+  - Script budget for copycat will exceed the global 150KB target because PixiJS v8 WebGPU is inherently larger. The build will produce a budget warning; this is expected and acceptable for this single WebGPU game. Do not raise the global budget.
+  - Use `resolveAssetUrl()` from `client/audio.ts` if any runtime asset fetch is introduced later.
+- Full validation:
+  - `pnpm check` → lint + typecheck pass
+  - `pnpm test:unit` → unit tests pass
+  - `pnpm test:e2e` → new copycat smoke tests pass
+  - `pnpm sync:attributions` → ATTRIBUTIONS.md updated
+- Delivery verification:
+  - Local-only: `pnpm dev` loads `/copycat/`, camera preview initializes, PixiJS stage renders cats, music plays, cats join at milestones.
+
+## User Intent
+A playful camera-driven dance toy where the player's body movements are mirrored by a PixiJS cat on a WebGPU stage. As a synthesized song plays, additional cats join the line and echo the player's poses with increasing delay. There is no win/lose condition — it is a joyful, calm experience. The camera is the only way to dance; keyboard and gamepad are reserved for UI navigation.
+
+## Legs
+
+### LEG-1: Game Shell & Registration
+- Status: done
+- Confirmed: yes
+- Goal link: Provides the server-rendered page, PWA scoping, and stylesheet foundation so later legs have a mount point.
+- Depends on: none
+- Owned files:
+  - `games/copycat/controller.tsx`
+  - `games/copycat/info.ts`
+  - `games/copycat/attributions.ts`
+  - `public/copycat/manifest.json`
+  - `public/copycat/sw.js`
+  - `public/styles/copycat.css`
+- Read-only:
+  - `games/beat-pad/controller.tsx` - pattern for `Document`, `GameScreen`, `GameTabbedModal`, `GameHeader`
+  - `app/ui/game-shell.tsx` - shared shell component API
+- Deferred shared edits:
+  - `package.json` - add `pixi.js` dependency
+  - `app/data/game-registry.ts` - add copycat entry (`slug: 'copycat'`, `name: 'Copycat'`, `icon: '🐱'`)
+  - `app/routes.ts` - add `copycat` and `copycatInfo` routes
+  - `app/router.ts` - wire `copycatAction`
+  - `build.ts` - add `games/copycat/main.ts` to esbuild entryPoints and static route
+  - `server.ts` - add `games/copycat/main.ts` to esbuild watch entryPoints
+  - `app/data/attribution-index.ts` - import and register copycat attribution/info
+- Verification: `pnpm check` passes after deferred edits applied.
+- Intent:
+  1. Create `controller.tsx` rendering a full-screen game page with `Document` (`includeNav={false}`, `includeFooter={false}`, `viewportFitCover`). Include three `GameScreen` sections: `start-screen` (title + camera permission prompt + Start button), `game-screen` (HUD + camera preview `<video>` + PixiJS mount container), `end-screen` (completion message + replay button). Include `GameTabbedModal` with Settings (SFX toggle, reduce-motion toggle, controls help) and Info tabs. Add `#game-status` and `#game-feedback` live regions and a `<noscript>` fallback.
+  2. `info.ts` exports a one-sentence summary. `attributions.ts` exports PixiJS MIT attribution and any web-font attribution if a display font is added.
+  3. `public/copycat/manifest.json` uses `start_url: "./"` and `scope: "./"`. `public/copycat/sw.js` precaches the game stylesheet and script with a cache name prefixed `copycat-`.
+  4. `public/styles/copycat.css` defines `.copycat-game` tokens (stage background, spotlight gradient, cat colors, HUD type), full-screen layout, safe-area padding, `#camera-preview` mirrored styling, `#pixi-stage` container sizing, and button reset styles. Keep shell chrome out of this file - use `Document` props for that.
+  5. CSS classes required: `.copycat-game`, `#start-screen`, `#game-screen`, `#end-screen`, `#camera-preview`, `#pixi-stage`, `.copycat-hud`, `.copycat-btn`, `.dance-floor`.
+
+### LEG-2: PixiJS WebGPU Stage & Cat Graphics
+- Status: done
+- Confirmed: yes
+- Goal link: Renders the visual world - the stage, the procedurally drawn cats, and their pose transitions.
+- Depends on: none
+- Owned files:
+  - `games/copycat/renderer.ts`
+  - `games/copycat/types.ts`
+  - `games/copycat/animations.ts`
+- Read-only:
+  - `client/audio.ts` - reference for audio bus usage (read-only because audio leg owns sound files)
+- Verification: `pnpm check` passes; manual visual check required that canvas renders a cat in idle pose at 390×844.
+- Intent:
+  1. `types.ts` exports `Pose` union (`'idle' | 'left-paw-up' | 'right-paw-up' | 'both-paws-up' | 'crouch' | 'jump'`), `Cat` interface (`id`, `x`, `y`, `scale`, `tint`, `pose`, `delayMs`, `joinTime`), and `DanceState` interface.
+  2. `renderer.ts` exports `initStage(canvasContainer: HTMLElement): Promise<Application>` that creates a PixiJS v8 `Application` with `preference: 'webgpu'` and no fallback renderer. If `app.init()` throws, render a friendly DOM message into the container and return `null`. Create a dark stage background with a radial spotlight gradient using `Graphics`. Export `createCat(): Container` that draws a stylized side-view cat entirely with `Graphics` primitives: rounded body, circular head, triangular ears, curved tail, oval paws, and simple eyes. Export `updateCatPose(cat: Container, pose: Pose, instant?: boolean)` that repositions the paws, tail, and body offset to match the pose. Instant mode is used when `data-reduce-motion` is active.
+  3. `animations.ts` exports `animatePose(cat: Container, targetPose: Pose, durationMs: number)` using PixiJS `Ticker`. It tweens the relevant `Graphics` geometry offsets. When reduce-motion is active, skip the tween and call `updateCatPose(cat, targetPose, true)` immediately. Export `animateCatJoin(cat: Container, fromX: number, toX: number)` - a quick slide-in from the right edge using `Ticker`.
+  4. Stage layout: cats are arranged left-to-right along a virtual dance-floor line at 65% stage height. The player cat (index 0) is largest (`scale: 1.2`). Subsequent cats scale down slightly (`1.0`, `0.9`, `0.85`, `0.8`) to fit the viewport. At 390×844 portrait, up to 5 cats must fit without overlap; horizontal spacing minimum 48px between cat bounding boxes.
+  5. Visual verification: after LEG-2 implementation, open `/copycat/` in dev mode, click Start, and confirm the canvas shows the player cat in idle pose against the dark stage background.
+
+### LEG-3: Camera & Motion Detection
+- Status: done
+- Confirmed: yes
+- Goal link: Captures the player's movement and distills it into poses the cats can mirror.
+- Depends on: none
+- Owned files:
+  - `games/copycat/camera.ts`
+  - `games/copycat/motion.ts`
+- Read-only:
+  - `client/game-accessibility.ts` - reference for `announce()` pattern
+- Verification: `pnpm check` passes; `games/copycat/motion.test.ts` passes.
+- Intent:
+  1. `camera.ts` exports `requestCamera(videoEl: HTMLVideoElement): Promise<boolean>` that calls `navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' } })`. On success, attach the stream to the video element and return `true`. On denial or error, return `false` and do not throw. Export `stopCamera(stream: MediaStream): void` to end tracks.
+  2. `motion.ts` exports `startMotionTracking(video: HTMLVideoElement, onPose: (pose: Pose) => void)` and `stopMotionTracking()`. Inside, create a hidden `<canvas>` (64×48) and sample the video at 15fps using `requestAnimationFrame` throttling. Convert each frame to grayscale, compute absolute pixel differences vs the previous frame. Derive:
+     - `centroidX`, `centroidY` (average x/y of pixels with diff > threshold)
+     - `spreadX`, `spreadY` (max - min of changed pixels)
+     - `motionScore` (count of changed pixels)
+  3. Map the derived values to `Pose`:
+     - `idle`: `motionScore < 50`
+     - `left-paw-up`: `centroidX < 0.35` and `centroidY < 0.4` and `motionScore > 150`
+     - `right-paw-up`: `centroidX > 0.65` and `centroidY < 0.4` and `motionScore > 150`
+     - `both-paws-up`: `centroidY < 0.3` and `spreadX > 0.4` and `motionScore > 250`
+     - `crouch`: `centroidY > 0.7` and `motionScore > 100`
+     - `jump`: `motionScore > 400` and `spreadY > 0.5`
+     Apply a 150ms pose-hold debounce so brief noise doesn't flicker poses.
+  4. `motion.test.ts` unit tests: create two synthetic `ImageData` frames (one static, one with a shifted bright block) and assert the calculated centroid and pose mapping are correct.
+  5. When camera is denied, `main.ts` (LEG-4) shows `#camera-denied-msg` and disables the Start button until camera permission is granted. Keyboard/gamepad remain available for UI navigation only.
+
+### LEG-4: Dance State & Game Loop
+- Status: done
+- Confirmed: yes
+- Goal link: Orchestrates the song timeline, cat spawning, pose mirroring, and screen transitions.
+- Depends on: LEG-2, LEG-3
+- Owned files:
+  - `games/copycat/state.ts`
+  - `games/copycat/main.ts`
+- Read-only:
+  - `client/game-screens.ts` - `showScreen()` helper
+  - `client/game-menu.ts` - `setupGameMenu()` helper
+- Verification: `pnpm check` passes; manual check that start → game → end flow works. (`state.test.ts` is owned by LEG-7.)
+- Intent:
+  1. `state.ts` exports `DanceState` and pure transition functions:
+     - `createInitialState(): DanceState` - phase `'start'`, one player cat, empty pose history, `songProgress: 0`.
+     - `startDance(state): DanceState` - phase `'dancing'`, resets progress to 0, resets pose history.
+     - `updatePose(state, pose): DanceState` - appends pose to history (max 60 entries), updates all cats so each cat's target pose is the player's pose at `now - cat.delayMs`.
+     - `progressSong(state, deltaMs): DanceState` - increments `songProgress`. At thresholds `0.20`, `0.40`, `0.60`, `0.80`, if a cat has not yet spawned at that threshold, append a new cat with increasing delay (`200ms * catCount`).
+     - `completeDance(state): DanceState` - phase `'complete'`.
+     - `spawnCat(state): DanceState` - adds a new cat at the right edge with `joinTime` set to current progress.
+  2. `main.ts` is the browser entry point. On `DOMContentLoaded`:
+     - Call `initStage()` and mount the PixiJS canvas into `#pixi-stage`.
+     - Call `requestCamera()`; if granted, attach stream to `#camera-preview` and `startMotionTracking()`.
+     - If camera denied, show `#camera-denied-msg` and disable the Start button until permission is granted.
+     - Wire `setupGameMenu()`.
+     - Bind Start button to `enterGame()`.
+  3. `enterGame()`:
+     - Call `ensureAudioUnlocked()`.
+     - Start synthesized dance music (via LEG-5 `sounds.ts`).
+     - Show `game-screen`.
+     - Start the game loop: on each `Ticker` tick (PixiJS) or `requestAnimationFrame`:
+       - Read current pose **only** from the motion engine.
+       - Update state via `updatePose()` / `progressSong()`.
+       - If a new cat spawned, call `animateCatJoin()` and play join SFX.
+       - Update every cat's visual pose via `animatePose()` (or instant if reduced-motion).
+       - If `songProgress >= 1`, call `completeDance()`, fade music, show `end-screen`.
+  4. `end-screen` has a Replay button that returns to `start-screen` and resets state. A Quit link goes to site root.
+  5. Handle `visibilitychange`: pause the PixiJS Ticker and music when hidden; resume when visible.
+
+### LEG-5: Music & Audio Engine
+- Status: done
+- Confirmed: yes
+- Goal link: Provides the upbeat synthesized soundtrack and cheerful SFX that punctuate cat joins.
+- Depends on: none
+- Owned files:
+  - `games/copycat/sounds.ts`
+- Read-only:
+  - `client/audio.ts` - `getGameAudioBuses`, `createMusicBus`, `createSfxBus`, `fadeBusGain`
+  - `client/music-catalog.ts` - reference for loop scheduling pattern
+- Verification: `pnpm check` passes; manual listen check that music loops and SFX plays.
+- Intent:
+  1. `sounds.ts` exports:
+     - `ensureAudioUnlocked(): void`
+     - `startDanceMusic(): void` - begins a synthesized loop at 110 BPM, 4/4, ~5.8s loop.
+     - `stopDanceMusic(): void`
+     - `fadeOutMusic(): void` - 1.5s linear fade via `fadeBusGain()`.
+     - `sfxCatJoin(): void` - short cheerful sine chirp (frequency sweep 600Hz → 900Hz over 120ms).
+  2. Music composition (synthesized, no samples):
+     - Kick: sine sweep 150Hz → 60Hz, 120ms, on beats 1 and 3.
+     - Snare: band-passed noise burst, 80ms, on beats 2 and 4.
+     - Hi-hat: high-passed noise, 40ms, every 8th note.
+     - Melody: triangle wave, pentatonic scale `[C5, D5, E5, G5, A5]`, playful 8th-note pattern. Gain 0.08 per note.
+     - Bass: triangle wave, root notes on beat 1, gain 0.05.
+     - Bus the music into the shared music bus at default 0.20 gain. Bus SFX into the shared SFX bus at default 0.12 gain with per-sample gain 1.0 so the compressor threshold (-18 dB) is reached.
+  3. The music loop is scheduled with `setInterval` or `AudioContext` time-wrapping (see `music-catalog.ts` pattern). Avoid `AudioBufferSourceNode` looping for gapless playback - use individual `OscillatorNode` scheduling per note.
+  4. No `sample-manifest.ts` needed; everything is synthesized.
+
+### LEG-6: Input, Accessibility & Menu
+- Status: done
+- Confirmed: yes
+- Goal link: Makes the dance controllable without a camera and keeps the experience accessible.
+- Depends on: LEG-4
+- Owned files:
+  - `games/copycat/input.ts`
+  - `games/copycat/accessibility.ts`
+- Read-only:
+  - `client/game-input.ts` - `createGamepadPoller`, `DpadDirection`
+  - `client/game-accessibility.ts` - `announce()` helper
+- Deferred shared edits:
+  - `public/styles/copycat.css` - add `.keyboard-active` focus styles, `#camera-denied-msg` styling, and ensure `-webkit-touch-callout: none; user-select: none` on `#pixi-stage` and `.dance-floor`
+- Verification: `pnpm check` passes; keyboard cycling works without camera; gamepad mock opens menu.
+- Intent:
+  1. `input.ts` exports `setupCopycatInput(opts: { onMenu(): void })`. Keyboard bindings are **UI-only**:
+     - Tab / Shift+Tab — navigate focusable controls
+     - Enter / Space — activate focused button
+     - Escape — close modal if open
+     No pose-mapping keys. The camera is the only dance input.
+  2. Gamepad bindings via `createGamepadPoller`:
+     - D-pad / analog stick — spatial focus navigation between buttons (reuse shared spatial-nav logic if available, otherwise simple directional focus)
+     - Button A (0) — activate focused button
+     - Button Start (9) → menu toggle.
+     No pose-mapping gamepad buttons.
+  3. `accessibility.ts` exports:
+     - `announcePose(pose: Pose): void` - maps each pose to a friendly verb (e.g., "Left paw up!").
+     - `announceCatJoin(catIndex: number): void` - "A new cat joined the dance!"
+     - `announceSongMilestone(progress: number): void` - "Halfway there!", "Almost done!"
+     - `moveFocusAfterTransition(elementId: string, delayMs: number): void`
+  4. In `controller.tsx` (LEG-1), the Settings tab already includes a reduce-motion toggle. Since this game has animations (pose tweens, cat join slides), the toggle is required. When `data-reduce-motion` is active, skip all `Ticker` tweens and snap poses instantly.
+  5. CSS deferred edit: add `#pixi-stage { -webkit-touch-callout: none; user-select: none; touch-action: manipulation; }` to prevent iOS callout on the canvas.
+
+### LEG-7: Tests & Validation
+- Status: done
+- Confirmed: yes
+- Goal link: Catches regressions in state logic, motion math, and page layout before human testing.
+- Depends on: LEG-4, LEG-5, LEG-6
+- Owned files:
+  - `games/copycat/state.test.ts`
+  - `games/copycat/motion.test.ts`
+  - `e2e/site-copycat.spec.ts`
+- Read-only:
+  - `e2e/site-07-game-smoke.spec.ts` - pattern for gamepad mock and in-viewport assertions
+- Verification: `pnpm test:unit` and `pnpm test:e2e` pass after adding these files.
+- Intent:
+  1. `state.test.ts`:
+     - Assert `createInitialState()` has one cat and phase `'start'`.
+     - Assert `progressSong()` spawns a new cat exactly at progress `0.2`, `0.4`, `0.6`, `0.8`.
+     - Assert `updatePose()` updates the player cat immediately and delayed cats receive historical poses.
+     - Assert `completeDance()` transitions to phase `'complete'`.
+  2. `motion.test.ts`:
+     - Create two 64×48 `ImageData` frames: frame A is black, frame B has a white 10×10 block at top-left. Assert the computed centroid is within the block bounds.
+     - Test pose mapping: a frame with high motion in the top-center maps to `both-paws-up`; low motion maps to `idle`.
+  3. `e2e/site-copycat.spec.ts`:
+     - Test `Copycat - start screen is visible`: navigate to `/copycat/`, assert `#start-screen` and heading visible.
+     - Test `Copycat - game screen and canvas render on start`: click Start, assert `#game-screen` visible, assert `#pixi-stage canvas` exists with `width > 0 && height > 0`, assert canvas is in viewport at 390×844.
+     - Test `Copycat — controller opens menu`: install mock gamepad, click Start via pointer (since Start is disabled without camera), then tap gamepad button 9, assert `#settings-modal` visible.
+     - Test `Copycat - asset 404 gate`: intercept network requests and assert no 404s for `/client/copycat/main.js` or `/styles/copycat.css`.
+  4. Run `pnpm sync:attributions` after LEG-1 attribution files are stable.
+  5. Final gate: `pnpm test:local` must pass.
+
+## Implementation
+Commit: 6e6a34a | none (local-only)
+Pushed: 2025-05-01
+
+## Dispatch Order
+Sequential via subagent (navigator reviews between each):
+1. **LEG-1** (Game Shell) - no dependencies
+2. **Batch 2a (parallel, no file conflicts):**
+   - **LEG-2** (PixiJS Stage)
+   - **LEG-3** (Camera & Motion)
+   - **LEG-5** (Music & Audio)
+3. **LEG-4** (State & Loop) - depends on LEG-2, LEG-3
+4. **LEG-6** (Input & A11y) - depends on LEG-4, deferred CSS edit to `public/styles/copycat.css`
+5. **LEG-7** (Tests) - depends on LEG-4, LEG-5, LEG-6
+
+After all complete:
+- Apply deferred shared edits (`package.json`, `app/data/game-registry.ts`, `app/routes.ts`, `app/router.ts`, `build.ts`, `server.ts`, `app/data/attribution-index.ts`)
+- Run `pnpm sync:attributions`
+- Run `pnpm check`
+- Run `pnpm test:local`
+- Manual visual check: 390×844 portrait canvas renders cats; 844×390 landscape fits 5 cats.
+- Commit → push.
