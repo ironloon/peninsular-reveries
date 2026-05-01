@@ -1,0 +1,369 @@
+/* Copycat — camera-based dance mimic game
+ * Viewport checkpoints: 390x844, 844x390, 1024x768, 1280x800.
+ */
+
+body.copycat-game {
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-title: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #1a1a2e;
+  --text: #e0e0e0;
+  --muted: rgba(224, 224, 224, 0.65);
+  --panel: rgba(20, 20, 38, 0.78);
+  --panel-strong: rgba(28, 28, 48, 0.92);
+  --line: rgba(224, 224, 224, 0.14);
+  --accent: #ff6b9d;
+  --accent-soft: rgba(255, 107, 157, 0.16);
+  --hud-bg: rgba(10, 10, 24, 0.85);
+  --spotlight: radial-gradient(circle at 50% 40%, rgba(255, 107, 157, 0.12), transparent 55%);
+
+  min-height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+}
+
+body.copycat-game main {
+  overflow: hidden;
+}
+
+/* ── Scene track ────────────────────────────────────────────── */
+
+.scene-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--spotlight), var(--bg);
+}
+
+/* ── Screen panels ──────────────────────────────────────────── */
+
+.copycat-screen-panel {
+  width: min(100%, 78rem);
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  padding:
+    max(1rem, env(safe-area-inset-top, 0px))
+    max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+.copycat-start-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+.copycat-game-panel {
+  min-height: 100dvh;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.copycat-end-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+.copycat-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.copycat-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.copycat-start-panel .copycat-title {
+  color: var(--accent);
+  text-shadow:
+    0 0 6px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent) 50%, transparent),
+    0 0 38px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.copycat-title-small {
+  font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+}
+
+/* ── Menu button ───────────────────────────────────────────── */
+
+.copycat-menu-btn {
+  appearance: none;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.copycat-menu-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* ── Subtitle & prompts ────────────────────────────────────── */
+
+.copycat-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+}
+
+.copycat-camera-prompt {
+  color: var(--muted);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+}
+
+.copycat-camera-prompt p {
+  margin: 0;
+}
+
+/* ── Primary button ─────────────────────────────────────────── */
+
+.copycat-primary-btn {
+  appearance: none;
+  font-family: var(--font-title);
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.9rem 2rem;
+  border-radius: 1rem;
+  border: 0;
+  cursor: pointer;
+  color: var(--bg);
+  background: var(--accent);
+  box-shadow: 0 0 1.4rem var(--accent);
+  transition: transform 120ms ease-out, filter 160ms ease-out;
+}
+
+.copycat-primary-btn:hover {
+  filter: brightness(1.15);
+}
+
+.copycat-primary-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.copycat-primary-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Start screen ───────────────────────────────────────────── */
+
+#start-screen {
+  position: relative;
+}
+
+/* ── Game screen ────────────────────────────────────────────── */
+
+#game-screen {
+  position: relative;
+}
+
+/* ── HUD ──────────────────────────────────────────────────── */
+
+.copycat-hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.8rem;
+  color: var(--muted);
+  background: var(--hud-bg);
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  backdrop-filter: blur(4px);
+}
+
+.copycat-hud-item {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  font-size: 0.95rem;
+}
+
+/* ── Dance floor ─────────────────────────────────────────────── */
+
+.dance-floor {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* ── Camera preview ─────────────────────────────────────────── */
+
+#camera-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  border-radius: inherit;
+}
+
+#pixi-stage,
+.dance-floor {
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* ── Pixi stage ─────────────────────────────────────────────── */
+
+#pixi-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+#pixi-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+/* ── End screen ─────────────────────────────────────────────── */
+
+#end-screen {
+  position: relative;
+}
+
+.copycat-completion-msg {
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+}
+
+/* ── Button reset helper ───────────────────────────────────── */
+
+.copycat-btn {
+  appearance: none;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.7rem 1.2rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 160ms ease-out, transform 120ms ease-out;
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.copycat-btn:hover {
+  background: rgba(40, 40, 64, 0.92);
+}
+
+.copycat-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.copycat-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Controls help ──────────────────────────────────────────── */
+
+.copycat-controls-help {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+
+.copycat-controls-help kbd {
+  font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+  font-size: 0.9em;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Noscript ──────────────────────────────────────────────── */
+
+.noscript-message {
+  margin: 2rem auto;
+  max-width: 36rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--panel);
+  color: var(--text);
+  text-align: center;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+
+@media (orientation: landscape) and (max-height: 480px) {
+  .copycat-game-panel {
+    gap: 0.4rem;
+  }
+
+  .copycat-header,
+  .copycat-hud {
+    padding: 0.4rem 0.7rem;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  body.copycat-game .screen {
+    transition-duration: 0ms;
+  }
+
+  .copycat-primary-btn,
+  .copycat-btn,
+  .copycat-menu-btn {
+    transition: none;
+  }
+}
+
+body.copycat-game[data-reduce-motion="true"] .screen {
+  transition-duration: 0ms;
+}
+
+body.copycat-game[data-reduce-motion="true"] .copycat-primary-btn,
+body.copycat-game[data-reduce-motion="true"] .copycat-btn,
+body.copycat-game[data-reduce-motion="true"] .copycat-menu-btn {
+  transition: none;
+}

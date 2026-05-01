@@ -85,4 +85,11 @@ export const games: GameEntry[] = [
     icon: '🙈',
     status: 'live',
   },
+  {
+    slug: 'copycat',
+    name: 'Copycat',
+    description: 'Mirror the dancer\'s moves using your camera.',
+    icon: '🐱',
+    status: 'live',
+  },
 ]

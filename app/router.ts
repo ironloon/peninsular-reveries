@@ -15,6 +15,7 @@ import { trainSoundsAction } from '../games/train-sounds/controller.js'
 import { waterwallAction } from '../games/waterwall/controller.js'
 import { spotOnAction } from '../games/spot-on/controller.js'
 import { peekabooAction } from '../games/peekaboo/controller.js'
+import { copycatAction } from '../games/copycat/controller.js'
 
 export function createAppRouter() {
   const router = createRouter()
@@ -32,6 +33,7 @@ export function createAppRouter() {
   router.get(routes.trainSoundsInfo, () => gameInfoAction('train-sounds'))
   router.get(routes.spotOnInfo, () => gameInfoAction('spot-on'))
   router.get(routes.peekabooInfo, () => gameInfoAction('peekaboo'))
+  router.get(routes.copycatInfo, () => gameInfoAction('copycat'))
   router.get(routes.missionOrbit, () => missionOrbitAction())
   router.get(routes.superWord, () => superWordAction())
   router.get(routes.chompers, () => chompersAction())
@@ -43,6 +45,7 @@ export function createAppRouter() {
   router.get(routes.trainSounds, () => trainSoundsAction())
   router.get(routes.spotOn, () => spotOnAction())
   router.get(routes.peekaboo, () => peekabooAction())
+  router.get(routes.copycat, () => copycatAction())
   router.get(routes.notFound, () => notFoundAction())
 
   return router

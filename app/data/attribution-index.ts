@@ -20,6 +20,8 @@ import { spotOnAttribution } from '../../games/spot-on/attributions.js'
 import { spotOnInfo } from '../../games/spot-on/info.js'
 import { peekabooAttribution } from '../../games/peekaboo/attributions.js'
 import { peekabooInfo } from '../../games/peekaboo/info.js'
+import { copycatAttribution } from '../../games/copycat/attributions.js'
+import { copycatInfo } from '../../games/copycat/info.js'
 import type { GameAttribution, GameInfo } from './attribution-types.js'
 import { attributionsPagePath, repositoryCodeLicense } from './attribution-types.js'
 
@@ -42,6 +44,7 @@ const gameEntries: readonly { attribution: GameAttribution; info: GameInfo }[] =
   { attribution: trainSoundsAttribution, info: trainSoundsInfo },
   { attribution: spotOnAttribution, info: spotOnInfo },
   { attribution: peekabooAttribution, info: peekabooInfo },
+  { attribution: copycatAttribution, info: copycatInfo },
 ]
 
 export const gameAttributions: readonly GameAttributionWithInfo[] = gameEntries.map(

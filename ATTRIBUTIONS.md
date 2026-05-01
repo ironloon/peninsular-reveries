@@ -589,3 +589,21 @@
 - Summary: Peekaboo — find the hidden character! Clear the fog, peek behind scenery to discover who's hiding.
 
 - No attribution entries recorded.
+
+### Copycat
+
+- Slug: copycat
+- Code license: GPL-3.0
+- Summary: Mirror the dancer's moves using your camera.
+
+#### Entries
+
+##### PixiJS
+
+- Type: other
+- Used in: Copycat game rendering via PixiJS
+- Creator: PixiJS Contributors
+- Source: https://pixijs.com/ (https://pixijs.com/)
+- License: MIT
+- Modifications: Not applicable
+- Notes: 2D WebGL rendering engine used for the game stage.

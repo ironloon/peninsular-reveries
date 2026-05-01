@@ -27,6 +27,7 @@ const swFiles = [
   'train-sounds/sw.js',
   'peekaboo/sw.js',
   'spot-on/sw.js',
+  'copycat/sw.js',
 ]
 for (const swFile of swFiles) {
   const swPath = join(outputDir, swFile)
@@ -50,6 +51,7 @@ mkdirSync(join(outputDir, 'client', 'beat-pad'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'train-sounds'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'peekaboo'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'spot-on'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'copycat'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -95,6 +97,7 @@ await esbuild.build({
     'games/train-sounds/main.ts',
     'games/peekaboo/main.ts',
     'games/spot-on/main.ts',
+    'games/copycat/main.ts',
   ],
   bundle: true,
   outbase: 'games',
@@ -133,6 +136,8 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/peekaboo/info/', outPath: 'peekaboo/info/index.html' },
   { url: 'http://localhost/spot-on/', outPath: 'spot-on/index.html' },
   { url: 'http://localhost/spot-on/info/', outPath: 'spot-on/info/index.html' },
+  { url: 'http://localhost/copycat/', outPath: 'copycat/index.html' },
+  { url: 'http://localhost/copycat/info/', outPath: 'copycat/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -191,6 +196,7 @@ const pages: Record<string, string[]> = {
   'train-sounds': ['train-sounds/index.html', 'styles/train-sounds.css', 'client/shell.js', 'client/train-sounds/main.js'],
   peekaboo: ['peekaboo/index.html', 'styles/peekaboo.css', 'client/shell.js', 'client/peekaboo/main.js'],
   'spot-on': ['spot-on/index.html', 'styles/spot-on.css', 'client/shell.js', 'client/spot-on/main.js'],
+  copycat: ['copycat/index.html', 'styles/copycat.css', 'client/shell.js', 'client/copycat/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 

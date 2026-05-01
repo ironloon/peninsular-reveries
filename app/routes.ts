@@ -15,6 +15,7 @@ export const routes = route({
   trainSoundsInfo: '/train-sounds/info/',
   spotOnInfo: '/spot-on/info/',
   peekabooInfo: '/peekaboo/info/',
+  copycatInfo: '/copycat/info/',
   missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
   chompers: '/chompers/',
@@ -26,5 +27,6 @@ export const routes = route({
   trainSounds: '/train-sounds/',
   spotOn: '/spot-on/',
   peekaboo: '/peekaboo/',
+  copycat: '/copycat/',
   notFound: '/404.html',
 })
