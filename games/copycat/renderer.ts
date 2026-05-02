@@ -5,27 +5,49 @@ import type { Pose } from './types.js'
 
 async function checkRendererHealth(app: Application): Promise<boolean> {
   // Some browsers claim WebGPU support but produce transparent compositor output
-  // (e.g. Firefox with broken ANGLE drivers).  We draw a red square and
-  // compare the canvas *before* and *after* — if the PNG is unchanged the
-  // renderer is “soft-broken” even though init succeeded.
-  const emptyDataUrl = app.canvas.toDataURL()
-
+  // (e.g. Firefox with broken ANGLE drivers).  toDataURL() can return a
+  // *different* PNG on each call even though the compositor is broken (driver
+  // noise / compression differences), so comparing data-URL strings is NOT
+  // reliable.  Instead we force a real compositor readback by drawing the
+  // PixiJS canvas into a fresh 2D canvas and checking actual RGBA pixels.
   const g = new Graphics()
-  g.rect(0, 0, 100, 100)
+  g.rect(0, 0, 50, 50)
   g.fill({ color: 0xff0000 })
   app.stage.addChild(g)
   app.render()
 
-  const redDataUrl = app.canvas.toDataURL()
+  const temp = document.createElement('canvas')
+  temp.width = 50
+  temp.height = 50
+  const ctx = temp.getContext('2d')
+  if (!ctx) {
+    app.stage.removeChild(g)
+    g.destroy()
+    return false
+  }
+
+  try {
+    // drawImage forces the browser to composite the GPU/WebGL canvas into a 2D
+    // bitmap.  If the compositor is broken this will produce all-transparent.
+    ctx.drawImage(app.canvas, 0, 0, 50, 50, 0, 0, 50, 50)
+    const data = ctx.getImageData(0, 0, 50, 50).data
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i] > 200 && data[i + 1] < 50 && data[i + 2] < 50) {
+        // Found an actual red pixel — the renderer is producing visible output.
+        app.stage.removeChild(g)
+        g.destroy()
+        app.render()
+        return true
+      }
+    }
+  } catch {
+    // drawImage or getImageData failed — broken renderer.
+  }
 
   app.stage.removeChild(g)
   g.destroy()
-
-  // Clear the canvas back to empty so the next health check starts clean
   app.render()
-
-  // If the canvas bitmap did not change, the renderer is compositing nothing.
-  return emptyDataUrl !== redDataUrl
+  return false
 }
 
 async function tryCreateApp(container: HTMLElement, preference: 'webgpu' | 'webgl' | 'canvas'): Promise<Application | null> {
@@ -33,7 +55,8 @@ async function tryCreateApp(container: HTMLElement, preference: 'webgpu' | 'webg
   try {
     await app.init({
       preference,
-      backgroundAlpha: 0,
+      background: '#1a1a2e',
+      backgroundAlpha: 1,
       autoDensity: true,
     })
     container.appendChild(app.canvas)
@@ -91,7 +114,7 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
       return app
     }
 
-    // Broken renderer — tear down and try next fallback
+    // Broken renderer - tear down and try next fallback
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(app as any).destroy(true)
     canvasContainer.innerHTML = ''

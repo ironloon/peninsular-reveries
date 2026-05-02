@@ -117,32 +117,25 @@ async function enterGame(): Promise<void> {
   app.canvas.style.height = '100%'
   app.canvas.style.display = 'block'
 
-  // Detect the actual renderer type (minified class names are useless)
+  // Detect the actual renderer type using PixiJS internal enum:
+  // RendererType.WEBGL = 1, RendererType.WEBGPU = 2, RendererType.CANVAS = 4
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const r = app.renderer as any
-  const isWebGL = typeof r.gl !== 'undefined'
-  const isWebGPU = typeof r.gpu !== 'undefined' || typeof r.device !== 'undefined'
-  const isCanvas2D = typeof r.context !== 'undefined'
-  const realRendererType = isWebGPU ? 'webgpu' : isWebGL ? 'webgl' : isCanvas2D ? 'canvas2d' : 'unknown'
+  const typeNum = (app.renderer as any).type as number
+  const realRendererType = typeNum === 2 ? 'webgpu' : typeNum === 1 ? 'webgl' : typeNum === 4 ? 'canvas2d' : `unknown(${typeNum})`
 
-  // ── Build background using ACTUAL dimensions ──
-  // Remove old background if it exists
+  // ── Spotlight overlay (canvas already has opaque dark background from init) ──
   for (let i = app.stage.children.length - 1; i >= 0; i--) {
     const child = app.stage.children[i]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((child as any).__copycatBg) {
+    if ((child as any).__copycatSpotlight) {
       app.stage.removeChild(child)
     }
   }
   const sw = app.screen.width
   const sh = app.screen.height
-  const bg = new Graphics()
+  const spotlight = new Graphics()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(bg as any).__copycatBg = true
-  bg.rect(0, 0, sw, sh)
-  bg.fill({ color: 0x2d2d44 }) // slightly lighter than page bg so canvas boundary is visible
-
-  // Spotlight
+  ;(spotlight as any).__copycatSpotlight = true
   const cx = sw / 2
   const cy = sh * 0.4
   const maxRadius = Math.max(sw, sh) * 0.55
@@ -150,10 +143,10 @@ async function enterGame(): Promise<void> {
   for (let i = steps; i >= 0; i--) {
     const radius = maxRadius * (i / steps)
     const alpha = 0.18 * (1 - i / steps)
-    bg.circle(cx, cy, radius)
-    bg.fill({ color: 0xff6b9d, alpha })
+    spotlight.circle(cx, cy, radius)
+    spotlight.fill({ color: 0xff6b9d, alpha })
   }
-  app.stage.addChildAt(bg, 0)
+  app.stage.addChildAt(spotlight, 0)
 
   ensureAudioUnlocked()
   startDanceMusic()
@@ -172,40 +165,18 @@ async function enterGame(): Promise<void> {
   catContainers.push(playerCat)
   layoutCats(catContainers, app.screen.width, app.screen.height)
 
-  // Render and verify pixels
+  // Render first frame so content is visible immediately
   app.render()
 
-  const dataUrl = app.canvas.toDataURL()
-  const pixelBytes = atob(dataUrl.split(',')[1]).length
-  let visiblePixels = 0
-  let transparentPixels = 0
-  if (isCanvas2D) {
-    try {
-      const ctx2d = app.canvas.getContext('2d')
-      if (ctx2d) {
-        const imgData = ctx2d.getImageData(0, 0, app.canvas.width, app.canvas.height)
-        for (let i = 3; i < imgData.data.length; i += 4) {
-          if (imgData.data[i] > 0) visiblePixels++
-          else transparentPixels++
-        }
-      }
-    } catch { /* ignore */ }
-  }
-
-  // Diagnostics
+  // Diagnostics: log renderer and stage state
   console.log('[copycat] enterGame diagnostics:', {
     realRendererType,
     screenW: app.screen.width,
     screenH: app.screen.height,
-    canvasAttrW: app.canvas.width,
-    canvasAttrH: app.canvas.height,
-    pixelBytes,
-    visiblePixels,
-    transparentPixels,
     stageChildren: app.stage.children.length,
   })
 
-  // Expose debug state
+  // Expose debug state on window for console inspection
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(window as any).__copycatDebug = {
     app,
@@ -213,38 +184,7 @@ async function enterGame(): Promise<void> {
     canvas: app.canvas,
     screen: { w: app.screen.width, h: app.screen.height },
     rendererType: realRendererType,
-    pixelBytes,
   }
-
-  // ── Fallback: if PixiJS produced no visible pixels, try raw 2D ──
-  if (visiblePixels === 0 && pixelBytes < 5000) {
-    console.warn('[copycat] PixiJS produced no visible pixels — attempting raw Canvas 2D fallback')
-    const rawCtx = app.canvas.getContext('2d')
-    if (rawCtx) {
-      rawCtx.fillStyle = '#ff0000'
-      rawCtx.fillRect(0, 0, 200, 200)
-      rawCtx.fillStyle = '#ffffff'
-      rawCtx.font = '20px sans-serif'
-      rawCtx.fillText('Rendering fallback', 10, 110)
-      console.log('[copycat] Raw 2D fallback drawn')
-    }
-
-    const debugEl = document.createElement('div')
-    debugEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ff0000;color:#fff;padding:2rem;z-index:9999;font-family:sans-serif;'
-    debugEl.innerHTML = `<p><strong>Copycat rendering issue</strong></p><p>Renderer: ${realRendererType}</p><p>Canvas: ${app.canvas.width}x${app.canvas.height}</p><p>Please try Chrome or Edge.</p>`
-    document.body.appendChild(debugEl)
-
-    // Also show in the stage container
-    pixiStage.style.border = '6px dashed #ff0000'
-    pixiStage.style.background = '#440000'
-
-    // Don't start the ticker loop if rendering is broken
-    return
-  }
-
-  // Visible border for debugging (can be removed later)
-  app.canvas.style.border = '2px dashed #00ff00'
-  app.canvas.style.boxSizing = 'border-box'
 
   prevCatCount = 1
   lastAnnouncedPose = null
