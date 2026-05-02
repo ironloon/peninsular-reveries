@@ -1,8 +1,48 @@
-import type { DanceState, Cat, Pose } from './types.js'
+import type { DanceState, Cat, Pose, RoundConfig } from './types.js'
 
 const MAX_HISTORY = 60
-const SONG_DURATION_MS = 30000
-const THRESHOLDS = [0.20, 0.40, 0.60, 0.80]
+
+export const ROUNDS: RoundConfig[] = [
+  {
+    round: 1,
+    maxRounds: 3,
+    durationMs: 25000,
+    bpm: 110,
+    melodySeed: [
+      0, 2, 1, 3, 4, 3, 2, 1,
+      0, 2, 4, 3, 2, 1, 0, 2,
+      4, 3, 1, 0,
+    ],
+    catDelayMs: 600,
+    thresholds: [0.20, 0.40, 0.60, 0.80],
+  },
+  {
+    round: 2,
+    maxRounds: 3,
+    durationMs: 30000,
+    bpm: 125,
+    melodySeed: [
+      4, 3, 2, 1, 0, 1, 2, 3,
+      4, 2, 0, 2, 4, 3, 1, 3,
+      2, 0, 1, 4,
+    ],
+    catDelayMs: 500,
+    thresholds: [0.16, 0.32, 0.48, 0.64, 0.80],
+  },
+  {
+    round: 3,
+    maxRounds: 3,
+    durationMs: 35000,
+    bpm: 138,
+    melodySeed: [
+      0, 4, 2, 3, 1, 4, 0, 2,
+      3, 1, 4, 0, 2, 3, 1, 4,
+      0, 2, 3, 4,
+    ],
+    catDelayMs: 350,
+    thresholds: [0.12, 0.24, 0.36, 0.48, 0.60, 0.72, 0.84],
+  },
+]
 
 function createPlayerCat(): Cat {
   return {
@@ -18,23 +58,45 @@ function createPlayerCat(): Cat {
 }
 
 export function createInitialState(): DanceState {
+  const config = ROUNDS[0]
   return {
     phase: 'start',
     cats: [createPlayerCat()],
     poseHistory: [],
     songProgress: 0,
     lastPoseTime: 0,
+    round: config.round,
+    maxRounds: config.maxRounds,
+    config,
   }
 }
 
-export function startDance(state: DanceState): DanceState {
+export function startRound(state: DanceState): DanceState {
+  const now = performance.now()
   return {
     ...state,
     phase: 'dancing',
     songProgress: 0,
     poseHistory: [],
     cats: [createPlayerCat()],
-    lastPoseTime: performance.now(),
+    lastPoseTime: now,
+  }
+}
+
+export function nextRound(state: DanceState): DanceState | null {
+  const nextIndex = state.round
+  if (nextIndex >= state.maxRounds) return null
+
+  const config = ROUNDS[nextIndex]
+  return {
+    ...state,
+    round: config.round,
+    config,
+    phase: 'start',
+    songProgress: 0,
+    poseHistory: [],
+    cats: [createPlayerCat()],
+    lastPoseTime: 0,
   }
 }
 
@@ -75,7 +137,7 @@ export function updatePose(state: DanceState, pose: Pose): DanceState {
 }
 
 export function progressSong(state: DanceState, deltaMs: number): DanceState {
-  const progressDelta = deltaMs / SONG_DURATION_MS
+  const progressDelta = deltaMs / state.config.durationMs
   const newProgress = Math.min(state.songProgress + progressDelta, 1)
 
   let result: DanceState = {
@@ -83,7 +145,7 @@ export function progressSong(state: DanceState, deltaMs: number): DanceState {
     songProgress: newProgress,
   }
 
-  const expectedCatCount = 1 + THRESHOLDS.filter((t) => newProgress >= t).length
+  const expectedCatCount = 1 + state.config.thresholds.filter((t) => newProgress >= t).length
 
   while (result.cats.length < expectedCatCount) {
     result = spawnCat(result)
@@ -101,8 +163,7 @@ export function completeDance(state: DanceState): DanceState {
 
 export function spawnCat(state: DanceState): DanceState {
   const catCount = state.cats.length + 1
-  // Dramatic follow-the-leader delay so each cat visibly trails the player
-  const delayMs = 600 * (catCount - 1)
+  const delayMs = state.config.catDelayMs * (catCount - 1)
   const newCat: Cat = {
     id: `cat-${state.cats.length}`,
     x: 0,

@@ -2,14 +2,15 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert'
 import {
   createInitialState,
-  startDance,
+  startRound,
   updatePose,
   progressSong,
   completeDance,
+  ROUNDS, nextRound,
 } from './state.js'
 
 describe('createInitialState', () => {
-  it('has one cat and phase start', () => {
+  it('has one cat and phase start with round config', () => {
     const state = createInitialState()
 
     assert.strictEqual(state.phase, 'start')
@@ -18,16 +19,20 @@ describe('createInitialState', () => {
     assert.strictEqual(state.cats[0].delayMs, 0)
     assert.strictEqual(state.songProgress, 0)
     assert.deepStrictEqual(state.poseHistory, [])
+    assert.strictEqual(state.round, 1)
+    assert.strictEqual(state.maxRounds, 3)
+    assert.ok(state.config)
   })
 })
 
 describe('progressSong', () => {
-  it('spawns a new cat exactly at progress 0.2, 0.4, 0.6, 0.8', () => {
-    const thresholds = [0.2, 0.4, 0.6, 0.8]
+  it('spawns a new cat exactly at round 1 thresholds', () => {
+    const cfg = ROUNDS[0]
+    const thresholds = cfg.thresholds
 
     for (let i = 0; i < thresholds.length; i++) {
-      let state = startDance(createInitialState())
-      const deltaMs = thresholds[i] * 30000
+      let state = startRound(createInitialState())
+      const deltaMs = thresholds[i] * cfg.durationMs
       state = progressSong(state, deltaMs)
 
       const expectedCats = i + 2
@@ -42,25 +47,22 @@ describe('progressSong', () => {
 
 describe('updatePose', () => {
   it('updates the player cat immediately', () => {
-    let state = startDance(createInitialState())
+    let state = startRound(createInitialState())
     state = updatePose(state, 'left-paw-up')
 
     assert.strictEqual(state.cats[0].pose, 'left-paw-up')
   })
 
   it('gives delayed cats the historical pose closest to their delay', () => {
-    let state = startDance(createInitialState())
+    let state = startRound(createInitialState())
+    const cfg = state.config
 
-    // Spawn four cats so we have cats with delayMs = 600, 1200, 1800
-    // (the first is the player at delay 0)
-    state = progressSong(state, 0.8 * 30000)
-    assert.strictEqual(state.cats.length, 5)
+    state = progressSong(state, cfg.durationMs)
+    // Round 1 has 4 thresholds → 5 cats total
+    assert.strictEqual(state.cats.length, cfg.thresholds.length + 1)
 
-    // Seed the pose history with known timestamps.
-    // We simulate updatePose calls at 200ms increments.
     const baseTime = performance.now()
 
-    // Override performance.now for determinism.
     let callIndex = 0
     const times = [
       baseTime, baseTime + 200, baseTime + 400, baseTime + 600,
@@ -73,35 +75,25 @@ describe('updatePose', () => {
       writable: true,
     })
 
-    state = updatePose(state, 'idle')      // t=0     history: idle
+    state = updatePose(state, 'idle')      // t=0
     callIndex++
-    state = updatePose(state, 'left-paw-up')   // t=200   history: idle, left
+    state = updatePose(state, 'left-paw-up')   // t=200
     callIndex++
-    state = updatePose(state, 'right-paw-up')  // t=400   history: idle, left, right
+    state = updatePose(state, 'right-paw-up')  // t=400
     callIndex++
-    state = updatePose(state, 'both-paws-up')  // t=600   history: idle, left, right, both
+    state = updatePose(state, 'both-paws-up')  // t=600
     callIndex++
-    state = updatePose(state, 'jump')          // t=800   history: idle, left, right, both, jump
+    state = updatePose(state, 'jump')          // t=800
     callIndex++
-    state = updatePose(state, 'crouch')        // t=1000  history: ..., crouch
+    state = updatePose(state, 'crouch')        // t=1000
     callIndex++
-    state = updatePose(state, 'idle')          // t=1200  history: ..., idle
+    state = updatePose(state, 'idle')          // t=1200
     callIndex++
 
-    // Player cat (delayMs = 0) gets the latest pose
     assert.strictEqual(state.cats[0].pose, 'idle')
-
-    // Cat 1 delay 600 — at t=1200 wants pose closest to t=600 → both-paws-up
     assert.strictEqual(state.cats[1].pose, 'both-paws-up')
-
-    // Cat 2 delay 1200 — at t=1200 wants pose closest to t=0 → idle
     assert.strictEqual(state.cats[2].pose, 'idle')
-
-    // Cat 3 delay 1800 — at t=1200 wants pose closest to t=-600
-    // Closest available is t=0 → idle
     assert.strictEqual(state.cats[3].pose, 'idle')
-
-    // Cat 4 delay 2400 — same as above → idle
     assert.strictEqual(state.cats[4].pose, 'idle')
 
     Object.defineProperty(performance, 'now', {
@@ -114,9 +106,35 @@ describe('updatePose', () => {
 
 describe('completeDance', () => {
   it('transitions to phase complete', () => {
-    let state = startDance(createInitialState())
+    let state = startRound(createInitialState())
     state = completeDance(state)
 
     assert.strictEqual(state.phase, 'complete')
+  })
+})
+
+describe('nextRound', () => {
+  it('advances from round 1 to round 2', () => {
+    let state = createInitialState()
+    state = startRound(state)
+    state = completeDance(state)
+
+    const nextState = nextRound(state)
+    assert.ok(nextState)
+    assert.strictEqual(nextState!.round, 2)
+    assert.strictEqual(nextState!.config.round, 2)
+    assert.deepStrictEqual(nextState!.cats, [
+      { id: 'cat-0', x: 0, y: 0, scale: 1.2, tint: 0xffffff, pose: 'idle', delayMs: 0, joinTime: 0 },
+    ])
+  })
+
+  it('returns null after the final round', () => {
+    let state = createInitialState()
+    state = { ...state, round: 3, config: ROUNDS[2] }
+    state = startRound(state)
+    state = completeDance(state)
+
+    const nextState = nextRound(state)
+    assert.strictEqual(nextState, null)
   })
 })

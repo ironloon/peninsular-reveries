@@ -5,7 +5,7 @@ import { animatePose, animateCatJoin } from './animations.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
 import { ensureAudioUnlocked, startDanceMusic, stopDanceMusic, fadeOutMusic, sfxCatJoin } from './sounds.js'
-import { createInitialState, startDance, updatePose, progressSong, completeDance } from './state.js'
+import { createInitialState, startRound, nextRound, updatePose, progressSong, completeDance } from './state.js'
 import type { Pose, DanceState } from './types.js'
 import { setupCopycatInput } from './input.js'
 import { announcePose, announceCatJoin, announceSongMilestone } from './accessibility.js'
@@ -17,11 +17,16 @@ const cameraPreview = document.getElementById('camera-preview') as HTMLVideoElem
 const startBtn = document.getElementById('start-btn') as HTMLButtonElement
 const replayBtn = document.getElementById('replay-btn') as HTMLButtonElement
 const cameraPrompt = document.querySelector('.copycat-camera-prompt') as HTMLElement
+const roundDisplay = document.getElementById('round-display')!
 const progressDisplay = document.getElementById('progress-display')!
 const catCountDisplay = document.getElementById('cat-count')!
 const poseIndicator = document.getElementById('pose-indicator')!
 const gameStatus = document.getElementById('game-status')!
 const gameFeedback = document.getElementById('game-feedback')!
+const roundBreakOverlay = document.getElementById('round-break-overlay')!
+const roundBreakMsg = document.getElementById('round-break-msg')!
+const roundBreakCountdown = document.getElementById('round-break-countdown')!
+const endScreenContent = document.getElementById('end-screen-content')!
 
 const ALL_SCREENS = ['start-screen', 'game-screen', 'end-screen']
 
@@ -64,17 +69,14 @@ async function boot(): Promise<void> {
 
   setupGameMenu({ musicTrackPicker: false })
 
-  // If the player toggles music on mid-game, start playback immediately.
   window.addEventListener('reveries:music-change', (e) => {
     const enabled = (e as CustomEvent<{ enabled: boolean }>).detail.enabled
     if (enabled && danceState.phase === 'dancing') {
-      startDanceMusic()
+      startDanceMusic(danceState.config)
     }
   })
 
   setupCopycatInput({ onMenu: () => {
-    // The modal toggle is handled by shared game-menu wiring;
-    // this callback is a fallback for explicit menu requests.
     const modal = document.getElementById('settings-modal')
     if (modal) {
       const isHidden = modal.hasAttribute('hidden')
@@ -94,7 +96,6 @@ async function boot(): Promise<void> {
     cameraPrompt.textContent = 'Camera access granted. Press Start to begin!'
   } else {
     cameraPrompt.textContent = 'Camera not available. Press Start to watch the cats dance!'
-    // Start button stays enabled — the visual experience works without camera.
   }
 
   startBtn.addEventListener('click', enterGame)
@@ -109,34 +110,24 @@ async function enterGame(): Promise<void> {
   if (!app) return
 
   showScreen('game-screen')
+  endScreenContent.hidden = true
 
-  // Wait two animation frames + CSS transition so the browser fully removes [hidden]
-  // and applies the .active CSS transition (520ms).
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       setTimeout(resolve, 600)
     }))
   })
 
-  // Measure the container after layout has settled
   const rect = pixiStage.getBoundingClientRect()
   const w = Math.max(1, Math.round(rect.width)) || window.innerWidth
   const h = Math.max(1, Math.round(rect.height)) || window.innerHeight
 
   app.renderer.resize(w, h)
-
-  // Ensure the canvas always fills its CSS container regardless of autoDensity
   app.canvas.style.width = '100%'
   app.canvas.style.height = '100%'
   app.canvas.style.display = 'block'
 
-  // Detect the actual renderer type using PixiJS internal enum:
-  // RendererType.WEBGL = 1, RendererType.WEBGPU = 2, RendererType.CANVAS = 4
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const typeNum = (app.renderer as any).type as number
-  const realRendererType = typeNum === 2 ? 'webgpu' : typeNum === 1 ? 'webgl' : typeNum === 4 ? 'canvas2d' : `unknown(${typeNum})`
-
-  // ── Spotlight overlay (canvas already has opaque dark background from init) ──
+  // Spotlight
   for (let i = app.stage.children.length - 1; i >= 0; i--) {
     const child = app.stage.children[i]
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -162,10 +153,23 @@ async function enterGame(): Promise<void> {
   app.stage.addChildAt(spotlight, 0)
 
   ensureAudioUnlocked()
-  startDanceMusic()
+  beginRound()
+}
 
-  danceState = startDance(danceState)
+function beginRound(): void {
+  if (!app) return
+
+  danceState = startRound(danceState)
   currentPose = 'idle'
+  prevCatCount = 1
+  lastAnnouncedPose = null
+  announcedMilestones.clear()
+  roundBreakOverlay.hidden = true
+
+  roundDisplay.textContent = `Round ${danceState.round}/${danceState.maxRounds}`
+  progressDisplay.textContent = 'Progress: 0%'
+  catCountDisplay.textContent = 'Cats: 1'
+  gameStatus.textContent = `Round ${danceState.round} — Mirror the moves!`
 
   // Reset visual cats
   for (const cat of catContainers) {
@@ -178,36 +182,7 @@ async function enterGame(): Promise<void> {
   catContainers.push(playerCat)
   layoutCats(catContainers, app.screen.width, app.screen.height)
 
-  // Render first frame so content is visible immediately
   app.render()
-
-  // Detect build SHA from script tag so user can verify they're on latest code
-  const scriptTag = document.querySelector('script[src*="copycat/main.js"]') as HTMLScriptElement | null
-  const buildSha = scriptTag?.src.match(/v=([a-f0-9]+)/)?.[1] ?? 'unknown'
-  // Diagnostics: log renderer, stage state, and build SHA
-  const childInfo = app.stage.children.map((c, i) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const child = c as any
-    return {
-      index: i,
-      type: child.constructor?.name ?? 'unknown',
-      x: child.x,
-      y: child.y,
-      scaleX: child.scale?.x,
-      scaleY: child.scale?.y,
-      alpha: child.alpha,
-      visible: child.visible,
-      children: child.children?.length,
-    }
-  })
-  console.log('[copycat] enterGame diagnostics:', {
-    buildSha,
-    realRendererType,
-    screenW: app.screen.width,
-    screenH: app.screen.height,
-    stageChildren: app.stage.children.length,
-    childInfo,
-  })
 
   // Expose debug state on window for console inspection
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -216,14 +191,11 @@ async function enterGame(): Promise<void> {
     playerCat,
     canvas: app.canvas,
     screen: { w: app.screen.width, h: app.screen.height },
-    buildSha,
-    rendererType: realRendererType,
+    buildSha: 'dev',
+    rendererType: app.renderer.type,
   }
 
-  prevCatCount = 1
-  lastAnnouncedPose = null
-  announcedMilestones.clear()
-  gameStatus.textContent = 'Dance started! Mirror the moves.'
+  startDanceMusic(danceState.config)
 
   if (gameLoopCallback) {
     app.ticker.remove(gameLoopCallback)
@@ -261,8 +233,6 @@ async function enterGame(): Promise<void> {
       const container = catContainers[i]
       if (container) {
         animatePose(container, catState.pose, 150)
-
-        // Idle breathing: subtle scale Y pulse and gentle tail sway
         const t = performance.now() / 1000
         const breathe = 1 + Math.sin(t * 3 + i * 1.2) * 0.03
         const tailSway = Math.sin(t * 2.5 + i * 0.8) * 0.15
@@ -270,7 +240,6 @@ async function enterGame(): Promise<void> {
         if (parts2) {
           parts2.body.scale.y = breathe
           parts2.tail.rotation = tailSway
-          // Periodic blink
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const blink = (container as any).__blinkState
           if (blink) {
@@ -318,13 +287,50 @@ async function enterGame(): Promise<void> {
       }
       fadeOutMusic()
       setTimeout(() => stopDanceMusic(), 1600)
-      stopMotionTracking()
-      showScreen('end-screen')
-      gameStatus.textContent = 'Dance complete! Great job.'
+      handleSongComplete()
     }
   }
 
   app.ticker.add(gameLoopCallback)
+}
+
+// ── Song complete → next round or end screen ────────────────────────────────
+
+function handleSongComplete(): void {
+  const nextState = nextRound(danceState)
+
+  if (!nextState) {
+    // Final round complete
+    stopMotionTracking()
+    showScreen('end-screen')
+    gameStatus.textContent = 'All rounds complete! Great dancing!'
+    return
+  }
+
+  danceState = nextState
+
+  // Show round break overlay
+  roundBreakMsg.textContent = `Round ${danceState.round - 1} complete!`
+  roundBreakOverlay.hidden = false
+  roundBreakCountdown.textContent = '3'
+  gameStatus.textContent = `Round ${danceState.round} coming up...`
+
+  let count = 3
+  const tick = () => {
+    count--
+    if (count > 0) {
+      roundBreakCountdown.textContent = String(count)
+    } else if (count === 0) {
+      roundBreakCountdown.textContent = 'GO!'
+    } else {
+      roundBreakOverlay.hidden = true
+      beginRound()
+      return
+    }
+    setTimeout(tick, 900)
+  }
+
+  setTimeout(tick, 900)
 }
 
 // ── Reset / replay ───────────────────────────────────────────────────────────
@@ -350,6 +356,8 @@ function resetToStart(): void {
   lastAnnouncedPose = null
   announcedMilestones.clear()
 
+  roundBreakOverlay.hidden = true
+
   showScreen('start-screen')
 
   if (cameraGranted && cameraPreview) {
@@ -371,7 +379,7 @@ function handleVisibilityChange(): void {
   } else {
     app.ticker.start()
     if (danceState.phase === 'dancing') {
-      startDanceMusic()
+      startDanceMusic(danceState.config)
     }
   }
 }

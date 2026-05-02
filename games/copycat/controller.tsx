@@ -98,6 +98,7 @@ export async function copycatAction() {
             />
 
             <div className="copycat-hud">
+              <span className="copycat-hud-item" id="round-display">Round 1/3</span>
               <span className="copycat-hud-item" id="progress-display">Progress: 0%</span>
               <span className="copycat-hud-item" id="cat-count">Cats: 1</span>
               <span className="copycat-hud-item" id="pose-indicator">Pose: idle</span>
@@ -130,10 +131,18 @@ export async function copycatAction() {
               </button>}
             />
 
-            <p className="copycat-completion-msg">Great dancing! The song is complete.</p>
+            <div id="round-break-overlay" className="copycat-round-break" hidden>
+              <div className="copycat-round-break-inner">
+                <p id="round-break-msg">Round 1 complete!</p>
+                <p id="round-break-countdown" className="copycat-countdown">3</p>
+              </div>
+            </div>
 
-            <div>
-              <button id="replay-btn" type="button" className="copycat-primary-btn">Play again</button>
+            <div id="end-screen-content" hidden>
+              <p className="copycat-completion-msg">Great dancing! The song is complete.</p>
+              <div>
+                <button id="replay-btn" type="button" className="copycat-primary-btn">Play again</button>
+              </div>
             </div>
           </div>
         </GameScreen>

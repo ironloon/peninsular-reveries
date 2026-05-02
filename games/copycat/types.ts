@@ -1,5 +1,15 @@
 export type Pose = 'idle' | 'left-paw-up' | 'right-paw-up' | 'both-paws-up' | 'crouch' | 'jump'
 
+export interface RoundConfig {
+  round: number
+  maxRounds: number
+  durationMs: number
+  bpm: number
+  melodySeed: number[]
+  catDelayMs: number
+  thresholds: number[]
+}
+
 export interface Cat {
   id: string
   x: number
@@ -17,4 +27,7 @@ export interface DanceState {
   poseHistory: Array<{ pose: Pose; timestamp: number }>
   songProgress: number
   lastPoseTime: number
+  round: number
+  maxRounds: number
+  config: RoundConfig
 }

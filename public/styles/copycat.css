@@ -351,3 +351,61 @@ body.copycat-game[data-reduce-motion="true"] .copycat-btn,
 body.copycat-game[data-reduce-motion="true"] .copycat-menu-btn {
   transition: none;
 }
+
+/* ── Round break overlay ───────────────────────────────────── */
+
+.copycat-round-break {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(6px);
+  border-radius: inherit;
+}
+
+.copycat-round-break[hidden] {
+  display: none;
+}
+
+.copycat-round-break-inner {
+  text-align: center;
+}
+
+.copycat-round-break-inner p {
+  margin: 0;
+  color: #1a1a2e;
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+}
+
+.copycat-round-break-inner p:first-child {
+  font-size: clamp(1.4rem, 4vw, 2rem);
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+
+.copycat-countdown {
+  font-size: clamp(2.4rem, 8vw, 4rem) !important;
+  font-weight: 800;
+  color: var(--accent) !important;
+  animation: countdownPulse 0.8s ease-out;
+}
+
+@keyframes countdownPulse {
+  0% {
+    transform: scale(1.4);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ── End screen content ─────────────────────────────────────── */
+
+#end-screen-content[hidden] {
+  display: none;
+}

@@ -3,6 +3,7 @@ import {
   ensureAudioUnlocked as baseEnsureAudioUnlocked,
   fadeBusGain,
 } from '../../client/audio.js'
+import type { RoundConfig } from './types.js'
 
 // ── State ───────────────────────────────────────────────────────────────────
 
@@ -13,8 +14,7 @@ interface TrackedNode {
 
 let musicTimer: number | null = null
 const scheduledNodes: TrackedNode[] = []
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
+let currentRoundConfig: RoundConfig | null = null
 
 function track(...nodes: AudioNode[]): void {
   for (const node of nodes) {
@@ -36,32 +36,20 @@ export function ensureAudioUnlocked(): void {
 
 // ── Music loop ──────────────────────────────────────────────────────────────
 
-const BPM = 110
-const BEAT_DUR = 60 / BPM                    // ~0.5455 s
-const EIGHTH_DUR = BEAT_DUR / 2             // ~0.2727 s
-const LOOP_BEATS = 10                        // 2.5 bars ≈ 5.45 s
-const LOOP_MS = Math.round(LOOP_BEATS * BEAT_DUR * 1000)
-
-const PENTATONIC = [
-  523.25, // C5
-  587.33, // D5
-  659.25, // E5
-  783.99, // G5
-  880.00, // A5
-]
-
-// Playful 20-eighth-note melody (spans 10 beats)
-const MELODY_INDICES = [
-  0, 2, 1, 3, 4, 3, 2, 1,
-  0, 2, 4, 3, 2, 1, 0, 2,
-  4, 3, 1, 0,
-]
+const PENTATONIC = [523.25, 587.33, 659.25, 783.99, 880.00]
 
 function scheduleDanceBatch(): void {
   const { music, ctx } = getGameAudioBuses('copycat')
+  const cfg = currentRoundConfig
+  if (!cfg) return
+
+  const bpm = cfg.bpm
+  const BEAT_DUR = 60 / bpm
+  const EIGHTH_DUR = BEAT_DUR / 2
+  const LOOP_BEATS = 10
   const now = ctx.currentTime + 0.05
 
-  // Kick — sine sweep 150 Hz → 60 Hz, 120 ms, on beats 1 and 3
+  // Kick — sine sweep, on beats 1 and 3
   for (let beat = 0; beat < LOOP_BEATS; beat += 2) {
     const t = now + beat * BEAT_DUR
     const osc = ctx.createOscillator()
@@ -78,7 +66,7 @@ function scheduleDanceBatch(): void {
     track(osc, gain)
   }
 
-  // Snare — band-passed noise burst, 80 ms, on beats 2 and 4
+  // Snare — band-passed noise, on beats 2, 4, 6, 8, 10
   const snareBeats = [1, 3, 5, 7, 9]
   for (const beat of snareBeats) {
     const t = now + beat * BEAT_DUR
@@ -103,8 +91,8 @@ function scheduleDanceBatch(): void {
     track(noise, filter, gain)
   }
 
-  // Hi-hat — high-passed noise, 40 ms, every 8th note
-  const numEighths = LOOP_BEATS * 2 // 20
+  // Hi-hat — high-passed noise, every 8th note
+  const numEighths = LOOP_BEATS * 2
   for (let i = 0; i < numEighths; i++) {
     const t = now + i * EIGHTH_DUR
     const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.04), ctx.sampleRate)
@@ -127,9 +115,10 @@ function scheduleDanceBatch(): void {
     track(noise, filter, gain)
   }
 
-  // Melody — triangle wave, pentatonic, gain 0.08 per note
-  for (let i = 0; i < MELODY_INDICES.length; i++) {
-    const freq = PENTATONIC[MELODY_INDICES[i]]
+  // Melody — triangle wave, pentatonic, per-round seed
+  const melody = cfg.melodySeed
+  for (let i = 0; i < melody.length; i++) {
+    const freq = PENTATONIC[melody[i]]
     const t = now + i * EIGHTH_DUR
     const dur = EIGHTH_DUR
     const osc = ctx.createOscillator()
@@ -147,7 +136,7 @@ function scheduleDanceBatch(): void {
     track(osc, gain)
   }
 
-  // Bass — triangle wave, root notes on beat 1, gain 0.05
+  // Bass — root notes on beat 1
   const bassBeats = [0, 4, 8]
   for (const beat of bassBeats) {
     const t = now + beat * BEAT_DUR
@@ -155,7 +144,7 @@ function scheduleDanceBatch(): void {
     const osc = ctx.createOscillator()
     const gain = ctx.createGain()
     osc.type = 'triangle'
-    osc.frequency.setValueAtTime(PENTATONIC[0] / 2, t) // C4
+    osc.frequency.setValueAtTime(PENTATONIC[0] / 2, t)
     gain.gain.setValueAtTime(0.0001, t)
     gain.gain.linearRampToValueAtTime(0.05, t + 0.03)
     gain.gain.setValueAtTime(0.05, t + dur - 0.05)
@@ -168,10 +157,17 @@ function scheduleDanceBatch(): void {
   }
 }
 
-export function startDanceMusic(): void {
+export function getLoopMsForRound(config: RoundConfig): number {
+  const BEAT_DUR = 60 / config.bpm
+  return Math.round(10 * BEAT_DUR * 1000)
+}
+
+export function startDanceMusic(config: RoundConfig): void {
   if (musicTimer !== null) return
+  currentRoundConfig = config
   scheduleDanceBatch()
-  musicTimer = window.setInterval(scheduleDanceBatch, LOOP_MS)
+  const loopMs = getLoopMsForRound(config)
+  musicTimer = window.setInterval(scheduleDanceBatch, loopMs)
 }
 
 export function stopDanceMusic(): void {
@@ -180,6 +176,7 @@ export function stopDanceMusic(): void {
     musicTimer = null
   }
   clearScheduledNodes()
+  currentRoundConfig = null
 }
 
 export function fadeOutMusic(): void {

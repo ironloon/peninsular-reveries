@@ -92,8 +92,8 @@ test.describe('Copycat', () => {
     await page.locator('#start-btn').click()
     await expect(page.locator('#game-screen')).toBeVisible()
 
-    // Wait for CSS transition + rAF settle (same as game code)
-    await page.waitForTimeout(700)
+    // Wait for CSS transition + rAF settle + full round init
+    await page.waitForTimeout(1200)
 
     const canvas = page.locator('#pixi-stage canvas')
     await expect(canvas).toBeAttached()
@@ -114,10 +114,10 @@ test.describe('Copycat', () => {
     await page.locator('#start-btn').click()
     await expect(page.locator('#game-screen')).toBeVisible()
 
-    // Wait for CSS transition + rAF settle (same as game code)
-    await page.waitForTimeout(700)
+    // Wait for CSS transition + rAF settle + full round init
+    await page.waitForTimeout(1200)
 
-    // Transparent WebGPU canvases don't reliably read back via drawImage in
+    // WebGPU canvases don't reliably read back via drawImage in
     // headless browsers, so we verify content through the runtime debug handle.
     const hasContent = await page.evaluate(() => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
