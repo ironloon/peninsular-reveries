@@ -163,7 +163,8 @@ export function getLoopMsForRound(config: RoundConfig): number {
 }
 
 export function startDanceMusic(config: RoundConfig): void {
-  if (musicTimer !== null) return
+  // Always restart: stop any existing timer so a new round gets fresh music
+  stopDanceMusic()
   currentRoundConfig = config
   scheduleDanceBatch()
   const loopMs = getLoopMsForRound(config)

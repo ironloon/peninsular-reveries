@@ -88,12 +88,12 @@ export function resolvePose(
   // Flip centroidX so "user's left" on the mirrored screen maps to left-paw-up.
   const x = 1 - centroidX
 
-  if (motionScore < 30) return 'idle'
-  if (centroidY < 0.35 && spreadX > 0.35 && motionScore > 120) return 'both-paws-up'
-  if (x < 0.35 && centroidY < 0.45 && motionScore > 60) return 'left-paw-up'
-  if (x > 0.65 && centroidY < 0.45 && motionScore > 60) return 'right-paw-up'
-  if (centroidY > 0.65 && motionScore > 40) return 'crouch'
-  if (motionScore > 180 && spreadY > 0.4) return 'jump'
+  if (motionScore < 20) return 'idle'
+  if (centroidY < 0.40 && spreadX > 0.25 && motionScore > 60) return 'both-paws-up'
+  if (x < 0.40 && centroidY < 0.50 && motionScore > 30) return 'left-paw-up'
+  if (x > 0.60 && centroidY < 0.50 && motionScore > 30) return 'right-paw-up'
+  if (centroidY > 0.60 && motionScore > 20) return 'crouch'
+  if (motionScore > 100 && spreadY > 0.35) return 'jump'
   return 'idle'
 }
 

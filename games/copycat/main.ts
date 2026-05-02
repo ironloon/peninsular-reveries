@@ -4,7 +4,7 @@ import { initStage, createCat, layoutCats, getCatParts } from './renderer.js'
 import { animatePose, animateCatJoin } from './animations.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
-import { ensureAudioUnlocked, startDanceMusic, stopDanceMusic, fadeOutMusic, sfxCatJoin } from './sounds.js'
+import { ensureAudioUnlocked, startDanceMusic, stopDanceMusic, sfxCatJoin } from './sounds.js'
 import { createInitialState, startRound, nextRound, updatePose, progressSong, completeDance } from './state.js'
 import type { Pose, DanceState } from './types.js'
 import { setupCopycatInput } from './input.js'
@@ -169,7 +169,7 @@ function beginRound(): void {
   roundDisplay.textContent = `Round ${danceState.round}/${danceState.maxRounds}`
   progressDisplay.textContent = 'Progress: 0%'
   catCountDisplay.textContent = 'Cats: 1'
-  gameStatus.textContent = `Round ${danceState.round} — Mirror the moves!`
+  gameStatus.textContent = `Round ${danceState.round} — Strike a pose!`
 
   // Reset visual cats
   for (const cat of catContainers) {
@@ -218,11 +218,13 @@ function beginRound(): void {
       for (let i = prevCatCount; i < danceState.cats.length; i++) {
         const container = catContainers[i]
         const targetX = container.x
-        const fromX = app.screen.width + 60
+        // Dance-crew side entry: alternate from left/right
+        const fromLeft = i % 2 === 1
+        const fromX = fromLeft ? -60 : app.screen.width + 60
         animateCatJoin(container, fromX, targetX)
         sfxCatJoin()
       }
-      gameFeedback.textContent = `A new cat joined! Total cats: ${danceState.cats.length}`
+      gameFeedback.textContent = `Cat ${danceState.cats.length} joined the crew!`
       announceCatJoin(danceState.cats.length - 1)
       prevCatCount = danceState.cats.length
     }
@@ -285,8 +287,7 @@ function beginRound(): void {
         app.ticker.remove(gameLoopCallback)
         gameLoopCallback = null
       }
-      fadeOutMusic()
-      setTimeout(() => stopDanceMusic(), 1600)
+      stopDanceMusic()
       handleSongComplete()
     }
   }

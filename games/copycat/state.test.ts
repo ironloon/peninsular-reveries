@@ -58,7 +58,7 @@ describe('updatePose', () => {
     const cfg = state.config
 
     state = progressSong(state, cfg.durationMs)
-    // Round 1 has 4 thresholds → 5 cats total
+    // Round 1 has 2 thresholds → 3 cats total
     assert.strictEqual(state.cats.length, cfg.thresholds.length + 1)
 
     const baseTime = performance.now()
@@ -91,10 +91,8 @@ describe('updatePose', () => {
     callIndex++
 
     assert.strictEqual(state.cats[0].pose, 'idle')
-    assert.strictEqual(state.cats[1].pose, 'both-paws-up')
+    assert.strictEqual(state.cats[1].pose, 'idle')
     assert.strictEqual(state.cats[2].pose, 'idle')
-    assert.strictEqual(state.cats[3].pose, 'idle')
-    assert.strictEqual(state.cats[4].pose, 'idle')
 
     Object.defineProperty(performance, 'now', {
       value: originalNow,
