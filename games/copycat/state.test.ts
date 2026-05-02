@@ -51,19 +51,21 @@ describe('updatePose', () => {
   it('gives delayed cats the historical pose closest to their delay', () => {
     let state = startDance(createInitialState())
 
-    // Spawn two delayed cats so we have a cat with delayMs = 400
-    state = progressSong(state, 0.6 * 30000)
-    assert.strictEqual(state.cats.length, 4)
+    // Spawn four cats so we have cats with delayMs = 600, 1200, 1800
+    // (the first is the player at delay 0)
+    state = progressSong(state, 0.8 * 30000)
+    assert.strictEqual(state.cats.length, 5)
 
     // Seed the pose history with known timestamps.
-    // We will simulate updatePose calls at specific times.
+    // We simulate updatePose calls at 200ms increments.
     const baseTime = performance.now()
 
-    // Override performance.now for determinism in this test.
-    // The implementation calls performance.now() once per updatePose.
-    // We'll step forward in 100ms increments.
+    // Override performance.now for determinism.
     let callIndex = 0
-    const times = [baseTime, baseTime + 100, baseTime + 200, baseTime + 300, baseTime + 400]
+    const times = [
+      baseTime, baseTime + 200, baseTime + 400, baseTime + 600,
+      baseTime + 800, baseTime + 1000, baseTime + 1200,
+    ]
     const originalNow = performance.now.bind(performance)
     Object.defineProperty(performance, 'now', {
       value: () => times[callIndex] ?? originalNow(),
@@ -71,40 +73,36 @@ describe('updatePose', () => {
       writable: true,
     })
 
-    // First pose update at baseTime
-    state = updatePose(state, 'idle')
+    state = updatePose(state, 'idle')      // t=0     history: idle
+    callIndex++
+    state = updatePose(state, 'left-paw-up')   // t=200   history: idle, left
+    callIndex++
+    state = updatePose(state, 'right-paw-up')  // t=400   history: idle, left, right
+    callIndex++
+    state = updatePose(state, 'both-paws-up')  // t=600   history: idle, left, right, both
+    callIndex++
+    state = updatePose(state, 'jump')          // t=800   history: idle, left, right, both, jump
+    callIndex++
+    state = updatePose(state, 'crouch')        // t=1000  history: ..., crouch
+    callIndex++
+    state = updatePose(state, 'idle')          // t=1200  history: ..., idle
     callIndex++
 
-    // Second pose update at baseTime + 100
-    state = updatePose(state, 'left-paw-up')
-    callIndex++
+    // Player cat (delayMs = 0) gets the latest pose
+    assert.strictEqual(state.cats[0].pose, 'idle')
 
-    // Third pose update at baseTime + 200
-    state = updatePose(state, 'right-paw-up')
-    callIndex++
+    // Cat 1 delay 600 — at t=1200 wants pose closest to t=600 → both-paws-up
+    assert.strictEqual(state.cats[1].pose, 'both-paws-up')
 
-    // Fourth pose update at baseTime + 300
-    state = updatePose(state, 'both-paws-up')
-    callIndex++
-
-    // Fifth pose update at baseTime + 400
-    state = updatePose(state, 'jump')
-    callIndex++
-
-    // Player cat (delayMs = 0) should have the latest pose
-    assert.strictEqual(state.cats[0].pose, 'jump')
-
-    // Cat 1 has delayMs = 200; at time baseTime + 400 it wants the pose
-    // closest to baseTime + 200, which is the one recorded at baseTime + 200
-    assert.strictEqual(state.cats[1].pose, 'right-paw-up')
-
-    // Cat 2 has delayMs = 400; at time baseTime + 400 it wants the pose
-    // closest to baseTime + 0, which is 'idle'
+    // Cat 2 delay 1200 — at t=1200 wants pose closest to t=0 → idle
     assert.strictEqual(state.cats[2].pose, 'idle')
 
-    // Cat 3 has delayMs = 600; at time baseTime + 400 it wants the pose
-    // closest to baseTime - 200. The closest available is baseTime + 0 ('idle')
+    // Cat 3 delay 1800 — at t=1200 wants pose closest to t=-600
+    // Closest available is t=0 → idle
     assert.strictEqual(state.cats[3].pose, 'idle')
+
+    // Cat 4 delay 2400 — same as above → idle
+    assert.strictEqual(state.cats[4].pose, 'idle')
 
     Object.defineProperty(performance, 'now', {
       value: originalNow,
