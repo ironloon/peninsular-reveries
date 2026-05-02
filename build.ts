@@ -156,12 +156,19 @@ for (const htmlFile of readdirSync(outputDir, { recursive: true }) as string[]) 
   const htmlPath = join(outputDir, htmlFile)
   if (statSync(htmlPath).isDirectory()) continue
   const htmlContent = readFileSync(htmlPath, 'utf-8')
-  // Cache-bust CSS: append git SHA as query parameter
-  const cacheBusted = htmlContent.replace(
+  // Cache-bust CSS and JS: append git SHA as query parameter
+  let cacheBusted = htmlContent.replace(
     /href="([^"]*\/styles\/[^"]*\.css)"/g,
     (match, href) => {
       const separator = href.includes('?') ? '&' : '?'
       return `href="${href}${separator}v=${sha}"`
+    },
+  )
+  cacheBusted = cacheBusted.replace(
+    /src="([^"]*\.js)"/g,
+    (match, src) => {
+      const separator = src.includes('?') ? '&' : '?'
+      return `src="${src}${separator}v=${sha}"`
     },
   )
   const updated = cacheBusted.replaceAll('__BUILD_SHA__', sha)

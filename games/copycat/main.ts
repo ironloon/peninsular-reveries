@@ -168,8 +168,12 @@ async function enterGame(): Promise<void> {
   // Render first frame so content is visible immediately
   app.render()
 
-  // Diagnostics: log renderer and stage state
+  // Detect build SHA from script tag so user can verify they're on latest code
+  const scriptTag = document.querySelector('script[src*="copycat/main.js"]') as HTMLScriptElement | null
+  const buildSha = scriptTag?.src.match(/v=([a-f0-9]+)/)?.[1] ?? 'unknown'
+  // Diagnostics: log renderer, stage state, and build SHA
   console.log('[copycat] enterGame diagnostics:', {
+    buildSha,
     realRendererType,
     screenW: app.screen.width,
     screenH: app.screen.height,
@@ -183,6 +187,7 @@ async function enterGame(): Promise<void> {
     playerCat,
     canvas: app.canvas,
     screen: { w: app.screen.width, h: app.screen.height },
+    buildSha,
     rendererType: realRendererType,
   }
 

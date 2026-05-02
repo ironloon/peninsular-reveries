@@ -1,7 +1,7 @@
 import { test, expect, type Page } from '@playwright/test'
 
 async function injectMockCamera(page: Page): Promise<void> {
-  await page.route('**/client/copycat/main.js', async (route) => {
+  await page.route('**/client/copycat/main.js*', async (route) => {
     const response = await route.fetch()
     const original = await response.text()
     const injected = `

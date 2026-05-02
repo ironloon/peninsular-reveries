@@ -36,7 +36,7 @@ export async function copycatAction() {
       includeFooter={false}
       includeDefaultStyles={false}
       stylesheets={['/styles/copycat.css']}
-      scripts={['/client/copycat/main.js']}
+      scripts={[`/client/copycat/main.js?v=__BUILD_SHA__`]}
       bodyClass="copycat-game"
       viewportFitCover
       faviconPath="/favicon.svg"
