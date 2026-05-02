@@ -4,22 +4,28 @@ import type { Pose } from './types.js'
 // ── Renderer health check ──────────────────────────────────────────────────
 
 async function checkRendererHealth(app: Application): Promise<boolean> {
-  // Draw a solid red square and verify the canvas captured it.
-  // WebGPU/WebGL with broken drivers can "succeed" at init but produce
-  // transparent pixels — this detects that state and forces Canvas2D.
+  // Some browsers claim WebGPU support but produce transparent compositor output
+  // (e.g. Firefox with broken ANGLE drivers).  We draw a red square and
+  // compare the canvas *before* and *after* — if the PNG is unchanged the
+  // renderer is “soft-broken” even though init succeeded.
+  const emptyDataUrl = app.canvas.toDataURL()
+
   const g = new Graphics()
   g.rect(0, 0, 100, 100)
   g.fill({ color: 0xff0000 })
   app.stage.addChild(g)
   app.render()
 
-  const dataUrl = app.canvas.toDataURL()
-  const hasContent = dataUrl.length > 8000 // ~5KB transparent vs ~15KB red square
+  const redDataUrl = app.canvas.toDataURL()
 
   app.stage.removeChild(g)
   g.destroy()
 
-  return hasContent
+  // Clear the canvas back to empty so the next health check starts clean
+  app.render()
+
+  // If the canvas bitmap did not change, the renderer is compositing nothing.
+  return emptyDataUrl !== redDataUrl
 }
 
 async function tryCreateApp(container: HTMLElement, preference: 'webgpu' | 'webgl' | 'canvas'): Promise<Application | null> {
