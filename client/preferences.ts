@@ -94,7 +94,7 @@ const SFX_EVENT = 'reveries:sfx-change'
 
 export function getMusicEnabled(): boolean {
   const stored = localStorage.getItem(MUSIC_ENABLED_KEY)
-  return stored === null ? false : stored === 'true'
+  return stored === null ? true : stored === 'true'
 }
 
 export function setMusicEnabled(enabled: boolean): void {

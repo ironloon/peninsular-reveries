@@ -266,10 +266,24 @@ async function enterGame(): Promise<void> {
         const t = performance.now() / 1000
         const breathe = 1 + Math.sin(t * 3 + i * 1.2) * 0.03
         const tailSway = Math.sin(t * 2.5 + i * 0.8) * 0.15
-        const parts = getCatParts(container)
-        if (parts) {
-          parts.body.scale.y = breathe
-          parts.tail.rotation = tailSway
+        const parts2 = getCatParts(container)
+        if (parts2) {
+          parts2.body.scale.y = breathe
+          parts2.tail.rotation = tailSway
+          // Periodic blink
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const blink = (container as any).__blinkState
+          if (blink) {
+            const nowMs = performance.now()
+            if (nowMs > blink.nextBlink) {
+              blink.open = !blink.open
+              const dur = blink.open ? 2000 + Math.random() * 3000 : 120
+              blink.nextBlink = nowMs + dur
+            }
+            const eyeScale = blink.open ? 1 : 0.1
+            parts2.leftEye.scale.y = eyeScale
+            parts2.rightEye.scale.y = eyeScale
+          }
         }
       }
       if (i === 0 && catState.pose !== lastAnnouncedPose) {

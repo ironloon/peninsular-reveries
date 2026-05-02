@@ -170,8 +170,6 @@ function scheduleDanceBatch(): void {
 
 export function startDanceMusic(): void {
   if (musicTimer !== null) return
-  const { music } = getGameAudioBuses('copycat')
-  if (music.gain.value < 0.001) return
   scheduleDanceBatch()
   musicTimer = window.setInterval(scheduleDanceBatch, LOOP_MS)
 }

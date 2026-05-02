@@ -55,8 +55,8 @@ async function tryCreateApp(container: HTMLElement, preference: 'webgpu' | 'webg
   try {
     await app.init({
       preference,
-      background: '#1a1a2e',
-      backgroundAlpha: 0,
+      background: '#ffffff',
+      backgroundAlpha: 0.88,
       autoDensity: true,
     })
     container.appendChild(app.canvas)
@@ -134,7 +134,8 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
 
 export function createCat(tint?: number): Container {
   const cat = new Container()
-  const BASE = tint != null ? tint : 0xffffff
+  const BASE = tint != null ? tint : 0x000000
+  const EYE = 0xffffff
 
   // Tail (drawn behind body)
   const tail = new Graphics()
@@ -181,13 +182,17 @@ export function createCat(tint?: number): Container {
   // Eyes
   const leftEye = new Graphics()
   leftEye.circle(5, -7, 1.5)
-  leftEye.fill({ color: 0x1a1a2e })
+  leftEye.fill({ color: EYE })
   cat.addChild(leftEye)
 
   const rightEye = new Graphics()
   rightEye.circle(10, -7, 1.5)
-  rightEye.fill({ color: 0x1a1a2e })
+  rightEye.fill({ color: EYE })
   cat.addChild(rightEye)
+
+  // Blink state
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(cat as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
 
   // Paws
   const leftBackPaw = new Graphics()

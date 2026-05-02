@@ -3,7 +3,6 @@ import { Pose } from './types.js'
 const FPS = 30
 const FRAME_INTERVAL = 1000 / FPS
 const THRESHOLD = 20
-const DEBOUNCE_MS = 80
 
 type TrackingState = {
   canvas: HTMLCanvasElement
@@ -130,7 +129,7 @@ function processFrame(): void {
   const pose = resolvePose(centroidX, centroidY, spreadX, spreadY, motionScore)
 
   if (pose === state.pendingPose) {
-    if (pose !== state.lastEmittedPose && now - state.pendingSince >= DEBOUNCE_MS) {
+    if (pose !== state.lastEmittedPose) {
       state.lastEmittedPose = pose
       onPose(pose)
     }
