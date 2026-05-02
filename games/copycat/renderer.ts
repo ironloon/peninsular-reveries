@@ -75,6 +75,19 @@ export interface CatGraphics {
   rightFrontPaw: Graphics
   leftBackPaw: Graphics
   rightBackPaw: Graphics
+  // Rest positions so poses are relative (animal-agnostic)
+  rest: {
+    bodyY: number
+    headY: number
+    leftFrontLegY: number
+    rightFrontLegY: number
+    leftBackLegY: number
+    rightBackLegY: number
+    leftFrontPawY: number
+    rightFrontPawY: number
+    leftBackPawY: number
+    rightBackPawY: number
+  }
 }
 
 interface PoseTargets {
@@ -137,8 +150,23 @@ export function createAnimal(kind: AnimalKind, tint?: number): Container {
   }
 }
 
-function buildPartsMap(container: Container, parts: CatGraphics): void {
-  catPartsMap.set(container, parts)
+function buildPartsMap(container: Container, parts: Omit<CatGraphics, 'rest'>): void {
+  const fullParts: CatGraphics = {
+    ...(parts as CatGraphics),
+    rest: {
+      bodyY: parts.body.y,
+      headY: parts.head.y,
+      leftFrontLegY: parts.leftFrontLeg.y,
+      rightFrontLegY: parts.rightFrontLeg.y,
+      leftBackLegY: parts.leftBackLeg.y,
+      rightBackLegY: parts.rightBackLeg.y,
+      leftFrontPawY: parts.leftFrontPaw.y,
+      rightFrontPawY: parts.rightFrontPaw.y,
+      leftBackPawY: parts.leftBackPaw.y,
+      rightBackPawY: parts.rightBackPaw.y,
+    },
+  }
+  catPartsMap.set(container, fullParts)
   updateCatPose(container, 'idle', true)
 }
 
@@ -313,33 +341,31 @@ function createGiraffe(): Container {
   spots.fill({ color: DARK })
   g.addChild(spots)
 
-  // Head with very long built-in neck
+  // Head with very long built-in neck — narrower than the body
   const head = new Graphics()
-  // Neck — tall thin rectangle bridging down to body
-  head.roundRect(-3, -8, 6, 26, 2)
+  head.roundRect(-2, -12, 4, 30, 2) // very thin neck
   head.fill({ color: BASE })
-  // Head circle at top
-  head.circle(0, -22, 8)
+  head.circle(0, -24, 9) // slightly wider head circle
   head.fill({ color: BASE })
 
-  // Ossicones (horn nubs)
+  // Ossicones (horn nubs) — small knobs on top
   const leftEar = new Graphics()
-  leftEar.roundRect(-5, -30, 3, 5, 1)
+  leftEar.roundRect(-5, -32, 3, 5, 1)
   leftEar.fill({ color: DARK })
   head.addChild(leftEar)
 
   const rightEar = new Graphics()
-  rightEar.roundRect(2, -30, 3, 5, 1)
+  rightEar.roundRect(2, -32, 3, 5, 1)
   rightEar.fill({ color: DARK })
   head.addChild(rightEar)
 
   const leftEye = new Graphics()
-  leftEye.circle(-3.5, -22, 2)
+  leftEye.circle(-3.5, -24, 2.2)
   leftEye.fill({ color: EYE })
   head.addChild(leftEye)
 
   const rightEye = new Graphics()
-  rightEye.circle(3.5, -22, 2)
+  rightEye.circle(3.5, -24, 2.2)
   rightEye.fill({ color: EYE })
   head.addChild(rightEye)
 
@@ -962,21 +988,27 @@ export function getPoseTargets(pose: Pose): PoseTargets {
 }
 
 function applyPoseTargets(parts: CatGraphics, targets: PoseTargets): void {
-  parts.body.y = targets.bodyY
+  const r = parts.rest
+
+  // Body moves first; everything else follows relative to body
+  parts.body.y = r.bodyY + targets.bodyY
   parts.body.scale.y = targets.bodyScaleY
-  parts.head.y = targets.headY
+  parts.head.y = r.headY + targets.bodyY + targets.headY
   parts.tail.rotation = targets.tailRotation
-  parts.leftFrontPaw.y = targets.leftFrontPawY
-  parts.rightFrontPaw.y = targets.rightFrontPawY
-  parts.leftBackPaw.y = targets.leftBackPawY
-  parts.rightBackPaw.y = targets.rightBackPawY
+
+  // Paws move with body offset + their own offset
+  parts.leftFrontPaw.y = r.leftFrontPawY + targets.bodyY + targets.leftFrontPawY
+  parts.rightFrontPaw.y = r.rightFrontPawY + targets.bodyY + targets.rightFrontPawY
+  parts.leftBackPaw.y = r.leftBackPawY + targets.bodyY + targets.leftBackPawY
+  parts.rightBackPaw.y = r.rightBackPawY + targets.bodyY + targets.rightBackPawY
   parts.leftFrontPaw.rotation = targets.leftFrontPawRotation
   parts.rightFrontPaw.rotation = targets.rightFrontPawRotation
 
-  parts.leftFrontLeg.y = 8 + targets.leftFrontPawY
-  parts.rightFrontLeg.y = 8 + targets.rightFrontPawY
-  parts.leftBackLeg.y = 8 + targets.leftBackPawY
-  parts.rightBackLeg.y = 8 + targets.rightBackPawY
+  // Legs shadow the same delta as paws so they stay visually attached
+  parts.leftFrontLeg.y = r.leftFrontLegY + targets.bodyY + targets.leftFrontPawY
+  parts.rightFrontLeg.y = r.rightFrontLegY + targets.bodyY + targets.rightFrontPawY
+  parts.leftBackLeg.y = r.leftBackLegY + targets.bodyY + targets.leftBackPawY
+  parts.rightBackLeg.y = r.rightBackLegY + targets.bodyY + targets.rightBackPawY
 }
 
 // ── Pose update ─────────────────────────────────────────────────────────────
