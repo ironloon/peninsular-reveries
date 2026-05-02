@@ -20,7 +20,7 @@ describe('createInitialState', () => {
     assert.strictEqual(state.songProgress, 0)
     assert.deepStrictEqual(state.poseHistory, [])
     assert.strictEqual(state.round, 1)
-    assert.strictEqual(state.maxRounds, 3)
+    assert.strictEqual(state.maxRounds, 5)
     assert.ok(state.config)
   })
 })
@@ -58,7 +58,7 @@ describe('updatePose', () => {
     const cfg = state.config
 
     state = progressSong(state, cfg.durationMs)
-    // Round 1 has 2 thresholds → 3 cats total
+    // 4 thresholds → 5 cats total
     assert.strictEqual(state.cats.length, cfg.thresholds.length + 1)
 
     const baseTime = performance.now()
@@ -93,6 +93,14 @@ describe('updatePose', () => {
     assert.strictEqual(state.cats[0].pose, 'idle')
     assert.strictEqual(state.cats[1].pose, 'idle')
     assert.strictEqual(state.cats[2].pose, 'idle')
+    assert.strictEqual(state.cats[3].pose, 'idle')
+    assert.strictEqual(state.cats[4].pose, 'idle')
+
+    Object.defineProperty(performance, 'now', {
+      value: originalNow,
+      configurable: true,
+      writable: true,
+    })
 
     Object.defineProperty(performance, 'now', {
       value: originalNow,
@@ -128,7 +136,7 @@ describe('nextRound', () => {
 
   it('returns null after the final round', () => {
     let state = createInitialState()
-    state = { ...state, round: 3, config: ROUNDS[2] }
+    state = { ...state, round: 5, config: ROUNDS[4] }
     state = startRound(state)
     state = completeDance(state)
 

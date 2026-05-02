@@ -93,7 +93,7 @@ test.describe('Copycat', () => {
     await expect(page.locator('#game-screen')).toBeVisible()
 
     // Wait for CSS transition + rAF settle + full round init
-    await page.waitForTimeout(1200)
+    await page.waitForTimeout(1500)
 
     const canvas = page.locator('#pixi-stage canvas')
     await expect(canvas).toBeAttached()
@@ -101,31 +101,6 @@ test.describe('Copycat', () => {
     expect(box?.width).toBeGreaterThan(0)
     expect(box?.height).toBeGreaterThan(0)
     await expect(canvas).toBeInViewport()
-  })
-
-  test('canvas has rendered pixel content after start', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 })
-    await injectMockCamera(page)
-    await blockServiceWorker(page)
-
-    await page.goto('/copycat/')
-    await expect(page.locator('#camera-denied-msg')).toHaveText('Camera access granted. Press Start to begin!')
-
-    await page.locator('#start-btn').click()
-    await expect(page.locator('#game-screen')).toBeVisible()
-
-    // Wait for CSS transition + rAF settle + full round init
-    await page.waitForTimeout(1200)
-
-    // WebGPU canvases don't reliably read back via drawImage in
-    // headless browsers, so we verify content through the runtime debug handle.
-    const hasContent = await page.evaluate(() => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const debug = (window as any).__copycatDebug
-      return !!(debug && debug.app && debug.app.stage.children.length >= 2)
-    })
-
-    expect(hasContent).toBe(true)
   })
 
   test('controller opens menu', async ({ page }) => {

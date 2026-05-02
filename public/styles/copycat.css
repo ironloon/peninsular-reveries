@@ -409,3 +409,76 @@ body.copycat-game[data-reduce-motion="true"] .copycat-menu-btn {
 #end-screen-content[hidden] {
   display: none;
 }
+
+/* ── Replay preview on start screen ───────────────────────── */
+
+.copycat-replay-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1rem;
+  border-radius: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.copycat-replay-preview[hidden] {
+  display: none;
+}
+
+.copycat-replay-title {
+  font-size: clamp(0.9rem, 2.2vw, 1.1rem);
+  font-weight: 600;
+  color: var(--accent);
+  margin: 0;
+}
+
+.copycat-replay-stage {
+  width: 120px;
+  height: 100px;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+
+.copycat-replay-cat {
+  font-size: 3rem;
+  line-height: 1;
+  transition: transform 0.2s ease-out;
+  will-change: transform;
+}
+
+.copycat-replay-cat.pose-left-paw-up {
+  transform: rotate(-18deg) translateX(-6px) translateY(-4px);
+}
+
+.copycat-replay-cat.pose-right-paw-up {
+  transform: rotate(18deg) translateX(6px) translateY(-4px);
+}
+
+.copycat-replay-cat.pose-both-paws-up {
+  transform: scale(1.15) translateY(-8px);
+}
+
+.copycat-replay-cat.pose-crouch {
+  transform: scaleY(0.85) translateY(6px);
+}
+
+.copycat-replay-cat.pose-jump {
+  transform: translateY(-14px) scale(1.1);
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

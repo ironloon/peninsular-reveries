@@ -8,6 +8,7 @@ export interface RoundConfig {
   melodySeed: number[]
   catDelayMs: number
   thresholds: number[]
+  songStyle: 'groove' | 'drive' | 'swing' | 'half' | 'break'
 }
 
 export interface Cat {

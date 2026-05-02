@@ -47,7 +47,7 @@ async function tryCreateApp(container: HTMLElement, preference: 'webgpu' | 'webg
     await app.init({
       preference,
       background: '#ffffff',
-      backgroundAlpha: 0.88,
+      backgroundAlpha: 0.45,
       autoDensity: true,
     })
     container.appendChild(app.canvas)
@@ -395,23 +395,27 @@ export function getCatParts(cat: Container): CatGraphics | undefined {
 export function layoutCats(cats: Container[], stageWidth: number, stageHeight: number): void {
   const lineY = stageHeight * 0.65
   const NATIVE_WIDTH = 44
-  const scale = Math.max(2.5, (stageWidth * 0.15) / NATIVE_WIDTH)
+  const scale = Math.max(2.2, (stageWidth * 0.12) / NATIVE_WIDTH)
   const catWidth = NATIVE_WIDTH * scale
-  const minGap = 24
 
-  const totalWidth = cats.length * catWidth + (cats.length - 1) * minGap
-  let gap = minGap
-  if (totalWidth > stageWidth && cats.length > 1) {
-    const available = stageWidth - cats.length * catWidth
-    gap = Math.max(8, available / (cats.length - 1))
-  }
+  // Player (index 0) is always centered; backup dancers alternate left/right.
+  const gap = catWidth + 20
+  const cx = stageWidth / 2
+  const count = cats.length
 
-  let currentX = (stageWidth - (cats.length * catWidth + (cats.length - 1) * gap)) / 2
-  for (let i = 0; i < cats.length; i++) {
+  for (let i = 0; i < count; i++) {
     const cat = cats[i]
     cat.scale.set(scale)
-    cat.x = currentX + catWidth / 2
+    if (i === 0) {
+      // Player in the exact centre
+      cat.x = cx
+    } else if (i % 2 === 1) {
+      // Odd indices go to the left of player (1, 3, 5...)
+      cat.x = cx - gap * ((i + 1) / 2)
+    } else {
+      // Even indices go to the right of player (2, 4, 6...)
+      cat.x = cx + gap * (i / 2)
+    }
     cat.y = lineY
-    currentX += catWidth + gap
   }
 }

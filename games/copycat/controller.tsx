@@ -71,7 +71,15 @@ export async function copycatAction() {
               <p>Camera access is required to play.</p>
             </div>
 
-            <div>
+            <div id="replay-preview" className="copycat-replay-preview" hidden>
+              <p className="copycat-replay-title">Your last dance!</p>
+              <div className="copycat-replay-stage">
+                <div id="replay-cat" className="copycat-replay-cat">🐱</div>
+              </div>
+              <button id="replay-btn-start" type="button" className="copycat-primary-btn">Play again</button>
+            </div>
+
+            <div id="start-controls">
               <button id="start-btn" type="button" className="copycat-primary-btn">Start</button>
             </div>
           </div>
@@ -107,6 +115,12 @@ export async function copycatAction() {
             <div className="dance-floor">
               <video id="camera-preview" autoPlay playsInline muted aria-label="Camera preview" />
               <div id="pixi-stage" aria-hidden="true" />
+              <div id="round-break-overlay" className="copycat-round-break" hidden>
+                <div className="copycat-round-break-inner">
+                  <p id="round-break-msg">Round 1 complete!</p>
+                  <p id="round-break-countdown" className="copycat-countdown">3</p>
+                </div>
+              </div>
             </div>
           </div>
         </GameScreen>
@@ -131,18 +145,10 @@ export async function copycatAction() {
               </button>}
             />
 
-            <div id="round-break-overlay" className="copycat-round-break" hidden>
-              <div className="copycat-round-break-inner">
-                <p id="round-break-msg">Round 1 complete!</p>
-                <p id="round-break-countdown" className="copycat-countdown">3</p>
-              </div>
-            </div>
+            <p className="copycat-completion-msg">Great dancing! The song is complete.</p>
 
-            <div id="end-screen-content" hidden>
-              <p className="copycat-completion-msg">Great dancing! The song is complete.</p>
-              <div>
-                <button id="replay-btn" type="button" className="copycat-primary-btn">Play again</button>
-              </div>
+            <div>
+              <button id="replay-btn" type="button" className="copycat-primary-btn">Play again</button>
             </div>
           </div>
         </GameScreen>

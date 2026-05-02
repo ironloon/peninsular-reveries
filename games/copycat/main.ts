@@ -27,6 +27,10 @@ const roundBreakOverlay = document.getElementById('round-break-overlay')!
 const roundBreakMsg = document.getElementById('round-break-msg')!
 const roundBreakCountdown = document.getElementById('round-break-countdown')!
 const endScreenContent = document.getElementById('end-screen-content')!
+const replayPreview = document.getElementById('replay-preview') as HTMLElement | null
+const replayCat = document.getElementById('replay-cat') as HTMLElement | null
+const replayBtnStart = document.getElementById('replay-btn-start') as HTMLButtonElement | null
+const startControls = document.getElementById('start-controls') as HTMLElement | null
 
 const ALL_SCREENS = ['start-screen', 'game-screen', 'end-screen']
 
@@ -56,6 +60,10 @@ let gameLoopCallback: ((ticker: Ticker) => void) | null = null
 let prevCatCount = 0
 let lastAnnouncedPose: Pose | null = null
 const announcedMilestones = new Set<number>()
+
+let lastRoundHistory: Pose[] = []
+let replayTimer: number | null = null
+let replayIndex = 0
 
 // ── Stage init ───────────────────────────────────────────────────────────────
 
@@ -100,6 +108,7 @@ async function boot(): Promise<void> {
 
   startBtn.addEventListener('click', enterGame)
   replayBtn.addEventListener('click', resetToStart)
+  replayBtnStart?.addEventListener('click', enterGame)
 
   document.addEventListener('visibilitychange', handleVisibilityChange)
 }
@@ -108,6 +117,8 @@ async function boot(): Promise<void> {
 
 async function enterGame(): Promise<void> {
   if (!app) return
+
+  stopReplayPreview()
 
   showScreen('game-screen')
   endScreenContent.hidden = true
@@ -298,6 +309,9 @@ function beginRound(): void {
 // ── Song complete → next round or end screen ────────────────────────────────
 
 function handleSongComplete(): void {
+  // Save pose history from this round for the replay preview
+  lastRoundHistory = danceState.poseHistory.map((h) => h.pose)
+
   const nextState = nextRound(danceState)
 
   if (!nextState) {
@@ -334,6 +348,49 @@ function handleSongComplete(): void {
   setTimeout(tick, 900)
 }
 
+// ── Replay preview on start screen ───────────────────────────────────────────
+
+function showReplayPreview(): void {
+  if (!replayPreview || !replayCat || !startControls) return
+
+  // Sample up to 16 poses evenly from the history so the replay is ~5 seconds
+  const samples: Pose[] = []
+  const history = lastRoundHistory
+  const count = Math.min(history.length, 16)
+  if (count > 0) {
+    const step = history.length / count
+    for (let i = 0; i < count; i++) {
+      samples.push(history[Math.floor(i * step)])
+    }
+  } else {
+    samples.push('idle')
+  }
+
+  replayPreview.hidden = false
+  startControls.hidden = true
+  replayIndex = 0
+
+  const showFrame = () => {
+    const pose = samples[replayIndex % samples.length]
+    replayCat.textContent = pose === 'jump' ? '🐈' : '🐱'
+    replayCat.className = `copycat-replay-cat pose-${pose}`
+    replayIndex++
+  }
+
+  showFrame()
+  replayTimer = window.setInterval(showFrame, 320)
+}
+
+function stopReplayPreview(): void {
+  if (replayTimer !== null) {
+    window.clearInterval(replayTimer)
+    replayTimer = null
+  }
+  if (replayPreview) replayPreview.hidden = true
+  if (startControls) startControls.hidden = false
+  if (replayCat) replayCat.className = 'copycat-replay-cat'
+}
+
 // ── Reset / replay ───────────────────────────────────────────────────────────
 
 function resetToStart(): void {
@@ -343,6 +400,7 @@ function resetToStart(): void {
   }
   stopDanceMusic()
   stopMotionTracking()
+  stopReplayPreview()
 
   if (app) {
     for (const cat of catContainers) {
@@ -360,6 +418,10 @@ function resetToStart(): void {
   roundBreakOverlay.hidden = true
 
   showScreen('start-screen')
+
+  if (lastRoundHistory.length > 0) {
+    showReplayPreview()
+  }
 
   if (cameraGranted && cameraPreview) {
     startMotionTracking(cameraPreview, (pose) => {
