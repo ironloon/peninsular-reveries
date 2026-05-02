@@ -28,8 +28,6 @@ function readCurrentValues(parts: NonNullable<ReturnType<typeof getCatParts>>) {
     bodyY: parts.body.y,
     bodyScaleY: parts.body.scale.y,
     headY: parts.head.y,
-    leftEarY: parts.leftEar.y,
-    rightEarY: parts.rightEar.y,
     tailRotation: parts.tail.rotation,
     leftFrontPawY: parts.leftFrontPaw.y,
     rightFrontPawY: parts.rightFrontPaw.y,
@@ -51,8 +49,6 @@ function applyInterpolatedPose(
   parts.body.y = lerp(start.bodyY, target.bodyY, t)
   parts.body.scale.y = lerp(start.bodyScaleY, target.bodyScaleY, t)
   parts.head.y = lerp(start.headY, target.headY, t)
-  parts.leftEar.y = lerp(start.leftEarY, target.leftEarY, t)
-  parts.rightEar.y = lerp(start.rightEarY, target.rightEarY, t)
   parts.tail.rotation = lerp(start.tailRotation, target.tailRotation, t)
   parts.leftFrontPaw.y = lerp(start.leftFrontPawY, target.leftFrontPawY, t)
   parts.rightFrontPaw.y = lerp(start.rightFrontPawY, target.rightFrontPawY, t)
@@ -60,6 +56,12 @@ function applyInterpolatedPose(
   parts.rightBackPaw.y = lerp(start.rightBackPawY, target.rightBackPawY, t)
   parts.leftFrontPaw.rotation = lerp(start.leftFrontPawRotation, target.leftFrontPawRotation, t)
   parts.rightFrontPaw.rotation = lerp(start.rightFrontPawRotation, target.rightFrontPawRotation, t)
+
+  // Legs follow paws
+  parts.leftFrontLeg.y = 8 + parts.leftFrontPaw.y
+  parts.rightFrontLeg.y = 8 + parts.rightFrontPaw.y
+  parts.leftBackLeg.y = 8 + parts.leftBackPaw.y
+  parts.rightBackLeg.y = 8 + parts.rightBackPaw.y
 }
 
 function easeOutQuad(t: number): number {

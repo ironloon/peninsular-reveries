@@ -65,7 +65,7 @@ export async function copycatAction() {
               </button>}
             />
 
-            <p className="copycat-subtitle">Mirror the dancer's moves using your camera.</p>
+            <p className="copycat-subtitle">Strike a pose to make your cat dance.</p>
 
             <div className="copycat-camera-prompt" id="camera-denied-msg">
               <p>Camera access is required to play.</p>

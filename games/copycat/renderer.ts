@@ -4,12 +4,6 @@ import type { Pose } from './types.js'
 // ── Renderer health check ──────────────────────────────────────────────────
 
 async function checkRendererHealth(app: Application): Promise<boolean> {
-  // Some browsers claim WebGPU support but produce transparent compositor output
-  // (e.g. Firefox with broken ANGLE drivers).  toDataURL() can return a
-  // *different* PNG on each call even though the compositor is broken (driver
-  // noise / compression differences), so comparing data-URL strings is NOT
-  // reliable.  Instead we force a real compositor readback by drawing the
-  // PixiJS canvas into a fresh 2D canvas and checking actual RGBA pixels.
   const g = new Graphics()
   g.rect(0, 0, 50, 50)
   g.fill({ color: 0xff0000 })
@@ -27,13 +21,10 @@ async function checkRendererHealth(app: Application): Promise<boolean> {
   }
 
   try {
-    // drawImage forces the browser to composite the GPU/WebGL canvas into a 2D
-    // bitmap.  If the compositor is broken this will produce all-transparent.
     ctx.drawImage(app.canvas, 0, 0, 50, 50, 0, 0, 50, 50)
     const data = ctx.getImageData(0, 0, 50, 50).data
     for (let i = 0; i < data.length; i += 4) {
       if (data[i] > 200 && data[i + 1] < 50 && data[i + 2] < 50) {
-        // Found an actual red pixel — the renderer is producing visible output.
         app.stage.removeChild(g)
         g.destroy()
         app.render()
@@ -41,7 +32,7 @@ async function checkRendererHealth(app: Application): Promise<boolean> {
       }
     }
   } catch {
-    // drawImage or getImageData failed — broken renderer.
+    // broken renderer
   }
 
   app.stage.removeChild(g)
@@ -66,7 +57,7 @@ async function tryCreateApp(container: HTMLElement, preference: 'webgpu' | 'webg
   }
 }
 
-// ── Internal types for cat graphics references ───────────────────────────────
+// ── Internal types ─────────────────────────────────────────────────────────
 
 export interface CatGraphics {
   body: Graphics
@@ -76,6 +67,10 @@ export interface CatGraphics {
   leftEye: Graphics
   rightEye: Graphics
   tail: Graphics
+  leftFrontLeg: Graphics
+  rightFrontLeg: Graphics
+  leftBackLeg: Graphics
+  rightBackLeg: Graphics
   leftFrontPaw: Graphics
   rightFrontPaw: Graphics
   leftBackPaw: Graphics
@@ -86,8 +81,6 @@ interface PoseTargets {
   bodyY: number
   bodyScaleY: number
   headY: number
-  leftEarY: number
-  rightEarY: number
   tailRotation: number
   leftFrontPawY: number
   rightFrontPawY: number
@@ -99,28 +92,21 @@ interface PoseTargets {
 
 const catPartsMap = new WeakMap<Container, CatGraphics>()
 
-// ── Stage init ────────────────────────────────────────────────────────────────
+// ── Stage init ────────────────────────────────────────────────────────────
 
 export async function initStage(canvasContainer: HTMLElement): Promise<Application | null> {
-  // Try WebGPU first (best performance), then WebGL, then Canvas2D.
-  // Some browsers claim WebGPU support but have broken GPU drivers;
-  // the health check catches transparent output and forces a working fallback.
   for (const preference of ['webgpu', 'webgl', 'canvas'] as const) {
     const app = await tryCreateApp(canvasContainer, preference)
     if (!app) continue
 
     const healthy = await checkRendererHealth(app)
-    if (healthy) {
-      return app
-    }
+    if (healthy) return app
 
-    // Broken renderer - tear down and try next fallback
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ;(app as any).destroy(true)
     canvasContainer.innerHTML = ''
   }
 
-  // All renderers failed
   const message = document.createElement('p')
   message.style.color = '#e0e0e0'
   message.style.textAlign = 'center'
@@ -130,7 +116,7 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
   return null
 }
 
-// ── Cat creation ──────────────────────────────────────────────────────────────
+// ── Cat creation ────────────────────────────────────────────────────────────
 
 export function createCat(tint?: number): Container {
   const cat = new Container()
@@ -139,81 +125,127 @@ export function createCat(tint?: number): Container {
 
   // Tail (drawn behind body)
   const tail = new Graphics()
-  tail.moveTo(-10, 2)
-  tail.lineTo(-18, 0)
-  tail.lineTo(-22, -6)
-  tail.lineTo(-20, -12)
-  tail.lineTo(-14, -10)
-  tail.lineTo(-12, -4)
+  tail.moveTo(-10, 0)
+  tail.lineTo(-20, -10)
+  tail.lineTo(-26, -6)
+  tail.lineTo(-22, 2)
+  tail.lineTo(-16, 4)
+  tail.lineTo(-10, 2)
   tail.closePath()
   tail.fill({ color: BASE })
   cat.addChild(tail)
 
-  // Body
+  // Body — rounded cat-like oval
   const body = new Graphics()
-  body.roundRect(-12, -7, 24, 14, 7)
+  body.roundRect(-14, -10, 28, 24, 12)
   body.fill({ color: BASE })
   cat.addChild(body)
 
-  // Head
+  // Head group — head shape + ears + eyes as children so they move together
   const head = new Graphics()
-  head.circle(8, -6, 8)
+  head.circle(0, 0, 10)
   head.fill({ color: BASE })
-  cat.addChild(head)
 
-  // Left ear
+  // Left ear (relative to head center)
   const leftEar = new Graphics()
-  leftEar.moveTo(2, -12)
-  leftEar.lineTo(6, -18)
-  leftEar.lineTo(10, -12)
+  leftEar.moveTo(-7, -8)
+  leftEar.lineTo(-4, -18)
+  leftEar.lineTo(-1, -8)
   leftEar.closePath()
   leftEar.fill({ color: BASE })
-  cat.addChild(leftEar)
+  head.addChild(leftEar)
 
   // Right ear
   const rightEar = new Graphics()
-  rightEar.moveTo(8, -12)
-  rightEar.lineTo(12, -18)
-  rightEar.lineTo(16, -12)
+  rightEar.moveTo(1, -8)
+  rightEar.lineTo(4, -18)
+  rightEar.lineTo(7, -8)
   rightEar.closePath()
   rightEar.fill({ color: BASE })
-  cat.addChild(rightEar)
+  head.addChild(rightEar)
 
-  // Eyes
+  // Left eye
   const leftEye = new Graphics()
-  leftEye.circle(5, -7, 1.5)
+  leftEye.circle(-3.5, -1, 2)
   leftEye.fill({ color: EYE })
-  cat.addChild(leftEye)
+  head.addChild(leftEye)
 
+  // Right eye
   const rightEye = new Graphics()
-  rightEye.circle(10, -7, 1.5)
+  rightEye.circle(3.5, -1, 2)
   rightEye.fill({ color: EYE })
-  cat.addChild(rightEye)
+  head.addChild(rightEye)
 
-  // Blink state
+  // Position head on top of body
+  head.y = -14
+  cat.addChild(head)
+
+  // Blink state stored on the cat container
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(cat as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
 
-  // Paws
+  // Leg stubs (thin rounded rects hanging from body)
+  const legColor = BASE
+
+  // Left back leg + paw
+  const leftBackLeg = new Graphics()
+  leftBackLeg.roundRect(-1.5, 0, 3, 9, 1.5)
+  leftBackLeg.fill({ color: legColor })
+  leftBackLeg.x = -10
+  leftBackLeg.y = 8
+  cat.addChild(leftBackLeg)
+
   const leftBackPaw = new Graphics()
-  leftBackPaw.ellipse(-12, 9, 3, 2.5)
-  leftBackPaw.fill({ color: BASE })
+  leftBackPaw.roundRect(-3, 0, 6, 4, 2)
+  leftBackPaw.fill({ color: legColor })
+  leftBackPaw.x = -10
+  leftBackPaw.y = 16
   cat.addChild(leftBackPaw)
 
+  // Right back leg + paw
+  const rightBackLeg = new Graphics()
+  rightBackLeg.roundRect(-1.5, 0, 3, 9, 1.5)
+  rightBackLeg.fill({ color: legColor })
+  rightBackLeg.x = -3
+  rightBackLeg.y = 8
+  cat.addChild(rightBackLeg)
+
   const rightBackPaw = new Graphics()
-  rightBackPaw.ellipse(-8, 8, 3.5, 3)
-  rightBackPaw.fill({ color: BASE })
+  rightBackPaw.roundRect(-3, 0, 6, 4, 2)
+  rightBackPaw.fill({ color: legColor })
+  rightBackPaw.x = -3
+  rightBackPaw.y = 16
   cat.addChild(rightBackPaw)
 
-  const rightFrontPaw = new Graphics()
-  rightFrontPaw.ellipse(0, 9, 3, 2.5)
-  rightFrontPaw.fill({ color: BASE })
-  cat.addChild(rightFrontPaw)
+  // Left front leg + paw
+  const leftFrontLeg = new Graphics()
+  leftFrontLeg.roundRect(-1.5, 0, 3, 9, 1.5)
+  leftFrontLeg.fill({ color: legColor })
+  leftFrontLeg.x = 3
+  leftFrontLeg.y = 8
+  cat.addChild(leftFrontLeg)
 
   const leftFrontPaw = new Graphics()
-  leftFrontPaw.ellipse(4, 8, 3.5, 3)
-  leftFrontPaw.fill({ color: BASE })
+  leftFrontPaw.roundRect(-3, 0, 6, 4, 2)
+  leftFrontPaw.fill({ color: legColor })
+  leftFrontPaw.x = 3
+  leftFrontPaw.y = 16
   cat.addChild(leftFrontPaw)
+
+  // Right front leg + paw
+  const rightFrontLeg = new Graphics()
+  rightFrontLeg.roundRect(-1.5, 0, 3, 9, 1.5)
+  rightFrontLeg.fill({ color: legColor })
+  rightFrontLeg.x = 10
+  rightFrontLeg.y = 8
+  cat.addChild(rightFrontLeg)
+
+  const rightFrontPaw = new Graphics()
+  rightFrontPaw.roundRect(-3, 0, 6, 4, 2)
+  rightFrontPaw.fill({ color: legColor })
+  rightFrontPaw.x = 10
+  rightFrontPaw.y = 16
+  cat.addChild(rightFrontPaw)
 
   catPartsMap.set(cat, {
     body,
@@ -223,6 +255,10 @@ export function createCat(tint?: number): Container {
     leftEye,
     rightEye,
     tail,
+    leftFrontLeg,
+    rightFrontLeg,
+    leftBackLeg,
+    rightBackLeg,
     leftFrontPaw,
     rightFrontPaw,
     leftBackPaw,
@@ -233,7 +269,7 @@ export function createCat(tint?: number): Container {
   return cat
 }
 
-// ── Pose targets ─────────────────────────────────────────────────────────────
+// ── Pose targets ──────────────────────────────────────────────────────────
 
 export function getPoseTargets(pose: Pose): PoseTargets {
   switch (pose) {
@@ -242,8 +278,6 @@ export function getPoseTargets(pose: Pose): PoseTargets {
         bodyY: 0,
         bodyScaleY: 1,
         headY: 0,
-        leftEarY: 0,
-        rightEarY: 0,
         tailRotation: 0,
         leftFrontPawY: 0,
         rightFrontPawY: 0,
@@ -257,10 +291,8 @@ export function getPoseTargets(pose: Pose): PoseTargets {
         bodyY: -4,
         bodyScaleY: 1.05,
         headY: -3,
-        leftEarY: -2,
-        rightEarY: -2,
         tailRotation: -0.4,
-        leftFrontPawY: -20,
+        leftFrontPawY: -18,
         rightFrontPawY: 0,
         leftBackPawY: 0,
         rightBackPawY: 0,
@@ -272,11 +304,9 @@ export function getPoseTargets(pose: Pose): PoseTargets {
         bodyY: -4,
         bodyScaleY: 1.05,
         headY: -3,
-        leftEarY: -2,
-        rightEarY: -2,
         tailRotation: 0.4,
         leftFrontPawY: 0,
-        rightFrontPawY: -20,
+        rightFrontPawY: -18,
         leftBackPawY: 0,
         rightBackPawY: 0,
         leftFrontPawRotation: 0,
@@ -287,11 +317,9 @@ export function getPoseTargets(pose: Pose): PoseTargets {
         bodyY: -8,
         bodyScaleY: 1.08,
         headY: -5,
-        leftEarY: -4,
-        rightEarY: -4,
         tailRotation: 0,
-        leftFrontPawY: -20,
-        rightFrontPawY: -20,
+        leftFrontPawY: -18,
+        rightFrontPawY: -18,
         leftBackPawY: -4,
         rightBackPawY: -4,
         leftFrontPawRotation: -0.5,
@@ -299,31 +327,27 @@ export function getPoseTargets(pose: Pose): PoseTargets {
       }
     case 'crouch':
       return {
-        bodyY: 10,
-        bodyScaleY: 0.85,
-        headY: 6,
-        leftEarY: 4,
-        rightEarY: 4,
+        bodyY: 8,
+        bodyScaleY: 0.88,
+        headY: 4,
         tailRotation: 0.5,
-        leftFrontPawY: 5,
-        rightFrontPawY: 5,
-        leftBackPawY: 5,
-        rightBackPawY: 5,
+        leftFrontPawY: 4,
+        rightFrontPawY: 4,
+        leftBackPawY: 4,
+        rightBackPawY: 4,
         leftFrontPawRotation: 0,
         rightFrontPawRotation: 0,
       }
     case 'jump':
       return {
-        bodyY: -22,
-        bodyScaleY: 1.12,
-        headY: -10,
-        leftEarY: -6,
-        rightEarY: -6,
+        bodyY: -20,
+        bodyScaleY: 1.1,
+        headY: -8,
         tailRotation: -0.8,
-        leftFrontPawY: -10,
-        rightFrontPawY: -10,
-        leftBackPawY: -16,
-        rightBackPawY: -16,
+        leftFrontPawY: -8,
+        rightFrontPawY: -8,
+        leftBackPawY: -14,
+        rightBackPawY: -14,
         leftFrontPawRotation: 0.4,
         rightFrontPawRotation: 0.4,
       }
@@ -336,8 +360,6 @@ function applyPoseTargets(parts: CatGraphics, targets: PoseTargets): void {
   parts.body.y = targets.bodyY
   parts.body.scale.y = targets.bodyScaleY
   parts.head.y = targets.headY
-  parts.leftEar.y = targets.leftEarY
-  parts.rightEar.y = targets.rightEarY
   parts.tail.rotation = targets.tailRotation
   parts.leftFrontPaw.y = targets.leftFrontPawY
   parts.rightFrontPaw.y = targets.rightFrontPawY
@@ -345,9 +367,15 @@ function applyPoseTargets(parts: CatGraphics, targets: PoseTargets): void {
   parts.rightBackPaw.y = targets.rightBackPawY
   parts.leftFrontPaw.rotation = targets.leftFrontPawRotation
   parts.rightFrontPaw.rotation = targets.rightFrontPawRotation
+
+  // Move legs together with paws so they stay visually attached
+  parts.leftFrontLeg.y = 8 + targets.leftFrontPawY
+  parts.rightFrontLeg.y = 8 + targets.rightFrontPawY
+  parts.leftBackLeg.y = 8 + targets.leftBackPawY
+  parts.rightBackLeg.y = 8 + targets.rightBackPawY
 }
 
-// ── Pose update ───────────────────────────────────────────────────────────────
+// ── Pose update ─────────────────────────────────────────────────────────────
 
 export function updateCatPose(cat: Container, pose: Pose, _instant: boolean = false): void {
   const parts = catPartsMap.get(cat)
@@ -356,19 +384,17 @@ export function updateCatPose(cat: Container, pose: Pose, _instant: boolean = fa
   applyPoseTargets(parts, targets)
 }
 
-// ── Parts accessor (used by animations) ──────────────────────────────────────
+// ── Parts accessor ────────────────────────────────────────────────────────
 
 export function getCatParts(cat: Container): CatGraphics | undefined {
   return catPartsMap.get(cat)
 }
 
-// ── Layout helper ─────────────────────────────────────────────────────────────
+// ── Layout helper ─────────────────────────────────────────────────────────
 
 export function layoutCats(cats: Container[], stageWidth: number, stageHeight: number): void {
   const lineY = stageHeight * 0.65
-  // Cat native drawing is ~40 px wide. We want each cat to be ~15 % of the
-  // stage width so they are clearly visible and their poses read at a glance.
-  const NATIVE_WIDTH = 40
+  const NATIVE_WIDTH = 44
   const scale = Math.max(2.5, (stageWidth * 0.15) / NATIVE_WIDTH)
   const catWidth = NATIVE_WIDTH * scale
   const minGap = 24
