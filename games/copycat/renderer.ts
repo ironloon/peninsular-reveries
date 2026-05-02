@@ -132,9 +132,9 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
 
 // ── Cat creation ──────────────────────────────────────────────────────────────
 
-export function createCat(): Container {
+export function createCat(tint?: number): Container {
   const cat = new Container()
-  const BASE = 0xffffff
+  const BASE = tint != null ? tint : 0xffffff
 
   // Tail (drawn behind body)
   const tail = new Graphics()

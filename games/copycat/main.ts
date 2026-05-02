@@ -165,7 +165,7 @@ async function enterGame(): Promise<void> {
   }
   catContainers = []
 
-  const playerCat = createCat()
+  const playerCat = createCat(0xffb7c5)
   app.stage.addChild(playerCat)
   catContainers.push(playerCat)
   layoutCats(catContainers, app.screen.width, app.screen.height)

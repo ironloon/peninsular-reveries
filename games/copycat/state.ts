@@ -101,14 +101,16 @@ export function completeDance(state: DanceState): DanceState {
 
 export function spawnCat(state: DanceState): DanceState {
   const catCount = state.cats.length + 1
+  // Dramatic follow-the-leader delay so each cat visibly trails the player
+  const delayMs = 600 * (catCount - 1)
   const newCat: Cat = {
     id: `cat-${state.cats.length}`,
     x: 0,
     y: 0,
     scale: 1.0,
     tint: 0xffffff,
-    pose: 'idle',
-    delayMs: 200 * (catCount - 1),
+    pose: state.cats[0]?.pose ?? 'idle',
+    delayMs,
     joinTime: state.songProgress,
   }
 
