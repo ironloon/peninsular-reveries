@@ -26,7 +26,6 @@ const gameFeedback = document.getElementById('game-feedback')!
 const roundBreakOverlay = document.getElementById('round-break-overlay')!
 const roundBreakMsg = document.getElementById('round-break-msg')!
 const roundBreakCountdown = document.getElementById('round-break-countdown')!
-const endScreenContent = document.getElementById('end-screen-content')!
 const replayPreview = document.getElementById('replay-preview') as HTMLElement | null
 const replayCat = document.getElementById('replay-cat') as HTMLElement | null
 const replayBtnStart = document.getElementById('replay-btn-start') as HTMLButtonElement | null
@@ -121,7 +120,6 @@ async function enterGame(): Promise<void> {
   stopReplayPreview()
 
   showScreen('game-screen')
-  endScreenContent.hidden = true
 
   await new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => {

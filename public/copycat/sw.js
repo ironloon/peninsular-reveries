@@ -1,13 +1,17 @@
-const CACHE_NAME = 'copycat-v2'
-const PRECACHE_URLS = [
-  '/styles/copycat.css',
-  '/client/copycat/main.js',
-]
+const CACHE_NAME = 'copycat-v3'
+
+// Compute base path from where this SW lives (e.g. /peninsular-reveries/copycat/sw.js)
+const BASE_PATH = self.location.pathname.replace(/\/copycat\/sw\.js$/, '') || ''
+
+function withBase(url: string): string {
+  if (url.startsWith('/')) {
+    return BASE_PATH + url
+  }
+  return url
+}
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)),
-  )
+  // No precache — install always succeeds
   self.skipWaiting()
 })
 
@@ -26,25 +30,22 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url)
+  const reqPath = url.pathname
 
-  // Network-first for JS and CSS so cache-busting query params work
-  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
-          }
-          return response
-        })
-        .catch(() => caches.match(event.request).then((response) => response || Response.error())),
-    )
-    return
-  }
-
-  // Cache-first for everything else
+  // Network-first for everything so ?v= cache-busting works and HTML never goes stale
   event.respondWith(
-    caches.match(event.request).then((response) => response || fetch(event.request)),
+    fetch(event.request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone()
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, clone)
+          })
+        }
+        return response
+      })
+      .catch(() =>
+        caches.match(event.request).then((response) => response || Response.error()),
+      ),
   )
 })
