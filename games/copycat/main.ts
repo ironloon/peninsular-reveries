@@ -1,4 +1,4 @@
-import { Application, Container, Ticker } from 'pixi.js'
+import { Application, Container, Graphics, Ticker } from 'pixi.js'
 import { setupGameMenu } from '../../client/game-menu.js'
 import { initStage, createCat, layoutCats } from './renderer.js'
 import { animatePose, animateCatJoin } from './animations.js'
@@ -97,10 +97,12 @@ async function enterGame(): Promise<void> {
 
   showScreen('game-screen')
 
-  // Wait two animation frames so the browser fully removes [hidden],
-  // applies the .active CSS transition, and recalculates layout.
+  // Wait two animation frames + CSS transition so the browser fully removes [hidden]
+  // and applies the .active CSS transition (520ms).
   await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      setTimeout(resolve, 600)
+    }))
   })
 
   // Measure the container after layout has settled
@@ -115,22 +117,43 @@ async function enterGame(): Promise<void> {
   app.canvas.style.height = '100%'
   app.canvas.style.display = 'block'
 
-  // Diagnostics: log everything that affects visibility
-  console.log('[copycat] enterGame diagnostics:', {
-    rendererType: app.renderer.constructor.name,
-    screenW: app.screen.width,
-    screenH: app.screen.height,
-    canvasAttrW: app.canvas.width,
-    canvasAttrH: app.canvas.height,
-    canvasStyleW: app.canvas.style.width,
-    canvasStyleH: app.canvas.style.height,
-    containerRect: { w: rect.width, h: rect.height },
-    pixiStageComputed: {
-      w: getComputedStyle(pixiStage).width,
-      h: getComputedStyle(pixiStage).height,
-    },
-    stageChildren: app.stage.children.length,
-  })
+  // Detect the actual renderer type (minified class names are useless)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const r = app.renderer as any
+  const isWebGL = typeof r.gl !== 'undefined'
+  const isWebGPU = typeof r.gpu !== 'undefined' || typeof r.device !== 'undefined'
+  const isCanvas2D = typeof r.context !== 'undefined'
+  const realRendererType = isWebGPU ? 'webgpu' : isWebGL ? 'webgl' : isCanvas2D ? 'canvas2d' : 'unknown'
+
+  // ── Build background using ACTUAL dimensions ──
+  // Remove old background if it exists
+  for (let i = app.stage.children.length - 1; i >= 0; i--) {
+    const child = app.stage.children[i]
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((child as any).__copycatBg) {
+      app.stage.removeChild(child)
+    }
+  }
+  const sw = app.screen.width
+  const sh = app.screen.height
+  const bg = new Graphics()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(bg as any).__copycatBg = true
+  bg.rect(0, 0, sw, sh)
+  bg.fill({ color: 0x2d2d44 }) // slightly lighter than page bg so canvas boundary is visible
+
+  // Spotlight
+  const cx = sw / 2
+  const cy = sh * 0.4
+  const maxRadius = Math.max(sw, sh) * 0.55
+  const steps = 12
+  for (let i = steps; i >= 0; i--) {
+    const radius = maxRadius * (i / steps)
+    const alpha = 0.18 * (1 - i / steps)
+    bg.circle(cx, cy, radius)
+    bg.fill({ color: 0xff6b9d, alpha })
+  }
+  app.stage.addChildAt(bg, 0)
 
   ensureAudioUnlocked()
   startDanceMusic()
@@ -149,17 +172,79 @@ async function enterGame(): Promise<void> {
   catContainers.push(playerCat)
   layoutCats(catContainers, app.screen.width, app.screen.height)
 
-  // Force an immediate render so the first frame is visible before ticker kicks in
+  // Render and verify pixels
   app.render()
 
-  // Expose debug state on window for console inspection
+  const dataUrl = app.canvas.toDataURL()
+  const pixelBytes = atob(dataUrl.split(',')[1]).length
+  let visiblePixels = 0
+  let transparentPixels = 0
+  if (isCanvas2D) {
+    try {
+      const ctx2d = app.canvas.getContext('2d')
+      if (ctx2d) {
+        const imgData = ctx2d.getImageData(0, 0, app.canvas.width, app.canvas.height)
+        for (let i = 3; i < imgData.data.length; i += 4) {
+          if (imgData.data[i] > 0) visiblePixels++
+          else transparentPixels++
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  // Diagnostics
+  console.log('[copycat] enterGame diagnostics:', {
+    realRendererType,
+    screenW: app.screen.width,
+    screenH: app.screen.height,
+    canvasAttrW: app.canvas.width,
+    canvasAttrH: app.canvas.height,
+    pixelBytes,
+    visiblePixels,
+    transparentPixels,
+    stageChildren: app.stage.children.length,
+  })
+
+  // Expose debug state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(window as any).__copycatDebug = {
     app,
     playerCat,
     canvas: app.canvas,
     screen: { w: app.screen.width, h: app.screen.height },
+    rendererType: realRendererType,
+    pixelBytes,
   }
+
+  // ── Fallback: if PixiJS produced no visible pixels, try raw 2D ──
+  if (visiblePixels === 0 && pixelBytes < 5000) {
+    console.warn('[copycat] PixiJS produced no visible pixels — attempting raw Canvas 2D fallback')
+    const rawCtx = app.canvas.getContext('2d')
+    if (rawCtx) {
+      rawCtx.fillStyle = '#ff0000'
+      rawCtx.fillRect(0, 0, 200, 200)
+      rawCtx.fillStyle = '#ffffff'
+      rawCtx.font = '20px sans-serif'
+      rawCtx.fillText('Rendering fallback', 10, 110)
+      console.log('[copycat] Raw 2D fallback drawn')
+    }
+
+    const debugEl = document.createElement('div')
+    debugEl.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#ff0000;color:#fff;padding:2rem;z-index:9999;font-family:sans-serif;'
+    debugEl.innerHTML = `<p><strong>Copycat rendering issue</strong></p><p>Renderer: ${realRendererType}</p><p>Canvas: ${app.canvas.width}x${app.canvas.height}</p><p>Please try Chrome or Edge.</p>`
+    document.body.appendChild(debugEl)
+
+    // Also show in the stage container
+    pixiStage.style.border = '6px dashed #ff0000'
+    pixiStage.style.background = '#440000'
+
+    // Don't start the ticker loop if rendering is broken
+    return
+  }
+
+  // Visible border for debugging (can be removed later)
+  app.canvas.style.border = '2px dashed #00ff00'
+  app.canvas.style.boxSizing = 'border-box'
 
   prevCatCount = 1
   lastAnnouncedPose = null
@@ -167,30 +252,23 @@ async function enterGame(): Promise<void> {
   gameStatus.textContent = 'Dance started! Mirror the moves.'
 
   if (gameLoopCallback) {
-    Ticker.shared.remove(gameLoopCallback)
+    app.ticker.remove(gameLoopCallback)
   }
 
   gameLoopCallback = (ticker) => {
     if (!app) return
     const deltaMs = ticker.deltaMS
 
-    // Feed latest pose from motion engine into state
     danceState = updatePose(danceState, currentPose)
-
-    // Advance song progress
     danceState = progressSong(danceState, deltaMs)
 
-    // Handle newly spawned cats
     if (danceState.cats.length > prevCatCount) {
       for (let i = prevCatCount; i < danceState.cats.length; i++) {
         const newCat = createCat()
         app.stage.addChild(newCat)
         catContainers.push(newCat)
       }
-
-      // Recompute layout so every cat knows its target position
       layoutCats(catContainers, app.screen.width, app.screen.height)
-
       for (let i = prevCatCount; i < danceState.cats.length; i++) {
         const container = catContainers[i]
         const targetX = container.x
@@ -198,13 +276,11 @@ async function enterGame(): Promise<void> {
         animateCatJoin(container, fromX, targetX)
         sfxCatJoin()
       }
-
       gameFeedback.textContent = `A new cat joined! Total cats: ${danceState.cats.length}`
       announceCatJoin(danceState.cats.length - 1)
       prevCatCount = danceState.cats.length
     }
 
-    // Sync visual poses
     let didPoseChange = false
     for (let i = 0; i < danceState.cats.length; i++) {
       const catState = danceState.cats[i]
@@ -221,7 +297,6 @@ async function enterGame(): Promise<void> {
       if (lastAnnouncedPose) announcePose(lastAnnouncedPose)
     }
 
-    // Milestone announcements
     for (const milestone of [0.25, 0.5, 0.75] as const) {
       if (danceState.songProgress >= milestone && !announcedMilestones.has(milestone)) {
         announceSongMilestone(milestone)
@@ -229,15 +304,13 @@ async function enterGame(): Promise<void> {
       }
     }
 
-    // Update HUD
     progressDisplay.textContent = `Progress: ${Math.floor(danceState.songProgress * 100)}%`
     catCountDisplay.textContent = `Cats: ${danceState.cats.length}`
 
-    // Song complete?
     if (danceState.songProgress >= 1 && danceState.phase !== 'complete') {
       danceState = completeDance(danceState)
       if (gameLoopCallback) {
-        Ticker.shared.remove(gameLoopCallback)
+        app.ticker.remove(gameLoopCallback)
         gameLoopCallback = null
       }
       fadeOutMusic()
@@ -248,14 +321,14 @@ async function enterGame(): Promise<void> {
     }
   }
 
-  Ticker.shared.add(gameLoopCallback)
+  app.ticker.add(gameLoopCallback)
 }
 
 // ── Reset / replay ───────────────────────────────────────────────────────────
 
 function resetToStart(): void {
   if (gameLoopCallback) {
-    Ticker.shared.remove(gameLoopCallback)
+    app?.ticker.remove(gameLoopCallback)
     gameLoopCallback = null
   }
   stopDanceMusic()
@@ -288,11 +361,12 @@ function resetToStart(): void {
 // ── Visibility handling ────────────────────────────────────────────────────────
 
 function handleVisibilityChange(): void {
+  if (!app) return
   if (document.hidden) {
-    Ticker.shared.stop()
+    app.ticker.stop()
     stopDanceMusic()
   } else {
-    Ticker.shared.start()
+    app.ticker.start()
     if (danceState.phase === 'dancing') {
       startDanceMusic()
     }

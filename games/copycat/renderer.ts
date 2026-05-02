@@ -55,26 +55,6 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
   }
 
   canvasContainer.appendChild(app.canvas)
-
-  // Dark stage background with radial spotlight gradient using Graphics
-  const bg = new Graphics()
-  bg.rect(0, 0, app.screen.width, app.screen.height)
-  bg.fill({ color: 0x1a1a2e })
-
-  const cx = app.screen.width / 2
-  const cy = app.screen.height * 0.4
-  const maxRadius = Math.max(app.screen.width, app.screen.height) * 0.55
-  const steps = 12
-
-  for (let i = steps; i >= 0; i--) {
-    const radius = maxRadius * (i / steps)
-    const alpha = 0.12 * (1 - i / steps)
-    bg.circle(cx, cy, radius)
-    bg.fill({ color: 0xff6b9d, alpha })
-  }
-
-  app.stage.addChild(bg)
-
   return app
 }
 
