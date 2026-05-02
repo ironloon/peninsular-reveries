@@ -7,7 +7,7 @@ import { startMotionTracking, stopMotionTracking } from './motion.js'
 import { ensureAudioUnlocked, startDanceMusic, stopDanceMusic, fadeOutMusic, sfxCatJoin } from './sounds.js'
 import { createInitialState, startDance, updatePose, progressSong, completeDance } from './state.js'
 import type { Pose, DanceState } from './types.js'
-import { setupCopycatInput, cleanupCopycatInput } from './input.js'
+import { setupCopycatInput } from './input.js'
 import { announcePose, announceCatJoin, announceSongMilestone } from './accessibility.js'
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
@@ -92,8 +92,22 @@ async function boot(): Promise<void> {
 
 // ── Game entry ───────────────────────────────────────────────────────────────
 
-function enterGame(): void {
+async function enterGame(): Promise<void> {
   if (!app) return
+
+  showScreen('game-screen')
+
+  // Allow the browser to recalculate layout after removing [hidden]
+  // so clientWidth/Height reflect the visible container size.
+  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+
+  // Size the renderer to the now-visible container
+  const rect = pixiStage.getBoundingClientRect()
+  const w = Math.round(rect.width) || window.innerWidth
+  const h = Math.round(rect.height) || window.innerHeight
+  if (w > 0 && h > 0) {
+    app.renderer.resize(w, h)
+  }
 
   ensureAudioUnlocked()
   startDanceMusic()
@@ -115,8 +129,6 @@ function enterGame(): void {
   prevCatCount = 1
   lastAnnouncedPose = null
   announcedMilestones.clear()
-
-  showScreen('game-screen')
   gameStatus.textContent = 'Dance started! Mirror the moves.'
 
   if (gameLoopCallback) {
@@ -211,7 +223,6 @@ function resetToStart(): void {
     Ticker.shared.remove(gameLoopCallback)
     gameLoopCallback = null
   }
-  cleanupCopycatInput()
   stopDanceMusic()
   stopMotionTracking()
 

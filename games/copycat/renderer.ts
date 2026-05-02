@@ -41,7 +41,6 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
   try {
     await app.init({
       preference: 'webgpu',
-      resizeTo: canvasContainer,
       backgroundAlpha: 0,
     })
   } catch {

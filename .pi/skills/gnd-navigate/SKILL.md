@@ -217,6 +217,12 @@ If the leg's intent names a visual checkpoint (e.g., specific viewport dimension
 
 If a leg creates a helper module or claims a user-facing affordance layer (live regions, indicators, prompts, overlays, and similar), file presence is not enough. During review, verify that the runtime imports or calls the helper, or that the affordance produces at least one observable effect in browser or test verification, before marking the leg done.
 
+**Input lifecycle check:** When a leg wires keyboard/gamepad input handlers, verify that `cleanup*Input()` is not called on replay/reset unless `setup*Input()` is re-called. Input handlers should persist across screen transitions within a single page session.
+
+**PixiJS ticker scoping check:** When a leg uses PixiJS Ticker for pause/resume on visibility change, verify it uses `app.ticker` or a dedicated `new Ticker()` instance rather than `Ticker.shared`. Mutating the global shared ticker can break other PixiJS games on the same page.
+
+**PixiJS canvas sizing check:** When a leg uses PixiJS `resizeTo` on a container that starts hidden (`display: none`), verify the canvas is resized after the container becomes visible. A hidden container measures 0×0, producing a 1×1 canvas framebuffer that CSS-stretches into a blank-looking canvas. Prefer omitting `resizeTo` and calling `app.renderer.resize()` manually after the container is shown, or verify the ResizeObserver has fired before `layoutCats`/drawing runs.
+
 ## CSS/HTML Class Cross-Reference
 
 When reviewing a visual leg that adds or modifies CSS, grep for all `className=` strings in the game's TSX/controller files **and** all `classList.add` / `classList.toggle` / `classList.remove` calls in TS/JS files. Cross-check against CSS class selectors. Any HTML class or classList target without a matching CSS rule is a boundary violation. Any CSS class selector that never appears in HTML or classList is dead CSS. Fix before marking the leg done.
