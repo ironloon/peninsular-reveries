@@ -1,6 +1,42 @@
 import { Application, Container, Graphics } from 'pixi.js'
 import type { Pose } from './types.js'
 
+// ── Renderer health check ──────────────────────────────────────────────────
+
+async function checkRendererHealth(app: Application): Promise<boolean> {
+  // Draw a solid red square and verify the canvas captured it.
+  // WebGPU/WebGL with broken drivers can "succeed" at init but produce
+  // transparent pixels — this detects that state and forces Canvas2D.
+  const g = new Graphics()
+  g.rect(0, 0, 100, 100)
+  g.fill({ color: 0xff0000 })
+  app.stage.addChild(g)
+  app.render()
+
+  const dataUrl = app.canvas.toDataURL()
+  const hasContent = dataUrl.length > 8000 // ~5KB transparent vs ~15KB red square
+
+  app.stage.removeChild(g)
+  g.destroy()
+
+  return hasContent
+}
+
+async function tryCreateApp(container: HTMLElement, preference: 'webgpu' | 'webgl' | 'canvas'): Promise<Application | null> {
+  const app = new Application()
+  try {
+    await app.init({
+      preference,
+      backgroundAlpha: 0,
+      autoDensity: true,
+    })
+    container.appendChild(app.canvas)
+    return app
+  } catch {
+    return null
+  }
+}
+
 // ── Internal types for cat graphics references ───────────────────────────────
 
 export interface CatGraphics {
@@ -37,25 +73,32 @@ const catPartsMap = new WeakMap<Container, CatGraphics>()
 // ── Stage init ────────────────────────────────────────────────────────────────
 
 export async function initStage(canvasContainer: HTMLElement): Promise<Application | null> {
-  const app = new Application()
-  try {
-    await app.init({
-      preference: 'webgpu',
-      backgroundAlpha: 0,
-      autoDensity: true,
-    })
-  } catch {
-    const message = document.createElement('p')
-    message.style.color = '#e0e0e0'
-    message.style.textAlign = 'center'
-    message.style.padding = '2rem'
-    message.textContent = 'Unable to start the dance stage. WebGPU is required for this experience.'
-    canvasContainer.appendChild(message)
-    return null
+  // Try WebGPU first (best performance), then WebGL, then Canvas2D.
+  // Some browsers claim WebGPU support but have broken GPU drivers;
+  // the health check catches transparent output and forces a working fallback.
+  for (const preference of ['webgpu', 'webgl', 'canvas'] as const) {
+    const app = await tryCreateApp(canvasContainer, preference)
+    if (!app) continue
+
+    const healthy = await checkRendererHealth(app)
+    if (healthy) {
+      return app
+    }
+
+    // Broken renderer — tear down and try next fallback
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(app as any).destroy(true)
+    canvasContainer.innerHTML = ''
   }
 
-  canvasContainer.appendChild(app.canvas)
-  return app
+  // All renderers failed
+  const message = document.createElement('p')
+  message.style.color = '#e0e0e0'
+  message.style.textAlign = 'center'
+  message.style.padding = '2rem'
+  message.textContent = 'Unable to start the dance stage. Your browser cannot run this experience.'
+  canvasContainer.appendChild(message)
+  return null
 }
 
 // ── Cat creation ──────────────────────────────────────────────────────────────
