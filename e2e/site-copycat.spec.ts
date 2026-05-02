@@ -1,25 +1,13 @@
 import { test, expect, type Page } from '@playwright/test'
 
 async function injectMockCamera(page: Page): Promise<void> {
-  await page.route('**/client/copycat/main.js*', async (route) => {
-    const response = await route.fetch()
-    const original = await response.text()
-    const injected = `
-      (function() {
-        var fakeStream = new MediaStream();
-        Object.defineProperty(navigator, 'mediaDevices', {
-          get: function() {
-            return { getUserMedia: async () => fakeStream };
-          },
-          configurable: true,
-        });
-      })();
-      ${original}
-    `
-    await route.fulfill({
-      status: response.status(),
-      headers: { ...response.headers(), 'content-type': 'application/javascript' },
-      body: injected,
+  await page.addInitScript(() => {
+    const fakeStream = new MediaStream()
+    Object.defineProperty(navigator, 'mediaDevices', {
+      get() {
+        return { getUserMedia: async () => fakeStream }
+      },
+      configurable: true,
     })
   })
 }

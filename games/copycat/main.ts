@@ -80,8 +80,8 @@ async function boot(): Promise<void> {
     })
     cameraPrompt.textContent = 'Camera access granted. Press Start to begin!'
   } else {
-    cameraPrompt.textContent = 'Camera access denied. Please allow camera access and reload the page.'
-    startBtn.disabled = true
+    cameraPrompt.textContent = 'Camera not available. Press Start to watch the cats dance!'
+    // Start button stays enabled — the visual experience works without camera.
   }
 
   startBtn.addEventListener('click', enterGame)
@@ -204,7 +204,7 @@ async function enterGame(): Promise<void> {
     if (!app) return
     const deltaMs = ticker.deltaMS
 
-    danceState = updatePose(danceState, currentPose)
+    danceState = updatePose(danceState, cameraGranted ? currentPose : 'idle')
     danceState = progressSong(danceState, deltaMs)
 
     if (danceState.cats.length > prevCatCount) {
