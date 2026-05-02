@@ -42,6 +42,7 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
     await app.init({
       preference: 'webgpu',
       backgroundAlpha: 0,
+      autoDensity: true,
     })
   } catch {
     const message = document.createElement('p')

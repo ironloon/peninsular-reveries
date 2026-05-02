@@ -97,17 +97,40 @@ async function enterGame(): Promise<void> {
 
   showScreen('game-screen')
 
-  // Allow the browser to recalculate layout after removing [hidden]
-  // so clientWidth/Height reflect the visible container size.
-  await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()))
+  // Wait two animation frames so the browser fully removes [hidden],
+  // applies the .active CSS transition, and recalculates layout.
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+  })
 
-  // Size the renderer to the now-visible container
+  // Measure the container after layout has settled
   const rect = pixiStage.getBoundingClientRect()
-  const w = Math.round(rect.width) || window.innerWidth
-  const h = Math.round(rect.height) || window.innerHeight
-  if (w > 0 && h > 0) {
-    app.renderer.resize(w, h)
-  }
+  const w = Math.max(1, Math.round(rect.width)) || window.innerWidth
+  const h = Math.max(1, Math.round(rect.height)) || window.innerHeight
+
+  app.renderer.resize(w, h)
+
+  // Ensure the canvas always fills its CSS container regardless of autoDensity
+  app.canvas.style.width = '100%'
+  app.canvas.style.height = '100%'
+  app.canvas.style.display = 'block'
+
+  // Diagnostics: log everything that affects visibility
+  console.log('[copycat] enterGame diagnostics:', {
+    rendererType: app.renderer.constructor.name,
+    screenW: app.screen.width,
+    screenH: app.screen.height,
+    canvasAttrW: app.canvas.width,
+    canvasAttrH: app.canvas.height,
+    canvasStyleW: app.canvas.style.width,
+    canvasStyleH: app.canvas.style.height,
+    containerRect: { w: rect.width, h: rect.height },
+    pixiStageComputed: {
+      w: getComputedStyle(pixiStage).width,
+      h: getComputedStyle(pixiStage).height,
+    },
+    stageChildren: app.stage.children.length,
+  })
 
   ensureAudioUnlocked()
   startDanceMusic()
@@ -125,6 +148,18 @@ async function enterGame(): Promise<void> {
   app.stage.addChild(playerCat)
   catContainers.push(playerCat)
   layoutCats(catContainers, app.screen.width, app.screen.height)
+
+  // Force an immediate render so the first frame is visible before ticker kicks in
+  app.render()
+
+  // Expose debug state on window for console inspection
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ;(window as any).__copycatDebug = {
+    app,
+    playerCat,
+    canvas: app.canvas,
+    screen: { w: app.screen.width, h: app.screen.height },
+  }
 
   prevCatCount = 1
   lastAnnouncedPose = null

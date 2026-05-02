@@ -1,5 +1,29 @@
 import { test, expect, type Page } from '@playwright/test'
 
+async function injectMockCamera(page: Page): Promise<void> {
+  await page.route('**/client/copycat/main.js', async (route) => {
+    const response = await route.fetch()
+    const original = await response.text()
+    const injected = `
+      (function() {
+        var fakeStream = new MediaStream();
+        Object.defineProperty(navigator, 'mediaDevices', {
+          get: function() {
+            return { getUserMedia: async () => fakeStream };
+          },
+          configurable: true,
+        });
+      })();
+      ${original}
+    `
+    await route.fulfill({
+      status: response.status(),
+      headers: { ...response.headers(), 'content-type': 'application/javascript' },
+      body: injected,
+    })
+  })
+}
+
 async function installMockGamepad(page: Page): Promise<void> {
   await page.addInitScript(() => {
     const state = {
@@ -60,28 +84,7 @@ test.describe('Copycat', () => {
 
   test('game screen and canvas render on start', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-
-    await page.route('**/client/copycat/main.js', async (route) => {
-      const response = await route.fetch()
-      const original = await response.text()
-      const injected = `
-        (function() {
-          var fakeStream = new MediaStream();
-          Object.defineProperty(navigator, 'mediaDevices', {
-            get: function() {
-              return { getUserMedia: async () => fakeStream };
-            },
-            configurable: true,
-          });
-        })();
-        ${original}
-      `
-      await route.fulfill({
-        status: response.status(),
-        headers: { ...response.headers(), 'content-type': 'application/javascript' },
-        body: injected,
-      })
-    })
+    await injectMockCamera(page)
 
     await page.goto('/copycat/')
     await expect(page.locator('#start-screen')).toBeVisible()
@@ -99,28 +102,31 @@ test.describe('Copycat', () => {
     await expect(canvas).toBeInViewport()
   })
 
-  test('controller opens menu', async ({ page }) => {
-    await page.route('**/client/copycat/main.js', async (route) => {
-      const response = await route.fetch()
-      const original = await response.text()
-      const injected = `
-        (function() {
-          var fakeStream = new MediaStream();
-          Object.defineProperty(navigator, 'mediaDevices', {
-            get: function() {
-              return { getUserMedia: async () => fakeStream };
-            },
-            configurable: true,
-          });
-        })();
-        ${original}
-      `
-      await route.fulfill({
-        status: response.status(),
-        headers: { ...response.headers(), 'content-type': 'application/javascript' },
-        body: injected,
-      })
+  test('canvas has rendered pixel content after start', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await injectMockCamera(page)
+
+    await page.goto('/copycat/')
+    await expect(page.locator('#camera-denied-msg')).toHaveText('Camera access granted. Press Start to begin!')
+
+    await page.locator('#start-btn').click()
+    await expect(page.locator('#game-screen')).toBeVisible()
+
+    // Wait for PixiJS to render at least one frame
+    await page.waitForTimeout(600)
+
+    const dataUrl = await page.evaluate(() => {
+      const canvas = document.querySelector('#pixi-stage canvas') as HTMLCanvasElement | null
+      return canvas?.toDataURL() ?? ''
     })
+
+    // A truly blank canvas is either empty or produces a tiny transparent PNG.
+    // A rendered scene with background + cat produces a much larger data URL.
+    expect(dataUrl.length).toBeGreaterThan(5000)
+  })
+
+  test('controller opens menu', async ({ page }) => {
+    await injectMockCamera(page)
     await installMockGamepad(page)
     await page.goto('/copycat/')
 
