@@ -56,7 +56,7 @@ async function tryCreateApp(container: HTMLElement, preference: 'webgpu' | 'webg
     await app.init({
       preference,
       background: '#1a1a2e',
-      backgroundAlpha: 1,
+      backgroundAlpha: 0,
       autoDensity: true,
     })
     container.appendChild(app.canvas)
@@ -249,78 +249,78 @@ export function getPoseTargets(pose: Pose): PoseTargets {
       }
     case 'left-paw-up':
       return {
-        bodyY: -2,
-        bodyScaleY: 1.02,
-        headY: -1,
-        leftEarY: -1,
-        rightEarY: -1,
-        tailRotation: -0.2,
-        leftFrontPawY: -12,
+        bodyY: -4,
+        bodyScaleY: 1.05,
+        headY: -3,
+        leftEarY: -2,
+        rightEarY: -2,
+        tailRotation: -0.4,
+        leftFrontPawY: -20,
         rightFrontPawY: 0,
         leftBackPawY: 0,
         rightBackPawY: 0,
-        leftFrontPawRotation: -0.3,
+        leftFrontPawRotation: -0.5,
         rightFrontPawRotation: 0,
       }
     case 'right-paw-up':
       return {
-        bodyY: -2,
-        bodyScaleY: 1.02,
-        headY: -1,
-        leftEarY: -1,
-        rightEarY: -1,
-        tailRotation: 0.2,
+        bodyY: -4,
+        bodyScaleY: 1.05,
+        headY: -3,
+        leftEarY: -2,
+        rightEarY: -2,
+        tailRotation: 0.4,
         leftFrontPawY: 0,
-        rightFrontPawY: -12,
+        rightFrontPawY: -20,
         leftBackPawY: 0,
         rightBackPawY: 0,
         leftFrontPawRotation: 0,
-        rightFrontPawRotation: -0.3,
+        rightFrontPawRotation: -0.5,
       }
     case 'both-paws-up':
       return {
-        bodyY: -4,
-        bodyScaleY: 1.04,
-        headY: -2,
-        leftEarY: -2,
-        rightEarY: -2,
+        bodyY: -8,
+        bodyScaleY: 1.08,
+        headY: -5,
+        leftEarY: -4,
+        rightEarY: -4,
         tailRotation: 0,
-        leftFrontPawY: -12,
-        rightFrontPawY: -12,
-        leftBackPawY: -2,
-        rightBackPawY: -2,
-        leftFrontPawRotation: -0.3,
-        rightFrontPawRotation: -0.3,
+        leftFrontPawY: -20,
+        rightFrontPawY: -20,
+        leftBackPawY: -4,
+        rightBackPawY: -4,
+        leftFrontPawRotation: -0.5,
+        rightFrontPawRotation: -0.5,
       }
     case 'crouch':
       return {
-        bodyY: 5,
-        bodyScaleY: 0.92,
-        headY: 3,
-        leftEarY: 2,
-        rightEarY: 2,
-        tailRotation: 0.3,
-        leftFrontPawY: 3,
-        rightFrontPawY: 3,
-        leftBackPawY: 3,
-        rightBackPawY: 3,
+        bodyY: 10,
+        bodyScaleY: 0.85,
+        headY: 6,
+        leftEarY: 4,
+        rightEarY: 4,
+        tailRotation: 0.5,
+        leftFrontPawY: 5,
+        rightFrontPawY: 5,
+        leftBackPawY: 5,
+        rightBackPawY: 5,
         leftFrontPawRotation: 0,
         rightFrontPawRotation: 0,
       }
     case 'jump':
       return {
-        bodyY: -10,
-        bodyScaleY: 1.05,
-        headY: -5,
-        leftEarY: -3,
-        rightEarY: -3,
-        tailRotation: -0.5,
-        leftFrontPawY: -5,
-        rightFrontPawY: -5,
-        leftBackPawY: -8,
-        rightBackPawY: -8,
-        leftFrontPawRotation: 0.2,
-        rightFrontPawRotation: 0.2,
+        bodyY: -22,
+        bodyScaleY: 1.12,
+        headY: -10,
+        leftEarY: -6,
+        rightEarY: -6,
+        tailRotation: -0.8,
+        leftFrontPawY: -10,
+        rightFrontPawY: -10,
+        leftBackPawY: -16,
+        rightBackPawY: -16,
+        leftFrontPawRotation: 0.4,
+        rightFrontPawRotation: 0.4,
       }
     default:
       return getPoseTargets('idle')
@@ -361,38 +361,24 @@ export function getCatParts(cat: Container): CatGraphics | undefined {
 
 export function layoutCats(cats: Container[], stageWidth: number, stageHeight: number): void {
   const lineY = stageHeight * 0.65
-  // Cat graphics are authored at ~36 CSS px; scale so the first cat is
-  // roughly 12 % of the stage width so it remains visible on large screens.
+  // All cats share the same scale so they look like a uniform dance line.
   const baseWidth = Math.max(36, stageWidth * 0.12)
-  const scales = [1.2, 1.0, 0.9, 0.85, 0.8]
+  const scale = 1.2
   const minGap = 48
 
-  let totalWidth = 0
-  for (let i = 0; i < cats.length; i++) {
-    const s = scales[i] ?? 0.75
-    totalWidth += baseWidth * s
-  }
-  totalWidth += (cats.length - 1) * minGap
-
+  const totalWidth = cats.length * baseWidth * scale + (cats.length - 1) * minGap
   let gap = minGap
   if (totalWidth > stageWidth && cats.length > 1) {
-    const available = stageWidth - cats.reduce((sum, _, i) => sum + baseWidth * (scales[i] ?? 0.75), 0)
+    const available = stageWidth - cats.length * baseWidth * scale
     gap = Math.max(20, available / (cats.length - 1))
-    totalWidth = 0
-    for (let i = 0; i < cats.length; i++) {
-      const s = scales[i] ?? 0.75
-      totalWidth += baseWidth * s
-      if (i < cats.length - 1) totalWidth += gap
-    }
   }
 
-  let currentX = (stageWidth - totalWidth) / 2
+  let currentX = (stageWidth - (cats.length * baseWidth * scale + (cats.length - 1) * gap)) / 2
   for (let i = 0; i < cats.length; i++) {
     const cat = cats[i]
-    const s = scales[i] ?? 0.75
-    cat.scale.set(s)
-    cat.x = currentX + (baseWidth * s) / 2
+    cat.scale.set(scale)
+    cat.x = currentX + (baseWidth * scale) / 2
     cat.y = lineY
-    currentX += baseWidth * s + gap
+    currentX += baseWidth * scale + gap
   }
 }

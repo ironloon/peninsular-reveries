@@ -1,4 +1,4 @@
-const CACHE_NAME = 'copycat-v1'
+const CACHE_NAME = 'copycat-v2'
 const PRECACHE_URLS = [
   '/styles/copycat.css',
   '/client/copycat/main.js',
@@ -25,6 +25,25 @@ self.addEventListener('activate', (event) => {
 })
 
 self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url)
+
+  // Network-first for JS and CSS so cache-busting query params work
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const clone = response.clone()
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone))
+          }
+          return response
+        })
+        .catch(() => caches.match(event.request).then((response) => response || Response.error())),
+    )
+    return
+  }
+
+  // Cache-first for everything else
   event.respondWith(
     caches.match(event.request).then((response) => response || fetch(event.request)),
   )

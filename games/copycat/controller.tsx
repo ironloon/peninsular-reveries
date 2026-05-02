@@ -100,6 +100,7 @@ export async function copycatAction() {
             <div className="copycat-hud">
               <span className="copycat-hud-item" id="progress-display">Progress: 0%</span>
               <span className="copycat-hud-item" id="cat-count">Cats: 1</span>
+              <span className="copycat-hud-item" id="pose-indicator">Pose: idle</span>
             </div>
 
             <div className="dance-floor">

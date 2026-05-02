@@ -19,25 +19,24 @@ const replayBtn = document.getElementById('replay-btn') as HTMLButtonElement
 const cameraPrompt = document.querySelector('.copycat-camera-prompt') as HTMLElement
 const progressDisplay = document.getElementById('progress-display')!
 const catCountDisplay = document.getElementById('cat-count')!
+const poseIndicator = document.getElementById('pose-indicator')!
 const gameStatus = document.getElementById('game-status')!
 const gameFeedback = document.getElementById('game-feedback')!
 
 const ALL_SCREENS = ['start-screen', 'game-screen', 'end-screen']
 
 function showScreen(screenId: string): void {
-  // Remove focus from any element before hiding its ancestor to avoid
-  // aria-hidden focus violations.
-  const active = document.activeElement
-  if (active && active instanceof HTMLElement) {
-    active.blur()
-  }
   for (const id of ALL_SCREENS) {
     const el = document.getElementById(id)
     if (!el) continue
     const isActive = id === screenId
     el.hidden = !isActive
     el.classList.toggle('active', isActive)
-    el.setAttribute('aria-hidden', String(!isActive))
+    if (isActive) {
+      el.removeAttribute('inert')
+    } else {
+      el.setAttribute('inert', '')
+    }
   }
 }
 
@@ -154,14 +153,6 @@ async function enterGame(): Promise<void> {
   }
   app.stage.addChildAt(spotlight, 0)
 
-  // Temporary debug: bright yellow rectangle so we can confirm the canvas is visible
-  const debugRect = new Graphics()
-  debugRect.rect(0, 0, 80, 80)
-  debugRect.fill({ color: 0xffff00 })
-  debugRect.x = 10
-  debugRect.y = 10
-  app.stage.addChild(debugRect)
-
   ensureAudioUnlocked()
   startDanceMusic()
 
@@ -215,7 +206,6 @@ async function enterGame(): Promise<void> {
   ;(window as any).__copycatDebug = {
     app,
     playerCat,
-    debugRect,
     canvas: app.canvas,
     screen: { w: app.screen.width, h: app.screen.height },
     buildSha,
@@ -263,6 +253,17 @@ async function enterGame(): Promise<void> {
       const container = catContainers[i]
       if (container) {
         animatePose(container, catState.pose, 150)
+
+        // Idle breathing: subtle scale Y pulse and gentle tail sway
+        const t = performance.now() / 1000
+        const breathe = 1 + Math.sin(t * 3 + i * 1.2) * 0.03
+        const tailSway = Math.sin(t * 2.5 + i * 0.8) * 0.15
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parts = (container as any).__catParts
+        if (parts) {
+          parts.body.scale.y = breathe
+          parts.tail.rotation = tailSway
+        }
       }
       if (i === 0 && catState.pose !== lastAnnouncedPose) {
         didPoseChange = true
@@ -271,6 +272,11 @@ async function enterGame(): Promise<void> {
     if (didPoseChange) {
       lastAnnouncedPose = danceState.cats[0]?.pose ?? null
       if (lastAnnouncedPose) announcePose(lastAnnouncedPose)
+    }
+
+    if (poseIndicator) {
+      const playerPose = danceState.cats[0]?.pose ?? 'idle'
+      poseIndicator.textContent = `Pose: ${playerPose.replace(/-/g, ' ')}`
     }
 
     for (const milestone of [0.25, 0.5, 0.75] as const) {

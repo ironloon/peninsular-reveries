@@ -1,4 +1,4 @@
-const CACHE_NAME = 'site-v3'
+const CACHE_NAME = 'site-v4'
 const APP_SHELL_URL = new URL('./', self.registration.scope).toString()
 const ASSETS = [
   APP_SHELL_URL,

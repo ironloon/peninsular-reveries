@@ -149,7 +149,7 @@ export function startMotionTracking(
   const canvas = document.createElement('canvas')
   canvas.width = 64
   canvas.height = 48
-  const ctx = canvas.getContext('2d')!
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })!
 
   const now = performance.now()
 
