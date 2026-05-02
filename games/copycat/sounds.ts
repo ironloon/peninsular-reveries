@@ -35,8 +35,6 @@ export function ensureAudioUnlocked(): void {
 
 // ── Shared synth helpers ────────────────────────────────────────────────────
 
-const PENTATONIC = [523.25, 587.33, 659.25, 783.99, 880.00]
-
 function makeNoise(ctx: AudioContext, durSec: number): AudioBuffer {
   const buf = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * durSec), ctx.sampleRate)
   const d = buf.getChannelData(0)
@@ -44,18 +42,18 @@ function makeNoise(ctx: AudioContext, durSec: number): AudioBuffer {
   return buf
 }
 
-function playKick(ctx: AudioContext, music: GainNode, t: number, gain = 1.0): void {
+function playKick(ctx: AudioContext, music: GainNode, t: number, gain = 1.0, freqStart = 150, decay = 0.12): void {
   const osc = ctx.createOscillator()
   const g = ctx.createGain()
   osc.type = 'sine'
-  osc.frequency.setValueAtTime(150, t)
-  osc.frequency.exponentialRampToValueAtTime(60, t + 0.12)
+  osc.frequency.setValueAtTime(freqStart, t)
+  osc.frequency.exponentialRampToValueAtTime(60, t + decay)
   g.gain.setValueAtTime(gain, t)
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + decay)
   osc.connect(g)
   g.connect(music)
   osc.start(t)
-  osc.stop(t + 0.12)
+  osc.stop(t + decay)
   track(osc, g)
 }
 
@@ -77,27 +75,30 @@ function playSnare(ctx: AudioContext, music: GainNode, t: number, gain = 1.0): v
   track(noise, filter, g)
 }
 
-function playHiHat(ctx: AudioContext, music: GainNode, t: number, gain = 0.6): void {
+function playHiHat(ctx: AudioContext, music: GainNode, t: number, gain = 0.6, open = false): void {
   const noise = ctx.createBufferSource()
-  noise.buffer = makeNoise(ctx, 0.04)
+  noise.buffer = makeNoise(ctx, open ? 0.15 : 0.04)
   const filter = ctx.createBiquadFilter()
   filter.type = 'highpass'
-  filter.frequency.value = 6000
+  filter.frequency.value = open ? 4000 : 6000
   const g = ctx.createGain()
   g.gain.setValueAtTime(gain, t)
-  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.04)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + (open ? 0.15 : 0.04))
   noise.connect(filter)
   filter.connect(g)
   g.connect(music)
   noise.start(t)
-  noise.stop(t + 0.04)
+  noise.stop(t + (open ? 0.15 : 0.04))
   track(noise, filter, g)
 }
 
-function playMelodyNote(ctx: AudioContext, music: GainNode, t: number, freq: number, dur: number, gain = 0.08): void {
+function playMelody(
+  ctx: AudioContext, music: GainNode, t: number, freq: number, dur: number,
+  gain = 0.08, type: OscillatorType = 'triangle',
+): void {
   const osc = ctx.createOscillator()
   const g = ctx.createGain()
-  osc.type = 'triangle'
+  osc.type = type
   osc.frequency.setValueAtTime(freq, t)
   g.gain.setValueAtTime(0.0001, t)
   g.gain.linearRampToValueAtTime(gain, t + 0.02)
@@ -110,10 +111,13 @@ function playMelodyNote(ctx: AudioContext, music: GainNode, t: number, freq: num
   track(osc, g)
 }
 
-function playBass(ctx: AudioContext, music: GainNode, t: number, freq: number, dur: number, gain = 0.05): void {
+function playBass(
+  ctx: AudioContext, music: GainNode, t: number, freq: number, dur: number,
+  gain = 0.05, type: OscillatorType = 'triangle',
+): void {
   const osc = ctx.createOscillator()
   const g = ctx.createGain()
-  osc.type = 'triangle'
+  osc.type = type
   osc.frequency.setValueAtTime(freq, t)
   g.gain.setValueAtTime(0.0001, t)
   g.gain.linearRampToValueAtTime(gain, t + 0.03)
@@ -126,6 +130,16 @@ function playBass(ctx: AudioContext, music: GainNode, t: number, freq: number, d
   track(osc, g)
 }
 
+// ── Scales per round ──────────────────────────────────────────────────────
+
+const SCALES: Record<RoundConfig['songStyle'], number[]> = {
+  groove: [261.63, 293.66, 329.63, 392.00, 440.00, 523.25], // C major pentatonic
+  drive:  [311.13, 349.23, 392.00, 466.16, 523.25, 622.25], // Eb minor-ish
+  swing:  [261.63, 293.66, 311.13, 349.23, 392.00, 440.00, 466.16], // C blues
+  half:   [130.81, 155.56, 196.00, 233.08, 261.63, 311.13], // Low octave dark
+  break:  [220.00, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 523.25], // A minor full
+}
+
 // ── Song arrangers ────────────────────────────────────────────────────────
 
 function scheduleGroove(cfg: RoundConfig): void {
@@ -134,31 +148,32 @@ function scheduleGroove(cfg: RoundConfig): void {
   const BEAT = 60 / bpm
   const EIGHTH = BEAT / 2
   const now = ctx.currentTime + 0.05
+  const scale = SCALES.groove
 
   // Four-on-the-floor kick
   for (let beat = 0; beat < 10; beat++) {
     playKick(ctx, music, now + beat * BEAT, 0.9)
   }
 
-  // Snare on 2 and 4 only
+  // Snare on 2 and 4
   for (const beat of [2, 4, 6, 8]) {
-    playSnare(ctx, music, now + beat * BEAT, 0.9)
+    playSnare(ctx, music, now + beat * BEAT, 0.85)
   }
 
-  // Light hi-hat on every other 8th
-  for (let i = 0; i < 20; i += 2) {
-    playHiHat(ctx, music, now + i * EIGHTH, 0.35)
+  // Light closed hi-hat on offbeats
+  for (let i = 1; i < 20; i += 2) {
+    playHiHat(ctx, music, now + i * EIGHTH, 0.3)
   }
 
-  // Simple pentatonic melody
+  // Warm triangle melody — playful, bouncy
   const melody = cfg.melodySeed
   for (let i = 0; i < melody.length; i++) {
-    playMelodyNote(ctx, music, now + i * EIGHTH, PENTATONIC[melody[i]], EIGHTH, 0.09)
+    playMelody(ctx, music, now + i * EIGHTH, scale[melody[i] % scale.length], EIGHTH, 0.09, 'triangle')
   }
 
-  // Warm bass on 1 and 5
-  for (const beat of [0, 4, 8]) {
-    playBass(ctx, music, now + beat * BEAT, PENTATONIC[0] / 2, BEAT * 2, 0.06)
+  // Walking bass
+  for (let beat = 0; beat < 10; beat += 2) {
+    playBass(ctx, music, now + beat * BEAT, scale[0] / 2, BEAT * 2, 0.06, 'triangle')
   }
 }
 
@@ -168,32 +183,33 @@ function scheduleDrive(cfg: RoundConfig): void {
   const BEAT = 60 / bpm
   const EIGHTH = BEAT / 2
   const now = ctx.currentTime + 0.05
+  const scale = SCALES.drive
 
-  // Driving kick on 1 and 3
+  // Hard kick on 1 and 3
   for (let beat = 0; beat < 10; beat += 2) {
-    playKick(ctx, music, now + beat * BEAT, 1.0)
+    playKick(ctx, music, now + beat * BEAT, 1.0, 180, 0.1)
   }
 
-  // Hard snare on every off-beat
+  // Hard snare on 2 and 4
   for (let beat = 1; beat < 10; beat += 2) {
     playSnare(ctx, music, now + beat * BEAT, 1.0)
   }
 
   // Busy hi-hat every 8th
   for (let i = 0; i < 20; i++) {
-    playHiHat(ctx, music, now + i * EIGHTH, 0.55)
+    playHiHat(ctx, music, now + i * EIGHTH, 0.5)
   }
 
-  // Fuller melody
+  // Square-wave melody — edgier, more electronic
   const melody = cfg.melodySeed
   for (let i = 0; i < melody.length; i++) {
-    playMelodyNote(ctx, music, now + i * EIGHTH, PENTATONIC[melody[i]], EIGHTH, 0.10)
+    playMelody(ctx, music, now + i * EIGHTH, scale[melody[i] % scale.length], EIGHTH, 0.10, 'square')
   }
 
   // Punchy bass every beat
   for (let beat = 0; beat < 10; beat += 2) {
-    const root = beat % 4 === 0 ? PENTATONIC[0] / 2 : PENTATONIC[3] / 2
-    playBass(ctx, music, now + beat * BEAT, root, BEAT * 2, 0.07)
+    const root = beat % 4 === 0 ? scale[0] / 2 : scale[3] / 2
+    playBass(ctx, music, now + beat * BEAT, root, BEAT * 2, 0.07, 'sawtooth')
   }
 }
 
@@ -202,6 +218,7 @@ function scheduleSwing(cfg: RoundConfig): void {
   const bpm = cfg.bpm
   const BEAT = 60 / bpm
   const now = ctx.currentTime + 0.05
+  const scale = SCALES.swing
 
   // Jazz kick: 1, 2+, 4
   playKick(ctx, music, now + 0 * BEAT, 0.8)
@@ -214,28 +231,28 @@ function scheduleSwing(cfg: RoundConfig): void {
 
   // Light snare on 2 and 4
   for (const beat of [1.5, 3.5, 5.5, 7.5, 9.5]) {
-    if (beat < 10) playSnare(ctx, music, now + beat * BEAT, 0.6)
+    if (beat < 10) playSnare(ctx, music, now + beat * BEAT, 0.55)
   }
 
   // Brushed hi-hat on every triplet
   for (let i = 0; i < 30; i++) {
     const t = now + i * (BEAT / 3)
     if (t < now + 10 * BEAT) {
-      playHiHat(ctx, music, t, 0.25)
+      playHiHat(ctx, music, t, 0.22)
     }
   }
 
-  // Swung melody
+  // Sine-wave melody — smooth, warm
   const melody = cfg.melodySeed
   for (let i = 0; i < melody.length; i++) {
     const swing = i % 2 === 1 ? BEAT / 6 : 0
-    playMelodyNote(ctx, music, now + i * (BEAT / 2) + swing, PENTATONIC[melody[i]], BEAT / 2, 0.08)
+    playMelody(ctx, music, now + i * (BEAT / 2) + swing, scale[melody[i] % scale.length], BEAT / 2, 0.08, 'sine')
   }
 
   // Walking bass on every beat
   for (let beat = 0; beat < 10; beat++) {
-    const note = PENTATONIC[(beat * 2) % 5] / 2
-    playBass(ctx, music, now + beat * BEAT, note, BEAT, 0.05)
+    const note = scale[(beat * 2) % scale.length] / 2
+    playBass(ctx, music, now + beat * BEAT, note, BEAT, 0.05, 'triangle')
   }
 }
 
@@ -244,33 +261,34 @@ function scheduleHalf(cfg: RoundConfig): void {
   const bpm = cfg.bpm
   const BEAT = 60 / bpm
   const now = ctx.currentTime + 0.05
+  const scale = SCALES.half
 
-  // Half-time: kick on 1 only (every 2 beats)
+  // Half-time: huge kick on 1 only (every 2 beats)
   for (let beat = 0; beat < 10; beat += 2) {
-    playKick(ctx, music, now + beat * BEAT, 1.1)
+    playKick(ctx, music, now + beat * BEAT, 1.2, 100, 0.18)
   }
 
-  // Huge snare on 3 (beat 2 in half-time)
+  // Big snare on 3 with ghost note
   for (let beat = 2; beat < 10; beat += 4) {
     playSnare(ctx, music, now + beat * BEAT, 1.1)
-    playSnare(ctx, music, now + (beat + 0.5) * BEAT, 0.7)
+    playSnare(ctx, music, now + (beat + 0.5) * BEAT, 0.6)
   }
 
-  // Crash-like hi-hat
+  // Crash-like open hi-hat
   for (let i = 0; i < 10; i += 2) {
-    playHiHat(ctx, music, now + i * BEAT, 0.7)
-    playHiHat(ctx, music, now + (i + 1.5) * BEAT, 0.4)
+    playHiHat(ctx, music, now + i * BEAT, 0.7, true)
+    playHiHat(ctx, music, now + (i + 1.5) * BEAT, 0.35)
   }
 
-  // Slow heavy melody
+  // Slow heavy sawtooth melody — ominous
   const melody = cfg.melodySeed
   for (let i = 0; i < melody.length; i += 2) {
-    playMelodyNote(ctx, music, now + i * BEAT, PENTATONIC[melody[i]], BEAT * 2, 0.11)
+    playMelody(ctx, music, now + i * BEAT, scale[melody[i] % scale.length], BEAT * 2, 0.12, 'sawtooth')
   }
 
   // Deep sub-bass on 1
   for (let beat = 0; beat < 10; beat += 2) {
-    playBass(ctx, music, now + beat * BEAT, PENTATONIC[0] / 4, BEAT * 4, 0.10)
+    playBass(ctx, music, now + beat * BEAT, scale[0] / 4, BEAT * 4, 0.12, 'sine')
   }
 }
 
@@ -281,11 +299,12 @@ function scheduleBreak(cfg: RoundConfig): void {
   const EIGHTH = BEAT / 2
   const SIXTEENTH = BEAT / 4
   const now = ctx.currentTime + 0.05
+  const scale = SCALES.break
 
   // Breakbeat kick: syncopated
   const kickBeats = [0, 0.75, 2, 2.75, 4, 5.5, 6, 6.75, 8, 8.75]
   for (const beat of kickBeats) {
-    if (beat < 10) playKick(ctx, music, now + beat * BEAT, 1.0)
+    if (beat < 10) playKick(ctx, music, now + beat * BEAT, 1.0, 200, 0.08)
   }
 
   // Fast snare fills
@@ -302,16 +321,17 @@ function scheduleBreak(cfg: RoundConfig): void {
     }
   }
 
-  // Frantic melody
+  // Frantic random melody with mixed waveforms
   const melody = cfg.melodySeed
   for (let i = 0; i < melody.length; i++) {
-    playMelodyNote(ctx, music, now + i * EIGHTH, PENTATONIC[melody[i]], EIGHTH, 0.09)
+    const wave = i % 3 === 0 ? 'square' : i % 3 === 1 ? 'sawtooth' : 'triangle'
+    playMelody(ctx, music, now + i * EIGHTH, scale[melody[i] % scale.length], EIGHTH, 0.09, wave)
   }
 
   // Aggressive bass
   for (let beat = 0; beat < 10; beat += 1) {
-    const root = beat % 2 === 0 ? PENTATONIC[0] / 2 : PENTATONIC[2] / 2
-    playBass(ctx, music, now + beat * BEAT, root, BEAT, 0.08)
+    const root = beat % 2 === 0 ? scale[0] / 2 : scale[2] / 2
+    playBass(ctx, music, now + beat * BEAT, root, BEAT, 0.08, 'sawtooth')
   }
 }
 

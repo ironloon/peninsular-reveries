@@ -8,6 +8,8 @@ const POSE_MESSAGES: Record<Pose, string> = {
   'both-paws-up': 'Both paws up!',
   crouch: 'Crouch!',
   jump: 'Jump!',
+  'lean-left': 'Lean left!',
+  'lean-right': 'Lean right!',
 }
 
 export function announcePose(pose: Pose): void {
@@ -18,7 +20,7 @@ export function announcePose(pose: Pose): void {
 }
 
 export function announceCatJoin(_catIndex: number): void {
-  announce('A new cat joined the dance!', 'assertive')
+  announce('A new dancer joined the crew!', 'assertive')
 }
 
 export function announceSongMilestone(progress: number): void {

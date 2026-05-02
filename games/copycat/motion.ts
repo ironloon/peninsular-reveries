@@ -1,8 +1,16 @@
 import { Pose } from './types.js'
 
-const FPS = 30
+interface VideoFrameCallback {
+  requestVideoFrameCallback(callback: () => void): number
+  cancelVideoFrameCallback(handle: number): void
+}
+
+const FPS = 15
 const FRAME_INTERVAL = 1000 / FPS
 const THRESHOLD = 20
+
+const CANVAS_W = 48
+const CANVAS_H = 36
 
 type TrackingState = {
   canvas: HTMLCanvasElement
@@ -16,6 +24,7 @@ type TrackingState = {
   pendingSince: number
   lastEmittedPose: Pose
   running: boolean
+  useVFC: boolean
 }
 
 let state: TrackingState | null = null
@@ -43,28 +52,33 @@ export function computeMotionMetrics(
   let minY = height
   let maxY = 0
 
-  for (let i = 0; i < pixelCount; i++) {
-    const pr = prevData[i * 4]
-    const pg = prevData[i * 4 + 1]
-    const pb = prevData[i * 4 + 2]
-    const pgray = pr * 0.299 + pg * 0.587 + pb * 0.114
+  // Process in chunks of 256 pixels to yield occasionally on slow devices
+  const CHUNK = 256
+  for (let i = 0; i < pixelCount; i += CHUNK) {
+    const end = Math.min(i + CHUNK, pixelCount)
+    for (let j = i; j < end; j++) {
+      const pr = prevData[j * 4]
+      const pg = prevData[j * 4 + 1]
+      const pb = prevData[j * 4 + 2]
+      const pgray = pr * 0.299 + pg * 0.587 + pb * 0.114
 
-    const cr = currData[i * 4]
-    const cg = currData[i * 4 + 1]
-    const cb = currData[i * 4 + 2]
-    const cgray = cr * 0.299 + cg * 0.587 + cb * 0.114
+      const cr = currData[j * 4]
+      const cg = currData[j * 4 + 1]
+      const cb = currData[j * 4 + 2]
+      const cgray = cr * 0.299 + cg * 0.587 + cb * 0.114
 
-    const diff = Math.abs(cgray - pgray)
-    if (diff > THRESHOLD) {
-      diffCount++
-      const x = i % width
-      const y = Math.floor(i / width)
-      sumX += x
-      sumY += y
-      if (x < minX) minX = x
-      if (x > maxX) maxX = x
-      if (y < minY) minY = y
-      if (y > maxY) maxY = y
+      const diff = Math.abs(cgray - pgray)
+      if (diff > THRESHOLD) {
+        diffCount++
+        const x = j % width
+        const y = Math.floor(j / width)
+        sumX += x
+        sumY += y
+        if (x < minX) minX = x
+        if (x > maxX) maxX = x
+        if (y < minY) minY = y
+        if (y > maxY) maxY = y
+      }
     }
   }
 
@@ -90,10 +104,13 @@ export function resolvePose(
 
   if (motionScore < 20) return 'idle'
   if (centroidY < 0.40 && spreadX > 0.25 && motionScore > 60) return 'both-paws-up'
-  if (x < 0.40 && centroidY < 0.50 && motionScore > 30) return 'left-paw-up'
-  if (x > 0.60 && centroidY < 0.50 && motionScore > 30) return 'right-paw-up'
+  if (x < 0.30 && centroidY < 0.55 && motionScore > 30) return 'left-paw-up'
+  if (x > 0.70 && centroidY < 0.55 && motionScore > 30) return 'right-paw-up'
   if (centroidY > 0.60 && motionScore > 20) return 'crouch'
   if (motionScore > 100 && spreadY > 0.35) return 'jump'
+  // Side-to-side leaning: body shifts left/right without arms going high
+  if (x < 0.35 && motionScore > 25 && centroidY >= 0.40) return 'lean-left'
+  if (x > 0.65 && motionScore > 25 && centroidY >= 0.40) return 'lean-right'
   return 'idle'
 }
 
@@ -102,7 +119,11 @@ function processFrame(): void {
 
   const now = performance.now()
   if (now - state.lastFrameTime < FRAME_INTERVAL) {
-    state.rafId = requestAnimationFrame(processFrame)
+    if (state.useVFC) {
+      state.rafId = (state.video as HTMLVideoElement & VideoFrameCallback).requestVideoFrameCallback?.(processFrame) ?? requestAnimationFrame(processFrame)
+    } else {
+      state.rafId = requestAnimationFrame(processFrame)
+    }
     return
   }
   state.lastFrameTime = now
@@ -113,7 +134,11 @@ function processFrame(): void {
 
   if (!state.prevImageData) {
     state.prevImageData = imageData
-    state.rafId = requestAnimationFrame(processFrame)
+    if (state.useVFC) {
+      state.rafId = (state.video as HTMLVideoElement & VideoFrameCallback).requestVideoFrameCallback?.(processFrame) ?? requestAnimationFrame(processFrame)
+    } else {
+      state.rafId = requestAnimationFrame(processFrame)
+    }
     return
   }
 
@@ -138,7 +163,11 @@ function processFrame(): void {
     state.pendingSince = now
   }
 
-  state.rafId = requestAnimationFrame(processFrame)
+  if (state.useVFC) {
+    state.rafId = (state.video as HTMLVideoElement & VideoFrameCallback).requestVideoFrameCallback?.(processFrame) ?? requestAnimationFrame(processFrame)
+  } else {
+    state.rafId = requestAnimationFrame(processFrame)
+  }
 }
 
 export function startMotionTracking(
@@ -150,11 +179,13 @@ export function startMotionTracking(
   }
 
   const canvas = document.createElement('canvas')
-  canvas.width = 64
-  canvas.height = 48
+  canvas.width = CANVAS_W
+  canvas.height = CANVAS_H
   const ctx = canvas.getContext('2d', { willReadFrequently: true })!
 
   const now = performance.now()
+
+  const useVFC = typeof (video as HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number }).requestVideoFrameCallback === 'function'
 
   state = {
     canvas,
@@ -168,14 +199,23 @@ export function startMotionTracking(
     pendingSince: now,
     lastEmittedPose: 'idle',
     running: true,
+    useVFC,
   }
 
-  state.rafId = requestAnimationFrame(processFrame)
+  if (useVFC) {
+    state.rafId = (video as HTMLVideoElement & VideoFrameCallback).requestVideoFrameCallback(processFrame)
+  } else {
+    state.rafId = requestAnimationFrame(processFrame)
+  }
 }
 
 export function stopMotionTracking(): void {
   if (!state) return
   state.running = false
-  cancelAnimationFrame(state.rafId)
+  if (state.useVFC && typeof (state.video as HTMLVideoElement & VideoFrameCallback).cancelVideoFrameCallback === 'function') {
+    (state.video as HTMLVideoElement & VideoFrameCallback).cancelVideoFrameCallback(state.rafId)
+  } else {
+    cancelAnimationFrame(state.rafId)
+  }
   state = null
 }

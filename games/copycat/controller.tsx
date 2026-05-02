@@ -67,6 +67,19 @@ export async function copycatAction() {
 
             <p className="copycat-subtitle">Strike a pose to make your cat dance.</p>
 
+            <div className="copycat-pose-list" id="pose-list">
+              <p className="copycat-pose-list-title">Recognized moves:</p>
+              <div className="copycat-pose-chips">
+                <span className="copycat-pose-chip">🙌 Both arms up</span>
+                <span className="copycat-pose-chip">👈 Lean left</span>
+                <span className="copycat-pose-chip">👉 Lean right</span>
+                <span className="copycat-pose-chip">✋ Left paw up</span>
+                <span className="copycat-pose-chip">🤚 Right paw up</span>
+                <span className="copycat-pose-chip">🦘 Jump</span>
+                <span className="copycat-pose-chip">🧎 Crouch</span>
+              </div>
+            </div>
+
             <div className="copycat-camera-prompt" id="camera-denied-msg">
               <p>Camera access is required to play.</p>
             </div>
@@ -146,6 +159,13 @@ export async function copycatAction() {
             />
 
             <p className="copycat-completion-msg">Great dancing! The song is complete.</p>
+
+            <div id="end-reel" className="copycat-end-reel" hidden>
+              <p className="copycat-replay-title">Highlights from your dance!</p>
+              <div className="copycat-replay-stage">
+                <div id="end-reel-cat" className="copycat-replay-cat">🐱</div>
+              </div>
+            </div>
 
             <div>
               <button id="replay-btn" type="button" className="copycat-primary-btn">Play again</button>

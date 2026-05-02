@@ -1,6 +1,6 @@
 import { Application, Container, Graphics, Ticker } from 'pixi.js'
 import { setupGameMenu } from '../../client/game-menu.js'
-import { initStage, createCat, layoutCats, getCatParts } from './renderer.js'
+import { initStage, createAnimal, getAnimalKind, layoutCats, getCatParts } from './renderer.js'
 import { animatePose, animateCatJoin } from './animations.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
@@ -30,6 +30,8 @@ const replayPreview = document.getElementById('replay-preview') as HTMLElement |
 const replayCat = document.getElementById('replay-cat') as HTMLElement | null
 const replayBtnStart = document.getElementById('replay-btn-start') as HTMLButtonElement | null
 const startControls = document.getElementById('start-controls') as HTMLElement | null
+const endReel = document.getElementById('end-reel') as HTMLElement | null
+const endReelCat = document.getElementById('end-reel-cat') as HTMLElement | null
 
 const ALL_SCREENS = ['start-screen', 'game-screen', 'end-screen']
 
@@ -186,7 +188,7 @@ function beginRound(): void {
   }
   catContainers = []
 
-  const playerCat = createCat(0xffb7c5)
+  const playerCat = createAnimal(getAnimalKind(0), 0xffb7c5)
   app.stage.addChild(playerCat)
   catContainers.push(playerCat)
   layoutCats(catContainers, app.screen.width, app.screen.height)
@@ -215,13 +217,15 @@ function beginRound(): void {
     const deltaMs = ticker.deltaMS
 
     danceState = updatePose(danceState, cameraGranted ? currentPose : 'idle')
-    danceState = progressSong(danceState, deltaMs)
+    // Cap deltaMs to prevent big jumps when tab throttles or motion blocks the main thread
+    const cappedDeltaMs = Math.min(deltaMs, 100)
+    danceState = progressSong(danceState, cappedDeltaMs)
 
     if (danceState.cats.length > prevCatCount) {
       for (let i = prevCatCount; i < danceState.cats.length; i++) {
-        const newCat = createCat()
-        app.stage.addChild(newCat)
-        catContainers.push(newCat)
+        const newAnimal = createAnimal(getAnimalKind(i))
+        app.stage.addChild(newAnimal)
+        catContainers.push(newAnimal)
       }
       layoutCats(catContainers, app.screen.width, app.screen.height)
       for (let i = prevCatCount; i < danceState.cats.length; i++) {
@@ -239,18 +243,27 @@ function beginRound(): void {
     }
 
     let didPoseChange = false
+    const beatSec = 60 / danceState.config.bpm
+    const beatT = (performance.now() / 1000) % beatSec / beatSec
     for (let i = 0; i < danceState.cats.length; i++) {
       const catState = danceState.cats[i]
       const container = catContainers[i]
       if (container) {
         animatePose(container, catState.pose, 150)
         const t = performance.now() / 1000
-        const breathe = 1 + Math.sin(t * 3 + i * 1.2) * 0.03
-        const tailSway = Math.sin(t * 2.5 + i * 0.8) * 0.15
         const parts2 = getCatParts(container)
         if (parts2) {
+          // Idle bopping — beat-synced subtle bounce when idle
+          const isIdle = catState.pose === 'idle'
+          const bounce = isIdle ? Math.sin(beatT * Math.PI * 2) * 1.5 : 0
+          const breathe = 1 + Math.sin(t * 3 + i * 1.2) * 0.03
+          const tailSway = Math.sin(t * 2.5 + i * 0.8) * 0.15
           parts2.body.scale.y = breathe
           parts2.tail.rotation = tailSway
+          if (isIdle) {
+            parts2.body.y = bounce
+            parts2.head.y = bounce * 0.6
+          }
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const blink = (container as any).__blinkState
           if (blink) {
@@ -317,6 +330,10 @@ function handleSongComplete(): void {
     stopMotionTracking()
     showScreen('end-screen')
     gameStatus.textContent = 'All rounds complete! Great dancing!'
+    if (lastRoundHistory.length > 0 && endReel && endReelCat) {
+      endReel.hidden = false
+      startEndReel()
+    }
     return
   }
 
@@ -379,14 +396,42 @@ function showReplayPreview(): void {
   replayTimer = window.setInterval(showFrame, 320)
 }
 
+function startEndReel(): void {
+  if (!endReelCat) return
+  const samples: Pose[] = []
+  const history = lastRoundHistory
+  const count = Math.min(history.length, 24)
+  if (count > 0) {
+    const step = history.length / count
+    for (let i = 0; i < count; i++) {
+      samples.push(history[Math.floor(i * step)])
+    }
+  } else {
+    samples.push('idle')
+  }
+
+  replayIndex = 0
+  const showFrame = () => {
+    const pose = samples[replayIndex % samples.length]
+    endReelCat.textContent = pose === 'jump' ? '🐈' : '🐱'
+    endReelCat.className = `copycat-replay-cat pose-${pose}`
+    replayIndex++
+  }
+
+  showFrame()
+  replayTimer = window.setInterval(showFrame, 280)
+}
+
 function stopReplayPreview(): void {
   if (replayTimer !== null) {
     window.clearInterval(replayTimer)
     replayTimer = null
   }
   if (replayPreview) replayPreview.hidden = true
+  if (endReel) endReel.hidden = true
   if (startControls) startControls.hidden = false
   if (replayCat) replayCat.className = 'copycat-replay-cat'
+  if (endReelCat) endReelCat.className = 'copycat-replay-cat'
 }
 
 // ── Reset / replay ───────────────────────────────────────────────────────────

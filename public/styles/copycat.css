@@ -410,9 +410,49 @@ body.copycat-game[data-reduce-motion="true"] .copycat-menu-btn {
   display: none;
 }
 
-/* ── Replay preview on start screen ───────────────────────── */
+/* ── Pose list on start screen ────────────────────────────── */
 
-.copycat-replay-preview {
+.copycat-pose-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  max-width: min(100%, 28rem);
+  margin: 0 auto;
+}
+
+.copycat-pose-list-title {
+  font-size: clamp(0.75rem, 1.6vw, 0.85rem);
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0;
+}
+
+.copycat-pose-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.copycat-pose-chip {
+  font-size: clamp(0.7rem, 1.4vw, 0.8rem);
+  padding: 0.25rem 0.55rem;
+  border-radius: 1rem;
+  background: var(--panel-strong);
+  color: var(--text);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+/* ── Replay preview / end reel ─────────────────────────────── */
+
+.copycat-replay-preview,
+.copycat-end-reel {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -424,7 +464,8 @@ body.copycat-game[data-reduce-motion="true"] .copycat-menu-btn {
   animation: fadeInUp 0.5s ease-out;
 }
 
-.copycat-replay-preview[hidden] {
+.copycat-replay-preview[hidden],
+.copycat-end-reel[hidden] {
   display: none;
 }
 
@@ -470,6 +511,14 @@ body.copycat-game[data-reduce-motion="true"] .copycat-menu-btn {
 
 .copycat-replay-cat.pose-jump {
   transform: translateY(-14px) scale(1.1);
+}
+
+.copycat-replay-cat.pose-lean-left {
+  transform: rotate(-12deg) translateX(-8px);
+}
+
+.copycat-replay-cat.pose-lean-right {
+  transform: rotate(12deg) translateX(8px);
 }
 
 @keyframes fadeInUp {

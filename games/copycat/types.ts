@@ -1,4 +1,4 @@
-export type Pose = 'idle' | 'left-paw-up' | 'right-paw-up' | 'both-paws-up' | 'crouch' | 'jump'
+export type Pose = 'idle' | 'left-paw-up' | 'right-paw-up' | 'both-paws-up' | 'crouch' | 'jump' | 'lean-left' | 'lean-right'
 
 export interface RoundConfig {
   round: number
