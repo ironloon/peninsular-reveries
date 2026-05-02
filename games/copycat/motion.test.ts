@@ -147,11 +147,13 @@ describe('resolvePose', () => {
   })
 
   it('returns left-paw-up for upper-left motion', () => {
-    assert.strictEqual(resolvePose(0.2, 0.2, 0.1, 0.1, 200), 'left-paw-up')
+    // centroidX is flipped internally (1 - x) so raw right-side motion
+    // becomes left-paw-up.
+    assert.strictEqual(resolvePose(0.8, 0.2, 0.1, 0.1, 200), 'left-paw-up')
   })
 
   it('returns right-paw-up for upper-right motion', () => {
-    assert.strictEqual(resolvePose(0.8, 0.2, 0.1, 0.1, 200), 'right-paw-up')
+    assert.strictEqual(resolvePose(0.2, 0.2, 0.1, 0.1, 200), 'right-paw-up')
   })
 
   it('returns both-paws-up for wide upper motion', () => {
