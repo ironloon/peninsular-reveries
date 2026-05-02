@@ -118,9 +118,9 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
 
 // ── Animal creation ─────────────────────────────────────────────────────────
 
-export type AnimalKind = 'cat' | 'giraffe' | 'orangutan' | 'wolf' | 'flamingo'
+export type AnimalKind = 'cat' | 'giraffe' | 'crocodile' | 'wolf' | 'flamingo'
 
-const BACKUP_ANIMALS: AnimalKind[] = ['orangutan', 'wolf', 'giraffe', 'flamingo']
+const BACKUP_ANIMALS: AnimalKind[] = ['crocodile', 'wolf', 'giraffe', 'flamingo']
 
 export function getAnimalKind(index: number): AnimalKind {
   if (index === 0) return 'cat'
@@ -131,7 +131,7 @@ export function createAnimal(kind: AnimalKind, tint?: number): Container {
   switch (kind) {
     case 'cat': return createCat(tint)
     case 'giraffe': return createGiraffe()
-    case 'orangutan': return createOrangutan()
+    case 'crocodile': return createCrocodile()
     case 'wolf': return createWolf()
     case 'flamingo': return createFlamingo()
   }
@@ -269,60 +269,77 @@ function createCat(tint?: number): Container {
 
 // ── Giraffe ─────────────────────────────────────────────────────────────────
 
+// ── Giraffe ─────────────────────────────────────────────────────────────────
+
 function createGiraffe(): Container {
   const g = new Container()
   const BASE = 0xC9A96E
-  const DARK = 0xA08555
+  const DARK = 0x8B6914
   const EYE = 0xffffff
 
-  // Broom tail with tuft
+  // Tufted tail
   const tail = new Graphics()
-  tail.moveTo(-8, -2)
-  tail.lineTo(-18, -14)
-  tail.lineTo(-14, -16)
-  tail.lineTo(-8, -6)
+  tail.moveTo(-8, -4)
+  tail.lineTo(-18, -16)
+  tail.lineTo(-14, -18)
+  tail.lineTo(-10, -8)
   tail.closePath()
   tail.fill({ color: DARK })
   g.addChild(tail)
 
-  // Body — taller rectangle
+  // Tall rectangular body
   const body = new Graphics()
-  body.roundRect(-12, -12, 24, 28, 8)
+  body.roundRect(-11, -14, 22, 32, 9)
   body.fill({ color: BASE })
   g.addChild(body)
 
-  // Spots on body
+  // Bold polygon spots as children of body
   const spots = new Graphics()
-  spots.circle(-6, 2, 3)
-  spots.circle(5, -4, 2.5)
-  spots.circle(0, 8, 3)
+  spots.moveTo(-5, -6)
+  spots.lineTo(-2, -10)
+  spots.lineTo(1, -7)
+  spots.lineTo(-1, -3)
+  spots.closePath()
+  spots.moveTo(4, 2)
+  spots.lineTo(7, -2)
+  spots.lineTo(9, 3)
+  spots.lineTo(5, 5)
+  spots.closePath()
+  spots.moveTo(-6, 8)
+  spots.lineTo(-3, 5)
+  spots.lineTo(0, 9)
+  spots.lineTo(-4, 11)
+  spots.closePath()
   spots.fill({ color: DARK })
   g.addChild(spots)
 
-  // Head with built-in long neck so it looks tall even at same anchor
+  // Head with very long built-in neck
   const head = new Graphics()
-  head.circle(0, -18, 8)
-  head.roundRect(-3, -10, 6, 16, 2) // neck bridge down to body
+  // Neck — tall thin rectangle bridging down to body
+  head.roundRect(-3, -8, 6, 26, 2)
+  head.fill({ color: BASE })
+  // Head circle at top
+  head.circle(0, -22, 8)
   head.fill({ color: BASE })
 
   // Ossicones (horn nubs)
   const leftEar = new Graphics()
-  leftEar.circle(-4, -26, 2.5)
+  leftEar.roundRect(-5, -30, 3, 5, 1)
   leftEar.fill({ color: DARK })
   head.addChild(leftEar)
 
   const rightEar = new Graphics()
-  rightEar.circle(4, -26, 2.5)
+  rightEar.roundRect(2, -30, 3, 5, 1)
   rightEar.fill({ color: DARK })
   head.addChild(rightEar)
 
   const leftEye = new Graphics()
-  leftEye.circle(-3, -19, 2)
+  leftEye.circle(-3.5, -22, 2)
   leftEye.fill({ color: EYE })
   head.addChild(leftEye)
 
   const rightEye = new Graphics()
-  rightEye.circle(3, -19, 2)
+  rightEye.circle(3.5, -22, 2)
   rightEye.fill({ color: EYE })
   head.addChild(rightEye)
 
@@ -332,11 +349,11 @@ function createGiraffe(): Container {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(g as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
 
-  // Long thin legs
+  // Extra-long thin legs
   const legColor = BASE
 
   const leftBackLeg = new Graphics()
-  leftBackLeg.roundRect(-1.2, 0, 2.4, 14, 1)
+  leftBackLeg.roundRect(-1.2, 0, 2.4, 16, 1)
   leftBackLeg.fill({ color: legColor })
   leftBackLeg.x = -9
   leftBackLeg.y = 8
@@ -346,11 +363,11 @@ function createGiraffe(): Container {
   leftBackPaw.roundRect(-2.5, 0, 5, 3, 1.5)
   leftBackPaw.fill({ color: legColor })
   leftBackPaw.x = -9
-  leftBackPaw.y = 16
+  leftBackPaw.y = 18
   g.addChild(leftBackPaw)
 
   const rightBackLeg = new Graphics()
-  rightBackLeg.roundRect(-1.2, 0, 2.4, 14, 1)
+  rightBackLeg.roundRect(-1.2, 0, 2.4, 16, 1)
   rightBackLeg.fill({ color: legColor })
   rightBackLeg.x = -2
   rightBackLeg.y = 8
@@ -360,11 +377,11 @@ function createGiraffe(): Container {
   rightBackPaw.roundRect(-2.5, 0, 5, 3, 1.5)
   rightBackPaw.fill({ color: legColor })
   rightBackPaw.x = -2
-  rightBackPaw.y = 16
+  rightBackPaw.y = 18
   g.addChild(rightBackPaw)
 
   const leftFrontLeg = new Graphics()
-  leftFrontLeg.roundRect(-1.2, 0, 2.4, 14, 1)
+  leftFrontLeg.roundRect(-1.2, 0, 2.4, 16, 1)
   leftFrontLeg.fill({ color: legColor })
   leftFrontLeg.x = 2
   leftFrontLeg.y = 8
@@ -374,11 +391,11 @@ function createGiraffe(): Container {
   leftFrontPaw.roundRect(-2.5, 0, 5, 3, 1.5)
   leftFrontPaw.fill({ color: legColor })
   leftFrontPaw.x = 2
-  leftFrontPaw.y = 16
+  leftFrontPaw.y = 18
   g.addChild(leftFrontPaw)
 
   const rightFrontLeg = new Graphics()
-  rightFrontLeg.roundRect(-1.2, 0, 2.4, 14, 1)
+  rightFrontLeg.roundRect(-1.2, 0, 2.4, 16, 1)
   rightFrontLeg.fill({ color: legColor })
   rightFrontLeg.x = 9
   rightFrontLeg.y = 8
@@ -388,7 +405,7 @@ function createGiraffe(): Container {
   rightFrontPaw.roundRect(-2.5, 0, 5, 3, 1.5)
   rightFrontPaw.fill({ color: legColor })
   rightFrontPaw.x = 9
-  rightFrontPaw.y = 16
+  rightFrontPaw.y = 18
   g.addChild(rightFrontPaw)
 
   buildPartsMap(g, {
@@ -399,162 +416,195 @@ function createGiraffe(): Container {
   return g
 }
 
-// ── Orangutan ───────────────────────────────────────────────────────────────
+// ── Crocodile ───────────────────────────────────────────────────────────────
 
-function createOrangutan(): Container {
-  const o = new Container()
-  const BASE = 0xD35400
-  const DARK = 0xA04000
+function createCrocodile(): Container {
+  const c = new Container()
+  const BASE = 0x4A7C59
+  const DARK = 0x2F5233
   const EYE = 0xffffff
 
-  // Stub tail (orangutans barely have tails)
+  // Thick tapering tail behind body
   const tail = new Graphics()
-  tail.circle(-10, 2, 2)
+  tail.moveTo(-22, -4)
+  tail.lineTo(-36, -2)
+  tail.lineTo(-36, 4)
+  tail.lineTo(-22, 4)
+  tail.closePath()
   tail.fill({ color: DARK })
-  o.addChild(tail)
+  c.addChild(tail)
 
-  // Big round body
+  // Long low horizontal body
   const body = new Graphics()
-  body.roundRect(-16, -12, 32, 28, 16)
+  body.roundRect(-22, -6, 44, 14, 7)
   body.fill({ color: BASE })
-  o.addChild(body)
+  c.addChild(body)
 
-  // Head — big, round, ape-like
+  // Spikes along the back
+  const spikes = new Graphics()
+  for (const sx of [-12, -4, 4, 12]) {
+    spikes.moveTo(sx, -6)
+    spikes.lineTo(sx + 2, -11)
+    spikes.lineTo(sx + 4, -6)
+  }
+  spikes.closePath()
+  spikes.fill({ color: DARK })
+  c.addChild(spikes)
+
+  // Head — elongated snout positioned at the front of the body
   const head = new Graphics()
-  head.roundRect(-12, -10, 24, 22, 12)
+  head.roundRect(6, -7, 20, 14, 5)
+  head.fill({ color: BASE })
+  // Pointed snout tip
+  head.moveTo(26, -3)
+  head.lineTo(32, 0)
+  head.lineTo(26, 3)
+  head.closePath()
   head.fill({ color: BASE })
 
-  // Tiny round ears
+  // Teeth (small white triangles inside snout)
+  const teeth = new Graphics()
+  for (const tx of [14, 18, 22]) {
+    teeth.moveTo(tx, 5)
+    teeth.lineTo(tx + 1.5, 8)
+    teeth.lineTo(tx + 3, 5)
+  }
+  teeth.closePath()
+  teeth.fill({ color: 0xFFFFF0 })
+  head.addChild(teeth)
+
+  // Eye bumps on top of snout
   const leftEar = new Graphics()
-  leftEar.circle(-13, -2, 3)
+  leftEar.circle(10, -10, 2.5)
   leftEar.fill({ color: DARK })
   head.addChild(leftEar)
 
   const rightEar = new Graphics()
-  rightEar.circle(13, -2, 3)
+  rightEar.circle(16, -10, 2.5)
   rightEar.fill({ color: DARK })
   head.addChild(rightEar)
 
   const leftEye = new Graphics()
-  leftEye.circle(-5, -2, 2.5)
+  leftEye.circle(10, -10, 1.5)
   leftEye.fill({ color: EYE })
   head.addChild(leftEye)
 
   const rightEye = new Graphics()
-  rightEye.circle(5, -2, 2.5)
+  rightEye.circle(16, -10, 1.5)
   rightEye.fill({ color: EYE })
   head.addChild(rightEye)
 
-  head.y = -14
-  o.addChild(head)
+  head.x = 4
+  head.y = -2
+  c.addChild(head)
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(o as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
+  ;(c as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
 
-  // Thick arms/legs
+  // Short legs splayed sideways
   const legColor = DARK
 
   const leftBackLeg = new Graphics()
-  leftBackLeg.roundRect(-2.5, 0, 5, 10, 2.5)
+  leftBackLeg.roundRect(-1.5, 0, 3, 5, 1.5)
   leftBackLeg.fill({ color: legColor })
-  leftBackLeg.x = -11
-  leftBackLeg.y = 8
-  o.addChild(leftBackLeg)
+  leftBackLeg.x = -16
+  leftBackLeg.y = 4
+  c.addChild(leftBackLeg)
 
   const leftBackPaw = new Graphics()
-  leftBackPaw.roundRect(-4, 0, 8, 5, 2.5)
+  leftBackPaw.roundRect(-2.5, 0, 5, 3, 1.5)
   leftBackPaw.fill({ color: legColor })
-  leftBackPaw.x = -11
-  leftBackPaw.y = 16
-  o.addChild(leftBackPaw)
+  leftBackPaw.x = -16
+  leftBackPaw.y = 8
+  c.addChild(leftBackPaw)
 
   const rightBackLeg = new Graphics()
-  rightBackLeg.roundRect(-2.5, 0, 5, 10, 2.5)
+  rightBackLeg.roundRect(-1.5, 0, 3, 5, 1.5)
   rightBackLeg.fill({ color: legColor })
-  rightBackLeg.x = -3
-  rightBackLeg.y = 8
-  o.addChild(rightBackLeg)
+  rightBackLeg.x = -8
+  rightBackLeg.y = 4
+  c.addChild(rightBackLeg)
 
   const rightBackPaw = new Graphics()
-  rightBackPaw.roundRect(-4, 0, 8, 5, 2.5)
+  rightBackPaw.roundRect(-2.5, 0, 5, 3, 1.5)
   rightBackPaw.fill({ color: legColor })
-  rightBackPaw.x = -3
-  rightBackPaw.y = 16
-  o.addChild(rightBackPaw)
+  rightBackPaw.x = -8
+  rightBackPaw.y = 8
+  c.addChild(rightBackPaw)
 
   const leftFrontLeg = new Graphics()
-  leftFrontLeg.roundRect(-2.5, 0, 5, 10, 2.5)
+  leftFrontLeg.roundRect(-1.5, 0, 3, 5, 1.5)
   leftFrontLeg.fill({ color: legColor })
-  leftFrontLeg.x = 3
-  leftFrontLeg.y = 8
-  o.addChild(leftFrontLeg)
+  leftFrontLeg.x = 8
+  leftFrontLeg.y = 4
+  c.addChild(leftFrontLeg)
 
   const leftFrontPaw = new Graphics()
-  leftFrontPaw.roundRect(-4, 0, 8, 5, 2.5)
+  leftFrontPaw.roundRect(-2.5, 0, 5, 3, 1.5)
   leftFrontPaw.fill({ color: legColor })
-  leftFrontPaw.x = 3
-  leftFrontPaw.y = 16
-  o.addChild(leftFrontPaw)
+  leftFrontPaw.x = 8
+  leftFrontPaw.y = 8
+  c.addChild(leftFrontPaw)
 
   const rightFrontLeg = new Graphics()
-  rightFrontLeg.roundRect(-2.5, 0, 5, 10, 2.5)
+  rightFrontLeg.roundRect(-1.5, 0, 3, 5, 1.5)
   rightFrontLeg.fill({ color: legColor })
-  rightFrontLeg.x = 11
-  rightFrontLeg.y = 8
-  o.addChild(rightFrontLeg)
+  rightFrontLeg.x = 16
+  rightFrontLeg.y = 4
+  c.addChild(rightFrontLeg)
 
   const rightFrontPaw = new Graphics()
-  rightFrontPaw.roundRect(-4, 0, 8, 5, 2.5)
+  rightFrontPaw.roundRect(-2.5, 0, 5, 3, 1.5)
   rightFrontPaw.fill({ color: legColor })
-  rightFrontPaw.x = 11
-  rightFrontPaw.y = 16
-  o.addChild(rightFrontPaw)
+  rightFrontPaw.x = 16
+  rightFrontPaw.y = 8
+  c.addChild(rightFrontPaw)
 
-  buildPartsMap(o, {
+  buildPartsMap(c, {
     body, head, leftEar, rightEar, leftEye, rightEye, tail,
     leftFrontLeg, rightFrontLeg, leftBackLeg, rightBackLeg,
     leftFrontPaw, rightFrontPaw, leftBackPaw, rightBackPaw,
   })
-  return o
+  return c
 }
 
 // ── Wolf ────────────────────────────────────────────────────────────────────
 
 function createWolf(): Container {
   const w = new Container()
-  const BASE = 0x7F8C8D
-  const DARK = 0x566363
+  const BASE = 0x8B9DAE
+  const DARK = 0x5D6D7E
   const EYE = 0xffffff
 
-  // Bushy tail
+  // Bushy tail pointing up/back
   const tail = new Graphics()
-  tail.moveTo(-10, 0)
-  tail.lineTo(-24, -14)
-  tail.lineTo(-20, -20)
-  tail.lineTo(-14, -14)
-  tail.lineTo(-10, -6)
+  tail.moveTo(-10, -4)
+  tail.lineTo(-22, -18)
+  tail.lineTo(-16, -22)
+  tail.lineTo(-8, -14)
+  tail.lineTo(-6, -6)
   tail.closePath()
   tail.fill({ color: DARK })
   w.addChild(tail)
 
-  // Lean body
+  // Sleek elongated body
   const body = new Graphics()
-  body.roundRect(-14, -9, 28, 22, 10)
+  body.roundRect(-15, -8, 30, 20, 10)
   body.fill({ color: BASE })
   w.addChild(body)
 
-  // Head — narrower, triangular
+  // Triangular head
   const head = new Graphics()
   head.moveTo(0, -10)
-  head.lineTo(-9, 6)
-  head.lineTo(9, 6)
+  head.lineTo(-10, 7)
+  head.lineTo(10, 7)
   head.closePath()
   head.fill({ color: BASE })
 
   // Tall pointy ears
   const leftEar = new Graphics()
   leftEar.moveTo(-6, -8)
-  leftEar.lineTo(-9, -22)
+  leftEar.lineTo(-10, -24)
   leftEar.lineTo(-2, -8)
   leftEar.closePath()
   leftEar.fill({ color: DARK })
@@ -562,7 +612,7 @@ function createWolf(): Container {
 
   const rightEar = new Graphics()
   rightEar.moveTo(2, -8)
-  rightEar.lineTo(9, -22)
+  rightEar.lineTo(10, -24)
   rightEar.lineTo(6, -8)
   rightEar.closePath()
   rightEar.fill({ color: DARK })
@@ -584,61 +634,62 @@ function createWolf(): Container {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(w as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
 
+  // Medium legs
   const legColor = DARK
 
   const leftBackLeg = new Graphics()
   leftBackLeg.roundRect(-1.5, 0, 3, 10, 1.5)
   leftBackLeg.fill({ color: legColor })
-  leftBackLeg.x = -10
+  leftBackLeg.x = -11
   leftBackLeg.y = 8
   w.addChild(leftBackLeg)
 
   const leftBackPaw = new Graphics()
   leftBackPaw.roundRect(-3, 0, 6, 4, 2)
   leftBackPaw.fill({ color: legColor })
-  leftBackPaw.x = -10
+  leftBackPaw.x = -11
   leftBackPaw.y = 16
   w.addChild(leftBackPaw)
 
   const rightBackLeg = new Graphics()
   rightBackLeg.roundRect(-1.5, 0, 3, 10, 1.5)
   rightBackLeg.fill({ color: legColor })
-  rightBackLeg.x = -3
+  rightBackLeg.x = -4
   rightBackLeg.y = 8
   w.addChild(rightBackLeg)
 
   const rightBackPaw = new Graphics()
   rightBackPaw.roundRect(-3, 0, 6, 4, 2)
   rightBackPaw.fill({ color: legColor })
-  rightBackPaw.x = -3
+  rightBackPaw.x = -4
   rightBackPaw.y = 16
   w.addChild(rightBackPaw)
 
   const leftFrontLeg = new Graphics()
   leftFrontLeg.roundRect(-1.5, 0, 3, 10, 1.5)
   leftFrontLeg.fill({ color: legColor })
-  leftFrontLeg.x = 3
+  leftFrontLeg.x = 4
   leftFrontLeg.y = 8
   w.addChild(leftFrontLeg)
 
   const leftFrontPaw = new Graphics()
   leftFrontPaw.roundRect(-3, 0, 6, 4, 2)
   leftFrontPaw.fill({ color: legColor })
-  leftFrontPaw.x = 3
+  leftFrontPaw.x = 4
   leftFrontPaw.y = 16
   w.addChild(leftFrontPaw)
 
   const rightFrontLeg = new Graphics()
   rightFrontLeg.roundRect(-1.5, 0, 3, 10, 1.5)
   rightFrontLeg.fill({ color: legColor })
-  rightFrontLeg.x = 10
+  rightFrontLeg.x = 11
   rightFrontLeg.y = 8
   w.addChild(rightFrontLeg)
 
   const rightFrontPaw = new Graphics()
   rightFrontPaw.roundRect(-3, 0, 6, 4, 2)
   rightFrontPaw.fill({ color: legColor })
-  rightFrontPaw.x = 10
+  rightFrontPaw.x = 11
   rightFrontPaw.y = 16
   w.addChild(rightFrontPaw)
 
@@ -650,55 +701,107 @@ function createWolf(): Container {
   return w
 }
 
-// ── Flamingo ────────────────────────────────────────────────────────────────
+// ── Flamingo ───────────────────────────────────────────────────────────────
 
 function createFlamingo(): Container {
   const f = new Container()
   const BASE = 0xFF8FA3
   const DARK = 0xE06B85
+  const BEAK = 0xFFB6C1
   const EYE = 0xffffff
 
   // Small tail fan
   const tail = new Graphics()
-  tail.moveTo(-6, -2)
-  tail.lineTo(-12, -8)
-  tail.lineTo(-8, -10)
-  tail.lineTo(-4, -4)
+  tail.moveTo(-6, -4)
+  tail.lineTo(-12, -10)
+  tail.lineTo(-8, -12)
+  tail.lineTo(-4, -6)
   tail.closePath()
   tail.fill({ color: DARK })
   f.addChild(tail)
 
-  // Compact oval body
+  // Very narrow tall body
   const body = new Graphics()
-  body.roundRect(-10, -8, 20, 20, 10)
+  body.roundRect(-7, -18, 14, 36, 7)
   body.fill({ color: BASE })
   f.addChild(body)
 
-  // Head with long built-in neck
+  // Wings (mapped to front legs) — curved feather shapes on the sides
+  const leftFrontLeg = new Graphics()
+  leftFrontLeg.moveTo(0, 0)
+  leftFrontLeg.bezierCurveTo(-10, -6, -10, 10, 0, 6)
+  leftFrontLeg.closePath()
+  leftFrontLeg.fill({ color: DARK })
+  leftFrontLeg.x = -9
+  leftFrontLeg.y = 2
+  f.addChild(leftFrontLeg)
+
+  const leftFrontPaw = new Graphics()
+  leftFrontPaw.moveTo(0, 0)
+  leftFrontPaw.bezierCurveTo(-8, -4, -8, 8, 0, 4)
+  leftFrontPaw.closePath()
+  leftFrontPaw.fill({ color: BEAK })
+  leftFrontPaw.x = -9
+  leftFrontPaw.y = 6
+  f.addChild(leftFrontPaw)
+
+  const rightFrontLeg = new Graphics()
+  rightFrontLeg.moveTo(0, 0)
+  rightFrontLeg.bezierCurveTo(10, -6, 10, 10, 0, 6)
+  rightFrontLeg.closePath()
+  rightFrontLeg.fill({ color: DARK })
+  rightFrontLeg.x = 9
+  rightFrontLeg.y = 2
+  f.addChild(rightFrontLeg)
+
+  const rightFrontPaw = new Graphics()
+  rightFrontPaw.moveTo(0, 0)
+  rightFrontPaw.bezierCurveTo(8, -4, 8, 8, 0, 4)
+  rightFrontPaw.closePath()
+  rightFrontPaw.fill({ color: BEAK })
+  rightFrontPaw.x = 9
+  rightFrontPaw.y = 6
+  f.addChild(rightFrontPaw)
+
+  // Head with long built-in S-curve neck
   const head = new Graphics()
-  head.circle(0, -22, 6)
-  // Long thin neck bridge
-  head.roundRect(-2, -14, 4, 18, 2)
+  // Neck — long thin S-curve approximation (two segments)
+  head.roundRect(-2, -10, 4, 18, 2)
+  head.fill({ color: BASE })
+  head.roundRect(-3, -18, 6, 12, 2)
+  head.fill({ color: BASE })
+  // Head circle
+  head.circle(0, -24, 6)
   head.fill({ color: BASE })
 
-  // Tiny ear stubs
+  // Beak — bent shape as child of head
+  const beak = new Graphics()
+  beak.moveTo(3, -24)
+  beak.lineTo(10, -22)
+  beak.lineTo(9, -18)
+  beak.lineTo(4, -20)
+  beak.closePath()
+  beak.fill({ color: BEAK })
+  head.addChild(beak)
+
+  // Tiny eye stubs
   const leftEar = new Graphics()
-  leftEar.circle(-3, -28, 1.5)
+  leftEar.circle(-3, -30, 1.2)
   leftEar.fill({ color: DARK })
   head.addChild(leftEar)
 
   const rightEar = new Graphics()
-  rightEar.circle(3, -28, 1.5)
+  rightEar.circle(3, -30, 1.2)
   rightEar.fill({ color: DARK })
   head.addChild(rightEar)
 
   const leftEye = new Graphics()
-  leftEye.circle(-2, -23, 1.8)
+  leftEye.circle(-2, -25, 1.5)
   leftEye.fill({ color: EYE })
   head.addChild(leftEye)
 
   const rightEye = new Graphics()
-  rightEye.circle(2, -23, 1.8)
+  rightEye.circle(2, -25, 1.5)
   rightEye.fill({ color: EYE })
   head.addChild(rightEye)
 
@@ -708,64 +811,36 @@ function createFlamingo(): Container {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(f as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
 
-  // Very long thin legs
+  // Two very long thin stilt legs (back legs)
   const legColor = DARK
 
   const leftBackLeg = new Graphics()
-  leftBackLeg.roundRect(-1, 0, 2, 18, 1)
+  leftBackLeg.roundRect(-1, 0, 2, 22, 1)
   leftBackLeg.fill({ color: legColor })
-  leftBackLeg.x = -7
-  leftBackLeg.y = 8
+  leftBackLeg.x = -4
+  leftBackLeg.y = 10
   f.addChild(leftBackLeg)
 
   const leftBackPaw = new Graphics()
   leftBackPaw.roundRect(-2.5, 0, 5, 2.5, 1)
   leftBackPaw.fill({ color: legColor })
-  leftBackPaw.x = -7
-  leftBackPaw.y = 16
+  leftBackPaw.x = -4
+  leftBackPaw.y = 20
   f.addChild(leftBackPaw)
 
   const rightBackLeg = new Graphics()
-  rightBackLeg.roundRect(-1, 0, 2, 18, 1)
+  rightBackLeg.roundRect(-1, 0, 2, 22, 1)
   rightBackLeg.fill({ color: legColor })
-  rightBackLeg.x = -2
-  rightBackLeg.y = 8
+  rightBackLeg.x = 4
+  rightBackLeg.y = 10
   f.addChild(rightBackLeg)
 
   const rightBackPaw = new Graphics()
   rightBackPaw.roundRect(-2.5, 0, 5, 2.5, 1)
   rightBackPaw.fill({ color: legColor })
-  rightBackPaw.x = -2
-  rightBackPaw.y = 16
+  rightBackPaw.x = 4
+  rightBackPaw.y = 20
   f.addChild(rightBackPaw)
-
-  const leftFrontLeg = new Graphics()
-  leftFrontLeg.roundRect(-1, 0, 2, 18, 1)
-  leftFrontLeg.fill({ color: legColor })
-  leftFrontLeg.x = 2
-  leftFrontLeg.y = 8
-  f.addChild(leftFrontLeg)
-
-  const leftFrontPaw = new Graphics()
-  leftFrontPaw.roundRect(-2.5, 0, 5, 2.5, 1)
-  leftFrontPaw.fill({ color: legColor })
-  leftFrontPaw.x = 2
-  leftFrontPaw.y = 16
-  f.addChild(leftFrontPaw)
-
-  const rightFrontLeg = new Graphics()
-  rightFrontLeg.roundRect(-1, 0, 2, 18, 1)
-  rightFrontLeg.fill({ color: legColor })
-  rightFrontLeg.x = 7
-  rightFrontLeg.y = 8
-  f.addChild(rightFrontLeg)
-
-  const rightFrontPaw = new Graphics()
-  rightFrontPaw.roundRect(-2.5, 0, 5, 2.5, 1)
-  rightFrontPaw.fill({ color: legColor })
-  rightFrontPaw.x = 7
-  rightFrontPaw.y = 16
-  f.addChild(rightFrontPaw)
 
   buildPartsMap(f, {
     body, head, leftEar, rightEar, leftEye, rightEye, tail,
@@ -774,8 +849,6 @@ function createFlamingo(): Container {
   })
   return f
 }
-
-// ── Pose targets ──────────────────────────────────────────────────────────
 
 export function getPoseTargets(pose: Pose): PoseTargets {
   switch (pose) {

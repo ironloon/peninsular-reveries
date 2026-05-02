@@ -5,12 +5,14 @@ interface VideoFrameCallback {
   cancelVideoFrameCallback(handle: number): void
 }
 
-const FPS = 15
+// Run motion at 10 FPS — responsive enough, light on the main thread
+const FPS = 10
 const FRAME_INTERVAL = 1000 / FPS
 const THRESHOLD = 20
+const CATCH_UP_MS = 250 // if tab throttles, reset prev frame to avoid stale diffs
 
-const CANVAS_W = 48
-const CANVAS_H = 36
+const CANVAS_W = 32
+const CANVAS_H = 24
 
 type TrackingState = {
   canvas: HTMLCanvasElement
@@ -52,33 +54,23 @@ export function computeMotionMetrics(
   let minY = height
   let maxY = 0
 
-  // Process in chunks of 256 pixels to yield occasionally on slow devices
-  const CHUNK = 256
-  for (let i = 0; i < pixelCount; i += CHUNK) {
-    const end = Math.min(i + CHUNK, pixelCount)
-    for (let j = i; j < end; j++) {
-      const pr = prevData[j * 4]
-      const pg = prevData[j * 4 + 1]
-      const pb = prevData[j * 4 + 2]
-      const pgray = pr * 0.299 + pg * 0.587 + pb * 0.114
+  // Simple single loop — 32×24 = only 768 pixels, no need to chunk
+  for (let i = 0; i < pixelCount; i++) {
+    const pi = i * 4
+    const pgray = prevData[pi] * 0.299 + prevData[pi + 1] * 0.587 + prevData[pi + 2] * 0.114
+    const cgray = currData[pi] * 0.299 + currData[pi + 1] * 0.587 + currData[pi + 2] * 0.114
 
-      const cr = currData[j * 4]
-      const cg = currData[j * 4 + 1]
-      const cb = currData[j * 4 + 2]
-      const cgray = cr * 0.299 + cg * 0.587 + cb * 0.114
-
-      const diff = Math.abs(cgray - pgray)
-      if (diff > THRESHOLD) {
-        diffCount++
-        const x = j % width
-        const y = Math.floor(j / width)
-        sumX += x
-        sumY += y
-        if (x < minX) minX = x
-        if (x > maxX) maxX = x
-        if (y < minY) minY = y
-        if (y > maxY) maxY = y
-      }
+    const diff = Math.abs(cgray - pgray)
+    if (diff > THRESHOLD) {
+      diffCount++
+      const x = i % width
+      const y = Math.floor(i / width)
+      sumX += x
+      sumY += y
+      if (x < minX) minX = x
+      if (x > maxX) maxX = x
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
     }
   }
 
@@ -118,12 +110,20 @@ function processFrame(): void {
   if (!state || !state.running) return
 
   const now = performance.now()
-  if (now - state.lastFrameTime < FRAME_INTERVAL) {
-    if (state.useVFC) {
-      state.rafId = (state.video as HTMLVideoElement & VideoFrameCallback).requestVideoFrameCallback?.(processFrame) ?? requestAnimationFrame(processFrame)
-    } else {
-      state.rafId = requestAnimationFrame(processFrame)
-    }
+  const elapsed = now - state.lastFrameTime
+
+  // Catch-up guard: if tab was throttled, discard stale prev frame
+  if (elapsed > CATCH_UP_MS) {
+    state.lastFrameTime = now
+    state.prevImageData = null
+    state.pendingPose = 'idle'
+    state.pendingSince = now
+    scheduleNext()
+    return
+  }
+
+  if (elapsed < FRAME_INTERVAL) {
+    scheduleNext()
     return
   }
   state.lastFrameTime = now
@@ -134,13 +134,11 @@ function processFrame(): void {
 
   if (!state.prevImageData) {
     state.prevImageData = imageData
-    if (state.useVFC) {
-      state.rafId = (state.video as HTMLVideoElement & VideoFrameCallback).requestVideoFrameCallback?.(processFrame) ?? requestAnimationFrame(processFrame)
-    } else {
-      state.rafId = requestAnimationFrame(processFrame)
-    }
+    scheduleNext()
     return
   }
+
+  const startProcess = performance.now()
 
   const { centroidX, centroidY, spreadX, spreadY, motionScore } = computeMotionMetrics(
     state.prevImageData,
@@ -163,6 +161,17 @@ function processFrame(): void {
     state.pendingSince = now
   }
 
+  // Budget guard: if processing took too long, drop the next frame
+  const processTime = performance.now() - startProcess
+  if (processTime > 12) {
+    state.lastFrameTime = now + FRAME_INTERVAL
+  }
+
+  scheduleNext()
+}
+
+function scheduleNext(): void {
+  if (!state) return
   if (state.useVFC) {
     state.rafId = (state.video as HTMLVideoElement & VideoFrameCallback).requestVideoFrameCallback?.(processFrame) ?? requestAnimationFrame(processFrame)
   } else {

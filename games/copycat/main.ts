@@ -27,11 +27,9 @@ const roundBreakOverlay = document.getElementById('round-break-overlay')!
 const roundBreakMsg = document.getElementById('round-break-msg')!
 const roundBreakCountdown = document.getElementById('round-break-countdown')!
 const replayPreview = document.getElementById('replay-preview') as HTMLElement | null
-const replayCat = document.getElementById('replay-cat') as HTMLElement | null
 const replayBtnStart = document.getElementById('replay-btn-start') as HTMLButtonElement | null
 const startControls = document.getElementById('start-controls') as HTMLElement | null
 const endReel = document.getElementById('end-reel') as HTMLElement | null
-const endReelCat = document.getElementById('end-reel-cat') as HTMLElement | null
 
 const ALL_SCREENS = ['start-screen', 'game-screen', 'end-screen']
 
@@ -62,9 +60,8 @@ let prevCatCount = 0
 let lastAnnouncedPose: Pose | null = null
 const announcedMilestones = new Set<number>()
 
-let lastRoundHistory: Pose[] = []
-let replayTimer: number | null = null
-let replayIndex = 0
+let lastRoundHistory: Array<{ pose: Pose; time: number }> = []
+let replayTimer: (() => void) | null = null
 
 // ── Stage init ───────────────────────────────────────────────────────────────
 
@@ -320,8 +317,12 @@ function beginRound(): void {
 // ── Song complete → next round or end screen ────────────────────────────────
 
 function handleSongComplete(): void {
-  // Save pose history from this round for the replay preview
-  lastRoundHistory = danceState.poseHistory.map((h) => h.pose)
+  // Save pose history with relative timestamps for faithful replay
+  const base = danceState.poseHistory[0]?.timestamp ?? performance.now()
+  lastRoundHistory = danceState.poseHistory.map((h) => ({
+    pose: h.pose,
+    time: h.timestamp - base,
+  }))
 
   const nextState = nextRound(danceState)
 
@@ -330,7 +331,7 @@ function handleSongComplete(): void {
     stopMotionTracking()
     showScreen('end-screen')
     gameStatus.textContent = 'All rounds complete! Great dancing!'
-    if (lastRoundHistory.length > 0 && endReel && endReelCat) {
+    if (lastRoundHistory.length > 0 && endReel) {
       endReel.hidden = false
       startEndReel()
     }
@@ -363,75 +364,163 @@ function handleSongComplete(): void {
   setTimeout(tick, 900)
 }
 
-// ── Replay preview on start screen ───────────────────────────────────────────
+// ── Mini Pixi replay stage ─────────────────────────────────────────────────
 
-function showReplayPreview(): void {
-  if (!replayPreview || !replayCat || !startControls) return
+interface MiniReplay {
+  app: Application
+  cat: Container
+  tick: (ticker: Ticker) => void
+}
 
-  // Sample up to 16 poses evenly from the history so the replay is ~5 seconds
-  const samples: Pose[] = []
-  const history = lastRoundHistory
-  const count = Math.min(history.length, 16)
-  if (count > 0) {
-    const step = history.length / count
-    for (let i = 0; i < count; i++) {
-      samples.push(history[Math.floor(i * step)])
-    }
-  } else {
-    samples.push('idle')
+let miniReplays: MiniReplay[] = []
+
+async function initReplayStage(container: HTMLElement): Promise<MiniReplay | null> {
+  const stageW = 120
+  const stageH = 100
+  const mini = new Application()
+  try {
+    await mini.init({
+      width: stageW,
+      height: stageH,
+      backgroundAlpha: 0,
+      preference: 'canvas',
+      autoDensity: true,
+    })
+  } catch {
+    return null
   }
+
+  container.innerHTML = ''
+  container.appendChild(mini.canvas)
+  mini.canvas.style.width = '100%'
+  mini.canvas.style.height = '100%'
+  mini.canvas.style.display = 'block'
+
+  const cat = createAnimal('cat', 0xffb7c5)
+  cat.scale.set(2.2)
+  cat.x = stageW / 2
+  cat.y = stageH * 0.78
+  mini.stage.addChild(cat)
+
+  const beatDur = 60 / 110 // default beat duration for idle bop
+
+  const tick = (_ticker: Ticker) => {
+    const t = performance.now() / 1000
+    const beatT = (t % beatDur) / beatDur
+    const parts = getCatParts(cat)
+    if (parts) {
+      const breathe = 1 + Math.sin(t * 3) * 0.03
+      const tailSway = Math.sin(t * 2.5) * 0.15
+      const bounce = Math.sin(beatT * Math.PI * 2) * 1.5
+      parts.body.scale.y = breathe
+      parts.tail.rotation = tailSway
+      parts.body.y = bounce
+      parts.head.y = -14 + bounce * 0.6
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const blink = (cat as any).__blinkState
+      if (blink) {
+        const nowMs = performance.now()
+        if (nowMs > blink.nextBlink) {
+          blink.open = !blink.open
+          const dur = blink.open ? 2000 + Math.random() * 3000 : 120
+          blink.nextBlink = nowMs + dur
+        }
+        const eyeScale = blink.open ? 1 : 0.1
+        parts.leftEye.scale.y = eyeScale
+        parts.rightEye.scale.y = eyeScale
+      }
+    }
+  }
+
+  mini.ticker.add(tick)
+
+  const replay: MiniReplay = { app: mini, cat, tick }
+  miniReplays.push(replay)
+  return replay
+}
+
+function runReplayAnimation(mini: MiniReplay, speed = 8): (() => void) {
+  const history = lastRoundHistory
+  if (history.length === 0) {
+    animatePose(mini.cat, 'idle', 120)
+    return () => {}
+  }
+
+  let timeouts: number[] = []
+
+  const setPose = (pose: Pose) => {
+    animatePose(mini.cat, pose, 120)
+  }
+
+  // First pose immediately
+  setPose(history[0].pose)
+
+  for (let i = 1; i < history.length; i++) {
+    const delay = (history[i].time - history[i - 1].time) / speed
+    const pose = history[i].pose
+    const t = window.setTimeout(() => setPose(pose), Math.max(80, delay))
+    timeouts.push(t)
+  }
+
+  // Auto-loop: restart after a short pause
+  const totalDuration = (history[history.length - 1].time - history[0].time) / speed
+  const loopT = window.setTimeout(() => {
+    const cancel = runReplayAnimation(mini, speed)
+    timeouts.push(cancel as unknown as number)
+  }, Math.max(1200, totalDuration + 400))
+  timeouts.push(loopT)
+
+  return () => {
+    for (const t of timeouts) window.clearTimeout(t)
+    timeouts = []
+  }
+}
+
+function destroyReplays(): void {
+  for (const mini of miniReplays) {
+    mini.app.ticker.remove(mini.tick)
+    mini.app.destroy(true, { children: true })
+  }
+  miniReplays = []
+}
+
+async function showReplayPreview(): Promise<void> {
+  if (!replayPreview || !startControls) return
+  const stage = replayPreview.querySelector('.copycat-replay-stage') as HTMLElement | null
+  if (!stage) return
 
   replayPreview.hidden = false
   startControls.hidden = true
-  replayIndex = 0
 
-  const showFrame = () => {
-    const pose = samples[replayIndex % samples.length]
-    replayCat.textContent = pose === 'jump' ? '🐈' : '🐱'
-    replayCat.className = `copycat-replay-cat pose-${pose}`
-    replayIndex++
-  }
+  const mini = await initReplayStage(stage)
+  if (!mini) return
 
-  showFrame()
-  replayTimer = window.setInterval(showFrame, 320)
+  const cancel = runReplayAnimation(mini, 8)
+  replayTimer = cancel
 }
 
-function startEndReel(): void {
-  if (!endReelCat) return
-  const samples: Pose[] = []
-  const history = lastRoundHistory
-  const count = Math.min(history.length, 24)
-  if (count > 0) {
-    const step = history.length / count
-    for (let i = 0; i < count; i++) {
-      samples.push(history[Math.floor(i * step)])
-    }
-  } else {
-    samples.push('idle')
-  }
+async function startEndReel(): Promise<void> {
+  const stage = endReel?.querySelector('.copycat-replay-stage') as HTMLElement | null
+  if (!stage) return
 
-  replayIndex = 0
-  const showFrame = () => {
-    const pose = samples[replayIndex % samples.length]
-    endReelCat.textContent = pose === 'jump' ? '🐈' : '🐱'
-    endReelCat.className = `copycat-replay-cat pose-${pose}`
-    replayIndex++
-  }
+  const mini = await initReplayStage(stage)
+  if (!mini) return
 
-  showFrame()
-  replayTimer = window.setInterval(showFrame, 280)
+  const cancel = runReplayAnimation(mini, 5)
+  replayTimer = cancel
 }
 
 function stopReplayPreview(): void {
-  if (replayTimer !== null) {
-    window.clearInterval(replayTimer)
-    replayTimer = null
+  if (typeof replayTimer === 'function') {
+    replayTimer()
   }
+  replayTimer = null
+  destroyReplays()
+
   if (replayPreview) replayPreview.hidden = true
   if (endReel) endReel.hidden = true
   if (startControls) startControls.hidden = false
-  if (replayCat) replayCat.className = 'copycat-replay-cat'
-  if (endReelCat) endReelCat.className = 'copycat-replay-cat'
 }
 
 // ── Reset / replay ───────────────────────────────────────────────────────────
