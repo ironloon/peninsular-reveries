@@ -19,7 +19,7 @@ async function checkRendererHealth(app: Application): Promise<boolean> {
   const temp = document.createElement('canvas')
   temp.width = 50
   temp.height = 50
-  const ctx = temp.getContext('2d')
+  const ctx = temp.getContext('2d', { willReadFrequently: true })
   if (!ctx) {
     app.stage.removeChild(g)
     g.destroy()
@@ -361,8 +361,10 @@ export function getCatParts(cat: Container): CatGraphics | undefined {
 
 export function layoutCats(cats: Container[], stageWidth: number, stageHeight: number): void {
   const lineY = stageHeight * 0.65
+  // Cat graphics are authored at ~36 CSS px; scale so the first cat is
+  // roughly 12 % of the stage width so it remains visible on large screens.
+  const baseWidth = Math.max(36, stageWidth * 0.12)
   const scales = [1.2, 1.0, 0.9, 0.85, 0.8]
-  const baseWidth = 36
   const minGap = 48
 
   let totalWidth = 0

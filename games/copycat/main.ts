@@ -25,6 +25,12 @@ const gameFeedback = document.getElementById('game-feedback')!
 const ALL_SCREENS = ['start-screen', 'game-screen', 'end-screen']
 
 function showScreen(screenId: string): void {
+  // Remove focus from any element before hiding its ancestor to avoid
+  // aria-hidden focus violations.
+  const active = document.activeElement
+  if (active && active instanceof HTMLElement) {
+    active.blur()
+  }
   for (const id of ALL_SCREENS) {
     const el = document.getElementById(id)
     if (!el) continue
@@ -142,11 +148,19 @@ async function enterGame(): Promise<void> {
   const steps = 12
   for (let i = steps; i >= 0; i--) {
     const radius = maxRadius * (i / steps)
-    const alpha = 0.18 * (1 - i / steps)
+    const alpha = 0.35 * (1 - i / steps)
     spotlight.circle(cx, cy, radius)
     spotlight.fill({ color: 0xff6b9d, alpha })
   }
   app.stage.addChildAt(spotlight, 0)
+
+  // Temporary debug: bright yellow rectangle so we can confirm the canvas is visible
+  const debugRect = new Graphics()
+  debugRect.rect(0, 0, 80, 80)
+  debugRect.fill({ color: 0xffff00 })
+  debugRect.x = 10
+  debugRect.y = 10
+  app.stage.addChild(debugRect)
 
   ensureAudioUnlocked()
   startDanceMusic()
@@ -172,12 +186,28 @@ async function enterGame(): Promise<void> {
   const scriptTag = document.querySelector('script[src*="copycat/main.js"]') as HTMLScriptElement | null
   const buildSha = scriptTag?.src.match(/v=([a-f0-9]+)/)?.[1] ?? 'unknown'
   // Diagnostics: log renderer, stage state, and build SHA
+  const childInfo = app.stage.children.map((c, i) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const child = c as any
+    return {
+      index: i,
+      type: child.constructor?.name ?? 'unknown',
+      x: child.x,
+      y: child.y,
+      scaleX: child.scale?.x,
+      scaleY: child.scale?.y,
+      alpha: child.alpha,
+      visible: child.visible,
+      children: child.children?.length,
+    }
+  })
   console.log('[copycat] enterGame diagnostics:', {
     buildSha,
     realRendererType,
     screenW: app.screen.width,
     screenH: app.screen.height,
     stageChildren: app.stage.children.length,
+    childInfo,
   })
 
   // Expose debug state on window for console inspection
@@ -185,6 +215,7 @@ async function enterGame(): Promise<void> {
   ;(window as any).__copycatDebug = {
     app,
     playerCat,
+    debugRect,
     canvas: app.canvas,
     screen: { w: app.screen.width, h: app.screen.height },
     buildSha,
