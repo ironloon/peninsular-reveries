@@ -1,9 +1,9 @@
 import { Pose } from './types.js'
 
-const FPS = 15
+const FPS = 30
 const FRAME_INTERVAL = 1000 / FPS
-const THRESHOLD = 30
-const DEBOUNCE_MS = 150
+const THRESHOLD = 20
+const DEBOUNCE_MS = 80
 
 type TrackingState = {
   canvas: HTMLCanvasElement
@@ -85,12 +85,16 @@ export function resolvePose(
   spreadY: number,
   motionScore: number,
 ): Pose {
-  if (motionScore < 50) return 'idle'
-  if (centroidY < 0.3 && spreadX > 0.4 && motionScore > 250) return 'both-paws-up'
-  if (centroidX < 0.35 && centroidY < 0.4 && motionScore > 150) return 'left-paw-up'
-  if (centroidX > 0.65 && centroidY < 0.4 && motionScore > 150) return 'right-paw-up'
-  if (centroidY > 0.7 && motionScore > 100) return 'crouch'
-  if (motionScore > 400 && spreadY > 0.5) return 'jump'
+  // Camera video is CSS-mirrored for the user, but raw pixel data is not.
+  // Flip centroidX so "user's left" on the mirrored screen maps to left-paw-up.
+  const x = 1 - centroidX
+
+  if (motionScore < 30) return 'idle'
+  if (centroidY < 0.35 && spreadX > 0.35 && motionScore > 120) return 'both-paws-up'
+  if (x < 0.35 && centroidY < 0.45 && motionScore > 60) return 'left-paw-up'
+  if (x > 0.65 && centroidY < 0.45 && motionScore > 60) return 'right-paw-up'
+  if (centroidY > 0.65 && motionScore > 40) return 'crouch'
+  if (motionScore > 180 && spreadY > 0.4) return 'jump'
   return 'idle'
 }
 

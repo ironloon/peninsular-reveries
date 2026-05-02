@@ -361,24 +361,26 @@ export function getCatParts(cat: Container): CatGraphics | undefined {
 
 export function layoutCats(cats: Container[], stageWidth: number, stageHeight: number): void {
   const lineY = stageHeight * 0.65
-  // All cats share the same scale so they look like a uniform dance line.
-  const baseWidth = Math.max(36, stageWidth * 0.12)
-  const scale = 1.2
-  const minGap = 48
+  // Cat native drawing is ~40 px wide. We want each cat to be ~15 % of the
+  // stage width so they are clearly visible and their poses read at a glance.
+  const NATIVE_WIDTH = 40
+  const scale = Math.max(2.5, (stageWidth * 0.15) / NATIVE_WIDTH)
+  const catWidth = NATIVE_WIDTH * scale
+  const minGap = 24
 
-  const totalWidth = cats.length * baseWidth * scale + (cats.length - 1) * minGap
+  const totalWidth = cats.length * catWidth + (cats.length - 1) * minGap
   let gap = minGap
   if (totalWidth > stageWidth && cats.length > 1) {
-    const available = stageWidth - cats.length * baseWidth * scale
-    gap = Math.max(20, available / (cats.length - 1))
+    const available = stageWidth - cats.length * catWidth
+    gap = Math.max(8, available / (cats.length - 1))
   }
 
-  let currentX = (stageWidth - (cats.length * baseWidth * scale + (cats.length - 1) * gap)) / 2
+  let currentX = (stageWidth - (cats.length * catWidth + (cats.length - 1) * gap)) / 2
   for (let i = 0; i < cats.length; i++) {
     const cat = cats[i]
     cat.scale.set(scale)
-    cat.x = currentX + (baseWidth * scale) / 2
+    cat.x = currentX + catWidth / 2
     cat.y = lineY
-    currentX += baseWidth * scale + gap
+    currentX += catWidth + gap
   }
 }

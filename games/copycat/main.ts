@@ -1,6 +1,6 @@
 import { Application, Container, Graphics, Ticker } from 'pixi.js'
 import { setupGameMenu } from '../../client/game-menu.js'
-import { initStage, createCat, layoutCats } from './renderer.js'
+import { initStage, createCat, layoutCats, getCatParts } from './renderer.js'
 import { animatePose, animateCatJoin } from './animations.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
@@ -258,8 +258,7 @@ async function enterGame(): Promise<void> {
         const t = performance.now() / 1000
         const breathe = 1 + Math.sin(t * 3 + i * 1.2) * 0.03
         const tailSway = Math.sin(t * 2.5 + i * 0.8) * 0.15
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const parts = (container as any).__catParts
+        const parts = getCatParts(container)
         if (parts) {
           parts.body.scale.y = breathe
           parts.tail.rotation = tailSway
