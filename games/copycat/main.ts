@@ -64,6 +64,14 @@ async function boot(): Promise<void> {
 
   setupGameMenu({ musicTrackPicker: false })
 
+  // If the player toggles music on mid-game, start playback immediately.
+  window.addEventListener('reveries:music-change', (e) => {
+    const enabled = (e as CustomEvent<{ enabled: boolean }>).detail.enabled
+    if (enabled && danceState.phase === 'dancing') {
+      startDanceMusic()
+    }
+  })
+
   setupCopycatInput({ onMenu: () => {
     // The modal toggle is handled by shared game-menu wiring;
     // this callback is a fallback for explicit menu requests.

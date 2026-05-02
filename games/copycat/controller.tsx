@@ -145,6 +145,12 @@ export async function copycatAction() {
           settingsContent={<>
             <SettingsSection title="Audio">
               <SettingsToggle
+                id="music-enabled-toggle"
+                label="Music"
+                helpText="Music is on until you change it here."
+                helpId="music-enabled-help"
+              />
+              <SettingsToggle
                 id="sfx-enabled-toggle"
                 label="Sound effects"
                 helpText="Sound effects are on until you change it here."
