@@ -73,12 +73,12 @@ function computeTargetValues(
   return {
     bodyY: r.bodyY + targets.bodyY,
     bodyScaleY: targets.bodyScaleY,
-    headY: r.headY + targets.bodyY + targets.headY,
+    headY: r.headY + targets.headY,
     tailRotation: targets.tailRotation,
-    leftFrontPawY: r.leftFrontPawY + targets.bodyY + targets.leftFrontPawY,
-    rightFrontPawY: r.rightFrontPawY + targets.bodyY + targets.rightFrontPawY,
-    leftBackPawY: r.leftBackPawY + targets.bodyY + targets.leftBackPawY,
-    rightBackPawY: r.rightBackPawY + targets.bodyY + targets.rightBackPawY,
+    leftFrontPawY: r.leftFrontPawY + targets.leftFrontPawY,
+    rightFrontPawY: r.rightFrontPawY + targets.rightFrontPawY,
+    leftBackPawY: r.leftBackPawY + targets.leftBackPawY,
+    rightBackPawY: r.rightBackPawY + targets.rightBackPawY,
     leftFrontPawRotation: targets.leftFrontPawRotation,
     rightFrontPawRotation: targets.rightFrontPawRotation,
   }

@@ -28,6 +28,7 @@ export interface Model {
 export interface BuiltSprite {
   container: Container
   parts: Map<string, Graphics>
+  nativeBounds: { x: number; y: number; width: number; height: number }
 }
 
 export function buildSprite(
@@ -97,7 +98,8 @@ export function buildSprite(
   }
 
   walk(model.root, container)
-  return { container, parts }
+  const nativeBounds = container.getLocalBounds()
+  return { container, parts, nativeBounds }
 }
 
 // ── Cat model ──────────────────────────────────────────────────────────────

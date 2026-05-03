@@ -89,6 +89,21 @@ export interface CatGraphics {
     leftBackPawY: number
     rightBackPawY: number
   }
+  rig: RigConfig
+  nativeBounds: { x: number; y: number; width: number; height: number }
+}
+
+interface RigConfig {
+  hasNeck: boolean
+  feetBaselineOffset: number
+}
+
+const ANIMAL_RIGS: Record<AnimalKind, RigConfig> = {
+  cat: { hasNeck: false, feetBaselineOffset: 20 },
+  giraffe: { hasNeck: true, feetBaselineOffset: 25 },
+  crocodile: { hasNeck: false, feetBaselineOffset: 12 },
+  wolf: { hasNeck: false, feetBaselineOffset: 19 },
+  flamingo: { hasNeck: true, feetBaselineOffset: 32.5 },
 }
 
 interface PoseTargets {
@@ -152,44 +167,54 @@ export function createAnimal(kind: AnimalKind, tint?: number): Container {
     kind === 'wolf' ? wolfModel :
     flamingoModel
 
-  const { container, parts } = buildSprite(model, overrides)
+  const { container, parts, nativeBounds } = buildSprite(model, overrides)
 
-  buildPartsMap(container, {
-    body: parts.get('body')!,
-    head: parts.get('head')!,
-    leftEar: parts.get(
-      kind === 'giraffe' ? 'leftOssicone' :
-      kind === 'crocodile' ? 'leftBump' :
-      kind === 'flamingo' ? 'leftNub' :
-      'leftEar'
-    )!,
-    rightEar: parts.get(
-      kind === 'giraffe' ? 'rightOssicone' :
-      kind === 'crocodile' ? 'rightBump' :
-      kind === 'flamingo' ? 'rightNub' :
-      'rightEar'
-    )!,
-    leftEye: parts.get('leftEye')!,
-    rightEye: parts.get('rightEye')!,
-    tail: parts.get('tail')!,
-    leftFrontLeg: parts.get('leftFrontLeg')!,
-    rightFrontLeg: parts.get('rightFrontLeg')!,
-    leftBackLeg: parts.get('leftBackLeg')!,
-    rightBackLeg: parts.get('rightBackLeg')!,
-    leftFrontPaw: parts.get('leftFrontPaw')!,
-    rightFrontPaw: parts.get('rightFrontPaw')!,
-    leftBackPaw: parts.get('leftBackPaw')!,
-    rightBackPaw: parts.get('rightBackPaw')!,
-  })
+  buildPartsMap(
+    container,
+    {
+      body: parts.get('body')!,
+      head: parts.get('head')!,
+      leftEar: parts.get(
+        kind === 'giraffe' ? 'leftOssicone' :
+        kind === 'crocodile' ? 'leftBump' :
+        kind === 'flamingo' ? 'leftNub' :
+        'leftEar'
+      )!,
+      rightEar: parts.get(
+        kind === 'giraffe' ? 'rightOssicone' :
+        kind === 'crocodile' ? 'rightBump' :
+        kind === 'flamingo' ? 'rightNub' :
+        'rightEar'
+      )!,
+      leftEye: parts.get('leftEye')!,
+      rightEye: parts.get('rightEye')!,
+      tail: parts.get('tail')!,
+      leftFrontLeg: parts.get('leftFrontLeg')!,
+      rightFrontLeg: parts.get('rightFrontLeg')!,
+      leftBackLeg: parts.get('leftBackLeg')!,
+      rightBackLeg: parts.get('rightBackLeg')!,
+      leftFrontPaw: parts.get('leftFrontPaw')!,
+      rightFrontPaw: parts.get('rightFrontPaw')!,
+      leftBackPaw: parts.get('leftBackPaw')!,
+      rightBackPaw: parts.get('rightBackPaw')!,
+    },
+    ANIMAL_RIGS[kind],
+    nativeBounds,
+  )
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(container as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
   return container
 }
 
-function buildPartsMap(container: Container, parts: Omit<CatGraphics, 'rest'>): void {
+function buildPartsMap(
+  container: Container,
+  parts: Omit<CatGraphics, 'rest' | 'rig' | 'nativeBounds'>,
+  rig: RigConfig,
+  nativeBounds: { x: number; y: number; width: number; height: number },
+): void {
   const fullParts: CatGraphics = {
-    ...(parts as CatGraphics),
+    ...(parts as unknown as Omit<CatGraphics, 'rest' | 'rig' | 'nativeBounds'>),
     rest: {
       bodyY: parts.body.y,
       headY: parts.head.y,
@@ -202,6 +227,8 @@ function buildPartsMap(container: Container, parts: Omit<CatGraphics, 'rest'>): 
       leftBackPawY: parts.leftBackPaw.y,
       rightBackPawY: parts.rightBackPaw.y,
     },
+    rig,
+    nativeBounds,
   }
   catPartsMap.set(container, fullParts)
   updateCatPose(container, 'idle', true)
@@ -323,25 +350,25 @@ export function getPoseTargets(pose: Pose): PoseTargets {
 function applyPoseTargets(parts: CatGraphics, targets: PoseTargets): void {
   const r = parts.rest
 
-  // Body moves first; everything else follows relative to body
+  // Body moves on its own; poses are part-relative, not anatomically chained
   parts.body.y = r.bodyY + targets.bodyY
   parts.body.scale.y = targets.bodyScaleY
-  parts.head.y = r.headY + targets.bodyY + targets.headY
+  parts.head.y = r.headY + targets.headY
   parts.tail.rotation = targets.tailRotation
 
-  // Paws move with body offset + their own offset
-  parts.leftFrontPaw.y = r.leftFrontPawY + targets.bodyY + targets.leftFrontPawY
-  parts.rightFrontPaw.y = r.rightFrontPawY + targets.bodyY + targets.rightFrontPawY
-  parts.leftBackPaw.y = r.leftBackPawY + targets.bodyY + targets.leftBackPawY
-  parts.rightBackPaw.y = r.rightBackPawY + targets.bodyY + targets.rightBackPawY
+  // Paws move only by their own pose delta
+  parts.leftFrontPaw.y = r.leftFrontPawY + targets.leftFrontPawY
+  parts.rightFrontPaw.y = r.rightFrontPawY + targets.rightFrontPawY
+  parts.leftBackPaw.y = r.leftBackPawY + targets.leftBackPawY
+  parts.rightBackPaw.y = r.rightBackPawY + targets.rightBackPawY
   parts.leftFrontPaw.rotation = targets.leftFrontPawRotation
   parts.rightFrontPaw.rotation = targets.rightFrontPawRotation
 
   // Legs shadow the same delta as paws so they stay visually attached
-  parts.leftFrontLeg.y = r.leftFrontLegY + targets.bodyY + targets.leftFrontPawY
-  parts.rightFrontLeg.y = r.rightFrontLegY + targets.bodyY + targets.rightFrontPawY
-  parts.leftBackLeg.y = r.leftBackLegY + targets.bodyY + targets.leftBackPawY
-  parts.rightBackLeg.y = r.rightBackLegY + targets.bodyY + targets.rightBackPawY
+  parts.leftFrontLeg.y = r.leftFrontLegY + targets.leftFrontPawY
+  parts.rightFrontLeg.y = r.rightFrontLegY + targets.rightFrontPawY
+  parts.leftBackLeg.y = r.leftBackLegY + targets.leftBackPawY
+  parts.rightBackLeg.y = r.rightBackLegY + targets.rightBackPawY
 }
 
 // ── Pose update ─────────────────────────────────────────────────────────────
@@ -363,18 +390,20 @@ export function getCatParts(cat: Container): CatGraphics | undefined {
 
 export function layoutCats(cats: Container[], stageWidth: number, stageHeight: number): void {
   const lineY = stageHeight * 0.65
-  const NATIVE_WIDTH = 44
-  const scale = Math.max(2.2, (stageWidth * 0.12) / NATIVE_WIDTH)
-  const catWidth = NATIVE_WIDTH * scale
-
-  // Player (index 0) is always centered; backup dancers alternate left/right.
-  const gap = catWidth + 20
   const cx = stageWidth / 2
   const count = cats.length
 
   for (let i = 0; i < count; i++) {
     const cat = cats[i]
+    const parts = catPartsMap.get(cat)
+    const nativeWidth = parts?.nativeBounds.width ?? 44
+    const feetOffset = parts?.rig.feetBaselineOffset ?? 20
+    const scale = Math.max(2.2, (stageWidth * 0.12) / nativeWidth)
+
     cat.scale.set(scale)
+    const catWidth = nativeWidth * scale
+    const gap = catWidth + 20
+
     if (i === 0) {
       cat.x = cx
     } else if (i % 2 === 1) {
@@ -382,6 +411,6 @@ export function layoutCats(cats: Container[], stageWidth: number, stageHeight: n
     } else {
       cat.x = cx + gap * (i / 2)
     }
-    cat.y = lineY
+    cat.y = lineY - feetOffset * scale
   }
 }
