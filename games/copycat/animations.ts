@@ -41,7 +41,7 @@ function readCurrentValues(parts: NonNullable<ReturnType<typeof getCatParts>>) {
 function applyInterpolatedPose(
   parts: NonNullable<ReturnType<typeof getCatParts>>,
   start: ReturnType<typeof readCurrentValues>,
-  target: ReturnType<typeof getPoseTargets>,
+  target: ReturnType<typeof readCurrentValues>,
   t: number,
 ): void {
   const lerp = (a: number, b: number, p: number): number => a + (b - a) * p
@@ -57,11 +57,31 @@ function applyInterpolatedPose(
   parts.leftFrontPaw.rotation = lerp(start.leftFrontPawRotation, target.leftFrontPawRotation, t)
   parts.rightFrontPaw.rotation = lerp(start.rightFrontPawRotation, target.rightFrontPawRotation, t)
 
-  // Legs follow paws
-  parts.leftFrontLeg.y = 8 + parts.leftFrontPaw.y
-  parts.rightFrontLeg.y = 8 + parts.rightFrontPaw.y
-  parts.leftBackLeg.y = 8 + parts.leftBackPaw.y
-  parts.rightBackLeg.y = 8 + parts.rightBackPaw.y
+  // Legs follow paws using their rest offsets so they stay attached on every animal
+  const r = parts.rest
+  parts.leftFrontLeg.y = r.leftFrontLegY + (parts.leftFrontPaw.y - r.leftFrontPawY)
+  parts.rightFrontLeg.y = r.rightFrontLegY + (parts.rightFrontPaw.y - r.rightFrontPawY)
+  parts.leftBackLeg.y = r.leftBackLegY + (parts.leftBackPaw.y - r.leftBackPawY)
+  parts.rightBackLeg.y = r.rightBackLegY + (parts.rightBackPaw.y - r.rightBackPawY)
+}
+
+function computeTargetValues(
+  parts: NonNullable<ReturnType<typeof getCatParts>>,
+  targets: ReturnType<typeof getPoseTargets>,
+): ReturnType<typeof readCurrentValues> {
+  const r = parts.rest
+  return {
+    bodyY: r.bodyY + targets.bodyY,
+    bodyScaleY: targets.bodyScaleY,
+    headY: r.headY + targets.bodyY + targets.headY,
+    tailRotation: targets.tailRotation,
+    leftFrontPawY: r.leftFrontPawY + targets.bodyY + targets.leftFrontPawY,
+    rightFrontPawY: r.rightFrontPawY + targets.bodyY + targets.rightFrontPawY,
+    leftBackPawY: r.leftBackPawY + targets.bodyY + targets.leftBackPawY,
+    rightBackPawY: r.rightBackPawY + targets.bodyY + targets.rightBackPawY,
+    leftFrontPawRotation: targets.leftFrontPawRotation,
+    rightFrontPawRotation: targets.rightFrontPawRotation,
+  }
 }
 
 function easeOutQuad(t: number): number {
@@ -120,10 +140,11 @@ export function animatePose(cat: Container, targetPose: Pose, durationMs: number
 
   const targets = getPoseTargets(targetPose)
   const startValues = readCurrentValues(parts)
+  const targetValues = computeTargetValues(parts, targets)
 
   poseAnimations.set(cat, {
     startValues,
-    targets,
+    targets: targetValues,
     durationMs,
     elapsed: 0,
   })

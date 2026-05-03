@@ -851,7 +851,7 @@ function createFlamingo(): Container {
     paw.circle(2.5, 2, 1)
     paw.fill({ color: DARK })
     paw.x = x
-    paw.y = 24
+    paw.y = 30
     f.addChild(paw)
 
     return { leg, paw }
