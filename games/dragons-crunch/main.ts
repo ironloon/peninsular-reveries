@@ -1,12 +1,10 @@
 import { Application, Container, Graphics, Ticker } from 'pixi.js'
 import { setupGameMenu } from '../../client/game-menu.js'
 import {
-  initStage, createDragon,
-  computeDragonScale, computeDragonTarget,
+  initStage, createMouthZone,
   createFoodGraphics, updateFoodPosition,
   createParticleGraphics, updateParticleGraphics,
 } from './renderer.js'
-import { animateChomp, animateFireBreathing, stopFireBreathing, applyIdle } from './animations.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
 import { createInitialState, startGame, updateGame } from './state.js'
@@ -26,9 +24,7 @@ const replayBtn = document.getElementById('replay-btn') as HTMLButtonElement
 const cameraPrompt = document.querySelector('.dc-camera-prompt') as HTMLElement
 const scoreDisplay = document.getElementById('score-display')!
 const foodDisplay = document.getElementById('food-display')!
-const dragonCountDisplay = document.getElementById('dragon-count')!
 const gameStatus = document.getElementById('game-status')!
-const gameFeedback = document.getElementById('game-feedback')!
 const celebrationOverlay = document.getElementById('celebration-overlay')!
 const celebrationCountdown = document.getElementById('celebration-countdown')!
 const endScoreMsg = document.getElementById('end-score-msg')!
@@ -63,26 +59,16 @@ let prevLandedCount = 0
 let lastAnnouncedScore = -1
 let lastAnnouncedFoodSpawned = -1
 
-interface DragonInstance {
-  container: Container
-  currentX: number
-  currentY: number
-  targetX: number
-  targetY: number
-  currentScale: number
-  targetScale: number
-}
-
-const dragonsById = new Map<number, DragonInstance>()
 const foodContainers = new Map<string, Container>()
 const particleGraphics: Graphics[] = []
+let mouthZone: Graphics | null = null
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 
 async function boot(): Promise<void> {
   app = await initStage(pixiStage)
   if (!app) {
-    cameraPrompt.textContent = 'Unable to initialize the dragon stage. Please try a different browser.'
+    cameraPrompt.textContent = 'Unable to initialize the stage. Please try a different browser.'
     startBtn.disabled = true
     return
   }
@@ -139,7 +125,6 @@ async function enterGame(): Promise<void> {
   app.canvas.style.display = 'block'
 
   app.stage.removeChildren()
-  dragonsById.clear()
   foodContainers.clear()
   particleGraphics.length = 0
 
@@ -174,87 +159,31 @@ async function enterGame(): Promise<void> {
   gameLoopCallback = (ticker) => {
     if (!app) return
     const deltaMs = Math.min(ticker.deltaMS, 50)
-    const now = performance.now()
 
     const bodiesToUse = cameraGranted ? activeBodies.slice(0, 6) : activeBodies.slice(0, 1)
     gameState = updateGame(gameState, bodiesToUse, app.screen.width, app.screen.height, deltaMs)
 
-    // ── Dragons ──────────────────────────────────────────────────────────
-    const dragonStates = gameState.dragons
-    const seenIds = new Set<number>()
-
-    for (const body of bodiesToUse) {
-      seenIds.add(body.id)
-      let inst = dragonsById.get(body.id)
-
-      if (!inst) {
-        const container = createDragon(getDragonColor(body.id))
-        app.stage.addChildAt(container, 0)
-        const scale = computeDragonScale(body, app.screen.width, app.screen.height)
-        const { x, y } = computeDragonTarget(body, scale, app.screen.width, app.screen.height)
-        inst = {
-          container,
-          currentX: x, currentY: y,
-          targetX: x, targetY: y,
-          currentScale: scale, targetScale: scale,
-        }
-        dragonsById.set(body.id, inst)
+    // ── Mouth zone indicator ──────────────────────────────────────────────
+    if (bodiesToUse.length > 0) {
+      if (!mouthZone) {
+        mouthZone = createMouthZone()
+        app.stage.addChildAt(mouthZone, 0)
       }
-
-      inst.targetScale = computeDragonScale(body, app.screen.width, app.screen.height)
-      const target = computeDragonTarget(body, inst.targetScale, app.screen.width, app.screen.height)
-      inst.targetX = target.x
-      inst.targetY = target.y
-    }
-
-    for (const [id, inst] of dragonsById) {
-      if (!seenIds.has(id)) {
-        stopFireBreathing(inst.container)
-        app.stage.removeChild(inst.container)
-        dragonsById.delete(id)
-      }
-    }
-
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-    const smoothT = Math.min(0.16, deltaMs * 0.0025)
-
-    dragonCountDisplay.textContent = `Dragons: ${dragonsById.size}`
-    if (gameFeedback && dragonsById.size > 0) {
-      gameFeedback.textContent = `${dragonsById.size} dragon${dragonsById.size > 1 ? 's' : ''} spotted`
-    }
-
-    for (let i = 0; i < dragonStates.length; i++) {
-      const dState = dragonStates[i]
-      const inst = dragonsById.get(dState.id)
-      if (!inst) continue
-
-      inst.currentX = lerp(inst.currentX, inst.targetX, smoothT)
-      inst.currentY = lerp(inst.currentY, inst.targetY, smoothT)
-      inst.currentScale = lerp(inst.currentScale, inst.targetScale, smoothT)
-
-      inst.container.x = inst.currentX
-      inst.container.y = inst.currentY
-      inst.container.scale.set(inst.currentScale)
-
-      if (inst.currentX < app.screen.width * 0.5) {
-        inst.container.scale.x = -Math.abs(inst.container.scale.x)
-      } else {
-        inst.container.scale.x = Math.abs(inst.container.scale.x)
-      }
-
-      applyIdle(inst.container, now / 1000, i)
-
-      if (dState.chomping) animateChomp(inst.container)
-      if (dState.breathingFire) animateFireBreathing(inst.container, dState.fireIntensity)
-      else stopFireBreathing(inst.container)
+      const body = bodiesToUse[0]
+      const mx = (1 - body.normalizedX) * app.screen.width
+      const my = body.normalizedY * app.screen.height - body.spreadY * app.screen.height * 0.25
+      mouthZone.x = mx
+      mouthZone.y = my
+    } else if (mouthZone && mouthZone.parent) {
+      mouthZone.parent.removeChild(mouthZone)
+      mouthZone = null
     }
 
     // ── Food ─────────────────────────────────────────────────────────────
     for (const food of gameState.foods) {
       if (!foodContainers.has(food.id) && !food.eaten) {
         const fc = createFoodGraphics(food)
-        const insertIdx = Math.min(dragonsById.size, app.stage.children.length)
-        app.stage.addChildAt(fc, insertIdx)
+        app.stage.addChild(fc)
         foodContainers.set(food.id, fc)
         if (lastFoodSpawnedVisual !== gameState.foodSpawned) {
           lastFoodSpawnedVisual = gameState.foodSpawned
@@ -382,9 +311,9 @@ function resetToStart(): void {
   stopEpicMusic()
 
   if (app) {
-    for (const inst of dragonsById.values()) {
-      stopFireBreathing(inst.container)
-      app.stage.removeChild(inst.container)
+    if (mouthZone && mouthZone.parent) {
+      mouthZone.parent.removeChild(mouthZone)
+      mouthZone = null
     }
     for (const fc of foodContainers.values()) app.stage.removeChild(fc)
     for (const pg of particleGraphics) {
@@ -394,7 +323,6 @@ function resetToStart(): void {
     app.stage.removeChildren()
   }
 
-  dragonsById.clear()
   foodContainers.clear()
   particleGraphics.length = 0
   gameState = createInitialState()
@@ -425,13 +353,6 @@ function handleVisibilityChange(): void {
       startEpicMusic()
     }
   }
-}
-
-function getDragonColor(index: number): number {
-  const colors = [
-    0x2e7d32, 0x1565c0, 0xc62828, 0x6a1b9a, 0xe65100, 0x00695c, 0xad1457, 0x455a64,
-  ]
-  return colors[index % colors.length]
 }
 
 // ── Boot ─────────────────────────────────────────────────────────────────────

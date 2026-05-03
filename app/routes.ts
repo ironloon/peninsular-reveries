@@ -36,5 +36,7 @@ export const routes = route({
   mudskipper: '/mudskipper/',
   tunaPiano: '/tuna-piano/',
   growWithMe: '/grow-with-me/',
+  bakingSimulator: '/baking-simulator/',
+  bakingSimulatorInfo: '/baking-simulator/info/',
   notFound: '/404.html',
 })

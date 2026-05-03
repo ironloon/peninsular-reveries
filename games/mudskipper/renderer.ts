@@ -1,6 +1,6 @@
 import { Application, Container, Graphics } from 'pixi.js'
 import { buildSprite, mudskipperModel } from './sprites.js'
-import type { SplashParticle, MudState } from './types.js'
+import type { SplashParticle, MudSplatter, MudState } from './types.js'
 
 async function checkRendererHealth(app: Application): Promise<boolean> {
   const g = new Graphics()
@@ -107,7 +107,7 @@ export function getMudskipperParts(container: Container): MudskipperGraphics | u
   return mudskipperPartsMap.get(container)
 }
 
-// ── Mud rendering ──────────────────────────────────────────────────────────
+// ── Mud surface rendering ──────────────────────────────────────────────────
 
 const MUD_COLORS = [0x3e2723, 0x4e342e, 0x5d4037, 0x6d4c41, 0x5d4037]
 
@@ -169,7 +169,27 @@ function drawMud(g: Graphics, stageWidth: number, stageHeight: number, mud: MudS
   }
 }
 
-// ── Particle rendering ─────────────────────────────────────────────────────
+// ── Screen splatter rendering ───────────────────────────────────────────────
+
+export function createSplatterGraphics(splatter: MudSplatter): Graphics {
+  const g = new Graphics()
+  // Draw an irregular blob by layering a few overlapping ellipses
+  g.ellipse(0, 0, splatter.radiusX, splatter.radiusY)
+  g.fill({ color: splatter.color, alpha: splatter.alpha })
+
+  // Add irregular bumps
+  g.ellipse(splatter.radiusX * 0.3, -splatter.radiusY * 0.2, splatter.radiusX * 0.5, splatter.radiusY * 0.4)
+  g.fill({ color: splatter.color, alpha: splatter.alpha * 0.7 })
+  g.ellipse(-splatter.radiusX * 0.25, splatter.radiusY * 0.15, splatter.radiusX * 0.4, splatter.radiusY * 0.5)
+  g.fill({ color: splatter.color, alpha: splatter.alpha * 0.6 })
+
+  g.x = splatter.x
+  g.y = splatter.y
+  g.rotation = splatter.rotation
+  return g
+}
+
+// ── Splash particle rendering ─────────────────────────────────────────────
 
 export function createSplashGraphics(particle: SplashParticle): Graphics {
   const g = new Graphics()

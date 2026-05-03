@@ -120,4 +120,11 @@ export const games: GameEntry[] = [
     icon: '🌱',
     status: 'live',
   },
+  {
+    slug: 'baking-simulator',
+    name: 'Baking Simulator',
+    description: 'Mix, knead, shape, proof, and bake your way to the perfect loaf! A step-by-step bread baking simulator.',
+    icon: '🍞',
+    status: 'live',
+  },
 ]

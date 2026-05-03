@@ -30,7 +30,7 @@ export async function mudskipperAction() {
   const html = await renderToString(
     <Document
       title="Mudskipper"
-      description="Jump in front of your camera and watch your mudskipper leap through the mud. Don't let the screen fill up!"
+      description="One mudskipper follows your movements. Jump to make it leap and splash mud everywhere! Don't let the splatters fill the screen!"
       path="/mudskipper/"
       includeNav={false}
       includeFooter={false}
@@ -67,15 +67,15 @@ export async function mudskipperAction() {
               </button>}
             />
 
-            <p className="ms-subtitle">Jump to make your mudskipper splash in the mud!</p>
+            <p className="ms-subtitle">Jump to make your mudskipper leap — mud splatters everywhere when it lands!</p>
 
             <div className="ms-instructions" id="instructions">
               <p className="ms-instructions-title">How to play:</p>
               <div className="ms-instruction-chips">
-                <span className="ms-chip">🐟 Stand in front of camera</span>
+                <span className="ms-chip">🐟 One mudskipper follows you</span>
                 <span className="ms-chip">⬆️ Jump to leap</span>
-                <span className="ms-chip">💦 Splashes fill the mud</span>
-                <span className="ms-chip">🏆 Don\'t let it overflow!</span>
+                <span className="ms-chip">💦 Splatters fill the screen</span>
+                <span className="ms-chip">🏆 Don't let it overflow!</span>
               </div>
             </div>
 
@@ -189,7 +189,7 @@ export async function mudskipperAction() {
               <p>{mudskipperInfo.summary}</p>
             </InfoSection>
             <InfoSection title="How to play">
-              <p>Stand in front of your camera and jump. Your mudskipper will leap out of the mud and splash back down. The more you jump, the more mud splashes up. If the mud fills the whole screen, the game ends!</p>
+              <p>One mudskipper follows your movements. Jump to make it leap out of the mud. When it lands, mud splatters across the screen in random spots. The more you jump, the more the screen fills with splatters. When the splatters cover the screen, the game ends!</p>
             </InfoSection>
             <InfoSection title="Credits">
               {mudskipperAttribution.entries.map((entry) => (

@@ -10,12 +10,17 @@ const CANVAS_H = 48
 
 const SMOOTH = 0.55
 const MERGE_DISTANCE = 18
-const PERSISTENCE_TIMEOUT = 400
+const PERSISTENCE_TIMEOUT = 600
 const MAX_BODIES = 4
 const STABLE_TIME = 120
 
-// Open hand has wider spreadX relative to its size than a closed fist
-const OPEN_HAND_SPREAD_THRESHOLD = 0.12
+// Hysteresis thresholds for open/closed hand detection
+// Once closed, need higher threshold to switch to open (prevents flickering)
+const OPEN_HAND_THRESHOLD = 0.16
+const CLOSED_HAND_THRESHOLD = 0.12
+
+// Also consider spreadY for fist detection — a fist is tall and narrow
+const CLOSED_HAND_SPREAD_Y_MAX = 0.35
 
 interface Blob {
   cx: number
@@ -27,6 +32,8 @@ interface Blob {
   pixelCount: number
 }
 
+type HandState = 'open' | 'closed' | 'unknown'
+
 type TrackedBody = {
   id: number
   x: number
@@ -35,6 +42,9 @@ type TrackedBody = {
   spreadY: number
   lastSeen: number
   firstSeen: number
+  handState: HandState
+  openFrames: number
+  closedFrames: number
 }
 
 type TrackingState = {
@@ -232,6 +242,45 @@ function detectAndTrackBodies(
   trackBodies(merged, now, width, height)
 }
 
+function detectHandState(
+  spreadX: number,
+  spreadY: number,
+  prevState: HandState,
+  prevOpenFrames: number,
+  prevClosedFrames: number,
+): { state: HandState; openFrames: number; closedFrames: number } {
+  // A closed fist is compact (small spreadX) AND tall (spreadY within range)
+  // An open hand is wider (larger spreadX)
+  const isCompact = spreadX < CLOSED_HAND_THRESHOLD && spreadY < CLOSED_HAND_SPREAD_Y_MAX
+  const isOpen = spreadX > OPEN_HAND_THRESHOLD
+
+  // Count consecutive frames for debouncing
+  const openFrames = isOpen ? prevOpenFrames + 1 : 0
+  const closedFrames = isCompact ? prevClosedFrames + 1 : 0
+
+  // Hysteresis: require 2+ consecutive frames to transition
+  if (prevState === 'closed') {
+    // Once closed, need stronger evidence to become open
+    if (openFrames >= 3) {
+      return { state: 'open', openFrames, closedFrames: 0 }
+    }
+    return { state: 'closed', openFrames: 0, closedFrames }
+  } else if (prevState === 'open') {
+    // Once open, need stronger evidence to become closed
+    if (closedFrames >= 3) {
+      return { state: 'closed', openFrames: 0, closedFrames }
+    }
+    return { state: 'open', openFrames, closedFrames: 0 }
+  }
+
+  // Unknown state: decide based on current measurement
+  if (isCompact) {
+    return { state: 'closed', openFrames: 0, closedFrames: closedFrames || 1 }
+  } else {
+    return { state: 'open', openFrames: openFrames || 1, closedFrames: 0 }
+  }
+}
+
 function trackBodies(
   merged: Blob[],
   now: number,
@@ -262,14 +311,22 @@ function trackBodies(
 
     if (bestId >= 0) {
       const prev = trackedBodies.get(bestId)!
+      const smoothSpreadX = prev.spreadX * SMOOTH + b.spreadX * (1 - SMOOTH)
+      const smoothSpreadY = prev.spreadY * SMOOTH + b.spreadY * (1 - SMOOTH)
+      const { state: handState, openFrames, closedFrames } = detectHandState(
+        smoothSpreadX, smoothSpreadY, prev.handState, prev.openFrames, prev.closedFrames,
+      )
       updated.set(bestId, {
         id: bestId,
         x: prev.x * SMOOTH + mx * (1 - SMOOTH),
         y: prev.y * SMOOTH + my * (1 - SMOOTH),
-        spreadX: prev.spreadX * SMOOTH + b.spreadX * (1 - SMOOTH),
-        spreadY: prev.spreadY * SMOOTH + b.spreadY * (1 - SMOOTH),
+        spreadX: smoothSpreadX,
+        spreadY: smoothSpreadY,
         lastSeen: now,
         firstSeen: prev.firstSeen,
+        handState,
+        openFrames,
+        closedFrames,
       })
       usedIds.add(bestId)
     } else if (trackedBodies.size + updated.size < MAX_BODIES) {
@@ -282,6 +339,9 @@ function trackBodies(
         spreadY: b.spreadY,
         lastSeen: now,
         firstSeen: now,
+        handState: 'unknown',
+        openFrames: 0,
+        closedFrames: 0,
       })
       state.nextId++
       usedIds.add(id)
@@ -311,7 +371,9 @@ function buildHands(now: number): MotionHand[] {
   for (const [, body] of state.trackedBodies) {
     if (now - body.firstSeen < STABLE_TIME) continue
     if (now - body.lastSeen > 200 && now - body.firstSeen < 500) continue
-    const handState = body.spreadX > OPEN_HAND_SPREAD_THRESHOLD ? 'open' as const : 'closed' as const
+    // Map hysteresis-smoothed hand state to the output type
+    // 'unknown' defaults to 'open' (safer for piano — won't accidentally trigger tuna)
+    const handState: 'open' | 'closed' = body.handState === 'closed' ? 'closed' : 'open'
     hands.push({
       id: body.id,
       normalizedX: 1 - body.x,

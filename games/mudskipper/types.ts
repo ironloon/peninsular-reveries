@@ -1,4 +1,4 @@
-export type GamePhase = 'start' | 'playing' | 'gameover' | 'draining'
+export type GamePhase = 'start' | 'playing' | 'gameover'
 
 export interface MotionBody {
   id: number
@@ -13,13 +13,10 @@ export interface MotionBody {
 }
 
 export interface MudskipperState {
-  id: number
   x: number
   y: number
-  vx: number
   vy: number
   scale: number
-  tint: number
   facingRight: boolean
   jumpPhase: 'idle' | 'rising' | 'falling' | 'landing'
   jumpProgress: number
@@ -27,6 +24,17 @@ export interface MudskipperState {
   blinkTimer: number
   blinkState: boolean
   idleOffset: number
+}
+
+export interface MudSplatter {
+  id: string
+  x: number
+  y: number
+  radiusX: number
+  radiusY: number
+  rotation: number
+  color: number
+  alpha: number
 }
 
 export interface SplashParticle {
@@ -42,18 +50,17 @@ export interface SplashParticle {
 
 export interface MudState {
   level: number
-  targetLevel: number
-  maxLevel: number
   wavePhase: number
-  drainSpeed: number
 }
 
 export interface GameState {
   phase: GamePhase
-  mudskippers: MudskipperState[]
+  mudskipper: MudskipperState
   particles: SplashParticle[]
+  splatters: MudSplatter[]
   mud: MudState
+  coverage: number
   time: number
-  drainTimer: number
   lastJumpTime: number
+  needsSplash: boolean
 }

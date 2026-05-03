@@ -612,7 +612,7 @@
 
 - Slug: dragons-crunch
 - Code license: GPL-3.0
-- Summary: Be a dragon and chomp falling food using your camera. Then breathe fire to celebrate!
+- Summary: Catch falling fruit by moving near it with your camera. Then enjoy a fire breath celebration!
 
 #### Entries
 
@@ -630,7 +630,7 @@
 
 - Slug: mudskipper
 - Code license: GPL-3.0
-- Summary: Become a mudskipper! Jump in front of your camera and watch your mudskipper leap through the mud. Keep jumping before the mud fills the whole screen!
+- Summary: One mudskipper follows your movements. Jump to make it leap — when it lands, mud splatters across the screen! Don't let the splatters fill everything!
 
 - No attribution entries recorded.
 
@@ -657,5 +657,13 @@
 - Slug: grow-with-me
 - Code license: GPL-3.0
 - Summary: Move in front of your camera to grow a garden! Plant seeds in the left lane, water in the next, speed up the sun, create rain, and watch your flowers bloom.
+
+- No attribution entries recorded.
+
+### Baking Simulator
+
+- Slug: baking-simulator
+- Code license: GPL-3.0
+- Summary: Mix, knead, shape, proof, and bake your way to the perfect loaf! A step-by-step bread baking simulator with a panning camera.
 
 - No attribution entries recorded.

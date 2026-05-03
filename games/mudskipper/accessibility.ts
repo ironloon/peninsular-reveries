@@ -10,13 +10,13 @@ export function announceJump(count: number): void {
 export function announceMudLevel(percent: number): void {
   const el = statusEl()
   if (!el) return
-  el.textContent = `Mud is ${Math.round(percent)} percent full.`
+  el.textContent = `Mud covers ${Math.round(percent)} percent of the screen.`
 }
 
 export function announceGameOver(): void {
   const el = feedbackEl()
   if (!el) return
-  el.textContent = 'The screen is completely covered in mud! Game over.'
+  el.textContent = 'The mud filled the whole screen! Game over.'
 }
 
 export function announceStart(): void {
@@ -28,13 +28,13 @@ export function announceStart(): void {
 export function announcePlaying(): void {
   const el = statusEl()
   if (!el) return
-  el.textContent = 'Jump to make your mudskipper splash in the mud!'
+  el.textContent = 'Jump to make your mudskipper leap and splash mud everywhere!'
 }
 
 export function announceReturnToStart(): void {
   const el = statusEl()
   if (!el) return
-  el.textContent = 'Mud is draining away. Returning to start screen.'
+  el.textContent = 'Returning to start screen.'
 }
 
 export function manageFocus(screen: 'start' | 'playing' | 'gameover'): void {

@@ -136,6 +136,6 @@ export function keyAtPosition(
 
 /** Is the position in the tuna zone (top-right corner)? */
 export function isInTunaZone(normalizedX: number, normalizedY: number): boolean {
-  // Top-right 15% × 15%
-  return normalizedX >= 0.85 && normalizedY <= 0.15
+  // Top-right 20% × 20% — generous zone so fist-over-fish is reliable
+  return normalizedX >= 0.80 && normalizedY <= 0.20
 }

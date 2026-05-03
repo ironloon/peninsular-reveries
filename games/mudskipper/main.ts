@@ -7,6 +7,7 @@ import {
   updateMudGraphics,
   createSplashGraphics,
   updateSplashGraphics,
+  createSplatterGraphics,
   createSkyGraphics,
 } from './renderer.js'
 import { animateJump, applyIdle, setEyeBlink } from './animations.js'
@@ -17,18 +18,15 @@ import type { GameState, MotionBody } from './types.js'
 import { setupMudskipperInput } from './input.js'
 import {
   announceJump,
-  announceMudLevel,
   announceGameOver,
   announceStart,
   announcePlaying,
-  announceReturnToStart,
   manageFocus,
 } from './accessibility.js'
 import {
   sfxJump,
   sfxSplash,
   sfxGameOver,
-  sfxDrain,
   startAmbience,
   stopAmbience,
   setMuted,
@@ -68,25 +66,18 @@ let gameState: GameState = createInitialState()
 let activeBodies: MotionBody[] = []
 let cameraGranted = false
 let gameLoopCallback: ((ticker: Ticker) => void) | null = null
-let lastAnnouncedMud = -1
-let lastAnnouncedJumpers = 0
+let lastAnnouncedCoverage = -1
 let gameoverAnnounced = false
-let drainAnnounced = false
 
-interface MudskipperInstance {
-  container: Container
-  currentX: number
-  currentY: number
-  targetX: number
-  targetY: number
-  currentScale: number
-  targetScale: number
-}
+// Single mudskipper instance
+let skipperContainer: Container | null = null
 
-const skippersById = new Map<number, MudskipperInstance>()
+// Rendering state
 const particleGraphics: Graphics[] = []
+const splatterGraphicsMap = new Map<string, Graphics>()
 let mudGraphics: Graphics | null = null
 let skyGraphics: Graphics | null = null
+let lastSplatterCount = 0
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 
@@ -165,14 +156,15 @@ async function enterGame(): Promise<void> {
   app.canvas.style.display = 'block'
 
   app.stage.removeChildren()
-  skippersById.clear()
   particleGraphics.length = 0
+  splatterGraphicsMap.clear()
   mudGraphics = null
   skyGraphics = null
+  skipperContainer = null
+  lastSplatterCount = 0
 
   gameState = startGame(createInitialState())
-  lastAnnouncedMud = -1
-  lastAnnouncedJumpers = 0
+  lastAnnouncedCoverage = -1
   gameoverAnnounced = false
 
   if (!cameraGranted) {
@@ -197,6 +189,8 @@ async function enterGame(): Promise<void> {
 
   if (gameLoopCallback) app.ticker.remove(gameLoopCallback)
 
+  let lastJumpPhase = 'idle'
+
   gameLoopCallback = (ticker) => {
     if (!app) return
     const deltaMs = Math.min(ticker.deltaMS, 50)
@@ -211,7 +205,7 @@ async function enterGame(): Promise<void> {
       app.stage.addChildAt(skyGraphics, 0)
     }
 
-    // ── Mud surface ────────────────────────────────────────────────────────
+    // ── Mud surface (constant level) ────────────────────────────────────
     if (!mudGraphics) {
       mudGraphics = createMudGraphics(app.screen.width, app.screen.height, gameState.mud)
       app.stage.addChildAt(mudGraphics, 1)
@@ -219,77 +213,62 @@ async function enterGame(): Promise<void> {
       updateMudGraphics(mudGraphics, app.screen.width, app.screen.height, gameState.mud)
     }
 
-    // ── Mudskippers ──────────────────────────────────────────────────────
-    const skipperStates = gameState.mudskippers
-    const seenIds = new Set<number>()
-
-    for (const body of bodiesToUse) {
-      seenIds.add(body.id)
-      let inst = skippersById.get(body.id)
-
-      if (!inst) {
-        const container = createMudskipper(getMudskipperTint(body.id))
-        app.stage.addChildAt(container, 2)
-        const scale = computeSkipperScale(body, app.screen.width, app.screen.height)
-        const { x, y } = computeSkipperTarget(body, scale, app.screen.width, app.screen.height, gameState.mud)
-        inst = {
-          container,
-          currentX: x, currentY: y,
-          targetX: x, targetY: y,
-          currentScale: scale, targetScale: scale,
-        }
-        skippersById.set(body.id, inst)
+    // ── Splatters ────────────────────────────────────────────────────────
+    // Add new splatters
+    if (gameState.splatters.length > lastSplatterCount) {
+      for (let i = lastSplatterCount; i < gameState.splatters.length; i++) {
+        const splatter = gameState.splatters[i]
+        const sg = createSplatterGraphics(splatter)
+        // Splatters go above sky but below mud surface (visually)
+        app.stage.addChildAt(sg, 1)
+        splatterGraphicsMap.set(splatter.id, sg)
       }
-
-      inst.targetScale = computeSkipperScale(body, app.screen.width, app.screen.height)
-      const target = computeSkipperTarget(body, inst.targetScale, app.screen.width, app.screen.height, gameState.mud)
-      inst.targetX = target.x
-      inst.targetY = target.y
+      lastSplatterCount = gameState.splatters.length
     }
 
-    for (const [id, inst] of skippersById) {
-      if (!seenIds.has(id)) {
-        app.stage.removeChild(inst.container)
-        skippersById.delete(id)
-      }
+    // ── Single Mudskipper ───────────────────────────────────────────────
+    const sState = gameState.mudskipper
+
+    if (!skipperContainer) {
+      skipperContainer = createMudskipper()
+      app.stage.addChild(skipperContainer)
     }
 
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-    const smoothT = Math.min(0.16, deltaMs * 0.0025)
+    const skipperScale = sState.scale
+    skipperContainer.x = sState.x
+    skipperContainer.y = sState.y
+    skipperContainer.scale.set(skipperScale)
 
-    skipperCountDisplay.textContent = `Mudskippers: ${skippersById.size}`
-
-    for (let i = 0; i < skipperStates.length; i++) {
-      const sState = skipperStates[i]
-      const inst = skippersById.get(sState.id)
-      if (!inst) continue
-
-      inst.currentX = lerp(inst.currentX, inst.targetX, smoothT)
-      inst.currentY = lerp(inst.currentY, inst.targetY, smoothT)
-      inst.currentScale = lerp(inst.currentScale, inst.targetScale, smoothT)
-
-      inst.container.x = inst.currentX
-      inst.container.y = inst.currentY
-      inst.container.scale.set(inst.currentScale)
-
-      // Face direction
-      if (sState.facingRight) {
-        inst.container.scale.x = Math.abs(inst.container.scale.x)
-      } else {
-        inst.container.scale.x = -Math.abs(inst.container.scale.x)
-      }
-
-      // Jump animation
-      if (sState.jumpPhase === 'rising' || sState.jumpPhase === 'falling') {
-        animateJump(inst.container)
-      }
-
-      // Idle animation
-      applyIdle(inst.container, now / 1000, i, sState.jumpPhase)
-
-      // Blink
-      setEyeBlink(inst.container, sState.blinkState)
+    // Face direction
+    if (sState.facingRight) {
+      skipperContainer.scale.x = Math.abs(skipperContainer.scale.x)
+    } else {
+      skipperContainer.scale.x = -Math.abs(skipperContainer.scale.x)
     }
+
+    // Jump animation
+    if (sState.jumpPhase === 'rising' || sState.jumpPhase === 'falling') {
+      animateJump(skipperContainer)
+    }
+
+    // Idle animation
+    applyIdle(skipperContainer, now / 1000, 0, sState.jumpPhase)
+
+    // Blink
+    setEyeBlink(skipperContainer, sState.blinkState)
+
+    // Jump SFX
+    if (sState.jumpPhase === 'rising' && lastJumpPhase !== 'rising') {
+      announceJump(1)
+      sfxJump()
+    }
+
+    // Landing SFX
+    if (sState.jumpPhase === 'landing' && sState.landSquash > 0.8 && lastJumpPhase === 'falling') {
+      sfxSplash()
+    }
+
+    lastJumpPhase = sState.jumpPhase
 
     // ── Splash particles ─────────────────────────────────────────────────
     const activeKeys = new Set(gameState.particles.map((_, idx) => idx))
@@ -314,30 +293,21 @@ async function enterGame(): Promise<void> {
     }
 
     // ── HUD ──────────────────────────────────────────────────────────────
-    const mudPercent = Math.round(gameState.mud.level * 100)
-    if (mudPercent !== lastAnnouncedMud) {
-      lastAnnouncedMud = mudPercent
-      mudLevelDisplay.textContent = `Mud: ${mudPercent}%`
-      if (mudPercent % 10 === 0) {
-        announceMudLevel(mudPercent)
+    const coveragePercent = Math.round(gameState.coverage * 100)
+    if (coveragePercent !== lastAnnouncedCoverage) {
+      lastAnnouncedCoverage = coveragePercent
+      mudLevelDisplay.textContent = `Mud: ${coveragePercent}%`
+      if (coveragePercent > 0 && coveragePercent % 10 === 0) {
+        announceJump(coveragePercent)
       }
     }
 
-    // Jump announcements + sfx
-    const currentJumpers = skipperStates.filter((s) => s.jumpPhase === 'rising').length
-    if (currentJumpers > lastAnnouncedJumpers) {
-      announceJump(currentJumpers)
-      sfxJump()
-    }
-    if (skipperStates.some((s) => s.jumpPhase === 'landing' && s.landSquash > 0.8)) {
-      sfxSplash()
-    }
-    lastAnnouncedJumpers = currentJumpers
+    // Hide skipper count (always 1) — show just "1 mudskipper"
+    skipperCountDisplay.textContent = '🐟'
 
     // Game over
     if (gameState.phase === 'gameover' && !gameoverAnnounced) {
       gameoverAnnounced = true
-      drainAnnounced = false
       announceGameOver()
       sfxGameOver()
       stopAmbience()
@@ -345,25 +315,12 @@ async function enterGame(): Promise<void> {
       gameStatus.textContent = 'Game over! The mud filled the screen.'
       manageFocus('gameover')
     }
-
-    // Draining / end
-    if (gameState.phase === 'draining' && !drainAnnounced) {
-      drainAnnounced = true
-      sfxDrain()
-    }
-
-    if (gameState.phase === 'start' && gameoverAnnounced) {
-      gameoverAnnounced = false
-      drainAnnounced = false
-      announceReturnToStart()
-      resetToStart()
-    }
   }
 
   app.ticker.add(gameLoopCallback)
 }
 
-// ── Reset ───────────────────────────────────────────────────────────────────
+// ── Reset ────────────────────────────────────────────────────────────────────
 
 function resetToStart(): void {
   if (gameLoopCallback && app) {
@@ -374,12 +331,18 @@ function resetToStart(): void {
   stopAmbience()
 
   if (app) {
-    for (const inst of skippersById.values()) {
-      app.stage.removeChild(inst.container)
+    if (skipperContainer && skipperContainer.parent) {
+      app.stage.removeChild(skipperContainer)
     }
+    skipperContainer = null
+
     for (const pg of particleGraphics) {
       if (pg.parent) pg.parent.removeChild(pg)
       pg.destroy()
+    }
+    for (const [, sg] of splatterGraphicsMap) {
+      if (sg.parent) sg.parent.removeChild(sg)
+      sg.destroy()
     }
     if (mudGraphics) {
       app.stage.removeChild(mudGraphics)
@@ -394,14 +357,13 @@ function resetToStart(): void {
     app.stage.removeChildren()
   }
 
-  skippersById.clear()
   particleGraphics.length = 0
+  splatterGraphicsMap.clear()
+  lastSplatterCount = 0
   gameState = createInitialState()
   activeBodies = []
-  lastAnnouncedMud = -1
-  lastAnnouncedJumpers = 0
+  lastAnnouncedCoverage = -1
   gameoverAnnounced = false
-  drainAnnounced = false
 
   showScreen('start-screen')
   gameStatus.textContent = 'Returned to start screen.'
@@ -427,40 +389,6 @@ function handleVisibilityChange(): void {
       startAmbience()
     }
   }
-}
-
-function computeSkipperScale(
-  body: MotionBody,
-  stageWidth: number,
-  _stageHeight: number,
-): number {
-  const personWidthPx = body.spreadX * stageWidth
-  const baseScale = Math.max(stageWidth, 480) * 0.002
-  const bodyScale = (personWidthPx / 48) * 2.2
-  return Math.max(baseScale * 0.6, Math.min(baseScale * 2.2, bodyScale))
-}
-
-function computeSkipperTarget(
-  body: MotionBody,
-  scale: number,
-  stageWidth: number,
-  stageHeight: number,
-  mud: { level: number },
-): { x: number; y: number } {
-  const x = body.normalizedX * stageWidth
-  const mudSurfaceY = stageHeight * (1 - mud.level)
-  const nativeH = 24
-  return {
-    x: Math.max(40, Math.min(stageWidth - 40, x)),
-    y: mudSurfaceY - nativeH * scale * 0.3,
-  }
-}
-
-function getMudskipperTint(index: number): number {
-  const colors = [
-    0x5d4037, 0x4e342e, 0x6d4c41, 0x795548, 0x8d6e63, 0x3e2723,
-  ]
-  return colors[index % colors.length]
 }
 
 // ── Boot ───────────────────────────────────────────────────────────────────

@@ -11,8 +11,7 @@ const FOOD_COLORS = [
 
 const FOOD_SPAWN_INTERVAL = 1000
 const GRAVITY = 0.4
-const CHOMP_RANGE = 90
-const CHOMP_COOLDOWN = 300
+const CHOMP_RANGE = 160
 const FOOD_FLOOR_MARGIN = 8
 
 function randomFoodColor(): number {
@@ -22,7 +21,7 @@ function randomFoodColor(): number {
 export function createInitialState(): GameState {
   return {
     phase: 'start',
-    dragons: [],
+    bodies: [],
     foods: [],
     particles: [],
     score: 0,
@@ -40,7 +39,7 @@ export function startGame(state: GameState): GameState {
   return {
     ...state,
     phase: 'playing',
-    dragons: [],
+    bodies: [],
     foods: [],
     particles: [],
     score: 0,
@@ -85,20 +84,14 @@ export function updateGame(
   const now = performance.now()
   const gameTime = state.gameTime + deltaMs
 
-  const dragons = bodies.map((b) => {
-    const prev = state.dragons.find((d) => d.id === b.id)
-    return {
-      id: b.id,
-      x: b.normalizedX * stageWidth,
-      y: b.normalizedY * stageHeight,
-      scale: 0.5 + b.spreadY * 1.5,
-      tint: getDragonColor(b.id),
-      chomping: false,
-      breathingFire: state.phase === 'celebrating',
-      fireIntensity: state.phase === 'celebrating' ? 1.2 : 0,
-      lastChomp: prev?.lastChomp ?? 0,
-    }
-  })
+  // Track body positions for eating
+  const bodyPositions = bodies.map((b) => ({
+    id: b.id,
+    x: (1 - b.normalizedX) * stageWidth,
+    y: b.normalizedY * stageHeight,
+    spreadY: b.spreadY,
+    scale: 0.5 + b.spreadY * 1.5,
+  }))
 
   // Spawn food
   let foods = state.foods
@@ -142,44 +135,37 @@ export function updateGame(
   }
   foods = updatedFoods
 
-  // Auto-eat: any dragon head near food = chomp
+  // Auto-eat: any body near food = chomp
+  let particles = state.particles
   if (state.phase === 'playing') {
-    for (let i = 0; i < dragons.length; i++) {
-      const dragon = dragons[i]
-      if (now - dragon.lastChomp < CHOMP_COOLDOWN) continue
-
-      const mouthX = dragon.x
-      const mouthY = dragon.y - 25
-      let ateSomething = false
+    for (let i = 0; i < bodyPositions.length; i++) {
+      const bp = bodyPositions[i]
+      // Mouth zone is at the top of the tracked body
+      const mouthX = bp.x
+      const mouthY = bp.y - bp.spreadY * stageHeight * 0.25
 
       for (let f = 0; f < foods.length; f++) {
         const food = foods[f]
-        if (food.eaten || food.landed) continue
+        if (food.eaten) continue
         const dx = food.x - mouthX
         const dy = food.y - mouthY
         const dist = Math.sqrt(dx * dx + dy * dy)
         if (dist < CHOMP_RANGE + food.radius) {
           foods[f] = { ...food, eaten: true }
           score += food.value
-          ateSomething = true
+          // Chomp burst particles at the food location
+          particles = [...particles, ...spawnChompBurst(food.x, food.y, food.color, food.value)]
         }
-      }
-
-      if (ateSomething) {
-        dragons[i] = { ...dragon, lastChomp: now, chomping: true }
       }
     }
   }
 
-  // Fire particles during celebration
-  let particles = state.particles
+  // Fire particles during celebration — spawn from all body positions
   if (state.phase === 'celebrating') {
-    for (const dragon of dragons) {
-      if (dragon.breathingFire) {
-        const mouthX = dragon.x
-        const mouthY = dragon.y - 35
-        particles = [...particles, ...spawnFireBurst(mouthX, mouthY, dragon.fireIntensity)]
-      }
+    for (const bp of bodyPositions) {
+      const fireX = bp.x
+      const fireY = bp.y - bp.spreadY * stageHeight * 0.3
+      particles = [...particles, ...spawnFireBurst(fireX, fireY, 1.5)]
     }
   }
 
@@ -205,7 +191,7 @@ export function updateGame(
   return {
     ...state,
     phase,
-    dragons,
+    bodies: bodyPositions,
     foods,
     particles,
     score,
@@ -216,29 +202,77 @@ export function updateGame(
   }
 }
 
-function getDragonColor(index: number): number {
-  const colors = [
-    0x2e7d32, 0x1565c0, 0xc62828, 0x6a1b9a, 0xe65100, 0x00695c, 0xad1457, 0x455a64,
-  ]
-  return colors[index % colors.length]
+function spawnChompBurst(x: number, y: number, color: number, value: number): Particle[] {
+  const out: Particle[] = []
+  const count = value >= 5 ? 16 : 8
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2
+    const speed = 2 + Math.random() * 4
+    out.push({
+      x: x + (Math.random() - 0.5) * 10,
+      y: y + (Math.random() - 0.5) * 10,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 0.4 + Math.random() * 0.5,
+      maxLife: 0.9,
+      color,
+      size: 4 + Math.random() * 6,
+    })
+  }
+  // Add white sparkles
+  for (let i = 0; i < 3; i++) {
+    const angle = Math.random() * Math.PI * 2
+    const speed = 3 + Math.random() * 5
+    out.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 2,
+      life: 0.3 + Math.random() * 0.3,
+      maxLife: 0.6,
+      color: 0xffffff,
+      size: 2 + Math.random() * 3,
+    })
+  }
+  return out
 }
 
 function spawnFireBurst(x: number, y: number, intensity: number): Particle[] {
   const out: Particle[] = []
-  const count = Math.floor(4 + intensity * 5)
+  // Many more particles, bigger, wider spread — more like fire than sparkler
+  const count = Math.floor(12 + intensity * 15)
   for (let i = 0; i < count; i++) {
-    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.9
-    const speed = 3.5 + Math.random() * 6 * intensity
-    const isCore = Math.random() < 0.35
+    // Wider spread angle — fire fans out
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 2.0
+    const speed = 2 + Math.random() * 8 * intensity
+    const size = 6 + Math.random() * 14 * intensity
+
+    // Fire colors: deep red → orange → bright yellow → white core
+    const colorRoll = Math.random()
+    let color: number
+    if (colorRoll < 0.15) {
+      color = 0xcc1100 // deep red
+    } else if (colorRoll < 0.40) {
+      color = 0xff4400 // red-orange
+    } else if (colorRoll < 0.65) {
+      color = 0xff8800 // orange
+    } else if (colorRoll < 0.85) {
+      color = 0xffcc00 // golden yellow
+    } else if (colorRoll < 0.95) {
+      color = 0xffee66 // bright yellow
+    } else {
+      color = 0xffffff // white-hot core
+    }
+
     out.push({
-      x: x + (Math.random() - 0.5) * 8,
-      y: y + (Math.random() - 0.5) * 4,
-      vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 2.5,
+      x: x + (Math.random() - 0.5) * 16,
+      y: y + (Math.random() - 0.5) * 8,
+      vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 4,
       vy: Math.sin(angle) * speed,
-      life: 0.5 + Math.random() * 0.9,
-      maxLife: 1.4,
-      color: isCore ? 0xffea00 : 0xff6600,
-      size: 3 + Math.random() * 6 * intensity,
+      life: 0.6 + Math.random() * 1.2,
+      maxLife: 1.8,
+      color,
+      size,
     })
   }
   return out
@@ -253,7 +287,7 @@ function updateParticles(particles: Particle[], dt: number): Particle[] {
       ...p,
       x: p.x + p.vx,
       y: p.y + p.vy,
-      vy: p.vy + (p.vy < 0 ? 0.015 : -0.012),
+      vy: p.vy + (p.vy < 0 ? 0.015 : 0.02),
       life,
     })
   }
@@ -265,6 +299,5 @@ export function forceCelebration(state: GameState): GameState {
     ...state,
     phase: 'celebrating',
     celebrationTimeLeft: state.celebrationDuration,
-    dragons: state.dragons.map((d) => ({ ...d, breathingFire: true, fireIntensity: 1.2 })),
   }
 }

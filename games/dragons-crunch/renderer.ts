@@ -1,6 +1,5 @@
 import { Application, Container, Graphics } from 'pixi.js'
-import { dragonModel, buildSprite } from './sprites.js'
-import type { FoodItem, Particle, MotionBody } from './types.js'
+import type { FoodItem, Particle } from './types.js'
 
 async function checkRendererHealth(app: Application): Promise<boolean> {
   const g = new Graphics()
@@ -77,90 +76,31 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
   return null
 }
 
-// ── Dragon head creation ────────────────────────────────────────────────────
+// ── Mouth zone indicator ────────────────────────────────────────────────────
 
-export interface DragonHeadGraphics {
-  container: Container
-  skull: Graphics
-  jaw: Graphics
-  rest: {
-    jawY: number
-  }
-  nativeBounds: { x: number; y: number; width: number; height: number }
-}
-
-const dragonPartsMap = new WeakMap<Container, DragonHeadGraphics>()
-
-export function createDragon(tint?: number): Container {
-  const overrides: Record<string, string | number> | undefined =
-    tint != null ? { base: tint } : undefined
-
-  const { container, parts, nativeBounds } = buildSprite(dragonModel, overrides)
-
-  const graphics: DragonHeadGraphics = {
-    container,
-    skull: parts.get('skull')!,
-    jaw: parts.get('jaw')!,
-    rest: {
-      jawY: parts.get('jaw')!.y,
-    },
-    nativeBounds,
-  }
-
-  dragonPartsMap.set(container, graphics)
-  return container
-}
-
-export function getDragonParts(container: Container): DragonHeadGraphics | undefined {
-  return dragonPartsMap.get(container)
-}
-
-// ── AR positioning ──────────────────────────────────────────────────────────
-
-export function computeDragonScale(
-  body: MotionBody,
-  stageWidth: number,
-  _stageHeight: number,
-): number {
-  const personWidthPx = body.spreadX * stageWidth
-  const baseScale = Math.max(stageWidth, 480) * 0.0024
-  const bodyScale = (personWidthPx / 48) * 2.8
-  return Math.max(baseScale * 0.7, Math.min(baseScale * 4, bodyScale))
-}
-
-export function computeDragonTarget(
-  body: MotionBody,
-  scale: number,
-  stageWidth: number,
-  stageHeight: number,
-): { x: number; y: number } {
-  const x = (1 - body.normalizedX) * stageWidth
-  const faceY = (body.normalizedY - body.spreadY * 0.25) * stageHeight
-  const nativeH = 44
-  return {
-    x: Math.max(60, Math.min(stageWidth - 60, x)),
-    y: Math.max(nativeH * scale * 0.25, Math.min(stageHeight - 10, faceY + nativeH * scale * 0.1)),
-  }
+export function createMouthZone(): Graphics {
+  const g = new Graphics()
+  g.circle(0, 0, 40)
+  g.fill({ color: 0xffffff, alpha: 0.08 })
+  g.circle(0, 0, 40)
+  g.stroke({ color: 0xffffff, width: 2, alpha: 0.15 })
+  return g
 }
 
 // ── Food rendering ──────────────────────────────────────────────────────────
 
-const foodGraphicsMap = new WeakMap<Graphics, FoodItem>()
 const foodContainerMap = new WeakMap<Container, Graphics>()
 
 export function createFoodGraphics(food: FoodItem): Container {
   const container = new Container()
 
   if (food.value >= 5) {
-    // Large bumpy lumpy shape: big blob with overlapping bumps + dots
+    // Large bumpy lumpy shape
     const r = food.radius
     const g = new Graphics()
 
-    // Main lumpy body
     g.circle(0, 0, r)
     g.fill({ color: food.color })
-
-    // Side bumps
     g.circle(-r * 0.6, -r * 0.2, r * 0.55)
     g.fill({ color: food.color })
     g.circle(r * 0.55, r * 0.1, r * 0.5)
@@ -170,7 +110,6 @@ export function createFoodGraphics(food: FoodItem): Container {
     g.circle(r * 0.1, -r * 0.55, r * 0.4)
     g.fill({ color: food.color })
 
-    // Dot highlights
     g.circle(-r * 0.25, -r * 0.25, r * 0.15)
     g.fill({ color: 0xffffff, alpha: 0.3 })
     g.circle(r * 0.2, r * 0.15, r * 0.1)
@@ -180,7 +119,7 @@ export function createFoodGraphics(food: FoodItem): Container {
 
     container.addChild(g)
   } else {
-    // Small: irregular rounded berry
+    // Small irregular rounded berry
     const r = food.radius
     const g = new Graphics()
     g.moveTo(r, 0)
@@ -200,7 +139,6 @@ export function createFoodGraphics(food: FoodItem): Container {
   container.x = food.x
   container.y = food.y
 
-  foodGraphicsMap.set(container.children[0] as Graphics, food)
   foodContainerMap.set(container, container.children[0] as Graphics)
   return container
 }

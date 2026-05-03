@@ -32,6 +32,7 @@ const swFiles = [
   'mudskipper/sw.js',
   'tuna-piano/sw.js',
   'grow-with-me/sw.js',
+  'baking-simulator/sw.js',
 ]
 for (const swFile of swFiles) {
   const swPath = join(outputDir, swFile)
@@ -60,6 +61,7 @@ mkdirSync(join(outputDir, 'client', 'dragons-crunch'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'mudskipper'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'tuna-piano'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'grow-with-me'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'baking-simulator'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -110,6 +112,7 @@ await esbuild.build({
     'games/mudskipper/main.ts',
     'games/tuna-piano/main.ts',
     'games/grow-with-me/main.ts',
+    'games/baking-simulator/main.ts',
   ],
   bundle: true,
   outbase: 'games',
@@ -158,6 +161,8 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/tuna-piano/info/', outPath: 'tuna-piano/info/index.html' },
   { url: 'http://localhost/grow-with-me/', outPath: 'grow-with-me/index.html' },
   { url: 'http://localhost/grow-with-me/info/', outPath: 'grow-with-me/info/index.html' },
+  { url: 'http://localhost/baking-simulator/', outPath: 'baking-simulator/index.html' },
+  { url: 'http://localhost/baking-simulator/info/', outPath: 'baking-simulator/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -228,6 +233,7 @@ const pages: Record<string, string[]> = {
   mudskipper: ['mudskipper/index.html', 'styles/mudskipper.css', 'client/shell.js', 'client/mudskipper/main.js'],
   'tuna-piano': ['tuna-piano/index.html', 'styles/tuna-piano.css', 'client/shell.js', 'client/tuna-piano/main.js'],
   'grow-with-me': ['grow-with-me/index.html', 'styles/grow-with-me.css', 'client/shell.js', 'client/grow-with-me/main.js'],
+  'baking-simulator': ['baking-simulator/index.html', 'styles/baking-simulator.css', 'client/shell.js', 'client/baking-simulator/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 

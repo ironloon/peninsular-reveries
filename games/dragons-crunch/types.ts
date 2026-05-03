@@ -1,15 +1,11 @@
 export type GamePhase = 'start' | 'playing' | 'celebrating' | 'end'
 
-export interface DragonState {
+export interface BodyPosition {
   id: number
   x: number
   y: number
+  spreadY: number
   scale: number
-  tint: number
-  chomping: boolean
-  breathingFire: boolean
-  fireIntensity: number
-  lastChomp: number
 }
 
 export interface FoodItem {
@@ -40,7 +36,7 @@ export interface Particle {
 
 export interface GameState {
   phase: GamePhase
-  dragons: DragonState[]
+  bodies: BodyPosition[]
   foods: FoodItem[]
   particles: Particle[]
   score: number

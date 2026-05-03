@@ -1,4 +1,4 @@
 export const mudskipperInfo = {
   summary:
-    'Become a mudskipper! Jump in front of your camera and watch your mudskipper leap through the mud. Keep jumping before the mud fills the whole screen!',
+    'One mudskipper follows your movements. Jump to make it leap — when it lands, mud splatters across the screen! Don\'t let the splatters fill everything!',
 }

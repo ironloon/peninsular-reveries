@@ -47,7 +47,7 @@ const handNoteMap = new Map<number, { key: PianoKey; sustained: boolean; noteId:
 const visualActiveNotes = new Map<string, { sustained: boolean }>()
 
 // Tuna hold tracking
-const TUNA_HOLD_MS = 1500
+const TUNA_HOLD_MS = 1000
 let tunaHoldStart = 0
 let tunaSfxPlayed = false
 

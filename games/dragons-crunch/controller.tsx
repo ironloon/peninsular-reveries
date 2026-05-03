@@ -30,7 +30,7 @@ export async function dragonsCrunchAction() {
   const html = await renderToString(
     <Document
       title="Dragon's Crunch"
-      description="Be a dragon and chomp falling food using your camera. Then breathe fire to celebrate!"
+      description="Catch falling fruit by moving near it. Fire breath celebration at the end!"
       path="/dragons-crunch/"
       includeNav={false}
       includeFooter={false}
@@ -65,17 +65,16 @@ export async function dragonsCrunchAction() {
               </button>}
             />
 
-            <p className="dc-subtitle">Raise your arms to chomp food as a dragon!</p>
+            <p className="dc-subtitle">Move near the food to catch it as it falls!</p>
 
             <div className="dc-pose-list" id="pose-list">
               <p className="dc-pose-list-title">How to play:</p>
               <div className="dc-pose-chips">
-                <span className="dc-pose-chip">🐉 Stand in front of camera</span>
-                <span className="dc-pose-chip">🍎 Food falls from above</span>
-                <span className="dc-pose-chip">👋 Raise arms to chomp</span>
-                <span className="dc-pose-chip">🔥 Raise arms to breathe fire</span>
+                <span className="dc-pose-chip">🎯 Stand in front of camera</span>
+                <span className="dc-pose-chip">🍎 Move near food to eat it</span>
                 <span className="dc-pose-chip">⭐ Small food = 1 point</span>
                 <span className="dc-pose-chip">🌟 Big food = 5 points</span>
+                <span className="dc-pose-chip">🔥 Fire breath celebration at the end!</span>
               </div>
             </div>
 
@@ -112,7 +111,6 @@ export async function dragonsCrunchAction() {
             <div className="dc-hud">
               <span className="dc-hud-item" id="score-display">Score: 0</span>
               <span className="dc-hud-item" id="food-display">Food: 0/100</span>
-              <span className="dc-hud-item" id="dragon-count">Dragons: 1</span>
             </div>
 
             <div className="dc-floor">
@@ -120,8 +118,8 @@ export async function dragonsCrunchAction() {
               <div id="pixi-stage" aria-hidden="true" />
               <div id="celebration-overlay" className="dc-celebration-overlay" hidden>
                 <div className="dc-celebration-inner">
-                  <p id="celebration-msg">All food served! Great chomping!</p>
-                  <p className="dc-celebration-sub">Raise your arms to breathe fire!</p>
+                  <p id="celebration-msg">All food served! Great catches!</p>
+                  <p className="dc-celebration-sub">Enjoy the fire breath celebration!</p>
                   <p id="celebration-countdown" className="dc-countdown">10</p>
                 </div>
               </div>
@@ -179,8 +177,8 @@ export async function dragonsCrunchAction() {
 
             <SettingsSection title="Controls">
               <div className="dc-controls-help">
-                <p><strong>Chomp:</strong> Stand in front of the camera and raise your arms to chomp food.</p>
-                <p><strong>Fire:</strong> Raise your arms during celebration to breathe fire!</p>
+                <p><strong>Eat:</strong> Move near falling food to catch it.</p>
+                <p><strong>Fire:</strong> Fire breath happens automatically at the end to celebrate!</p>
                 <p><strong>Menu:</strong> Use the Menu button for settings and help.</p>
               </div>
             </SettingsSection>

@@ -1,28 +1,48 @@
-import type { GamePhase, GameState, MotionBody, MudskipperState, SplashParticle, MudState } from './types.js'
+import type { GamePhase, GameState, MotionBody, MudskipperState, SplashParticle, MudSplatter, MudState } from './types.js'
 
 const GRAVITY = 0.0012
 const JUMP_IMPULSE = -0.95
-const MUD_RISE_SPEED = 0.00004
-const JUMP_MUD_BOOST = 0.025
-const GAMEOVER_THRESHOLD = 0.88
-const DRAIN_SPEED = 0.0006
-const DRAIN_DELAY = 2500
+const WALK_SPEED = 0.0015
+const GAMEOVER_COVERAGE = 0.85
+
+// Splatter sizes — each jump sends 6-9 splatters across the screen
+const SPLATTERS_PER_LAND = 6
+const SPLATTER_MIN_RADIUS = 15
+const SPLATTER_MAX_RADIUS = 50
+
+const BASE_MUD_LEVEL = 0.12
+const JUMP_COOLDOWN = 400
 
 export function createInitialState(): GameState {
   return {
     phase: 'start',
-    mudskippers: [],
+    mudskipper: createMudskipperState(400, 0),
     particles: [],
+    splatters: [],
     mud: {
-      level: 0.15,
-      targetLevel: 0.15,
-      maxLevel: GAMEOVER_THRESHOLD,
+      level: BASE_MUD_LEVEL,
       wavePhase: 0,
-      drainSpeed: DRAIN_SPEED,
     },
+    coverage: 0,
     time: 0,
-    drainTimer: 0,
     lastJumpTime: 0,
+    needsSplash: false,
+  }
+}
+
+function createMudskipperState(x: number, y: number): MudskipperState {
+  return {
+    x,
+    y,
+    vy: 0,
+    scale: 1.8,
+    facingRight: true,
+    jumpPhase: 'idle',
+    jumpProgress: 0,
+    landSquash: 0,
+    blinkTimer: 0,
+    blinkState: false,
+    idleOffset: Math.random() * 100,
   }
 }
 
@@ -30,18 +50,17 @@ export function startGame(state: GameState): GameState {
   return {
     ...state,
     phase: 'playing',
-    mudskippers: [],
+    mudskipper: createMudskipperState(400, 0),
     particles: [],
+    splatters: [],
     mud: {
-      level: 0.12,
-      targetLevel: 0.12,
-      maxLevel: GAMEOVER_THRESHOLD,
+      level: BASE_MUD_LEVEL,
       wavePhase: 0,
-      drainSpeed: DRAIN_SPEED,
     },
+    coverage: 0,
     time: 0,
-    drainTimer: 0,
     lastJumpTime: 0,
+    needsSplash: false,
   }
 }
 
@@ -52,198 +71,142 @@ export function updateGame(
   stageHeight: number,
   deltaMs: number,
 ): GameState {
-  if (state.phase !== 'playing' && state.phase !== 'gameover' && state.phase !== 'draining') return state
+  if (state.phase !== 'playing') return state
 
   const dt = Math.min(deltaMs, 50)
   const time = state.time + dt
 
   const mudSurfaceY = stageHeight * (1 - state.mud.level)
+  const skipper = { ...state.mudskipper }
+  skipper.idleOffset += dt * 0.001
 
-  // Update mudskippers from tracked bodies
-  const mudskippers: MudskipperState[] = []
-  const seenIds = new Set<number>()
+  const prevJumpPhase = skipper.jumpPhase
+  let needsSplash = state.needsSplash
 
-  for (const body of bodies) {
-    seenIds.add(body.id)
-    const prev = state.mudskippers.find((m) => m.id === body.id)
-
+  // ── Walk toward player position (slowly) ──────────────────────────────
+  if (bodies.length > 0) {
+    const body = bodies[0]
     const targetX = body.normalizedX * stageWidth
-    const baseScale = Math.max(stageWidth, 480) * 0.0018
-    const bodyScale = (body.spreadY * stageHeight / 48) * 1.6
-    const scale = Math.max(baseScale * 0.6, Math.min(baseScale * 2.5, bodyScale))
 
-    let x = prev?.x ?? targetX
-    let y = prev?.y ?? mudSurfaceY
-    const vx = prev?.vx ?? 0
-    let vy = prev?.vy ?? 0
-    let jumpPhase = prev?.jumpPhase ?? 'idle'
-    let jumpProgress = prev?.jumpProgress ?? 0
-    let landSquash = prev?.landSquash ?? 0
+    // Walk slowly toward target X
+    const walkDelta = (targetX - skipper.x) * WALK_SPEED * dt
+    skipper.x += walkDelta
 
-    // Horizontal follow with smoothing
-    const followT = Math.min(0.2, dt * 0.004)
-    x = x + (targetX - x) * followT
+    // Face direction of travel
+    skipper.facingRight = walkDelta >= 0
 
-    // Jump physics
-    if (body.jumping && (body.jumpPhase === 'rising' || body.jumpPhase === 'falling')) {
-      if (jumpPhase === 'idle') {
-        // Start jump
-        jumpProgress = 0
-        vy = JUMP_IMPULSE * stageHeight
-      } else {
-        jumpProgress += dt * 0.001
-        vy += GRAVITY * stageHeight * dt
-      }
-      y += vy * dt * 0.001
-      jumpPhase = body.jumpPhase
-    } else {
-      // Return to mud surface
-      if (y < mudSurfaceY - 2) {
-        vy += GRAVITY * stageHeight * dt
-        y += vy * dt * 0.001
-        jumpPhase = 'falling'
-      }
-      if (y >= mudSurfaceY - 2) {
-        if (jumpPhase === 'falling' || jumpPhase === 'rising') {
-          jumpPhase = 'landing'
-          landSquash = 1.0
-        }
-        y = mudSurfaceY
-        vy = 0
-        jumpProgress = 0
-        if (landSquash <= 0.01) {
-          jumpPhase = 'idle'
-        }
-      }
-    }
+    // ── Jump: when any body is jumping, mudskipper jumps ───────────────
+    const anyJumping = bodies.some((b) => b.jumping && b.jumpPhase === 'rising')
 
-    landSquash = Math.max(0, landSquash - dt * 0.003)
-
-    const blinkTimer = (prev?.blinkTimer ?? 0) + dt
-    let blinkState = prev?.blinkState ?? false
-    if (blinkTimer > 3000 + Math.random() * 2000) {
-      blinkState = true
-    }
-    if (blinkState && blinkTimer > 3200 + Math.random() * 2000) {
-      blinkState = false
-    }
-
-    mudskippers.push({
-      id: body.id,
-      x,
-      y,
-      vx,
-      vy,
-      scale,
-      tint: prev?.tint ?? getMudskipperTint(body.id),
-      facingRight: body.normalizedX < 0.5,
-      jumpPhase,
-      jumpProgress,
-      landSquash,
-      blinkTimer: blinkState ? blinkTimer : 0,
-      blinkState,
-      idleOffset: (prev?.idleOffset ?? Math.random() * 100) + dt * 0.001,
-    })
-  }
-
-  // Remove lost mudskippers (fade out)
-  for (const prev of state.mudskippers) {
-    if (!seenIds.has(prev.id)) {
-      // don't immediately remove; let them drift a bit? For now skip
+    if (anyJumping && skipper.jumpPhase === 'idle' && time - state.lastJumpTime > JUMP_COOLDOWN) {
+      skipper.jumpPhase = 'rising'
+      skipper.vy = JUMP_IMPULSE * stageHeight
+      skipper.jumpProgress = 0
+      needsSplash = false
+      state = { ...state, lastJumpTime: time, needsSplash: false }
     }
   }
 
-  // Mud level
-  let mudLevel = state.mud.level
-  let targetLevel = state.mud.targetLevel
+  // ── Jump physics ──────────────────────────────────────────────────────
+  if (skipper.jumpPhase === 'rising' || skipper.jumpPhase === 'falling') {
+    skipper.vy += GRAVITY * stageHeight * dt
+    skipper.y += skipper.vy * dt * 0.001
+    skipper.jumpProgress += dt * 0.001
 
-  if (state.phase === 'playing') {
-    targetLevel += MUD_RISE_SPEED * dt
-
-    // Boost from jumps
-    for (const body of bodies) {
-      if (body.jumping && body.jumpPhase === 'rising') {
-        targetLevel += JUMP_MUD_BOOST * 0.01
-      }
+    if (skipper.vy > 0) {
+      skipper.jumpPhase = 'falling'
     }
 
-    targetLevel = Math.min(GAMEOVER_THRESHOLD, targetLevel)
-    mudLevel += (targetLevel - mudLevel) * Math.min(0.05, dt * 0.0005)
-  } else if (state.phase === 'draining') {
-    targetLevel = 0.12
-    mudLevel -= DRAIN_SPEED * dt
-    if (mudLevel <= 0.12) {
-      mudLevel = 0.12
+    // Land when back to mud surface
+    if (skipper.y >= mudSurfaceY) {
+      skipper.y = mudSurfaceY
+      skipper.vy = 0
+      skipper.jumpPhase = 'landing'
+      skipper.landSquash = 1.0
+      skipper.jumpProgress = 0
+      needsSplash = true
     }
   }
 
+  // Idle: sit on mud surface
+  if (skipper.jumpPhase === 'idle') {
+    skipper.y = mudSurfaceY
+  }
+
+  // Landing squash decay
+  skipper.landSquash = Math.max(0, skipper.landSquash - dt * 0.004)
+  if (skipper.jumpPhase === 'landing' && skipper.landSquash <= 0.01) {
+    skipper.jumpPhase = 'idle'
+  }
+
+  // Blink
+  skipper.blinkTimer += dt
+  if (!skipper.blinkState && skipper.blinkTimer > 3000 + Math.random() * 2000) {
+    skipper.blinkState = true
+  }
+  if (skipper.blinkState && skipper.blinkTimer > 3400 + Math.random() * 2000) {
+    skipper.blinkState = false
+    skipper.blinkTimer = 0
+  }
+
+  // ── Mud surface (stays constant — no rise) ─────────────────────────────
   const mud: MudState = {
-    ...state.mud,
-    level: mudLevel,
-    targetLevel,
+    level: state.mud.level,
     wavePhase: state.mud.wavePhase + dt * 0.002,
   }
 
-  // Particles
+  // ── Splash particles + screen splatters on landing ────────────────────
   let particles = state.particles
+  let splatters = state.splatters
+  let coverage = state.coverage
 
-  // Spawn splash particles on landing
-  for (const m of mudskippers) {
-    if (m.jumpPhase === 'landing' && m.landSquash > 0.7) {
-      particles = [...particles, ...spawnSplash(m.x, mudSurfaceY, m.scale)]
-    }
+  if (needsSplash && prevJumpPhase !== 'landing') {
+    // First frame of landing → splash particles + screen splatters
+    particles = [...particles, ...spawnSplash(skipper.x, mudSurfaceY, skipper.scale)]
+    const newSplatters = spawnScreenSplatters(stageWidth, stageHeight)
+    splatters = [...splatters, ...newSplatters]
+    coverage = estimateCoverage(splatters, stageWidth, stageHeight)
+    needsSplash = false
   }
 
+  // Update particles
   particles = updateParticles(particles, dt)
 
-  // Phase transitions
+  // ── Phase transitions ──────────────────────────────────────────────────
   let phase = state.phase as GamePhase
-  let drainTimer = state.drainTimer
 
-  if (phase === 'playing' && mud.level >= GAMEOVER_THRESHOLD - 0.02) {
+  if (phase === 'playing' && coverage >= GAMEOVER_COVERAGE) {
     phase = 'gameover'
-    drainTimer = DRAIN_DELAY
-  }
-
-  if (phase === 'gameover') {
-    drainTimer -= dt
-    if (drainTimer <= 0) {
-      phase = 'draining'
-      drainTimer = 0
-    }
-  }
-
-  if (phase === 'draining' && mud.level <= 0.13) {
-    phase = 'start' as GamePhase
   }
 
   return {
     ...state,
     phase,
-    mudskippers,
+    mudskipper: skipper,
     particles,
+    splatters,
     mud,
+    coverage,
     time,
-    drainTimer,
-    lastJumpTime: bodies.some((b) => b.jumping) ? time : state.lastJumpTime,
+    needsSplash,
   }
 }
 
 function spawnSplash(x: number, y: number, scale: number): SplashParticle[] {
-  const count = Math.floor(5 + scale * 8)
+  const count = Math.floor(6 + scale * 6)
   const out: SplashParticle[] = []
   for (let i = 0; i < count; i++) {
-    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.2
-    const speed = 2 + Math.random() * 4 * scale
-    const size = 2 + Math.random() * 4 * scale
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.4
+    const speed = 2 + Math.random() * 5 * scale
+    const size = 2 + Math.random() * 5 * scale
     const isDark = Math.random() < 0.6
     out.push({
-      x: x + (Math.random() - 0.5) * 12 * scale,
+      x: x + (Math.random() - 0.5) * 16 * scale,
       y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      life: 0.5 + Math.random() * 0.6,
-      maxLife: 1.1,
+      life: 0.5 + Math.random() * 0.8,
+      maxLife: 1.3,
       size,
       color: isDark ? 0x3e2723 : 0x5d4037,
     })
@@ -267,9 +230,48 @@ function updateParticles(particles: SplashParticle[], dt: number): SplashParticl
   return out
 }
 
-function getMudskipperTint(index: number): number {
-  const colors = [
-    0x5d4037, 0x4e342e, 0x6d4c41, 0x795548, 0x8d6e63, 0x3e2723,
-  ]
-  return colors[index % colors.length]
+function spawnScreenSplatters(
+  stageWidth: number,
+  stageHeight: number,
+): MudSplatter[] {
+  const out: MudSplatter[] = []
+  const count = SPLATTERS_PER_LAND + Math.floor(Math.random() * 3)
+  const colors = [0x3e2723, 0x4e342e, 0x5d4037, 0x6d4c41]
+
+  for (let i = 0; i < count; i++) {
+    const rx = SPLATTER_MIN_RADIUS + Math.random() * (SPLATTER_MAX_RADIUS - SPLATTER_MIN_RADIUS)
+    const ry = rx * (0.5 + Math.random() * 0.5)
+    out.push({
+      id: `splatter-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      x: Math.random() * stageWidth,
+      y: Math.random() * stageHeight,
+      radiusX: rx,
+      radiusY: ry,
+      rotation: Math.random() * Math.PI * 2,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      alpha: 0.5 + Math.random() * 0.4,
+    })
+  }
+  return out
+}
+
+function estimateCoverage(splatters: MudSplatter[], stageWidth: number, stageHeight: number): number {
+  const screenArea = stageWidth * stageHeight
+  if (screenArea === 0) return 0
+
+  // Estimate total splatter area (with overlap, this overestimates, but we use
+  // a correction factor to account for expected overlap)
+  let totalArea = 0
+  for (const s of splatters) {
+    // Approximate ellipse area
+    totalArea += Math.PI * s.radiusX * s.radiusY * s.alpha
+  }
+
+  // Apply diminishing returns for overlap: as more splatters accumulate,
+  // the marginal coverage increase is less.
+  const rawRatio = totalArea / screenArea
+  // Diminishing returns curve: effective coverage grows slower than raw area
+  const effectiveCoverage = 1 - Math.exp(-rawRatio * 1.8)
+
+  return Math.min(1, effectiveCoverage)
 }

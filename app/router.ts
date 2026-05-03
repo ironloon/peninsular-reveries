@@ -20,6 +20,7 @@ import { dragonsCrunchAction } from '../games/dragons-crunch/controller.js'
 import { mudskipperAction } from '../games/mudskipper/controller.js'
 import { tunaPianoAction } from '../games/tuna-piano/controller.js'
 import { growWithMeAction } from '../games/grow-with-me/controller.js'
+import { bakingSimulatorAction } from '../games/baking-simulator/controller.js'
 
 export function createAppRouter() {
   const router = createRouter()
@@ -42,6 +43,7 @@ export function createAppRouter() {
   router.get(routes.mudskipperInfo, () => gameInfoAction('mudskipper'))
   router.get(routes.tunaPianoInfo, () => gameInfoAction('tuna-piano'))
   router.get(routes.growWithMeInfo, () => gameInfoAction('grow-with-me'))
+  router.get(routes.bakingSimulatorInfo, () => gameInfoAction('baking-simulator'))
   router.get(routes.missionOrbit, () => missionOrbitAction())
   router.get(routes.superWord, () => superWordAction())
   router.get(routes.chompers, () => chompersAction())
@@ -58,6 +60,7 @@ export function createAppRouter() {
   router.get(routes.mudskipper, () => mudskipperAction())
   router.get(routes.tunaPiano, () => tunaPianoAction())
   router.get(routes.growWithMe, () => growWithMeAction())
+  router.get(routes.bakingSimulator, () => bakingSimulatorAction())
   router.get(routes.notFound, () => notFoundAction())
 
   return router
