@@ -113,4 +113,11 @@ export const games: GameEntry[] = [
     icon: '🎹',
     status: 'live',
   },
+  {
+    slug: 'grow-with-me',
+    name: 'Grow With Me',
+    description: 'Move in front of your camera to grow a garden! Plant seeds, add water, speed up the sun, and watch your flowers bloom.',
+    icon: '🌱',
+    status: 'live',
+  },
 ]

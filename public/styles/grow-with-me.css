@@ -1,0 +1,292 @@
+/* Grow With Me — camera-based motion capture gardening game
+ * Viewport checkpoints: 390x844, 844x390, 1024x768, 1280x800.
+ */
+
+body.grow-with-me-game {
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-title: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #0a1e0a;
+  --text: #e8f5e9;
+  --muted: rgba(232, 245, 233, 0.65);
+  --panel: rgba(10, 30, 15, 0.78);
+  --panel-strong: rgba(20, 50, 25, 0.92);
+  --line: rgba(232, 245, 233, 0.14);
+  --accent: #66BB6A;
+  --accent-soft: rgba(102, 187, 106, 0.16);
+  --hud-bg: rgba(10, 30, 15, 0.85);
+  --spotlight: radial-gradient(circle at 50% 40%, rgba(102, 187, 106, 0.10), transparent 55%);
+
+  min-height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+}
+
+body.grow-with-me-game main {
+  overflow: hidden;
+}
+
+/* ── Scene track ────────────────────────────────────────────── */
+
+.scene-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--spotlight), var(--bg);
+}
+
+/* ── Screen panels ──────────────────────────────────────────── */
+
+.gwm-screen-panel {
+  width: min(100%, 78rem);
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  padding:
+    max(1rem, env(safe-area-inset-top, 0px))
+    max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+.gwm-start-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+.gwm-game-panel {
+  min-height: 100dvh;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.gwm-celebrate-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+.gwm-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--hud-bg);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+}
+
+.gwm-heading-block {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.gwm-title {
+  font-family: var(--font-title);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.gwm-title-small {
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+}
+
+.gwm-kicker {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin: 0;
+}
+
+.gwm-menu-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.gwm-menu-btn:hover {
+  background: var(--accent-soft);
+}
+
+/* ── Start screen ───────────────────────────────────────────── */
+
+.gwm-subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: var(--muted);
+  margin: 0.5rem 0 0;
+}
+
+.gwm-instructions {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 34rem;
+  margin: 1.2rem auto 0;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 1rem 1.2rem;
+}
+
+.gwm-instructions-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.gwm-instruction-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.gwm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.gwm-camera-prompt {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 1rem 0 0;
+}
+
+.gwm-camera-prompt p {
+  margin: 0;
+}
+
+.gwm-primary-btn {
+  appearance: none;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.6rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1.2rem;
+}
+
+.gwm-primary-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ── Game screen ────────────────────────────────────────────── */
+
+.gwm-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  background: var(--hud-bg);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.gwm-hud-left,
+.gwm-hud-center,
+.gwm-hud-right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.gwm-pixi-stage {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: transparent;
+}
+
+.gwm-camera-preview {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 0.4rem;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ── Celebrate screen ─────────────────────────────────────────── */
+
+.gwm-celebrate-card {
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  max-width: 24rem;
+  margin: 1.5rem auto 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 2rem 1.5rem;
+}
+
+.gwm-celebrate-emoji {
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.gwm-celebrate-msg {
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.gwm-secondary-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.gwm-secondary-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Noscript ───────────────────────────────────────────────── */
+
+.noscript-message-grow-with-me {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .gwm-primary-btn {
+    transition: none;
+  }
+}

@@ -651,3 +651,11 @@
 - License: MIT
 - Modifications: Not applicable
 - Notes: 2D WebGL rendering engine used for the game stage.
+
+### Grow With Me
+
+- Slug: grow-with-me
+- Code license: GPL-3.0
+- Summary: Move in front of your camera to grow a garden! Plant seeds in the left lane, water in the next, speed up the sun, create rain, and watch your flowers bloom.
+
+- No attribution entries recorded.

@@ -1,0 +1,16 @@
+{
+  "name": "Grow With Me",
+  "short_name": "Grow With Me",
+  "description": "Move in front of your camera to grow a garden! Plant seeds, add water, speed up the sun, and watch your flowers bloom.",
+  "start_url": "/grow-with-me/",
+  "display": "standalone",
+  "background_color": "#0a1e0a",
+  "theme_color": "#0a1e0a",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
