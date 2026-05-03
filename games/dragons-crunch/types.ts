@@ -22,6 +22,7 @@ export interface FoodItem {
   value: number
   color: number
   eaten: boolean
+  landed?: boolean
   spawnTime: number
   announced?: boolean
 }
@@ -49,6 +50,7 @@ export interface GameState {
   celebrationDuration: number
   lastFoodSpawnTime: number
   gameTime: number
+  landedFood: string[]
 }
 
 export interface MotionBody {

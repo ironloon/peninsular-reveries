@@ -1,19 +1,22 @@
 import { Application, Container, Graphics, Ticker } from 'pixi.js'
 import { setupGameMenu } from '../../client/game-menu.js'
 import {
-  initStage, createDragon, getDragonParts,
+  initStage, createDragon,
   computeDragonScale, computeDragonTarget,
   createFoodGraphics, updateFoodPosition,
   createParticleGraphics, updateParticleGraphics,
 } from './renderer.js'
-import { animateChomp, animateFireBreathing, stopFireBreathing, animateIdle, animateBlink } from './animations.js'
+import { animateChomp, animateFireBreathing, stopFireBreathing, applyIdle } from './animations.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
 import { createInitialState, startGame, updateGame } from './state.js'
 import type { GameState, MotionBody } from './types.js'
 import { setupDragonsCrunchInput } from './input.js'
 import { announceScore, announceFoodSpawned, announceChomp, announceCelebration, announceReturnToStart } from './accessibility.js'
-import { sfxChomp, sfxCelebrationStart, sfxFoodSpawn } from './sounds.js'
+import {
+  sfxChomp, sfxFoodSpawn, sfxFoodHitGround, sfxFireBurst, sfxCelebrationStart,
+  startEpicMusic, stopEpicMusic, setMuted,
+} from './sounds.js'
 
 // DOM refs
 const pixiStage = document.getElementById('pixi-stage')!
@@ -55,11 +58,11 @@ let activeBodies: MotionBody[] = []
 let cameraGranted = false
 let gameLoopCallback: ((ticker: Ticker) => void) | null = null
 let celebrationTimer: number | null = null
+let prevLandedCount = 0
 
 let lastAnnouncedScore = -1
 let lastAnnouncedFoodSpawned = -1
 
-// Persistent dragon instances by body ID (smoothly tracked)
 interface DragonInstance {
   container: Container
   currentX: number
@@ -74,7 +77,7 @@ const dragonsById = new Map<number, DragonInstance>()
 const foodContainers = new Map<string, Container>()
 const particleGraphics: Graphics[] = []
 
-// ── Stage init ───────────────────────────────────────────────────────────────
+// ── Boot ─────────────────────────────────────────────────────────────────────
 
 async function boot(): Promise<void> {
   app = await initStage(pixiStage)
@@ -85,6 +88,13 @@ async function boot(): Promise<void> {
   }
 
   setupGameMenu({ musicTrackPicker: false })
+
+  window.addEventListener('reveries:music-change', (e) => {
+    const enabled = (e as CustomEvent<{ enabled: boolean }>).detail.enabled
+    setMuted(!enabled)
+    if (!enabled) stopEpicMusic()
+    else if (gameState.phase === 'playing' || gameState.phase === 'celebrating') startEpicMusic()
+  })
 
   setupDragonsCrunchInput({ onMenu: () => {
     const modal = document.getElementById('settings-modal')
@@ -128,7 +138,6 @@ async function enterGame(): Promise<void> {
   app.canvas.style.height = '100%'
   app.canvas.style.display = 'block'
 
-  // Clear
   app.stage.removeChildren()
   dragonsById.clear()
   foodContainers.clear()
@@ -137,6 +146,7 @@ async function enterGame(): Promise<void> {
   gameState = startGame(createInitialState())
   lastAnnouncedScore = -1
   lastAnnouncedFoodSpawned = -1
+  prevLandedCount = 0
   celebrationOverlay.hidden = true
 
   if (!cameraGranted) {
@@ -152,14 +162,10 @@ async function enterGame(): Promise<void> {
     }]
   }
 
+  startEpicMusic()
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(window as any).__dragonsCrunchDebug = {
-    app,
-    canvas: app.canvas,
-    screen: { w: app.screen.width, h: app.screen.height },
-    buildSha: 'dev',
-    rendererType: app.renderer.type,
-  }
+  ;(window as any).__dragonsCrunchDebug = { app, canvas: app.canvas, screen: { w, h }, buildSha: 'dev', rendererType: app.renderer.type }
 
   if (gameLoopCallback) app.ticker.remove(gameLoopCallback)
 
@@ -171,14 +177,10 @@ async function enterGame(): Promise<void> {
     const now = performance.now()
 
     const bodiesToUse = cameraGranted ? activeBodies.slice(0, 6) : activeBodies.slice(0, 1)
-
-    // Update game state
     gameState = updateGame(gameState, bodiesToUse, app.screen.width, app.screen.height, deltaMs)
 
-    // ── Update dragon instances (smooth tracking) ──────────────────────
+    // ── Dragons ──────────────────────────────────────────────────────────
     const dragonStates = gameState.dragons
-
-    // Mark all for potential removal
     const seenIds = new Set<number>()
 
     for (const body of bodiesToUse) {
@@ -188,30 +190,23 @@ async function enterGame(): Promise<void> {
       if (!inst) {
         const container = createDragon(getDragonColor(body.id))
         app.stage.addChildAt(container, 0)
-
         const scale = computeDragonScale(body, app.screen.width, app.screen.height)
         const { x, y } = computeDragonTarget(body, scale, app.screen.width, app.screen.height)
-
         inst = {
           container,
-          currentX: x,
-          currentY: y,
-          targetX: x,
-          targetY: y,
-          currentScale: scale,
-          targetScale: scale,
+          currentX: x, currentY: y,
+          targetX: x, targetY: y,
+          currentScale: scale, targetScale: scale,
         }
         dragonsById.set(body.id, inst)
       }
 
-      // Update targets
       inst.targetScale = computeDragonScale(body, app.screen.width, app.screen.height)
       const target = computeDragonTarget(body, inst.targetScale, app.screen.width, app.screen.height)
       inst.targetX = target.x
       inst.targetY = target.y
     }
 
-    // Remove dragons for lost bodies
     for (const [id, inst] of dragonsById) {
       if (!seenIds.has(id)) {
         stopFireBreathing(inst.container)
@@ -220,9 +215,8 @@ async function enterGame(): Promise<void> {
       }
     }
 
-    // Apply smoothing
     const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-    const smoothT = Math.min(0.18, deltaMs * 0.003) // ~18% per frame, capped
+    const smoothT = Math.min(0.16, deltaMs * 0.0025)
 
     dragonCountDisplay.textContent = `Dragons: ${dragonsById.size}`
     if (gameFeedback && dragonsById.size > 0) {
@@ -242,40 +236,20 @@ async function enterGame(): Promise<void> {
       inst.container.y = inst.currentY
       inst.container.scale.set(inst.currentScale)
 
-      // Face direction: if body is left of center, flip to face left (side profile)
       if (inst.currentX < app.screen.width * 0.5) {
         inst.container.scale.x = -Math.abs(inst.container.scale.x)
       } else {
         inst.container.scale.x = Math.abs(inst.container.scale.x)
       }
 
-      const parts = getDragonParts(inst.container)
-      if (!parts) continue
+      applyIdle(inst.container, now / 1000, i)
 
-      // Idle animation
-      const tSec = now / 1000
-      animateIdle(inst.container, tSec, i)
-
-      // Chomp
       if (dState.chomping) animateChomp(inst.container)
-
-      // Fire breathing
       if (dState.breathingFire) animateFireBreathing(inst.container, dState.fireIntensity)
       else stopFireBreathing(inst.container)
-
-      // Blink
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const blink = (inst.container as any).__blinkState
-      if (blink) {
-        if (now > blink.nextBlink) {
-          blink.open = !blink.open
-          blink.nextBlink = now + (blink.open ? 2000 + Math.random() * 3000 : 140)
-        }
-        animateBlink(inst.container, blink.open)
-      }
     }
 
-    // ── Food (middle layer, above dragons) ────────────────────────────
+    // ── Food ─────────────────────────────────────────────────────────────
     for (const food of gameState.foods) {
       if (!foodContainers.has(food.id) && !food.eaten) {
         const fc = createFoodGraphics(food)
@@ -299,7 +273,14 @@ async function enterGame(): Promise<void> {
       }
     }
 
-    // Chomp announcements
+    // Food hit ground sound
+    const landedCount = gameState.landedFood?.length ?? 0
+    if (landedCount > prevLandedCount) {
+      sfxFoodHitGround()
+      prevLandedCount = landedCount
+    }
+
+    // Chomp announcements + sfx
     for (const food of gameState.foods) {
       if (food.eaten && !food.announced) {
         food.announced = true
@@ -308,10 +289,10 @@ async function enterGame(): Promise<void> {
       }
     }
 
-    // ── Particles (top layer) ─────────────────────────────────────────
-    const activeParticleKeys = new Set(gameState.particles.map((_, idx) => idx))
+    // ── Particles ──────────────────────────────────────────────────────────
+    const activeKeys = new Set(gameState.particles.map((_, idx) => idx))
     for (let i = particleGraphics.length - 1; i >= 0; i--) {
-      if (!activeParticleKeys.has(i)) {
+      if (!activeKeys.has(i)) {
         const pg = particleGraphics[i]
         if (pg.parent) pg.parent.removeChild(pg)
         pg.destroy()
@@ -330,7 +311,7 @@ async function enterGame(): Promise<void> {
       updateParticleGraphics(pg, p)
     }
 
-    // ── HUD ────────────────────────────────────────────────────────────
+    // ── HUD ────────────────────────────────────────────────────────────────
     if (gameState.score !== lastAnnouncedScore) {
       lastAnnouncedScore = gameState.score
       scoreDisplay.textContent = `Score: ${gameState.score}`
@@ -350,6 +331,7 @@ async function enterGame(): Promise<void> {
       celebrationCountdown.textContent = String(Math.max(0, secs))
       announceCelebration()
       sfxCelebrationStart()
+      sfxFireBurst()
 
       if (celebrationTimer === null) {
         celebrationTimer = window.setTimeout(() => endGame(), gameState.celebrationDuration)
@@ -374,6 +356,7 @@ function endGame(): void {
   }
 
   stopMotionTracking()
+  stopEpicMusic()
   showScreen('end-screen')
   endScoreMsg.textContent = `Final score: ${gameState.score}`
   gameStatus.textContent = `Game complete! Final score: ${gameState.score}`
@@ -396,6 +379,7 @@ function resetToStart(): void {
   }
 
   stopMotionTracking()
+  stopEpicMusic()
 
   if (app) {
     for (const inst of dragonsById.values()) {
@@ -417,6 +401,7 @@ function resetToStart(): void {
   activeBodies = []
   lastAnnouncedScore = -1
   lastAnnouncedFoodSpawned = -1
+  prevLandedCount = 0
   celebrationOverlay.hidden = true
 
   showScreen('start-screen')
@@ -431,8 +416,15 @@ function resetToStart(): void {
 
 function handleVisibilityChange(): void {
   if (!app) return
-  if (document.hidden) app.ticker.stop()
-  else app.ticker.start()
+  if (document.hidden) {
+    app.ticker.stop()
+    stopEpicMusic()
+  } else {
+    app.ticker.start()
+    if (gameState.phase === 'playing' || gameState.phase === 'celebrating') {
+      startEpicMusic()
+    }
+  }
 }
 
 function getDragonColor(index: number): number {

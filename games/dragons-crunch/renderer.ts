@@ -83,7 +83,6 @@ export interface DragonHeadGraphics {
   container: Container
   skull: Graphics
   jaw: Graphics
-  eye: Graphics
   rest: {
     jawY: number
   }
@@ -102,7 +101,6 @@ export function createDragon(tint?: number): Container {
     container,
     skull: parts.get('skull')!,
     jaw: parts.get('jaw')!,
-    eye: parts.get('eye')!,
     rest: {
       jawY: parts.get('jaw')!.y,
     },
@@ -110,10 +108,6 @@ export function createDragon(tint?: number): Container {
   }
 
   dragonPartsMap.set(container, graphics)
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(container as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
-
   return container
 }
 
@@ -121,25 +115,17 @@ export function getDragonParts(container: Container): DragonHeadGraphics | undef
   return dragonPartsMap.get(container)
 }
 
-// ── AR positioning: head overlay, 2x person size, smooth lerp ────────────
-
-// Base scale: dragon head is about 48 native px wide. If a person occupies ~1/5
-// of frame width (~200px on a 1000px screen), and we want the dragon DOUBLE
-// that, scale = 200 / 48 * 2 = ~8.3 at default, more for larger detected bodies.
+// ── AR positioning ──────────────────────────────────────────────────────────
 
 export function computeDragonScale(
   body: MotionBody,
   stageWidth: number,
   _stageHeight: number,
 ): number {
-  // Person's apparent width in pixels
   const personWidthPx = body.spreadX * stageWidth
-  // Native dragon width ~48. We want the dragon to be 2x the person's head width.
-  // Heuristic: a person on camera is roughly 2x their head width total.
-  // So dragon scale = (personWidthPx / 48) * 1.0 to get body-size, * 2 for 2x head.
-  const baseScale = Math.max(stageWidth, 480) * 0.0022
-  const bodyScale = (personWidthPx / 48) * 2.5
-  return Math.max(baseScale * 0.6, Math.min(baseScale * 3.5, bodyScale))
+  const baseScale = Math.max(stageWidth, 480) * 0.0024
+  const bodyScale = (personWidthPx / 48) * 2.8
+  return Math.max(baseScale * 0.7, Math.min(baseScale * 4, bodyScale))
 }
 
 export function computeDragonTarget(
@@ -148,45 +134,55 @@ export function computeDragonTarget(
   stageWidth: number,
   stageHeight: number,
 ): { x: number; y: number } {
-  // Head center overlay: place the dragon slightly above body centroid
-  const x = (1 - body.normalizedX) * stageWidth // mirror
-  // Lift the dragon so its jaw/throat roughly covers the person's head area
-  const faceY = (body.normalizedY - body.spreadY * 0.30) * stageHeight
-  const nativeHeight = 44 // approx native head height
-  const y = faceY + nativeHeight * scale * 0.15
+  const x = (1 - body.normalizedX) * stageWidth
+  const faceY = (body.normalizedY - body.spreadY * 0.25) * stageHeight
+  const nativeH = 44
   return {
     x: Math.max(60, Math.min(stageWidth - 60, x)),
-    y: Math.max(nativeHeight * scale * 0.3, Math.min(stageHeight - 10, y)),
+    y: Math.max(nativeH * scale * 0.25, Math.min(stageHeight - 10, faceY + nativeH * scale * 0.1)),
   }
 }
 
-// ── Food rendering (more stylized) ──────────────────────────────────────
+// ── Food rendering ──────────────────────────────────────────────────────────
 
 const foodGraphicsMap = new WeakMap<Graphics, FoodItem>()
 const foodContainerMap = new WeakMap<Container, Graphics>()
 
 export function createFoodGraphics(food: FoodItem): Container {
   const container = new Container()
-  const g = new Graphics()
 
-  if (food.value === 5) {
-    // Large: spiky star / gem shape
+  if (food.value >= 5) {
+    // Large bumpy lumpy shape: big blob with overlapping bumps + dots
     const r = food.radius
-    const spikes = 6
-    g.moveTo(r, 0)
-    for (let i = 0; i < spikes * 2; i++) {
-      const angle = (Math.PI * i) / spikes
-      const rad = i % 2 === 0 ? r : r * 0.5
-      g.lineTo(Math.cos(angle) * rad, Math.sin(angle) * rad)
-    }
-    g.closePath()
+    const g = new Graphics()
+
+    // Main lumpy body
+    g.circle(0, 0, r)
     g.fill({ color: food.color })
-    // Inner shine
-    g.circle(-r * 0.15, -r * 0.15, r * 0.3)
-    g.fill({ color: 0xffffff, alpha: 0.35 })
+
+    // Side bumps
+    g.circle(-r * 0.6, -r * 0.2, r * 0.55)
+    g.fill({ color: food.color })
+    g.circle(r * 0.55, r * 0.1, r * 0.5)
+    g.fill({ color: food.color })
+    g.circle(-r * 0.1, r * 0.5, r * 0.45)
+    g.fill({ color: food.color })
+    g.circle(r * 0.1, -r * 0.55, r * 0.4)
+    g.fill({ color: food.color })
+
+    // Dot highlights
+    g.circle(-r * 0.25, -r * 0.25, r * 0.15)
+    g.fill({ color: 0xffffff, alpha: 0.3 })
+    g.circle(r * 0.2, r * 0.15, r * 0.1)
+    g.fill({ color: 0xffffff, alpha: 0.25 })
+    g.circle(-r * 0.15, r * 0.3, r * 0.08)
+    g.fill({ color: 0xffffff, alpha: 0.2 })
+
+    container.addChild(g)
   } else {
-    // Small: irregular rounded shape (like a berry/nugget)
+    // Small: irregular rounded berry
     const r = food.radius
+    const g = new Graphics()
     g.moveTo(r, 0)
     g.bezierCurveTo(r, r * 0.6, r * 0.3, r, 0, r)
     g.bezierCurveTo(-r * 0.8, r, -r, r * 0.4, -r, 0)
@@ -194,17 +190,18 @@ export function createFoodGraphics(food: FoodItem): Container {
     g.bezierCurveTo(r * 0.6, -r, r, -r * 0.5, r, 0)
     g.closePath()
     g.fill({ color: food.color })
+
     g.circle(-r * 0.2, -r * 0.2, r * 0.25)
     g.fill({ color: 0xffffff, alpha: 0.3 })
+
+    container.addChild(g)
   }
 
-  container.addChild(g)
   container.x = food.x
   container.y = food.y
-  container.rotation = (food.x + food.y) * 0.01 // subtle per-item rotation
 
-  foodGraphicsMap.set(g, food)
-  foodContainerMap.set(container, g)
+  foodGraphicsMap.set(container.children[0] as Graphics, food)
+  foodContainerMap.set(container, container.children[0] as Graphics)
   return container
 }
 

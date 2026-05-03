@@ -3,21 +3,21 @@ import { getDragonParts } from './renderer.js'
 import { isReducedMotionEnabled } from '../../client/preferences.js'
 
 interface ChompAnim {
-  openAmount: number
-  targetOpen: number
+  openAmount: number // 0 = idle, 1 = fully open
   elapsed: number
   durationMs: number
 }
 
 interface FireAnim {
   intensity: number
-  targetIntensity: number
   elapsed: number
 }
 
 const chompAnims = new Map<Container, ChompAnim>()
 const fireAnims = new Map<Container, FireAnim>()
 let tickerInitialized = false
+
+const IDLE_JAW_OPEN = 4 // px: jaw always slightly dropped
 
 function easeOutBack(t: number): number {
   const c1 = 1.70158
@@ -31,12 +31,11 @@ function initTicker(): void {
   Ticker.shared.add((ticker) => {
     const delta = ticker.deltaMS
 
-    // Chomp: jaw drops DRAMATICALLY open
     for (const [container, anim] of chompAnims) {
       anim.elapsed += delta
       const progress = Math.min(anim.elapsed / anim.durationMs, 1)
       const eased = easeOutBack(progress)
-      anim.openAmount = anim.targetOpen * eased
+      anim.openAmount = eased // 0→1 over duration
 
       const parts = getDragonParts(container)
       if (!parts) {
@@ -44,20 +43,15 @@ function initTicker(): void {
         continue
       }
 
-      // Jaw drops way down for dramatic bite
-      parts.jaw.y = parts.rest.jawY + anim.openAmount * 28
-      // Skull tilts back as mouth opens wide
-      parts.skull.rotation = -anim.openAmount * 0.12
+      // Jaw drops from idle-open to dramatically open, then returns
+      const drop = IDLE_JAW_OPEN + anim.openAmount * 24
+      parts.jaw.y = parts.rest.jawY + drop
 
       if (progress >= 1) {
         chompAnims.delete(container)
-        // Snap shut
-        parts.jaw.y = parts.rest.jawY
-        parts.skull.rotation = 0
       }
     }
 
-    // Fire breathing: jaw quivers, skull shakes
     for (const [container, anim] of fireAnims) {
       anim.elapsed += delta
       const parts = getDragonParts(container)
@@ -66,24 +60,21 @@ function initTicker(): void {
         continue
       }
 
-      const shake = Math.sin(anim.elapsed * 0.014) * 0.05 * anim.targetIntensity
-      parts.skull.rotation = shake
-      parts.jaw.y = parts.rest.jawY + Math.abs(Math.sin(anim.elapsed * 0.025)) * 5 * anim.targetIntensity
+      const wobble = Math.sin(anim.elapsed * 0.016) * 0.04 * anim.intensity
+      parts.skull.rotation = wobble
+      parts.jaw.y = parts.rest.jawY + IDLE_JAW_OPEN + Math.abs(Math.sin(anim.elapsed * 0.022)) * 6 * anim.intensity
     }
   })
 }
 
 export function animateChomp(container: Container): void {
   if (isReducedMotionEnabled()) return
-
-  const parts = getDragonParts(container)
-  if (!parts) return
+  if (chompAnims.has(container)) return // don't re-trigger while animating
 
   chompAnims.set(container, {
     openAmount: 0,
-    targetOpen: 1,
     elapsed: 0,
-    durationMs: 260,
+    durationMs: 280,
   })
   initTicker()
 }
@@ -91,12 +82,8 @@ export function animateChomp(container: Container): void {
 export function animateFireBreathing(container: Container, intensity: number): void {
   if (isReducedMotionEnabled()) return
 
-  const parts = getDragonParts(container)
-  if (!parts) return
-
   fireAnims.set(container, {
-    intensity: 0,
-    targetIntensity: intensity,
+    intensity,
     elapsed: 0,
   })
   initTicker()
@@ -107,22 +94,17 @@ export function stopFireBreathing(container: Container): void {
   const parts = getDragonParts(container)
   if (!parts) return
   parts.skull.rotation = 0
-  parts.jaw.y = parts.rest.jawY
+  parts.jaw.y = parts.rest.jawY + IDLE_JAW_OPEN
 }
 
-export function animateIdle(container: Container, t: number, index: number): void {
+export function applyIdle(container: Container, t: number, index: number): void {
   const parts = getDragonParts(container)
   if (!parts) return
 
-  // Subtle breathing: skull bobs slightly
-  const breathe = Math.sin(t * 2.2 + index * 1.3) * 0.015
-  parts.skull.y = breathe * 3
-  parts.jaw.y = parts.rest.jawY + breathe * 2
-}
+  // Jaw is always slightly open in idle (so player can always eat)
+  parts.jaw.y = parts.rest.jawY + IDLE_JAW_OPEN + Math.sin(t * 2 + index * 1.1) * 1.2
 
-export function animateBlink(container: Container, open: boolean): void {
-  const parts = getDragonParts(container)
-  if (!parts) return
-  const scaleY = open ? 1 : 0.12
-  parts.eye.scale.y = scaleY
+  // Skull breathes subtly
+  const breathe = Math.sin(t * 1.8 + index * 0.9) * 0.012
+  parts.skull.y = breathe * 2.5
 }
