@@ -625,3 +625,11 @@
 - License: MIT
 - Modifications: Not applicable
 - Notes: 2D WebGL rendering engine used for the game stage.
+
+### Mudskipper
+
+- Slug: mudskipper
+- Code license: GPL-3.0
+- Summary: Become a mudskipper! Jump in front of your camera and watch your mudskipper leap through the mud. Keep jumping before the mud fills the whole screen!
+
+- No attribution entries recorded.

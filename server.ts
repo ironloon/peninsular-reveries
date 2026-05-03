@@ -49,6 +49,7 @@ const gameCtx = await esbuild.context({
     'games/peekaboo/main.ts',
     'games/spot-on/main.ts',
     'games/copycat/main.ts',
+    'games/mudskipper/main.ts',
   ],
   bundle: true,
   outbase: 'games',

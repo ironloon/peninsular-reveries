@@ -17,6 +17,7 @@ import { spotOnAction } from '../games/spot-on/controller.js'
 import { peekabooAction } from '../games/peekaboo/controller.js'
 import { copycatAction } from '../games/copycat/controller.js'
 import { dragonsCrunchAction } from '../games/dragons-crunch/controller.js'
+import { mudskipperAction } from '../games/mudskipper/controller.js'
 
 export function createAppRouter() {
   const router = createRouter()
@@ -36,6 +37,7 @@ export function createAppRouter() {
   router.get(routes.peekabooInfo, () => gameInfoAction('peekaboo'))
   router.get(routes.copycatInfo, () => gameInfoAction('copycat'))
   router.get(routes.dragonsCrunchInfo, () => gameInfoAction('dragons-crunch'))
+  router.get(routes.mudskipperInfo, () => gameInfoAction('mudskipper'))
   router.get(routes.missionOrbit, () => missionOrbitAction())
   router.get(routes.superWord, () => superWordAction())
   router.get(routes.chompers, () => chompersAction())
@@ -49,6 +51,7 @@ export function createAppRouter() {
   router.get(routes.peekaboo, () => peekabooAction())
   router.get(routes.copycat, () => copycatAction())
   router.get(routes.dragonsCrunch, () => dragonsCrunchAction())
+  router.get(routes.mudskipper, () => mudskipperAction())
   router.get(routes.notFound, () => notFoundAction())
 
   return router

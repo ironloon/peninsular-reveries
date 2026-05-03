@@ -1,0 +1,291 @@
+/* Mudskipper — camera-based motion capture jumping game
+ * Viewport checkpoints: 390x844, 844x390, 1024x768, 1280x800.
+ */
+
+body.mudskipper-game {
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-title: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #1a120b;
+  --text: #e0e0e0;
+  --muted: rgba(224, 224, 224, 0.65);
+  --panel: rgba(26, 18, 11, 0.78);
+  --panel-strong: rgba(36, 26, 16, 0.92);
+  --line: rgba(224, 224, 224, 0.14);
+  --accent: #8d6e63;
+  --accent-soft: rgba(141, 110, 99, 0.16);
+  --hud-bg: rgba(20, 14, 8, 0.85);
+  --spotlight: radial-gradient(circle at 50% 40%, rgba(141, 110, 99, 0.12), transparent 55%);
+
+  min-height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+}
+
+body.mudskipper-game main {
+  overflow: hidden;
+}
+
+/* ── Scene track ────────────────────────────────────────────── */
+
+.scene-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--spotlight), var(--bg);
+}
+
+/* ── Screen panels ──────────────────────────────────────────── */
+
+.ms-screen-panel {
+  width: min(100%, 78rem);
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  padding:
+    max(1rem, env(safe-area-inset-top, 0px))
+    max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+.ms-start-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+.ms-game-panel {
+  min-height: 100dvh;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.ms-gameover-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+.ms-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--hud-bg);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+}
+
+.ms-heading-block {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.ms-title {
+  font-family: var(--font-title);
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.1;
+  color: var(--text);
+}
+
+.ms-title-small {
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+}
+
+.ms-kicker {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  margin: 0;
+}
+
+.ms-menu-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+  padding: 0.45rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.ms-menu-btn:hover {
+  background: var(--accent-soft);
+}
+
+/* ── Start screen ───────────────────────────────────────────── */
+
+.ms-subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: var(--muted);
+  margin: 0.5rem 0 0;
+}
+
+.ms-instructions {
+  display: grid;
+  gap: 0.6rem;
+  max-width: 32rem;
+  margin: 1.2rem auto 0;
+  text-align: left;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: 1rem 1.2rem;
+}
+
+.ms-instructions-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.ms-instruction-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ms-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--panel-strong);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.ms-camera-prompt {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin: 1rem 0 0;
+}
+
+.ms-camera-prompt p {
+  margin: 0;
+}
+
+.ms-primary-btn {
+  appearance: none;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.6rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1.2rem;
+}
+
+.ms-primary-btn:hover {
+  filter: brightness(1.1);
+}
+
+/* ── Game screen ────────────────────────────────────────────── */
+
+.ms-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.4rem 1rem;
+  background: var(--hud-bg);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ms-hud-left,
+.ms-hud-right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.ms-pixi-stage {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: transparent;
+}
+
+.ms-camera-preview {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 0.4rem;
+  opacity: 0.45;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* ── Game over screen ─────────────────────────────────────────── */
+
+.ms-gameover-card {
+  display: grid;
+  place-items: center;
+  gap: 1rem;
+  max-width: 24rem;
+  margin: 1.5rem auto 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  padding: 2rem 1.5rem;
+}
+
+.ms-gameover-emoji {
+  font-size: 4rem;
+  line-height: 1;
+}
+
+.ms-gameover-msg {
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+.ms-secondary-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.ms-secondary-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Noscript ───────────────────────────────────────────────── */
+
+.noscript-message-mudskipper {
+  text-align: center;
+  padding: 2rem;
+  color: var(--muted);
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .ms-primary-btn {
+    transition: none;
+  }
+}

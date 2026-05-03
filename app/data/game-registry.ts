@@ -99,4 +99,11 @@ export const games: GameEntry[] = [
     icon: '🐉',
     status: 'live',
   },
+  {
+    slug: 'mudskipper',
+    name: 'Mudskipper',
+    description: 'Jump to make your mudskipper splash in the mud before the screen fills up!',
+    icon: '🐟',
+    status: 'live',
+  },
 ]

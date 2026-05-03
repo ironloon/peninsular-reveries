@@ -24,6 +24,8 @@ import { copycatAttribution } from '../../games/copycat/attributions.js'
 import { copycatInfo } from '../../games/copycat/info.js'
 import { dragonsCrunchAttribution } from '../../games/dragons-crunch/attributions.js'
 import { dragonsCrunchInfo } from '../../games/dragons-crunch/info.js'
+import { mudskipperAttribution } from '../../games/mudskipper/attributions.js'
+import { mudskipperInfo } from '../../games/mudskipper/info.js'
 import type { GameAttribution, GameInfo } from './attribution-types.js'
 import { attributionsPagePath, repositoryCodeLicense } from './attribution-types.js'
 
@@ -48,6 +50,7 @@ const gameEntries: readonly { attribution: GameAttribution; info: GameInfo }[] =
   { attribution: peekabooAttribution, info: peekabooInfo },
   { attribution: copycatAttribution, info: copycatInfo },
   { attribution: dragonsCrunchAttribution, info: dragonsCrunchInfo },
+  { attribution: mudskipperAttribution, info: mudskipperInfo },
 ]
 
 export const gameAttributions: readonly GameAttributionWithInfo[] = gameEntries.map(
