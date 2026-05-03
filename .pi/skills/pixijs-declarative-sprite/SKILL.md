@@ -90,11 +90,58 @@ Every major part (body, head) should include simple shading:
 - Shadow:
   - slightly offset
   - darker color (palette key: "shadow")
-  - can use alpha (0.2–0.4)
+  - alpha typically 0.2–0.4
 - Highlight:
   - small and subtle
-  - placed on upper area
+  - placed on upper-facing surfaces
   - palette key: "highlight"
+
+---
+
+## Animation Roles (Semantic Only)
+
+Use `role` ONLY as a hint for downstream animation systems.
+
+- blink → eyes
+- wag → tail
+- idle_breath → body
+- look → head
+- step → legs
+
+IMPORTANT:
+- Roles MUST NOT imply shared anatomy behavior
+- Roles do NOT define motion rules inside the model
+
+---
+
+## Rig Independence Rule (NEW, IMPORTANT)
+
+Models MUST NOT assume a shared skeleton structure.
+
+Different creatures MAY have:
+- necks (giraffe, flamingo)
+- elongated bodies (crocodile)
+- compact quadrupeds (cat, wolf)
+- vertical balance shifts (birds)
+
+Therefore:
+- No implicit spine model
+- No assumption that head/legs inherit body transforms
+- Each part is spatially independent
+
+---
+
+## Layout Compatibility Rule (NEW)
+
+This model may be used in systems that:
+- compute bounds dynamically
+- apply per-creature grounding offsets
+- avoid fixed width assumptions
+
+Therefore:
+- Designs SHOULD remain visually balanced around origin
+- Do NOT assume fixed stage width or alignment rules
+- Keep center of mass visually coherent
 
 ---
 
@@ -124,37 +171,27 @@ palette: {
 
 ---
 
-## Animation Roles
-
-Use `role` when appropriate:
-
-- blink → eyes
-- wag → tail
-- idle_breath → body
-- look → head
-- step → legs
-
----
-
 ## Composition Guidelines
 
 - Build characters from layered parts (body → head → details)
 - Use child parts for structure, not z-index hacks
-- Keep designs readable at small sizes (32–64px)
+- Ensure readability at 32–64px scale
+- Keep visual balance independent of animation system
 
 ---
 
 ## Quality Checklist (apply before output)
 
 - Is the silhouette clean and readable?
-- Are proportions appealing and consistent?
+- Does the model avoid implicit skeletal assumptions?
+- Are parts visually balanced around origin?
 - Are shapes simple and intentional?
-- Is there at least basic shading?
-- Does it look like a cohesive character?
+- Is shading present and subtle?
+- Does it remain valid across different rig systems?
 
 If not, refine before output.
 
 ---
 
 ## Version
-v2.0
+v2.1
