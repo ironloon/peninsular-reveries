@@ -21,6 +21,7 @@ import { mudskipperAction } from '../games/mudskipper/controller.js'
 import { tunaPianoAction } from '../games/tuna-piano/controller.js'
 import { growWithMeAction } from '../games/grow-with-me/controller.js'
 import { bakingSimulatorAction } from '../games/baking-simulator/controller.js'
+import { allAboardAction } from '../games/all-aboard/controller.js'
 
 export function createAppRouter() {
   const router = createRouter()
@@ -61,6 +62,8 @@ export function createAppRouter() {
   router.get(routes.tunaPiano, () => tunaPianoAction())
   router.get(routes.growWithMe, () => growWithMeAction())
   router.get(routes.bakingSimulator, () => bakingSimulatorAction())
+  router.get(routes.allAboard, () => allAboardAction())
+  router.get(routes.allAboardInfo, () => gameInfoAction('all-aboard'))
   router.get(routes.notFound, () => notFoundAction())
 
   return router

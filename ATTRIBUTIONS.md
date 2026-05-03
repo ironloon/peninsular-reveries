@@ -667,3 +667,31 @@
 - Summary: Mix, knead, shape, proof, and bake your way to the perfect loaf! A step-by-step bread baking simulator with a panning camera.
 
 - No attribution entries recorded.
+
+### All Aboard
+
+- Slug: all-aboard
+- Code license: GPL-3.0
+- Summary: Raise your hand to blow the whistle and shout "All Aboard!" then rotate your arm to make the steam engine chugga chugga choo choo across the screen! Uses your camera for motion controls.
+
+#### Entries
+
+##### PixiJS
+
+- Type: other
+- Used in: All Aboard game rendering via PixiJS
+- Creator: PixiJS Contributors
+- Source: https://pixijs.com/ (https://pixijs.com/)
+- License: MIT
+- Modifications: Not applicable
+- Notes: 2D WebGL rendering engine used for the game stage.
+
+##### Web Speech API
+
+- Type: other
+- Used in: All Aboard voice synthesis for "All Aboard!" announcement
+- Creator: W3C / Browser vendors
+- Source: https://wicg.github.io/speech-api/ (https://wicg.github.io/speech-api/)
+- License: W3C Community License
+- Modifications: Not applicable
+- Notes: Built-in browser API used for text-to-speech. No external service required.

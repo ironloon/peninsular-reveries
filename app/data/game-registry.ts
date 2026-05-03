@@ -127,4 +127,11 @@ export const games: GameEntry[] = [
     icon: '🍞',
     status: 'live',
   },
+  {
+    slug: 'all-aboard',
+    name: 'All Aboard',
+    description: 'Raise your hand to whistle "All Aboard!" and rotate your arm to make the steam engine chugga across the screen! Camera-powered train game.',
+    icon: '🚂',
+    status: 'live',
+  },
 ]

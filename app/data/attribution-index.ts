@@ -32,6 +32,8 @@ import { growWithMeAttribution } from '../../games/grow-with-me/attributions.js'
 import { growWithMeInfo } from '../../games/grow-with-me/info.js'
 import { bakingSimulatorAttribution } from '../../games/baking-simulator/attributions.js'
 import { bakingSimulatorInfo } from '../../games/baking-simulator/info.js'
+import { allAboardAttribution } from '../../games/all-aboard/attributions.js'
+import { allAboardInfo } from '../../games/all-aboard/info.js'
 import type { GameAttribution, GameInfo } from './attribution-types.js'
 import { attributionsPagePath, repositoryCodeLicense } from './attribution-types.js'
 
@@ -60,6 +62,7 @@ const gameEntries: readonly { attribution: GameAttribution; info: GameInfo }[] =
   { attribution: tunaPianoAttribution, info: tunaPianoInfo },
   { attribution: growWithMeAttribution, info: growWithMeInfo },
   { attribution: bakingSimulatorAttribution, info: bakingSimulatorInfo },
+  { attribution: allAboardAttribution, info: allAboardInfo },
 ]
 
 export const gameAttributions: readonly GameAttributionWithInfo[] = gameEntries.map(

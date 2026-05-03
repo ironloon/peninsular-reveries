@@ -14,6 +14,7 @@ const pages = [
   { path: '/spot-on/', heading: 'Spot On' },
   { path: '/peekaboo/' },
   { path: '/copycat/', heading: 'Copycat' },
+  { path: '/all-aboard/', heading: 'All Aboard' },
   { path: '/attributions/', heading: 'Attributions', checkMain: true },
   { path: '/404.html' },
 ]

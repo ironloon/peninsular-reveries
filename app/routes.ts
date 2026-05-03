@@ -38,5 +38,7 @@ export const routes = route({
   growWithMe: '/grow-with-me/',
   bakingSimulator: '/baking-simulator/',
   bakingSimulatorInfo: '/baking-simulator/info/',
+  allAboard: '/all-aboard/',
+  allAboardInfo: '/all-aboard/info/',
   notFound: '/404.html',
 })
