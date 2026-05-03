@@ -53,7 +53,11 @@ export interface GameState {
 
 export interface MotionBody {
   id: number
-  normalizedX: number // 0-1 across frame width
+  normalizedX: number // 0-1 across frame width (mirrored for display)
+  normalizedY: number // 0-1 across frame height (0=top, 1=bottom)
+  spreadX: number
+  spreadY: number
+  pixelCount: number
   active: boolean
   armsUp: boolean
 }

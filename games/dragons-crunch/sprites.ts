@@ -1,7 +1,5 @@
 import { Container, Graphics } from 'pixi.js'
 
-// ── Schema (pixijs-declarative-sprite skill v2.1) ───────────────────────────
-
 export type Shape =
   | { kind: 'circle'; x: number; y: number; r: number; fill: string; alpha?: number }
   | { kind: 'ellipse'; x: number; y: number; rx: number; ry: number; fill: string; alpha?: number }
@@ -22,8 +20,6 @@ export interface Model {
   palette: Record<string, string>
   root: Part
 }
-
-// ── Runtime: Model → PixiJS Container ─────────────────────────────────────
 
 export interface BuiltSprite {
   container: Container
@@ -102,140 +98,139 @@ export function buildSprite(
   return { container, parts, nativeBounds }
 }
 
-// ── Dragon model ──────────────────────────────────────────────────────────
+// ── Dragon head only ──────────────────────────────────────────────────────
+// Big menacing head that covers the player's head in AR.
+// Silhouette-driven: long snout, heavy brow, back-curving horns,
+// spiky crest, glowing slit eyes, full mouth of teeth.
+// Jaw opens for chomp, jaw snaps shut.
 
 export const dragonModel: Model = {
-  name: 'dragon',
+  name: 'dragon-head',
   palette: {
-    base: '#2E7D32',
-    belly: '#66BB6A',
-    accent: '#FF6F00',
-    jaw: '#E65100',
-    eye: '#ffffff',
-    pupil: '#000000',
-    shadow: '#1B5E20',
-    highlight: '#81C784',
-    fire: '#FF3D00',
-    fireCore: '#FFEA00',
+    base: '#1e2e1e',
+    belly: '#3a4a32',
+    accent: '#121a12',
+    eye: '#ff4422',
+    pupil: '#0a0000',
+    tooth: '#d8d0c0',
+    shadow: '#0c140c',
+    highlight: '#4a5a3e',
   },
   root: {
     name: 'root',
     children: [
+      // ── Crest spikes (back of head) ──
       {
-        name: 'tail',
-        role: 'wag',
-        offset: [-18, 4],
+        name: 'crest',
+        offset: [0, -18],
         shapes: [
-          { kind: 'ellipse', x: -6, y: 0, rx: 10, ry: 4, fill: 'base' },
-          { kind: 'ellipse', x: -14, y: -2, rx: 6, ry: 3, fill: 'base' },
-          { kind: 'ellipse', x: -18, y: -5, rx: 3, ry: 2.5, fill: 'accent' },
+          { kind: 'polygon', points: [-8, 0, -14, -10, -6, -2], fill: 'accent' },
+          { kind: 'polygon', points: [-2, -2, -6, -14, 2, -2], fill: 'accent' },
+          { kind: 'polygon', points: [6, -2, 2, -14, 10, -2], fill: 'accent' },
+          { kind: 'polygon', points: [12, 0, 8, -10, 16, 0], fill: 'accent' },
+        ],
+      },
+      // ── Horns (back-curving) ──
+      {
+        name: 'leftHorn',
+        offset: [-14, -14],
+        shapes: [
+          { kind: 'polygon', points: [0, 0, -16, -14, -6, 4], fill: 'accent' },
+          { kind: 'polygon', points: [-2, -2, -10, -8, -4, 2], fill: 'shadow', alpha: 0.3 },
         ],
       },
       {
-        name: 'leftLeg',
-        role: 'step',
-        offset: [-10, 18],
+        name: 'rightHorn',
+        offset: [14, -14],
         shapes: [
-          { kind: 'roundedRect', x: -3, y: -2, w: 6, h: 10, r: 3, fill: 'base' },
-          { kind: 'roundedRect', x: -3.5, y: 6, w: 7, h: 4, r: 2, fill: 'shadow' },
+          { kind: 'polygon', points: [0, 0, 16, -14, 6, 4], fill: 'accent' },
+          { kind: 'polygon', points: [2, -2, 10, -8, 4, 2], fill: 'shadow', alpha: 0.3 },
         ],
       },
+      // ── Main head shape ──
       {
-        name: 'rightLeg',
-        role: 'step',
-        offset: [10, 18],
+        name: 'head',
         shapes: [
-          { kind: 'roundedRect', x: -3, y: -2, w: 6, h: 10, r: 3, fill: 'base' },
-          { kind: 'roundedRect', x: -3.5, y: 6, w: 7, h: 4, r: 2, fill: 'shadow' },
+          // Big triangular skull with flat top, pointy cheeks, long taper to snout
+          { kind: 'polygon', points: [-16, -12, 16, -12, 20, 4, 14, 18, -14, 18, -20, 4], fill: 'base' },
+          // Cheek scales (subtle)
+          { kind: 'ellipse', x: -10, y: 6, rx: 4, ry: 2.5, fill: 'shadow', alpha: 0.25 },
+          { kind: 'ellipse', x: 10, y: 6, rx: 4, ry: 2.5, fill: 'shadow', alpha: 0.25 },
+          { kind: 'ellipse', x: -6, y: 10, rx: 3, ry: 1.8, fill: 'shadow', alpha: 0.2 },
+          { kind: 'ellipse', x: 6, y: 10, rx: 3, ry: 1.8, fill: 'shadow', alpha: 0.2 },
         ],
-      },
-      {
-        name: 'body',
-        role: 'idle_breath',
-        shapes: [
-          { kind: 'ellipse', x: 0, y: 0, rx: 18, ry: 14, fill: 'base' },
-          { kind: 'ellipse', x: 0, y: 4, rx: 12, ry: 9, fill: 'belly' },
-          { kind: 'ellipse', x: 0, y: 12, rx: 14, ry: 3, fill: 'shadow', alpha: 0.3 },
-          { kind: 'ellipse', x: -6, y: -6, rx: 5, ry: 3, fill: 'highlight', alpha: 0.25 },
-        ],
-      },
-      {
-        name: 'leftWing',
-        role: 'flap',
-        offset: [-14, -6],
-        shapes: [
-          { kind: 'polygon', points: [0, 0, -18, -22, -6, -4], fill: 'base' },
-          { kind: 'polygon', points: [-2, -2, -14, -18, -5, -4], fill: 'accent', alpha: 0.4 },
-        ],
-      },
-      {
-        name: 'rightWing',
-        role: 'flap',
-        offset: [14, -6],
-        shapes: [
-          { kind: 'polygon', points: [0, 0, 18, -22, 6, -4], fill: 'base' },
-          { kind: 'polygon', points: [2, -2, 14, -18, 5, -4], fill: 'accent', alpha: 0.4 },
-        ],
-      },
-      {
-        name: 'headGroup',
-        role: 'look',
-        offset: [0, -16],
         children: [
+          // Heavy brow ridge (covers top of eyes, adds menace)
           {
-            name: 'head',
+            name: 'brow',
+            offset: [0, -4],
             shapes: [
-              { kind: 'ellipse', x: 0, y: 0, rx: 14, ry: 12, fill: 'base' },
-              { kind: 'ellipse', x: -4, y: -6, rx: 5, ry: 4, fill: 'highlight', alpha: 0.3 },
+              { kind: 'polygon', points: [-14, -2, -6, -6, 6, -6, 14, -2, 12, 2, -12, 2], fill: 'accent' },
             ],
-            children: [
-              {
-                name: 'leftSpike',
-                shapes: [
-                  { kind: 'polygon', points: [-10, -10, -16, -22, -4, -12], fill: 'accent' },
-                ],
-              },
-              {
-                name: 'rightSpike',
-                shapes: [
-                  { kind: 'polygon', points: [10, -10, 16, -22, 4, -12], fill: 'accent' },
-                ],
-              },
-              {
-                name: 'leftEye',
-                role: 'blink',
-                shapes: [
-                  { kind: 'circle', x: -5, y: -2, r: 3.5, fill: 'eye' },
-                  { kind: 'circle', x: -5, y: -2, r: 1.4, fill: 'pupil' },
-                ],
-              },
-              {
-                name: 'rightEye',
-                role: 'blink',
-                shapes: [
-                  { kind: 'circle', x: 5, y: -2, r: 3.5, fill: 'eye' },
-                  { kind: 'circle', x: 5, y: -2, r: 1.4, fill: 'pupil' },
-                ],
-              },
+          },
+          // Angry slit eyes
+          {
+            name: 'leftEye',
+            role: 'blink',
+            offset: [-8, 2],
+            shapes: [
+              { kind: 'polygon', points: [-5, -1, 1, -1, 1, 3, -5, 3], fill: 'eye' },
+              { kind: 'rect', x: -3, y: 0.5, w: 3, h: 1.2, fill: 'pupil' },
             ],
           },
           {
-            name: 'upperJaw',
-            offset: [0, 2],
+            name: 'rightEye',
+            role: 'blink',
+            offset: [8, 2],
             shapes: [
-              { kind: 'roundedRect', x: -10, y: -2, w: 20, h: 6, r: 3, fill: 'base' },
-              { kind: 'roundedRect', x: -8, y: 0, w: 16, h: 3, r: 1.5, fill: 'belly' },
+              { kind: 'polygon', points: [-1, -1, 5, -1, 5, 3, -1, 3], fill: 'eye' },
+              { kind: 'rect', x: -0.5, y: 0.5, w: 3, h: 1.2, fill: 'pupil' },
             ],
           },
+          // Nostril slits (on snout bridge)
           {
-            name: 'lowerJaw',
-            role: 'chomp',
-            offset: [0, 6],
+            name: 'nostrils',
+            offset: [0, 8],
             shapes: [
-              { kind: 'roundedRect', x: -9, y: -2, w: 18, h: 5, r: 2.5, fill: 'jaw' },
-              { kind: 'roundedRect', x: -7, y: -1, w: 14, h: 2, r: 1, fill: 'belly' },
+              { kind: 'ellipse', x: -3, y: 0, rx: 1.2, ry: 0.6, fill: 'shadow', alpha: 0.5 },
+              { kind: 'ellipse', x: 3, y: 0, rx: 1.2, ry: 0.6, fill: 'shadow', alpha: 0.5 },
             ],
           },
+        ],
+      },
+      // ── Upper jaw / snout (lots of teeth, chomp area) ──
+      {
+        name: 'upperJaw',
+        offset: [0, 14],
+        shapes: [
+          { kind: 'polygon', points: [-14, -4, 14, -4, 18, 8, 0, 14, -18, 8], fill: 'base' },
+          // Upper teeth (many small sharp ones)
+          { kind: 'polygon', points: [-12, 4, -11, 10, -10, 4], fill: 'tooth' },
+          { kind: 'polygon', points: [-8, 5, -7, 11, -6, 5], fill: 'tooth' },
+          { kind: 'polygon', points: [-4, 5, -3, 11, -2, 5], fill: 'tooth' },
+          { kind: 'polygon', points: [0, 5, 1, 11, 2, 5], fill: 'tooth' },
+          { kind: 'polygon', points: [4, 5, 5, 11, 6, 5], fill: 'tooth' },
+          { kind: 'polygon', points: [8, 5, 9, 11, 10, 5], fill: 'tooth' },
+          { kind: 'polygon', points: [12, 4, 13, 10, 14, 4], fill: 'tooth' },
+          // Inner mouth (darker)
+          { kind: 'polygon', points: [-10, -2, 10, -2, 12, 4, -12, 4], fill: 'shadow', alpha: 0.5 },
+        ],
+      },
+      // ── Lower jaw (opens wide for chomp) ──
+      {
+        name: 'lowerJaw',
+        role: 'chomp',
+        offset: [0, 22],
+        shapes: [
+          { kind: 'polygon', points: [-12, -2, 12, -2, 8, 8, -8, 8], fill: 'accent' },
+          // Lower teeth pointing up
+          { kind: 'polygon', points: [-9, -2, -8, -8, -7, -2], fill: 'tooth' },
+          { kind: 'polygon', points: [-4, -2, -3, -9, -2, -2], fill: 'tooth' },
+          { kind: 'polygon', points: [0, -2, 1, -9, 2, -2], fill: 'tooth' },
+          { kind: 'polygon', points: [4, -2, 5, -9, 6, -2], fill: 'tooth' },
+          { kind: 'polygon', points: [9, -2, 10, -8, 11, -2], fill: 'tooth' },
+          // Tongue
+          { kind: 'ellipse', x: 0, y: 3, rx: 5, ry: 2, fill: 'belly', alpha: 0.5 },
         ],
       },
     ],

@@ -1,4 +1,4 @@
-import type { GameState, DragonState, FoodItem, Particle, MotionBody } from './types.js'
+import type { GameState, FoodItem, Particle, MotionBody } from './types.js'
 
 const FOOD_COLORS = [
   0xff4444, // apple red
@@ -10,10 +10,10 @@ const FOOD_COLORS = [
 ]
 
 const FOOD_SPAWN_INTERVAL = 900 // ms between food spawns
-const GRAVITY = 0.25
-const GROUND_OFFSET = 60 // pixels above ground where food sits
-const CHOMP_RANGE = 70 // pixels
-const CHOMP_COOLDOWN = 400 // ms
+const GRAVITY = 0.35
+const CHOMP_RANGE = 80 // pixels
+const CHOMP_COOLDOWN = 350 // ms per dragon
+const FOOD_FLOOR_MARGIN = 6 // stop slightly above screen bottom
 
 function randomFoodColor(): number {
   return FOOD_COLORS[Math.floor(Math.random() * FOOD_COLORS.length)]
@@ -51,15 +51,15 @@ export function startGame(state: GameState): GameState {
 
 export function spawnFoodItem(stageWidth: number, stageHeight: number, now: number): FoodItem | null {
   const isLarge = Math.random() < 0.2
-  const radius = isLarge ? 16 : 8
+  const radius = isLarge ? 18 : 9
   const value = isLarge ? 5 : 1
 
   return {
     id: `food-${now}-${Math.random().toString(36).slice(2, 8)}`,
     x: radius + Math.random() * (stageWidth - radius * 2),
-    y: -radius - 10,
-    vx: (Math.random() - 0.5) * 0.3,
-    vy: 1.5 + Math.random() * 1.5,
+    y: -radius - 8,
+    vx: (Math.random() - 0.5) * 0.5,
+    vy: 2 + Math.random() * 2,
     radius,
     value,
     color: randomFoodColor(),
@@ -81,8 +81,16 @@ export function updateGame(
   const now = performance.now()
   const gameTime = state.gameTime + deltaMs
 
-  // Update dragons from motion bodies
-  let dragons = updateDragonsFromBodies(state.dragons, bodies, stageWidth, stageHeight, now)
+  // Build chomp centers from body positions (mouth offset slightly above centroid)
+  const chompCenters = bodies
+    .filter((b) => b.armsUp)
+    .map((b) => ({
+      x: b.normalizedX * stageWidth,
+      y: (b.normalizedY - b.spreadY * 0.25) * stageHeight, // mouth is upper part of torso
+      lastChomp: state.dragons.find((d) => d.id === `body-${b.id}`)?.lastChomp ?? 0,
+      id: `body-${b.id}`,
+      breathingFire: state.phase === 'celebrating',
+    }))
 
   // Spawn food during playing phase
   let foods = state.foods
@@ -102,7 +110,7 @@ export function updateGame(
   }
 
   // Update food physics
-  const groundY = stageHeight * 0.82 - GROUND_OFFSET
+  const floorY = stageHeight - FOOD_FLOOR_MARGIN
   const updatedFoods: FoodItem[] = []
   for (const food of foods) {
     if (food.eaten) continue
@@ -111,10 +119,11 @@ export function updateGame(
     let fy = food.y + food.vy * dt
     let fvy = food.vy + GRAVITY * dt
 
-    if (fy >= groundY) {
-      fy = groundY
-      fvy = 0
-      fx += food.vx * dt * 0.2 // slight slide on ground
+    if (fy >= floorY - food.radius) {
+      fy = floorY - food.radius
+      fvy = -fvy * 0.25 // small bounce
+      if (Math.abs(fvy) < 1) fvy = 0
+      fx += food.vx * dt * 0.15
     }
 
     updatedFoods.push({ ...food, x: fx, y: fy, vy: fvy })
@@ -123,26 +132,19 @@ export function updateGame(
 
   // Chomp detection during playing
   if (state.phase === 'playing') {
-    for (let i = 0; i < dragons.length; i++) {
-      const dragon = dragons[i]
-      if (!dragon.chomping || now - dragon.lastChomp < CHOMP_COOLDOWN) {
-        continue
-      }
-      dragons[i] = { ...dragon, lastChomp: now }
-
-      const mouthX = dragon.x
-      const mouthY = dragon.y - 40 // approximate mouth height
+    for (const center of chompCenters) {
+      if (now - center.lastChomp < CHOMP_COOLDOWN) continue
+      center.lastChomp = now
 
       for (let f = 0; f < foods.length; f++) {
         const food = foods[f]
         if (food.eaten) continue
-        const dx = food.x - mouthX
-        const dy = food.y - mouthY
+        const dx = food.x - center.x
+        const dy = food.y - center.y
         const dist = Math.sqrt(dx * dx + dy * dy)
         if (dist < CHOMP_RANGE + food.radius) {
           foods[f] = { ...food, eaten: true }
           score += food.value
-          // Spawn crunch particles
           particles = [...particles, ...spawnCrunchBurst(food.x, food.y, food.color)]
         }
       }
@@ -151,27 +153,43 @@ export function updateGame(
 
   // Fire breathing during celebration
   if (state.phase === 'celebrating') {
-    for (const dragon of dragons) {
-      if (dragon.breathingFire) {
-        const mouthX = dragon.x
-        const mouthY = dragon.y - 45
-        particles = [...particles, ...spawnFireBurst(mouthX, mouthY, dragon.fireIntensity)]
-      }
+    for (const center of chompCenters) {
+      const mouthX = center.x
+      const mouthY = center.y - 20
+      particles = [...particles, ...spawnFireBurst(mouthX, mouthY, 1.0)]
     }
   }
 
   // Update particles
   particles = updateParticles(particles, dt)
 
+  // Update dragon state for tracking cool-downs
+  const dragons = bodies.map((b) => {
+    const prev = state.dragons.find((d) => d.id === `body-${b.id}`)
+    return {
+      id: `body-${b.id}`,
+      x: b.normalizedX * stageWidth,
+      y: b.normalizedY * stageHeight,
+      scale: 0.5 + b.spreadY * 1.5,
+      tint: getDragonColor(b.id),
+      chomping: b.armsUp,
+      breathingFire: state.phase === 'celebrating',
+      fireIntensity: state.phase === 'celebrating' ? 1.2 : 0,
+      lastChomp: prev?.lastChomp ?? 0,
+    }
+  })
+
   // Check phase transitions
   let phase = state.phase
   let celebrationTimeLeft = state.celebrationTimeLeft
 
-  if (phase === 'playing' && foodSpawned >= state.maxFood && foods.every((f) => f.eaten || f.y >= groundY - 2)) {
-    phase = 'celebrating'
-    celebrationTimeLeft = state.celebrationDuration
-    // Celebrate all dragons!
-    dragons = dragons.map((d) => ({ ...d, breathingFire: true, fireIntensity: 1.2 }))
+  if (phase === 'playing' && foodSpawned >= state.maxFood) {
+    // Wait until all food has been eaten or settled
+    const allSettled = foods.every((f) => f.eaten || Math.abs(f.vy) < 0.5)
+    if (allSettled) {
+      phase = 'celebrating'
+      celebrationTimeLeft = state.celebrationDuration
+    }
   }
 
   if (phase === 'celebrating') {
@@ -194,53 +212,9 @@ export function updateGame(
   }
 }
 
-function updateDragonsFromBodies(
-  existing: DragonState[],
-  bodies: MotionBody[],
-  stageWidth: number,
-  stageHeight: number,
-  now: number,
-): DragonState[] {
-  const dragons: DragonState[] = []
-
-  // Match bodies to dragons by index for now
-  for (let i = 0; i < bodies.length; i++) {
-    const body = bodies[i]
-    const prev = existing[i]
-
-    const dragonColor = getDragonColor(i)
-    const x = (1 - body.normalizedX) * stageWidth
-    const groundY = stageHeight * 0.82
-
-    // Chomp when arms go up
-    const chomping = body.armsUp
-
-    dragons.push({
-      id: prev?.id ?? `dragon-${i}-${now}`,
-      x: Math.max(60, Math.min(stageWidth - 60, x)),
-      y: groundY,
-      scale: prev?.scale ?? 1,
-      tint: dragonColor,
-      chomping,
-      breathingFire: prev?.breathingFire ?? false,
-      fireIntensity: prev?.fireIntensity ?? 0,
-      lastChomp: prev?.lastChomp ?? 0,
-    })
-  }
-
-  return dragons
-}
-
 function getDragonColor(index: number): number {
   const colors = [
-    0x2e7d32, // green
-    0x1565c0, // blue
-    0xc62828, // red
-    0x6a1b9a, // purple
-    0xe65100, // orange
-    0x00695c, // teal
-    0xad1457, // pink
-    0x455a64, // slate
+    0x2e7d32, 0x1565c0, 0xc62828, 0x6a1b9a, 0xe65100, 0x00695c, 0xad1457, 0x455a64,
   ]
   return colors[index % colors.length]
 }
@@ -266,20 +240,20 @@ function spawnCrunchBurst(x: number, y: number, color: number): Particle[] {
 
 function spawnFireBurst(x: number, y: number, intensity: number): Particle[] {
   const out: Particle[] = []
-  const count = Math.floor(3 + intensity * 4)
+  const count = Math.floor(4 + intensity * 5)
   for (let i = 0; i < count; i++) {
-    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.8
-    const speed = 3 + Math.random() * 5 * intensity
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.9
+    const speed = 3.5 + Math.random() * 5.5 * intensity
     const isCore = Math.random() < 0.35
     out.push({
-      x: x + (Math.random() - 0.5) * 6,
+      x: x + (Math.random() - 0.5) * 8,
       y: y + (Math.random() - 0.5) * 4,
-      vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 2,
+      vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 2.5,
       vy: Math.sin(angle) * speed,
-      life: 0.5 + Math.random() * 0.8,
-      maxLife: 1.3,
+      life: 0.5 + Math.random() * 0.9,
+      maxLife: 1.4,
       color: isCore ? 0xffea00 : 0xff6600,
-      size: 3 + Math.random() * 5 * intensity,
+      size: 3 + Math.random() * 6 * intensity,
     })
   }
   return out
@@ -288,13 +262,13 @@ function spawnFireBurst(x: number, y: number, intensity: number): Particle[] {
 function updateParticles(particles: Particle[], dt: number): Particle[] {
   const out: Particle[] = []
   for (const p of particles) {
-    const life = p.life - dt / 16.67 * 0.02
+    const life = p.life - dt / 16.67 * 0.018
     if (life <= 0) continue
     out.push({
       ...p,
       x: p.x + p.vx,
       y: p.y + p.vy,
-      vy: p.vy + (p.vy < 0 ? 0.02 : -0.01), // slight gravity/buoyancy mix
+      vy: p.vy + (p.vy < 0 ? 0.015 : -0.012),
       life,
     })
   }

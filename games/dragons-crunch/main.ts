@@ -1,16 +1,16 @@
 import { Application, Container, Graphics, Ticker } from 'pixi.js'
 import { setupGameMenu } from '../../client/game-menu.js'
-import { initStage, createDragon, getDragonParts, positionDragonFromBody, createFoodGraphics, updateFoodPosition, createParticleGraphics, updateParticleGraphics, createGround } from './renderer.js'
+import { initStage, createDragon, getDragonParts, positionDragonOverlay, createFoodGraphics, updateFoodPosition, createParticleGraphics, updateParticleGraphics } from './renderer.js'
 import { animateChomp, animateFireBreathing, stopFireBreathing, animateIdle, animateBlink } from './animations.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
 import { createInitialState, startGame, updateGame } from './state.js'
 import type { GameState, MotionBody } from './types.js'
 import { setupDragonsCrunchInput } from './input.js'
-import { announceScore, announceFoodSpawned, announceChomp, announceDragonJoined, announceCelebration, announceReturnToStart } from './accessibility.js'
+import { announceScore, announceFoodSpawned, announceChomp, announceCelebration, announceReturnToStart } from './accessibility.js'
 import { sfxChomp, sfxCelebrationStart, sfxFoodSpawn } from './sounds.js'
-// DOM refs
 
+// DOM refs
 const pixiStage = document.getElementById('pixi-stage')!
 const cameraPreview = document.getElementById('camera-preview') as HTMLVideoElement
 const startBtn = document.getElementById('start-btn') as HTMLButtonElement
@@ -49,10 +49,9 @@ let gameState: GameState = createInitialState()
 let dragonContainers: Container[] = []
 let foodContainers: Map<string, Container> = new Map()
 let particleGraphics: Graphics[] = []
-let currentBodies: MotionBody[] = []
+let activeBodies: MotionBody[] = []
 let cameraGranted = false
 let gameLoopCallback: ((ticker: Ticker) => void) | null = null
-let prevDragonCount = 0
 let lastAnnouncedScore = -1
 let lastAnnouncedFoodSpawned = -1
 let celebrationTimer: number | null = null
@@ -69,12 +68,6 @@ async function boot(): Promise<void> {
 
   setupGameMenu({ musicTrackPicker: false })
 
-  window.addEventListener('reveries:music-change', (e) => {
-    const enabled = (e as CustomEvent<{ enabled: boolean }>).detail.enabled
-    // Audio handled by global game-audio system
-    void enabled
-  })
-
   setupDragonsCrunchInput({ onMenu: () => {
     const modal = document.getElementById('settings-modal')
     if (modal) {
@@ -90,7 +83,7 @@ async function boot(): Promise<void> {
   cameraGranted = await requestCamera(cameraPreview)
   if (cameraGranted) {
     startMotionTracking(cameraPreview, (bodies) => {
-      currentBodies = bodies
+      activeBodies = bodies
     })
     cameraPrompt.textContent = 'Camera access granted. Press Start to begin!'
   } else {
@@ -128,33 +121,35 @@ async function enterGame(): Promise<void> {
   // Clear stage
   app.stage.removeChildren()
 
-  // Ground
-  const ground = createGround(w, h)
-  app.stage.addChild(ground)
-
-  // Reset containers
   dragonContainers = []
   foodContainers = new Map()
   particleGraphics = []
 
   gameState = startGame(createInitialState())
-  currentBodies = []
-  prevDragonCount = 0
+  activeBodies = []
   lastAnnouncedScore = -1
   lastAnnouncedFoodSpawned = -1
 
   scoreDisplay.textContent = 'Score: 0'
   foodDisplay.textContent = 'Food: 0/100'
-  dragonCountDisplay.textContent = 'Dragons: 1'
+  dragonCountDisplay.textContent = 'Dragons: 0'
   gameStatus.textContent = 'Game started! Raise your arms to chomp!'
   celebrationOverlay.hidden = true
 
   // Demo body if no camera
   if (!cameraGranted) {
-    currentBodies = [{ id: 0, normalizedX: 0.5, active: true, armsUp: false }]
+    activeBodies = [{
+      id: 0,
+      normalizedX: 0.5,
+      normalizedY: 0.65,
+      spreadX: 0.2,
+      spreadY: 0.5,
+      pixelCount: 200,
+      active: true,
+      armsUp: false,
+    }]
   }
 
-  // Expose debug state
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(window as any).__dragonsCrunchDebug = {
     app,
@@ -175,24 +170,26 @@ async function enterGame(): Promise<void> {
     const deltaMs = Math.min(ticker.deltaMS, 50)
     const now = performance.now()
 
+    // Use bodies from camera (or demo)
+    const bodiesToUse = cameraGranted ? activeBodies.slice(0, 6) : activeBodies.slice(0, 1)
+
     // Update game state
-    gameState = updateGame(gameState, currentBodies, app.screen.width, app.screen.height, deltaMs)
+    gameState = updateGame(gameState, bodiesToUse, app.screen.width, app.screen.height, deltaMs)
 
-    // Update dragons from motion bodies
-    const expectedDragonCount = cameraGranted ? currentBodies.length : 1
+    // ── Sync dragons (bottom layer: cover people) ──────────────────────
+    const dragonStates = gameState.dragons
 
-    while (dragonContainers.length < expectedDragonCount) {
-      const dragon = createDragon(getDragonColor(dragonContainers.length))
-      app.stage.addChild(dragon)
+    // Add dragons for new bodies
+    while (dragonContainers.length < dragonStates.length) {
+      const idx = dragonContainers.length
+      const dragon = createDragon(dragonStates[idx]?.tint ?? getDragonColor(idx))
+      // Dragons go at bottom so they cover the camera/person behind them
+      app.stage.addChildAt(dragon, 0)
       dragonContainers.push(dragon)
-      if (dragonContainers.length > prevDragonCount) {
-        gameFeedback.textContent = `Dragon ${dragonContainers.length} joined the feast!`
-        announceDragonJoined(dragonContainers.length)
-      }
     }
 
     // Remove extra dragons
-    while (dragonContainers.length > expectedDragonCount) {
+    while (dragonContainers.length > dragonStates.length) {
       const removed = dragonContainers.pop()
       if (removed) {
         stopFireBreathing(removed)
@@ -200,32 +197,22 @@ async function enterGame(): Promise<void> {
       }
     }
 
-    if (expectedDragonCount !== prevDragonCount) {
-      prevDragonCount = expectedDragonCount
-      dragonCountDisplay.textContent = `Dragons: ${expectedDragonCount}`
+    // Position and animate dragons
+    dragonCountDisplay.textContent = `Dragons: ${dragonStates.length}`
+    if (gameFeedback && dragonStates.length > 0) {
+      gameFeedback.textContent = `${dragonStates.length} dragon${dragonStates.length > 1 ? 's' : ''} detected`
     }
 
-    // Position dragons
     for (let i = 0; i < dragonContainers.length; i++) {
       const container = dragonContainers[i]
-      const dragonState = gameState.dragons[i]
-      if (!dragonState) continue
-
-      if (cameraGranted && currentBodies[i]) {
-        positionDragonFromBody(container, currentBodies[i], app.screen.width, app.screen.height)
-      } else {
-        // Demo position
-        container.x = app.screen.width / 2
-        container.y = app.screen.height * 0.82
-        container.scale.set(2.8)
-      }
-    }
-
-    // Animate dragons
-    for (let i = 0; i < dragonContainers.length; i++) {
-      const container = dragonContainers[i]
-      const dState = gameState.dragons[i]
+      const dState = dragonStates[i]
       if (!dState) continue
+
+      // Find matching body for positioning
+      const body = bodiesToUse[i]
+      if (body) {
+        positionDragonOverlay(container, body, app.screen.width, app.screen.height)
+      }
 
       const parts = getDragonParts(container)
       if (!parts) continue
@@ -234,12 +221,12 @@ async function enterGame(): Promise<void> {
       const t = now / 1000
       animateIdle(container, t, i)
 
-      // Chomp animation trigger
+      // Chomp animation
       if (dState.chomping) {
         animateChomp(container)
       }
 
-      // Fire breathing animation
+      // Fire breathing
       if (dState.breathingFire) {
         animateFireBreathing(container, dState.fireIntensity)
       } else {
@@ -259,12 +246,13 @@ async function enterGame(): Promise<void> {
       }
     }
 
-    // Food visuals
-    // Add new food
+    // ── Food visuals (middle layer: on top of dragons) ───────────────
     for (const food of gameState.foods) {
       if (!foodContainers.has(food.id) && !food.eaten) {
         const fc = createFoodGraphics(food)
-        app.stage.addChildAt(fc, app.stage.children.length > 0 ? 1 : 0)
+        // Food goes on top of all dragons but below particles
+        const insertIdx = Math.min(dragonContainers.length, app.stage.children.length)
+        app.stage.addChildAt(fc, insertIdx)
         foodContainers.set(food.id, fc)
         if (lastFoodSpawnedVisual !== gameState.foodSpawned) {
           lastFoodSpawnedVisual = gameState.foodSpawned
@@ -273,14 +261,10 @@ async function enterGame(): Promise<void> {
       }
     }
 
-    // Update food positions and remove eaten
     for (const [id, fc] of foodContainers) {
       const food = gameState.foods.find((f) => f.id === id)
       if (food) {
         updateFoodPosition(fc, food)
-        if (food.eaten && fc.alpha > 0) {
-          fc.alpha = 0
-        }
       } else {
         app.stage.removeChild(fc)
         foodContainers.delete(id)
@@ -296,8 +280,7 @@ async function enterGame(): Promise<void> {
       }
     }
 
-    // Particles
-    // Clean up old particle graphics that aren't in state anymore
+    // ── Particles (top layer) ──────────────────────────────────────────
     const activeParticleKeys = new Set(gameState.particles.map((_, idx) => idx))
     for (let i = particleGraphics.length - 1; i >= 0; i--) {
       if (!activeParticleKeys.has(i)) {
@@ -308,7 +291,6 @@ async function enterGame(): Promise<void> {
       }
     }
 
-    // Sync particle graphics with state
     for (let i = 0; i < gameState.particles.length; i++) {
       const p = gameState.particles[i]
       let pg = particleGraphics[i]
@@ -320,7 +302,7 @@ async function enterGame(): Promise<void> {
       updateParticleGraphics(pg, p)
     }
 
-    // HUD updates
+    // ── HUD updates ────────────────────────────────────────────────────
     if (gameState.score !== lastAnnouncedScore) {
       lastAnnouncedScore = gameState.score
       scoreDisplay.textContent = `Score: ${gameState.score}`
@@ -357,6 +339,8 @@ async function enterGame(): Promise<void> {
   app.ticker.add(gameLoopCallback)
 }
 
+// ── End game ────────────────────────────────────────────────────────────────
+
 function endGame(): void {
   if (!app) return
   if (gameLoopCallback) {
@@ -370,11 +354,12 @@ function endGame(): void {
   gameStatus.textContent = `Game complete! Final score: ${gameState.score}`
   announceReturnToStart()
 
-  // Auto-return to start after a brief moment on end screen
   setTimeout(() => {
     resetToStart()
-  }, 3000)
+  }, 4000)
 }
+
+// ── Reset to start ──────────────────────────────────────────────────────────
 
 function resetToStart(): void {
   if (gameLoopCallback && app) {
@@ -408,8 +393,7 @@ function resetToStart(): void {
   foodContainers = new Map()
   particleGraphics = []
   gameState = createInitialState()
-  currentBodies = []
-  prevDragonCount = 0
+  activeBodies = []
   lastAnnouncedScore = -1
   lastAnnouncedFoodSpawned = -1
 
@@ -420,10 +404,12 @@ function resetToStart(): void {
 
   if (cameraGranted && cameraPreview) {
     startMotionTracking(cameraPreview, (bodies) => {
-      currentBodies = bodies
+      activeBodies = bodies
     })
   }
 }
+
+// ── Visibility handling ─────────────────────────────────────────────────────
 
 function handleVisibilityChange(): void {
   if (!app) return
@@ -433,6 +419,8 @@ function handleVisibilityChange(): void {
     app.ticker.start()
   }
 }
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
 
 function getDragonColor(index: number): number {
   const colors = [

@@ -47,8 +47,7 @@ async function tryCreateApp(container: HTMLElement, preference: 'webgpu' | 'webg
   try {
     await app.init({
       preference,
-      background: '#0a0a14',
-      backgroundAlpha: 0.85,
+      backgroundAlpha: 0,
       autoDensity: true,
     })
     container.appendChild(app.canvas)
@@ -82,31 +81,28 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
   return null
 }
 
-// ── Dragon creation ─────────────────────────────────────────────────────────
+// ── Dragon head creation ────────────────────────────────────────────────────
 
-export interface DragonGraphics {
+export interface DragonHeadGraphics {
   container: Container
-  body: Graphics
   head: Graphics
   upperJaw: Graphics
   lowerJaw: Graphics
-  leftWing: Graphics
-  rightWing: Graphics
-  tail: Graphics
   leftEye: Graphics
   rightEye: Graphics
-  leftLeg: Graphics
-  rightLeg: Graphics
+  brow: Graphics
+  crest: Graphics
+  leftHorn: Graphics
+  rightHorn: Graphics
+  nostrils: Graphics
   rest: {
     lowerJawY: number
-    leftWingRotation: number
-    rightWingRotation: number
-    tailRotation: number
+    headY: number
   }
   nativeBounds: { x: number; y: number; width: number; height: number }
 }
 
-const dragonPartsMap = new WeakMap<Container, DragonGraphics>()
+const dragonPartsMap = new WeakMap<Container, DragonHeadGraphics>()
 
 export function createDragon(tint?: number): Container {
   const overrides: Record<string, string | number> | undefined =
@@ -114,24 +110,21 @@ export function createDragon(tint?: number): Container {
 
   const { container, parts, nativeBounds } = buildSprite(dragonModel, overrides)
 
-  const graphics: DragonGraphics = {
+  const graphics: DragonHeadGraphics = {
     container,
-    body: parts.get('body')!,
     head: parts.get('head')!,
     upperJaw: parts.get('upperJaw')!,
     lowerJaw: parts.get('lowerJaw')!,
-    leftWing: parts.get('leftWing')!,
-    rightWing: parts.get('rightWing')!,
-    tail: parts.get('tail')!,
     leftEye: parts.get('leftEye')!,
     rightEye: parts.get('rightEye')!,
-    leftLeg: parts.get('leftLeg')!,
-    rightLeg: parts.get('rightLeg')!,
+    brow: parts.get('brow')!,
+    crest: parts.get('crest')!,
+    leftHorn: parts.get('leftHorn')!,
+    rightHorn: parts.get('rightHorn')!,
+    nostrils: parts.get('nostrils')!,
     rest: {
       lowerJawY: parts.get('lowerJaw')!.y,
-      leftWingRotation: parts.get('leftWing')!.rotation,
-      rightWingRotation: parts.get('rightWing')!.rotation,
-      tailRotation: parts.get('tail')!.rotation,
+      headY: parts.get('head')!.y,
     },
     nativeBounds,
   }
@@ -144,52 +137,36 @@ export function createDragon(tint?: number): Container {
   return container
 }
 
-export function getDragonParts(container: Container): DragonGraphics | undefined {
+export function getDragonParts(container: Container): DragonHeadGraphics | undefined {
   return dragonPartsMap.get(container)
 }
 
-// ── Layout helpers ─────────────────────────────────────────────────────────
+// ── AR head positioning ──────────────────────────────────────────────────────
 
-export function layoutDragons(containers: Container[], stageWidth: number, stageHeight: number): void {
-  const groundY = stageHeight * 0.82
-  const cx = stageWidth / 2
-  const count = containers.length
-
-  for (let i = 0; i < count; i++) {
-    const dragon = containers[i]
-    const parts = dragonPartsMap.get(dragon)
-    const nativeWidth = parts?.nativeBounds.width ?? 44
-    const scale = Math.max(2.4, (stageWidth * 0.10) / nativeWidth)
-
-    dragon.scale.set(scale)
-    const dragonWidth = nativeWidth * scale
-    const gap = dragonWidth + 24
-
-    if (i === 0) {
-      dragon.x = cx
-    } else if (i % 2 === 1) {
-      dragon.x = cx - gap * ((i + 1) / 2)
-    } else {
-      dragon.x = cx + gap * (i / 2)
-    }
-    dragon.y = groundY
-  }
-}
-
-export function positionDragonFromBody(dragon: Container, body: MotionBody, stageWidth: number, stageHeight: number): void {
+export function positionDragonOverlay(
+  dragon: Container,
+  body: MotionBody,
+  stageWidth: number,
+  stageHeight: number,
+): void {
   const parts = dragonPartsMap.get(dragon)
-  const nativeWidth = parts?.nativeBounds.width ?? 44
-  const scale = Math.max(2.4, (stageWidth * 0.10) / nativeWidth)
+  const nativeHeight = parts?.nativeBounds.height ?? 44
+
+  // Scale head to match person's apparent size in frame
+  const baseScale = Math.min(stageWidth, stageHeight) * 0.005
+  const sizeScale = 0.7 + body.spreadY * 1.6
+  const scale = baseScale * sizeScale
+
   dragon.scale.set(scale)
 
-  // Mirror: body.normalizedX is from camera (0=left, 1=right).
-  // Because the camera preview is CSS-mirrored for the user,
-  // we flip so moving left on screen moves dragon left.
-  const x = (1 - body.normalizedX) * stageWidth
-  const groundY = stageHeight * 0.82
+  // Position head so it covers the person's head area
+  // normalizedY ~ 0.3 means upper body, ~0.6 means lower body
+  // We want the dragon head centered on upper body / face region
+  const x = body.normalizedX * stageWidth
+  const faceY = (body.normalizedY - body.spreadY * 0.35) * stageHeight
 
-  dragon.x = Math.max(60, Math.min(stageWidth - 60, x))
-  dragon.y = groundY
+  dragon.x = Math.max(40, Math.min(stageWidth - 40, x))
+  dragon.y = Math.max(nativeHeight * scale * 0.2, Math.min(stageHeight - 20, faceY + nativeHeight * scale * 0.1))
 }
 
 // ── Food rendering ──────────────────────────────────────────────────────────
@@ -201,15 +178,12 @@ export function createFoodGraphics(food: FoodItem): Container {
   const container = new Container()
   const g = new Graphics()
 
-  // Draw food item
   if (food.value === 5) {
-    // Large food: big rounded shape with shine
     g.circle(0, 0, food.radius)
     g.fill({ color: food.color })
     g.circle(-food.radius * 0.3, -food.radius * 0.3, food.radius * 0.25)
     g.fill({ color: 0xffffff, alpha: 0.35 })
   } else {
-    // Small food: simple circle
     g.circle(0, 0, food.radius)
     g.fill({ color: food.color })
     g.circle(-food.radius * 0.25, -food.radius * 0.25, food.radius * 0.2)
@@ -228,17 +202,7 @@ export function createFoodGraphics(food: FoodItem): Container {
 export function updateFoodPosition(container: Container, food: FoodItem): void {
   container.x = food.x
   container.y = food.y
-  if (food.eaten) {
-    container.alpha = 0
-  } else {
-    container.alpha = 1
-  }
-}
-
-export function getFoodFromContainer(container: Container): FoodItem | undefined {
-  const g = foodContainerMap.get(container)
-  if (!g) return undefined
-  return foodGraphicsMap.get(g)
+  container.alpha = food.eaten ? 0 : 1
 }
 
 // ── Particle rendering ────────────────────────────────────────────────────
@@ -262,65 +226,4 @@ export function updateParticleGraphics(g: Graphics, particle: Particle): void {
   g.y = particle.y
   const alpha = Math.max(0, particle.life / particle.maxLife)
   g.alpha = alpha
-}
-
-// ── Fire particles ──────────────────────────────────────────────────────────
-
-export function spawnFireParticles(
-  x: number,
-  y: number,
-  count: number,
-  intensity: number,
-): Particle[] {
-  const particles: Particle[] = []
-  for (let i = 0; i < count; i++) {
-    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.6
-    const speed = 2 + Math.random() * 4 * intensity
-    particles.push({
-      x,
-      y,
-      vx: Math.cos(angle) * speed + (Math.random() - 0.5) * 1.5,
-      vy: Math.sin(angle) * speed,
-      life: 0.6 + Math.random() * 0.8,
-      maxLife: 1.4,
-      color: Math.random() > 0.4 ? 0xff6600 : 0xffcc00,
-      size: 3 + Math.random() * 5 * intensity,
-    })
-  }
-  return particles
-}
-
-export function spawnCrunchParticles(x: number, y: number, color: number): Particle[] {
-  const particles: Particle[] = []
-  for (let i = 0; i < 8; i++) {
-    const angle = Math.random() * Math.PI * 2
-    const speed = 1.5 + Math.random() * 3
-    particles.push({
-      x,
-      y,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed,
-      life: 0.3 + Math.random() * 0.4,
-      maxLife: 0.7,
-      color,
-      size: 2 + Math.random() * 3,
-    })
-  }
-  return particles
-}
-
-// ── Ground rendering ───────────────────────────────────────────────────────
-
-export function createGround(stageWidth: number, stageHeight: number): Graphics {
-  const g = new Graphics()
-  const groundY = stageHeight * 0.82
-  g.rect(0, groundY, stageWidth, stageHeight - groundY)
-  g.fill({ color: 0x1a3322, alpha: 0.6 })
-  // Grass tufts
-  for (let i = 0; i < stageWidth; i += 18) {
-    const h = 4 + Math.random() * 6
-    g.rect(i, groundY - h, 2, h)
-    g.fill({ color: 0x2e7d32, alpha: 0.7 })
-  }
-  return g
 }

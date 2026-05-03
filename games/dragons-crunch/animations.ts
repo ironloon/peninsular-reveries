@@ -5,7 +5,6 @@ import { isReducedMotionEnabled } from '../../client/preferences.js'
 interface ChompAnimation {
   openAmount: number
   targetOpen: number
-  wingFlap: number
   elapsed: number
   durationMs: number
 }
@@ -13,7 +12,6 @@ interface ChompAnimation {
 interface FireAnimation {
   intensity: number
   targetIntensity: number
-  wingFlap: number
   elapsed: number
 }
 
@@ -33,13 +31,12 @@ function initTicker(): void {
   Ticker.shared.add((ticker) => {
     const delta = ticker.deltaMS
 
-    // Chomp tweens
+    // Chomp tweens (jaw opens wide)
     for (const [container, anim] of chompAnims) {
       anim.elapsed += delta
       const progress = Math.min(anim.elapsed / anim.durationMs, 1)
       const eased = easeOutBack(progress)
       anim.openAmount = anim.targetOpen * eased
-      anim.wingFlap = Math.sin(progress * Math.PI * 3) * 0.4 * anim.targetOpen
 
       const parts = getDragonParts(container)
       if (!parts) {
@@ -47,20 +44,22 @@ function initTicker(): void {
         continue
       }
 
-      parts.lowerJaw.y = parts.rest.lowerJawY + anim.openAmount * 10
-      parts.leftWing.rotation = parts.rest.leftWingRotation - anim.wingFlap
-      parts.rightWing.rotation = parts.rest.rightWingRotation + anim.wingFlap
+      parts.lowerJaw.y = parts.rest.lowerJawY + anim.openAmount * 18
+      // Head tilts back slightly on chomp
+      parts.head.rotation = -anim.openAmount * 0.08
+      // Brow furrows
+      parts.brow.y = -anim.openAmount * 2
 
       if (progress >= 1) {
         chompAnims.delete(container)
-        // Reset to closed
+        // Snap shut
         parts.lowerJaw.y = parts.rest.lowerJawY
-        parts.leftWing.rotation = parts.rest.leftWingRotation
-        parts.rightWing.rotation = parts.rest.rightWingRotation
+        parts.head.rotation = 0
+        parts.brow.y = 0
       }
     }
 
-    // Fire breathing tweens
+    // Fire breathing (head shakes slightly, jaw quivers)
     for (const [container, anim] of fireAnims) {
       anim.elapsed += delta
       const parts = getDragonParts(container)
@@ -69,17 +68,11 @@ function initTicker(): void {
         continue
       }
 
-      // Rapid wing flap during fire breathing
-      const flapSpeed = 0.012
-      anim.wingFlap = Math.sin(anim.elapsed * flapSpeed) * 0.5 * anim.targetIntensity
-      parts.leftWing.rotation = parts.rest.leftWingRotation - anim.wingFlap
-      parts.rightWing.rotation = parts.rest.rightWingRotation + anim.wingFlap
-
-      // Slight body rock
-      parts.body.rotation = Math.sin(anim.elapsed * 0.008) * 0.03 * anim.targetIntensity
-
-      // Head tilt back slightly
-      parts.head.rotation = -0.15 * anim.targetIntensity * (0.5 + 0.5 * Math.sin(anim.elapsed * 0.006))
+      const shake = Math.sin(anim.elapsed * 0.012) * 0.04 * anim.targetIntensity
+      parts.head.rotation = shake
+      parts.lowerJaw.y = parts.rest.lowerJawY + Math.abs(Math.sin(anim.elapsed * 0.02)) * 3 * anim.targetIntensity
+      // Crest wiggle
+      parts.crest.rotation = Math.sin(anim.elapsed * 0.015) * 0.08 * anim.targetIntensity
     }
   })
 }
@@ -93,9 +86,8 @@ export function animateChomp(container: Container): void {
   chompAnims.set(container, {
     openAmount: 0,
     targetOpen: 1,
-    wingFlap: 0,
     elapsed: 0,
-    durationMs: 280,
+    durationMs: 220,
   })
   initTicker()
 }
@@ -109,7 +101,6 @@ export function animateFireBreathing(container: Container, intensity: number): v
   fireAnims.set(container, {
     intensity: 0,
     targetIntensity: intensity,
-    wingFlap: 0,
     elapsed: 0,
   })
   initTicker()
@@ -119,27 +110,27 @@ export function stopFireBreathing(container: Container): void {
   fireAnims.delete(container)
   const parts = getDragonParts(container)
   if (!parts) return
-  parts.leftWing.rotation = parts.rest.leftWingRotation
-  parts.rightWing.rotation = parts.rest.rightWingRotation
-  parts.body.rotation = 0
   parts.head.rotation = 0
+  parts.lowerJaw.y = parts.rest.lowerJawY
+  parts.crest.rotation = 0
 }
 
 export function animateIdle(container: Container, t: number, index: number): void {
   const parts = getDragonParts(container)
   if (!parts) return
 
-  const breathe = 1 + Math.sin(t * 3 + index * 1.2) * 0.025
-  const tailSway = Math.sin(t * 2.5 + index * 0.8) * 0.12
-
-  parts.body.scale.y = breathe
-  parts.tail.rotation = parts.rest.tailRotation + tailSway
+  // Subtle breathing: head bobs slightly
+  const breathe = Math.sin(t * 2 + index * 1.2) * 0.02
+  parts.head.y = parts.rest.headY + breathe * 3
+  parts.upperJaw.y = 14 + breathe * 2
+  parts.lowerJaw.y = parts.rest.lowerJawY + breathe * 1.5
+  parts.crest.rotation = Math.sin(t * 1.5 + index * 0.8) * 0.04
 }
 
 export function animateBlink(container: Container, open: boolean): void {
   const parts = getDragonParts(container)
   if (!parts) return
-  const scaleY = open ? 1 : 0.1
+  const scaleY = open ? 1 : 0.15
   parts.leftEye.scale.y = scaleY
   parts.rightEye.scale.y = scaleY
 }
