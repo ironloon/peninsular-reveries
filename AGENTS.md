@@ -40,8 +40,8 @@ For project architecture, game quality standards, and testing conventions, load 
 - If a validation run finds an objective blocker to human testing that was introduced or exposed by the current work, fix it before stopping when the fix is clear and low-risk.
 - Ask the user a clarifying question only when the answer would materially change the implementation, or when proceeding would require a destructive, irreversible, or product-direction choice. If a reasonable default exists, use it and keep going.
 - If the user says some version of continue until done, interpret done as human-ready unless genuinely blocked.
-- If the user says wrap it up or otherwise makes it clear that pushing finished work is welcome, treat that as permission to finish the current task end-to-end. When the work is validated and human-ready, and the commit scope is clear with no ambiguous unrelated changes, stage the intended files, create a concise commit, and push without another confirmation round. If the working tree is mixed or risky, stop short of commit or push and explain the blocker briefly.
-- After completing work, report what changed and what was verified.
+- When work is validated and human-ready, always finish end-to-end: stage the intended files, create a concise commit, push, and report the resulting short SHA to the user. Do this without another confirmation round unless the working tree is mixed or risky; in that case, stop short of commit or push and explain the blocker briefly.
+- After completing work, report what changed, what was verified, and the short SHA of the commit that was pushed.
 
 ## Environment Context
 
