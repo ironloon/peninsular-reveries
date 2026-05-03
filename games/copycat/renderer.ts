@@ -154,47 +154,33 @@ export function createAnimal(kind: AnimalKind, tint?: number): Container {
 
   const { container, parts } = buildSprite(model, overrides)
 
-  if (kind === 'flamingo') {
-    const leftLeg = parts.get('leftLeg')!
-    const rightLeg = parts.get('rightLeg')!
-    const leftPaw = parts.get('leftPaw')!
-    const rightPaw = parts.get('rightPaw')!
-    buildPartsMap(container, {
-      body: parts.get('body')!,
-      head: parts.get('head')!,
-      leftEar: parts.get('leftEar')!,
-      rightEar: parts.get('rightEar')!,
-      leftEye: parts.get('leftEye')!,
-      rightEye: parts.get('rightEye')!,
-      tail: parts.get('tail')!,
-      leftFrontLeg: leftLeg,
-      rightFrontLeg: rightLeg,
-      leftBackLeg: leftLeg,
-      rightBackLeg: rightLeg,
-      leftFrontPaw: leftPaw,
-      rightFrontPaw: rightPaw,
-      leftBackPaw: leftPaw,
-      rightBackPaw: rightPaw,
-    })
-  } else {
-    buildPartsMap(container, {
-      body: parts.get('body')!,
-      head: parts.get('head')!,
-      leftEar: parts.get('leftEar')!,
-      rightEar: parts.get('rightEar')!,
-      leftEye: parts.get('leftEye')!,
-      rightEye: parts.get('rightEye')!,
-      tail: parts.get('tail')!,
-      leftFrontLeg: parts.get('leftFrontLeg')!,
-      rightFrontLeg: parts.get('rightFrontLeg')!,
-      leftBackLeg: parts.get('leftBackLeg')!,
-      rightBackLeg: parts.get('rightBackLeg')!,
-      leftFrontPaw: parts.get('leftFrontPaw')!,
-      rightFrontPaw: parts.get('rightFrontPaw')!,
-      leftBackPaw: parts.get('leftBackPaw')!,
-      rightBackPaw: parts.get('rightBackPaw')!,
-    })
-  }
+  buildPartsMap(container, {
+    body: parts.get('body')!,
+    head: parts.get('head')!,
+    leftEar: parts.get(
+      kind === 'giraffe' ? 'leftOssicone' :
+      kind === 'crocodile' ? 'leftBump' :
+      kind === 'flamingo' ? 'leftNub' :
+      'leftEar'
+    )!,
+    rightEar: parts.get(
+      kind === 'giraffe' ? 'rightOssicone' :
+      kind === 'crocodile' ? 'rightBump' :
+      kind === 'flamingo' ? 'rightNub' :
+      'rightEar'
+    )!,
+    leftEye: parts.get('leftEye')!,
+    rightEye: parts.get('rightEye')!,
+    tail: parts.get('tail')!,
+    leftFrontLeg: parts.get('leftFrontLeg')!,
+    rightFrontLeg: parts.get('rightFrontLeg')!,
+    leftBackLeg: parts.get('leftBackLeg')!,
+    rightBackLeg: parts.get('rightBackLeg')!,
+    leftFrontPaw: parts.get('leftFrontPaw')!,
+    rightFrontPaw: parts.get('rightFrontPaw')!,
+    leftBackPaw: parts.get('leftBackPaw')!,
+    rightBackPaw: parts.get('rightBackPaw')!,
+  })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(container as any).__blinkState = { open: true, nextBlink: 2000 + Math.random() * 3000 }
