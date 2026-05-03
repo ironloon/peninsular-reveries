@@ -1,6 +1,6 @@
 import { Application, Container, Graphics, Ticker } from 'pixi.js'
 import { setupGameMenu } from '../../client/game-menu.js'
-import { initStage, createAnimal, getAnimalKind, layoutCats, getCatParts } from './renderer.js'
+import { initStage, createAnimal, getAnimalKind, layoutCats, getCatParts, getPoseTargets } from './renderer.js'
 import { animatePose, animateCatJoin } from './animations.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
@@ -62,6 +62,7 @@ const announcedMilestones = new Set<number>()
 
 let lastRoundHistory: Array<{ pose: Pose; time: number }> = []
 let replayTimer: (() => void) | null = null
+const lastPoses = new Map<Container, Pose>()
 
 // ── Stage init ───────────────────────────────────────────────────────────────
 
@@ -246,20 +247,27 @@ function beginRound(): void {
       const catState = danceState.cats[i]
       const container = catContainers[i]
       if (container) {
-        animatePose(container, catState.pose, 150)
-        const t = performance.now() / 1000
+        const lastPose = lastPoses.get(container)
+        if (catState.pose !== lastPose) {
+          animatePose(container, catState.pose, 150)
+          lastPoses.set(container, catState.pose)
+        }
         const parts2 = getCatParts(container)
         if (parts2) {
-          // Idle bopping — beat-synced subtle bounce when idle
           const isIdle = catState.pose === 'idle'
-          const bounce = isIdle ? Math.sin(beatT * Math.PI * 2) * 1.5 : 0
-          const breathe = 1 + Math.sin(t * 3 + i * 1.2) * 0.03
-          const tailSway = Math.sin(t * 2.5 + i * 0.8) * 0.15
-          parts2.body.scale.y = breathe
-          parts2.tail.rotation = tailSway
           if (isIdle) {
-            parts2.body.y = bounce
-            parts2.head.y = bounce * 0.6
+            const t = performance.now() / 1000
+            const bounce = Math.sin(beatT * Math.PI * 2) * 1.5
+            const breathe = 1 + Math.sin(t * 3 + i * 1.2) * 0.03
+            const tailSway = Math.sin(t * 2.5 + i * 0.8) * 0.15
+            const idleTargets = getPoseTargets('idle')
+            const r = parts2.rest
+            parts2.body.scale.y = breathe
+            parts2.tail.rotation = tailSway
+            parts2.body.x = r.bodyX + idleTargets.bodyX
+            parts2.body.y = r.bodyY + idleTargets.bodyY + bounce
+            parts2.body.rotation = r.bodyRotation + idleTargets.bodyRotation
+            parts2.head.y = r.headY + idleTargets.headY + bounce * 0.6
           }
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const blink = (container as any).__blinkState
@@ -370,6 +378,7 @@ interface MiniReplay {
   app: Application
   cat: Container
   tick: (ticker: Ticker) => void
+  currentPose: Pose
 }
 
 let miniReplays: MiniReplay[] = []
@@ -404,18 +413,27 @@ async function initReplayStage(container: HTMLElement): Promise<MiniReplay | nul
 
   const beatDur = 60 / 110 // default beat duration for idle bop
 
+  const replay: MiniReplay = { app: mini, cat, tick: () => {}, currentPose: 'idle' }
+
   const tick = (_ticker: Ticker) => {
     const t = performance.now() / 1000
-    const beatT = (t % beatDur) / beatDur
     const parts = getCatParts(cat)
     if (parts) {
-      const breathe = 1 + Math.sin(t * 3) * 0.03
-      const tailSway = Math.sin(t * 2.5) * 0.15
-      const bounce = Math.sin(beatT * Math.PI * 2) * 1.5
-      parts.body.scale.y = breathe
-      parts.tail.rotation = tailSway
-      parts.body.y = bounce
-      parts.head.y = -14 + bounce * 0.6
+      const isIdle = replay.currentPose === 'idle'
+      if (isIdle) {
+        const beatT = (t % beatDur) / beatDur
+        const bounce = Math.sin(beatT * Math.PI * 2) * 1.5
+        const breathe = 1 + Math.sin(t * 3) * 0.03
+        const tailSway = Math.sin(t * 2.5) * 0.15
+        const idleTargets = getPoseTargets('idle')
+        const r = parts.rest
+        parts.body.scale.y = breathe
+        parts.tail.rotation = tailSway
+        parts.body.x = r.bodyX + idleTargets.bodyX
+        parts.body.y = r.bodyY + idleTargets.bodyY + bounce
+        parts.body.rotation = r.bodyRotation + idleTargets.bodyRotation
+        parts.head.y = r.headY + idleTargets.headY + bounce * 0.6
+      }
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const blink = (cat as any).__blinkState
@@ -434,8 +452,8 @@ async function initReplayStage(container: HTMLElement): Promise<MiniReplay | nul
   }
 
   mini.ticker.add(tick)
+  replay.tick = tick
 
-  const replay: MiniReplay = { app: mini, cat, tick }
   miniReplays.push(replay)
   return replay
 }
@@ -450,6 +468,7 @@ function runReplayAnimation(mini: MiniReplay, speed = 8): (() => void) {
   let timeouts: number[] = []
 
   const setPose = (pose: Pose) => {
+    mini.currentPose = pose
     animatePose(mini.cat, pose, 120)
   }
 
@@ -540,6 +559,7 @@ function resetToStart(): void {
     }
   }
   catContainers = []
+  lastPoses.clear()
 
   danceState = createInitialState()
   currentPose = 'idle'

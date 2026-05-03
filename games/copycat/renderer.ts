@@ -1,5 +1,5 @@
 import { Application, Container, Graphics } from 'pixi.js'
-import { buildSprite, catModel, crocodileModel, flamingoModel, giraffeModel, wolfModel } from './sprites.js'
+import { buildSprite, catModel, crocodileModel, flamingoModel, giraffeModel, mouseModel } from './sprites.js'
 import type { Pose } from './types.js'
 
 // ── Renderer health check ──────────────────────────────────────────────────
@@ -78,7 +78,9 @@ export interface CatGraphics {
   rightBackPaw: Graphics
   // Rest positions so poses are relative (animal-agnostic)
   rest: {
+    bodyX: number
     bodyY: number
+    bodyRotation: number
     headY: number
     leftFrontLegY: number
     rightFrontLegY: number
@@ -102,13 +104,15 @@ const ANIMAL_RIGS: Record<AnimalKind, RigConfig> = {
   cat: { hasNeck: false, feetBaselineOffset: 20 },
   giraffe: { hasNeck: true, feetBaselineOffset: 25 },
   crocodile: { hasNeck: false, feetBaselineOffset: 12 },
-  wolf: { hasNeck: false, feetBaselineOffset: 19 },
-  flamingo: { hasNeck: true, feetBaselineOffset: 32.5 },
+  mouse: { hasNeck: false, feetBaselineOffset: 10 },
+  flamingo: { hasNeck: true, feetBaselineOffset: 19 },
 }
 
 interface PoseTargets {
+  bodyX: number
   bodyY: number
   bodyScaleY: number
+  bodyRotation: number
   headY: number
   tailRotation: number
   leftFrontPawY: number
@@ -147,9 +151,9 @@ export async function initStage(canvasContainer: HTMLElement): Promise<Applicati
 
 // ── Animal creation ─────────────────────────────────────────────────────────
 
-export type AnimalKind = 'cat' | 'giraffe' | 'crocodile' | 'wolf' | 'flamingo'
+export type AnimalKind = 'cat' | 'giraffe' | 'crocodile' | 'mouse' | 'flamingo'
 
-const BACKUP_ANIMALS: AnimalKind[] = ['crocodile', 'wolf', 'giraffe', 'flamingo']
+const BACKUP_ANIMALS: AnimalKind[] = ['crocodile', 'mouse', 'giraffe', 'flamingo']
 
 export function getAnimalKind(index: number): AnimalKind {
   if (index === 0) return 'cat'
@@ -164,10 +168,39 @@ export function createAnimal(kind: AnimalKind, tint?: number): Container {
     kind === 'cat' ? catModel :
     kind === 'giraffe' ? giraffeModel :
     kind === 'crocodile' ? crocodileModel :
-    kind === 'wolf' ? wolfModel :
+    kind === 'mouse' ? mouseModel :
     flamingoModel
 
   const { container, parts, nativeBounds } = buildSprite(model, overrides)
+
+  // Depth layers: back legs behind body, front legs in front
+  const backLayer = new Container()
+  const bodyLayer = new Container()
+  const frontLayer = new Container()
+  container.addChild(backLayer, bodyLayer, frontLayer)
+
+  const reparent = (name: string, layer: Container) => {
+    const g = parts.get(name)
+    if (g && g.parent === container) {
+      container.removeChild(g)
+      layer.addChild(g)
+    }
+  }
+
+  reparent('tail', backLayer)
+  reparent('leftBackLeg', backLayer)
+  reparent('rightBackLeg', backLayer)
+  reparent('leftBackPaw', backLayer)
+  reparent('rightBackPaw', backLayer)
+
+  reparent('body', bodyLayer)
+  reparent('head', bodyLayer)
+  reparent('neck', bodyLayer)
+
+  reparent('leftFrontLeg', frontLayer)
+  reparent('rightFrontLeg', frontLayer)
+  reparent('leftFrontPaw', frontLayer)
+  reparent('rightFrontPaw', frontLayer)
 
   buildPartsMap(
     container,
@@ -216,7 +249,9 @@ function buildPartsMap(
   const fullParts: CatGraphics = {
     ...(parts as unknown as Omit<CatGraphics, 'rest' | 'rig' | 'nativeBounds'>),
     rest: {
+      bodyX: parts.body.x,
       bodyY: parts.body.y,
+      bodyRotation: parts.body.rotation,
       headY: parts.head.y,
       leftFrontLegY: parts.leftFrontLeg.y,
       rightFrontLegY: parts.rightFrontLeg.y,
@@ -240,21 +275,25 @@ export function getPoseTargets(pose: Pose): PoseTargets {
   switch (pose) {
     case 'idle':
       return {
-        bodyY: 0,
-        bodyScaleY: 1,
-        headY: 0,
-        tailRotation: 0,
-        leftFrontPawY: 0,
-        rightFrontPawY: 0,
-        leftBackPawY: 0,
-        rightBackPawY: 0,
+        bodyX: 0,
+        bodyY: 14,
+        bodyScaleY: 0.82,
+        bodyRotation: 0,
+        headY: 8,
+        tailRotation: 0.6,
+        leftFrontPawY: 10,
+        rightFrontPawY: 10,
+        leftBackPawY: 10,
+        rightBackPawY: 10,
         leftFrontPawRotation: 0,
         rightFrontPawRotation: 0,
       }
     case 'left-paw-up':
       return {
+        bodyX: 0,
         bodyY: -4,
         bodyScaleY: 1.05,
+        bodyRotation: 0,
         headY: -3,
         tailRotation: -0.4,
         leftFrontPawY: -18,
@@ -266,8 +305,10 @@ export function getPoseTargets(pose: Pose): PoseTargets {
       }
     case 'right-paw-up':
       return {
+        bodyX: 0,
         bodyY: -4,
         bodyScaleY: 1.05,
+        bodyRotation: 0,
         headY: -3,
         tailRotation: 0.4,
         leftFrontPawY: 0,
@@ -279,8 +320,10 @@ export function getPoseTargets(pose: Pose): PoseTargets {
       }
     case 'both-paws-up':
       return {
+        bodyX: 0,
         bodyY: -8,
         bodyScaleY: 1.08,
+        bodyRotation: 0,
         headY: -5,
         tailRotation: 0,
         leftFrontPawY: -18,
@@ -292,21 +335,25 @@ export function getPoseTargets(pose: Pose): PoseTargets {
       }
     case 'crouch':
       return {
-        bodyY: 8,
-        bodyScaleY: 0.88,
-        headY: 4,
-        tailRotation: 0.5,
-        leftFrontPawY: 4,
-        rightFrontPawY: 4,
-        leftBackPawY: 4,
-        rightBackPawY: 4,
+        bodyX: 0,
+        bodyY: 6,
+        bodyScaleY: 0.95,
+        bodyRotation: 0,
+        headY: -2,
+        tailRotation: 0,
+        leftFrontPawY: 2,
+        rightFrontPawY: 2,
+        leftBackPawY: 2,
+        rightBackPawY: 2,
         leftFrontPawRotation: 0,
         rightFrontPawRotation: 0,
       }
     case 'jump':
       return {
+        bodyX: 0,
         bodyY: -20,
         bodyScaleY: 1.1,
+        bodyRotation: 0,
         headY: -8,
         tailRotation: -0.8,
         leftFrontPawY: -8,
@@ -318,8 +365,10 @@ export function getPoseTargets(pose: Pose): PoseTargets {
       }
     case 'lean-left':
       return {
+        bodyX: -10,
         bodyY: 0,
         bodyScaleY: 1,
+        bodyRotation: -0.12,
         headY: 0,
         tailRotation: -0.3,
         leftFrontPawY: -6,
@@ -331,8 +380,10 @@ export function getPoseTargets(pose: Pose): PoseTargets {
       }
     case 'lean-right':
       return {
+        bodyX: 10,
         bodyY: 0,
         bodyScaleY: 1,
+        bodyRotation: 0.12,
         headY: 0,
         tailRotation: 0.3,
         leftFrontPawY: 2,
@@ -351,8 +402,10 @@ function applyPoseTargets(parts: CatGraphics, targets: PoseTargets): void {
   const r = parts.rest
 
   // Body moves on its own; poses are part-relative, not anatomically chained
+  parts.body.x = r.bodyX + targets.bodyX
   parts.body.y = r.bodyY + targets.bodyY
   parts.body.scale.y = targets.bodyScaleY
+  parts.body.rotation = r.bodyRotation + targets.bodyRotation
   parts.head.y = r.headY + targets.headY
   parts.tail.rotation = targets.tailRotation
 

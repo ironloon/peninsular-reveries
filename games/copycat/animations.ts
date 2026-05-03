@@ -25,8 +25,10 @@ let tickerInitialized = false
 
 function readCurrentValues(parts: NonNullable<ReturnType<typeof getCatParts>>) {
   return {
+    bodyX: parts.body.x,
     bodyY: parts.body.y,
     bodyScaleY: parts.body.scale.y,
+    bodyRotation: parts.body.rotation,
     headY: parts.head.y,
     tailRotation: parts.tail.rotation,
     leftFrontPawY: parts.leftFrontPaw.y,
@@ -46,8 +48,10 @@ function applyInterpolatedPose(
 ): void {
   const lerp = (a: number, b: number, p: number): number => a + (b - a) * p
 
+  parts.body.x = lerp(start.bodyX, target.bodyX, t)
   parts.body.y = lerp(start.bodyY, target.bodyY, t)
   parts.body.scale.y = lerp(start.bodyScaleY, target.bodyScaleY, t)
+  parts.body.rotation = lerp(start.bodyRotation, target.bodyRotation, t)
   parts.head.y = lerp(start.headY, target.headY, t)
   parts.tail.rotation = lerp(start.tailRotation, target.tailRotation, t)
   parts.leftFrontPaw.y = lerp(start.leftFrontPawY, target.leftFrontPawY, t)
@@ -71,8 +75,10 @@ function computeTargetValues(
 ): ReturnType<typeof readCurrentValues> {
   const r = parts.rest
   return {
+    bodyX: r.bodyX + targets.bodyX,
     bodyY: r.bodyY + targets.bodyY,
     bodyScaleY: targets.bodyScaleY,
+    bodyRotation: r.bodyRotation + targets.bodyRotation,
     headY: r.headY + targets.headY,
     tailRotation: targets.tailRotation,
     leftFrontPawY: r.leftFrontPawY + targets.leftFrontPawY,

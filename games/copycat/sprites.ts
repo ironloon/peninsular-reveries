@@ -368,18 +368,18 @@ export const crocodileModel: Model = {
   },
 }
 
-// ── Wolf model ──────────────────────────────────────────────────────────────
+// ── Mouse model ──────────────────────────────────────────────────────────────
 
-export const wolfModel: Model = {
-  name: 'wolf',
+export const mouseModel: Model = {
+  name: 'mouse',
   palette: {
-    base: '#778899',
-    belly: '#90A0B0',
-    accent: '#556677',
+    base: '#8B7355',
+    belly: '#A08B6D',
+    accent: '#6B5B45',
     eye: '#ffffff',
     pupil: '#000000',
-    shadow: '#445566',
-    highlight: '#AABBCC',
+    shadow: '#5A4D3B',
+    highlight: '#C4B49A',
   },
   root: {
     name: 'root',
@@ -387,66 +387,65 @@ export const wolfModel: Model = {
       {
         name: 'tail',
         role: 'wag',
-        offset: [-10, -2],
+        offset: [-8, 0],
         shapes: [
-          { kind: 'ellipse', x: -6, y: -2, rx: 8, ry: 4, fill: 'base' },
-          { kind: 'ellipse', x: -14, y: -6, rx: 5, ry: 3, fill: 'base' },
-          { kind: 'ellipse', x: -18, y: -10, rx: 3, ry: 2, fill: 'accent' },
+          { kind: 'ellipse', x: -4, y: 0, rx: 6, ry: 1.5, fill: 'base' },
+          { kind: 'ellipse', x: -10, y: -1, rx: 4, ry: 1.2, fill: 'base' },
+          { kind: 'ellipse', x: -14, y: -2, rx: 2.5, ry: 1, fill: 'accent' },
         ],
       },
       {
         name: 'body',
         role: 'idle_breath',
         shapes: [
-          { kind: 'ellipse', x: 0, y: 0, rx: 15, ry: 11, fill: 'base' },
-          { kind: 'ellipse', x: 0, y: 3, rx: 10, ry: 7, fill: 'belly' },
-          { kind: 'ellipse', x: 0, y: 10, rx: 12, ry: 3, fill: 'shadow', alpha: 0.25 },
-          { kind: 'ellipse', x: -5, y: -6, rx: 5, ry: 3, fill: 'highlight', alpha: 0.2 },
+          { kind: 'ellipse', x: 0, y: 0, rx: 7, ry: 6, fill: 'base' },
+          { kind: 'ellipse', x: 0, y: 2, rx: 4.5, ry: 3.5, fill: 'belly' },
+          { kind: 'ellipse', x: 0, y: 6, rx: 6, ry: 2, fill: 'shadow', alpha: 0.25 },
         ],
       },
       {
         name: 'head',
         role: 'look',
-        offset: [0, -14],
+        offset: [0, -9],
         shapes: [
-          { kind: 'ellipse', x: 0, y: 0, rx: 10, ry: 9, fill: 'base' },
-          { kind: 'ellipse', x: -4, y: -4, rx: 4, ry: 3, fill: 'highlight', alpha: 0.25 },
+          { kind: 'ellipse', x: 0, y: 0, rx: 6, ry: 5, fill: 'base' },
+          { kind: 'ellipse', x: -2, y: -3, rx: 3, ry: 2, fill: 'highlight', alpha: 0.25 },
         ],
         children: [
           {
             name: 'leftEar',
-            shapes: [{ kind: 'polygon', points: [-6, -7, -11, -23, -2, -7], fill: 'base' }],
+            shapes: [{ kind: 'circle', x: -5, y: -6, r: 3.5, fill: 'base' }],
           },
           {
             name: 'rightEar',
-            shapes: [{ kind: 'polygon', points: [2, -7, 11, -23, 6, -7], fill: 'base' }],
+            shapes: [{ kind: 'circle', x: 5, y: -6, r: 3.5, fill: 'base' }],
           },
           {
             name: 'leftEye',
             role: 'blink',
             shapes: [
-              { kind: 'circle', x: -4.5, y: -1, r: 2.5, fill: 'eye' },
-              { kind: 'circle', x: -4.5, y: -1, r: 1.1, fill: 'pupil' },
+              { kind: 'circle', x: -2.5, y: -0.5, r: 2, fill: 'eye' },
+              { kind: 'circle', x: -2.5, y: -0.5, r: 0.9, fill: 'pupil' },
             ],
           },
           {
             name: 'rightEye',
             role: 'blink',
             shapes: [
-              { kind: 'circle', x: 4.5, y: -1, r: 2.5, fill: 'eye' },
-              { kind: 'circle', x: 4.5, y: -1, r: 1.1, fill: 'pupil' },
+              { kind: 'circle', x: 2.5, y: -0.5, r: 2, fill: 'eye' },
+              { kind: 'circle', x: 2.5, y: -0.5, r: 0.9, fill: 'pupil' },
             ],
           },
         ],
       },
-      { name: 'leftBackLeg', role: 'step', offset: [-10, 4], shapes: [{ kind: 'roundedRect', x: -2, y: -3, w: 4, h: 13, r: 2, fill: 'base' }] },
-      { name: 'rightBackLeg', role: 'step', offset: [-3.5, 4], shapes: [{ kind: 'roundedRect', x: -2, y: -3, w: 4, h: 13, r: 2, fill: 'base' }] },
-      { name: 'leftFrontLeg', role: 'step', offset: [3.5, 4], shapes: [{ kind: 'roundedRect', x: -2, y: -3, w: 4, h: 13, r: 2, fill: 'base' }] },
-      { name: 'rightFrontLeg', role: 'step', offset: [10, 4], shapes: [{ kind: 'roundedRect', x: -2, y: -3, w: 4, h: 13, r: 2, fill: 'base' }] },
-      { name: 'leftBackPaw', offset: [-10, 15], shapes: [{ kind: 'roundedRect', x: -3, y: 0, w: 6, h: 4, r: 2, fill: 'shadow' }] },
-      { name: 'rightBackPaw', offset: [-3.5, 15], shapes: [{ kind: 'roundedRect', x: -3, y: 0, w: 6, h: 4, r: 2, fill: 'shadow' }] },
-      { name: 'leftFrontPaw', offset: [3.5, 15], shapes: [{ kind: 'roundedRect', x: -3, y: 0, w: 6, h: 4, r: 2, fill: 'shadow' }] },
-      { name: 'rightFrontPaw', offset: [10, 15], shapes: [{ kind: 'roundedRect', x: -3, y: 0, w: 6, h: 4, r: 2, fill: 'shadow' }] },
+      { name: 'leftBackLeg', role: 'step', offset: [-5, 3], shapes: [{ kind: 'roundedRect', x: -1.5, y: -2, w: 3, h: 6, r: 1.5, fill: 'base' }] },
+      { name: 'rightBackLeg', role: 'step', offset: [-1.5, 3], shapes: [{ kind: 'roundedRect', x: -1.5, y: -2, w: 3, h: 6, r: 1.5, fill: 'base' }] },
+      { name: 'leftFrontLeg', role: 'step', offset: [1.5, 3], shapes: [{ kind: 'roundedRect', x: -1.5, y: -2, w: 3, h: 6, r: 1.5, fill: 'base' }] },
+      { name: 'rightFrontLeg', role: 'step', offset: [5, 3], shapes: [{ kind: 'roundedRect', x: -1.5, y: -2, w: 3, h: 6, r: 1.5, fill: 'base' }] },
+      { name: 'leftBackPaw', offset: [-5, 7], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 3, r: 1.5, fill: 'shadow' }] },
+      { name: 'rightBackPaw', offset: [-1.5, 7], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 3, r: 1.5, fill: 'shadow' }] },
+      { name: 'leftFrontPaw', offset: [1.5, 7], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 3, r: 1.5, fill: 'shadow' }] },
+      { name: 'rightFrontPaw', offset: [5, 7], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 3, r: 1.5, fill: 'shadow' }] },
     ],
   },
 }
@@ -480,23 +479,23 @@ export const flamingoModel: Model = {
         name: 'body',
         role: 'idle_breath',
         shapes: [
-          { kind: 'ellipse', x: 0, y: 0, rx: 8, ry: 10, fill: 'base' },
+          { kind: 'ellipse', x: 0, y: 0, rx: 9, ry: 10, fill: 'base' },
           { kind: 'ellipse', x: 0, y: 3, rx: 5, ry: 6, fill: 'belly' },
-          { kind: 'ellipse', x: 0, y: 9, rx: 6, ry: 2, fill: 'shadow', alpha: 0.25 },
+          { kind: 'ellipse', x: 0, y: 9, rx: 7, ry: 2, fill: 'shadow', alpha: 0.25 },
         ],
       },
       {
         name: 'neck',
         offset: [0, -6],
         shapes: [
-          { kind: 'roundedRect', x: -1.5, y: -18, w: 3, h: 36, r: 1.5, fill: 'base' },
-          { kind: 'roundedRect', x: -0.8, y: -16, w: 1.6, h: 32, r: 0.8, fill: 'belly', alpha: 0.5 },
+          { kind: 'roundedRect', x: -1.5, y: -10, w: 3, h: 20, r: 1.5, fill: 'base' },
+          { kind: 'roundedRect', x: -0.8, y: -9, w: 1.6, h: 17, r: 0.8, fill: 'belly', alpha: 0.5 },
         ],
       },
       {
         name: 'head',
         role: 'look',
-        offset: [0, -26],
+        offset: [0, -16],
         shapes: [
           { kind: 'ellipse', x: 0, y: 0, rx: 6, ry: 5, fill: 'base' },
           { kind: 'ellipse', x: -2, y: -3, rx: 2.5, ry: 2, fill: 'highlight', alpha: 0.3 },
@@ -535,14 +534,17 @@ export const flamingoModel: Model = {
           },
         ],
       },
-      { name: 'leftBackLeg', role: 'step', offset: [-3, 6], shapes: [{ kind: 'roundedRect', x: -0.8, y: -2, w: 1.6, h: 24, r: 0.8, fill: 'base' }] },
-      { name: 'rightBackLeg', role: 'step', offset: [3, 6], shapes: [{ kind: 'roundedRect', x: -0.8, y: -2, w: 1.6, h: 24, r: 0.8, fill: 'base' }] },
-      { name: 'leftFrontLeg', role: 'step', offset: [-1.5, 6], shapes: [{ kind: 'roundedRect', x: -0.8, y: -2, w: 1.6, h: 24, r: 0.8, fill: 'base' }] },
-      { name: 'rightFrontLeg', role: 'step', offset: [1.5, 6], shapes: [{ kind: 'roundedRect', x: -0.8, y: -2, w: 1.6, h: 24, r: 0.8, fill: 'base' }] },
-      { name: 'leftBackPaw', offset: [-3, 30], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 2.5, r: 1, fill: 'shadow' }] },
-      { name: 'rightBackPaw', offset: [3, 30], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 2.5, r: 1, fill: 'shadow' }] },
-      { name: 'leftFrontPaw', offset: [-1.5, 30], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 2.5, r: 1, fill: 'shadow' }] },
-      { name: 'rightFrontPaw', offset: [1.5, 30], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 2.5, r: 1, fill: 'shadow' }] },
+      // Standing leg
+      { name: 'leftBackLeg', role: 'step', offset: [-3, 4], shapes: [{ kind: 'roundedRect', x: -0.8, y: -2, w: 1.6, h: 14, r: 0.8, fill: 'base' }] },
+      { name: 'leftBackPaw', offset: [-3, 16], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 2.5, r: 1, fill: 'shadow' }] },
+      // Raised leg (shorter, higher paw)
+      { name: 'rightBackLeg', role: 'step', offset: [3, 4], shapes: [{ kind: 'roundedRect', x: -0.8, y: -2, w: 1.6, h: 7, r: 0.8, fill: 'base' }] },
+      { name: 'rightBackPaw', offset: [3, 9], shapes: [{ kind: 'roundedRect', x: -2, y: 0, w: 4, h: 2.5, r: 1, fill: 'shadow' }] },
+      // Wings (front legs visually)
+      { name: 'leftFrontLeg', role: 'step', offset: [-7, -1], shapes: [{ kind: 'ellipse', x: -3, y: 0, rx: 4, ry: 2, fill: 'base' }] },
+      { name: 'rightFrontLeg', role: 'step', offset: [7, -1], shapes: [{ kind: 'ellipse', x: 3, y: 0, rx: 4, ry: 2, fill: 'base' }] },
+      { name: 'leftFrontPaw', offset: [-10, -2], shapes: [{ kind: 'ellipse', x: -2, y: 0, rx: 2.5, ry: 2, fill: 'accent' }] },
+      { name: 'rightFrontPaw', offset: [10, -2], shapes: [{ kind: 'ellipse', x: 2, y: 0, rx: 2.5, ry: 2, fill: 'accent' }] },
     ],
   },
 }
