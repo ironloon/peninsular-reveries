@@ -17,7 +17,7 @@ const chompAnims = new Map<Container, ChompAnim>()
 const fireAnims = new Map<Container, FireAnim>()
 let tickerInitialized = false
 
-const IDLE_JAW_OPEN = 4 // px: jaw always slightly dropped
+const IDLE_JAW_OPEN = 3 // px: jaw always slightly dropped
 
 function easeOutBack(t: number): number {
   const c1 = 1.70158
@@ -43,9 +43,15 @@ function initTicker(): void {
         continue
       }
 
-      // Jaw drops from idle-open to dramatically open, then returns
-      const drop = IDLE_JAW_OPEN + anim.openAmount * 24
+      // Jaw drops dramatically so the mouth gap is huge and visible
+      const drop = IDLE_JAW_OPEN + anim.openAmount * 56
       parts.jaw.y = parts.rest.jawY + drop
+
+      // Hinge open: rotate jaw slightly clockwise (positive) about its back hinge
+      parts.jaw.rotation = anim.openAmount * 0.18
+
+      // Skull tilts back (negative) to exaggerate the gape
+      parts.skull.rotation = -anim.openAmount * 0.10
 
       if (progress >= 1) {
         chompAnims.delete(container)
@@ -63,6 +69,7 @@ function initTicker(): void {
       const wobble = Math.sin(anim.elapsed * 0.016) * 0.04 * anim.intensity
       parts.skull.rotation = wobble
       parts.jaw.y = parts.rest.jawY + IDLE_JAW_OPEN + Math.abs(Math.sin(anim.elapsed * 0.022)) * 6 * anim.intensity
+      parts.jaw.rotation = Math.sin(anim.elapsed * 0.013) * 0.06 * anim.intensity
     }
   })
 }
@@ -74,7 +81,7 @@ export function animateChomp(container: Container): void {
   chompAnims.set(container, {
     openAmount: 0,
     elapsed: 0,
-    durationMs: 280,
+    durationMs: 340,
   })
   initTicker()
 }
@@ -95,6 +102,7 @@ export function stopFireBreathing(container: Container): void {
   if (!parts) return
   parts.skull.rotation = 0
   parts.jaw.y = parts.rest.jawY + IDLE_JAW_OPEN
+  parts.jaw.rotation = 0
 }
 
 export function applyIdle(container: Container, t: number, index: number): void {
@@ -102,9 +110,12 @@ export function applyIdle(container: Container, t: number, index: number): void 
   if (!parts) return
 
   // Jaw is always slightly open in idle (so player can always eat)
-  parts.jaw.y = parts.rest.jawY + IDLE_JAW_OPEN + Math.sin(t * 2 + index * 1.1) * 1.2
+  parts.jaw.y = parts.rest.jawY + IDLE_JAW_OPEN + Math.sin(t * 2 + index * 1.1) * 1.0
 
   // Skull breathes subtly
   const breathe = Math.sin(t * 1.8 + index * 0.9) * 0.012
   parts.skull.y = breathe * 2.5
+
+  // Tiny jaw sway in idle
+  parts.jaw.rotation = Math.sin(t * 1.4 + index * 0.7) * 0.02
 }

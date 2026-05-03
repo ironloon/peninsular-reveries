@@ -8,10 +8,31 @@ const CATCH_UP_MS = 250
 const CANVAS_W = 48
 const CANVAS_H = 36
 
+const SMOOTH = 0.6
 const MERGE_DISTANCE = 12
 const PERSISTENCE_TIMEOUT = 500
 const MAX_BODIES = 4
-const MIN_STABLE_FRAMES = 2 // need 2+ consecutive frames before a body is "real"
+const STABLE_TIME = 150
+
+interface Blob {
+  cx: number
+  cy: number
+  spreadX: number
+  spreadY: number
+  topMotion: number
+  bottomMotion: number
+  pixelCount: number
+}
+
+type TrackedBody = {
+  x: number
+  y: number
+  spreadX: number
+  spreadY: number
+  lastSeen: number
+  firstSeen: number
+  armsUp: boolean
+}
 
 type TrackingState = {
   canvas: HTMLCanvasElement
@@ -23,7 +44,7 @@ type TrackingState = {
   prevImageData: ImageData | null
   running: boolean
   useVFC: boolean
-  trackedBodies: Map<number, { x: number; y: number; spreadX: number; spreadY: number; lastSeen: number; armsUp: boolean; stableFrames: number }>
+  trackedBodies: Map<number, TrackedBody>
   nextId: number
 }
 
@@ -33,16 +54,6 @@ interface VideoFrameCallback {
 }
 
 let state: TrackingState | null = null
-
-interface Blob {
-  cx: number
-  cy: number
-  spreadX: number
-  spreadY: number
-  topMotion: number
-  bottomMotion: number
-  pixelCount: number
-}
 
 function processFrame(): void {
   if (!state || !state.running) return
@@ -87,72 +98,26 @@ function detectAndTrackBodies(
   height: number,
   now: number,
 ): MotionBody[] {
-  const blobs = extractBlobs(prev, curr, width, height)
-  if (blobs.length === 0) {
+  const rawBlobs = extractBlobs(prev, curr, width, height)
+  if (rawBlobs.length === 0) {
     purgeLostBodies(now)
     return buildMotionBodies(now)
   }
 
-  const merged = mergeBlobs(blobs, MERGE_DISTANCE)
+  const merged = mergeBlobs(rawBlobs, MERGE_DISTANCE, width, height)
 
-  const { trackedBodies, nextId } = state!
-  const usedIds = new Set<number>()
-  const updatedBodies = new Map<number, { x: number; y: number; spreadX: number; spreadY: number; lastSeen: number; armsUp: boolean; stableFrames: number }>()
+  const { trackedBodies, nextId } = trackBodies(
+    merged,
+    now,
+    width,
+    height,
+    state!.trackedBodies,
+    state!.nextId,
+  )
 
-  for (const b of merged) {
-    const mx = b.cx / width
-    const my = b.cy / height
-    let bestId = -1
-    let bestDist = Infinity
+  state!.trackedBodies = trackedBodies
+  state!.nextId = nextId
 
-    for (const [id, body] of trackedBodies) {
-      if (usedIds.has(id)) continue
-      const dx = body.x - mx
-      const dy = body.y - my
-      const dist = dx * dx + dy * dy
-      if (dist < bestDist && dist < 0.06) {
-        bestDist = dist
-        bestId = id
-      }
-    }
-
-    if (bestId >= 0) {
-      const prevBody = trackedBodies.get(bestId)!
-      updatedBodies.set(bestId, {
-        x: mx,
-        y: my,
-        spreadX: b.spreadX,
-        spreadY: b.spreadY,
-        lastSeen: now,
-        armsUp: false, // hands removed as trigger
-        stableFrames: prevBody.stableFrames + 1,
-      })
-      usedIds.add(bestId)
-    } else if (trackedBodies.size + updatedBodies.size < MAX_BODIES) {
-      const id = nextId
-      state!.nextId = nextId + 1
-      updatedBodies.set(id, {
-        x: mx,
-        y: my,
-        spreadX: b.spreadX,
-        spreadY: b.spreadY,
-        lastSeen: now,
-        armsUp: false,
-        stableFrames: 1,
-      })
-      usedIds.add(id)
-    }
-  }
-
-  // Persist unmatched bodies briefly
-  for (const [id, body] of trackedBodies) {
-    if (usedIds.has(id)) continue
-    if (now - body.lastSeen < PERSISTENCE_TIMEOUT) {
-      updatedBodies.set(id, body)
-    }
-  }
-
-  state!.trackedBodies = updatedBodies
   return buildMotionBodies(now)
 }
 
@@ -229,7 +194,7 @@ function extractBlobs(
   return blobs
 }
 
-function mergeBlobs(blobs: Blob[], mergeDist: number): Blob[] {
+function mergeBlobs(blobs: Blob[], mergeDist: number, width: number, height: number): Blob[] {
   if (blobs.length <= 1) return blobs
 
   const parents = new Array(blobs.length).fill(0).map((_, i) => i)
@@ -275,8 +240,8 @@ function mergeBlobs(blobs: Blob[], mergeDist: number): Blob[] {
     return {
       cx: cx / count,
       cy: cy / count,
-      spreadX: Math.max(0.06, (maxX - minX) / (width || 1)),
-      spreadY: Math.max(0.18, (maxY - minY) / (height || 1)),
+      spreadX: Math.max(0.06, (maxX - minX) / width),
+      spreadY: Math.max(0.18, (maxY - minY) / height),
       topMotion: topM,
       bottomMotion: botM,
       pixelCount: count,
@@ -284,10 +249,72 @@ function mergeBlobs(blobs: Blob[], mergeDist: number): Blob[] {
   })
 }
 
-// eslint-disable-next-line prefer-const
-let width = 48
-// eslint-disable-next-line prefer-const
-let height = 36
+function trackBodies(
+  merged: Blob[],
+  now: number,
+  width: number,
+  height: number,
+  trackedBodies: Map<number, TrackedBody>,
+  nextId: number,
+): { trackedBodies: Map<number, TrackedBody>; nextId: number } {
+  const usedIds = new Set<number>()
+  const updated = new Map<number, TrackedBody>()
+
+  for (const b of merged) {
+    const mx = b.cx / width
+    const my = b.cy / height
+    let bestId = -1
+    let bestDist = Infinity
+
+    for (const [id, body] of trackedBodies) {
+      if (usedIds.has(id)) continue
+      const dx = body.x - mx
+      const dy = body.y - my
+      const dist = dx * dx + dy * dy
+      if (dist < bestDist && dist < 0.06) {
+        bestDist = dist
+        bestId = id
+      }
+    }
+
+    if (bestId >= 0) {
+      const prevBody = trackedBodies.get(bestId)!
+      updated.set(bestId, {
+        x: prevBody.x * SMOOTH + mx * (1 - SMOOTH),
+        y: prevBody.y * SMOOTH + my * (1 - SMOOTH),
+        spreadX: prevBody.spreadX * SMOOTH + b.spreadX * (1 - SMOOTH),
+        spreadY: prevBody.spreadY * SMOOTH + b.spreadY * (1 - SMOOTH),
+        lastSeen: now,
+        firstSeen: prevBody.firstSeen,
+        armsUp: false,
+      })
+      usedIds.add(bestId)
+    } else if (trackedBodies.size + updated.size < MAX_BODIES) {
+      const id = nextId
+      nextId++
+      updated.set(id, {
+        x: mx,
+        y: my,
+        spreadX: b.spreadX,
+        spreadY: b.spreadY,
+        lastSeen: now,
+        firstSeen: now,
+        armsUp: false,
+      })
+      usedIds.add(id)
+    }
+  }
+
+  // Persist unmatched bodies briefly
+  for (const [id, body] of trackedBodies) {
+    if (usedIds.has(id)) continue
+    if (now - body.lastSeen < PERSISTENCE_TIMEOUT) {
+      updated.set(id, body)
+    }
+  }
+
+  return { trackedBodies: updated, nextId }
+}
 
 function purgeLostBodies(now: number): void {
   const { trackedBodies } = state!
@@ -299,8 +326,8 @@ function purgeLostBodies(now: number): void {
 function buildMotionBodies(now: number): MotionBody[] {
   const bodies: MotionBody[] = []
   for (const [id, body] of state!.trackedBodies) {
-    if (body.stableFrames < MIN_STABLE_FRAMES) continue
-    if (now - body.lastSeen > 200 && body.stableFrames < 5) continue
+    if (now - body.firstSeen < STABLE_TIME) continue
+    if (now - body.lastSeen > 200 && now - body.firstSeen < 500) continue
 
     bodies.push({
       id,

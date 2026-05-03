@@ -10,6 +10,8 @@ const FPS = 10
 const FRAME_INTERVAL = 1000 / FPS
 const THRESHOLD = 20
 const CATCH_UP_MS = 250 // if tab throttles, reset prev frame to avoid stale diffs
+const SMOOTH = 0.6
+const HOLD_TIME = 100
 
 const CANVAS_W = 32
 const CANVAS_H = 24
@@ -25,6 +27,11 @@ type TrackingState = {
   pendingPose: Pose
   pendingSince: number
   lastEmittedPose: Pose
+  smoothedCentroidX: number
+  smoothedCentroidY: number
+  smoothedSpreadX: number
+  smoothedSpreadY: number
+  smoothedMotionScore: number
   running: boolean
   useVFC: boolean
 }
@@ -118,6 +125,11 @@ function processFrame(): void {
     state.prevImageData = null
     state.pendingPose = 'idle'
     state.pendingSince = now
+    state.smoothedCentroidX = 0
+    state.smoothedCentroidY = 0
+    state.smoothedSpreadX = 0
+    state.smoothedSpreadY = 0
+    state.smoothedMotionScore = 0
     scheduleNext()
     return
   }
@@ -149,16 +161,28 @@ function processFrame(): void {
 
   state.prevImageData = imageData
 
-  const pose = resolvePose(centroidX, centroidY, spreadX, spreadY, motionScore)
+  // smoothMetrics
+  state.smoothedCentroidX = state.smoothedCentroidX * SMOOTH + centroidX * (1 - SMOOTH)
+  state.smoothedCentroidY = state.smoothedCentroidY * SMOOTH + centroidY * (1 - SMOOTH)
+  state.smoothedSpreadX = state.smoothedSpreadX * SMOOTH + spreadX * (1 - SMOOTH)
+  state.smoothedSpreadY = state.smoothedSpreadY * SMOOTH + spreadY * (1 - SMOOTH)
+  state.smoothedMotionScore = state.smoothedMotionScore * SMOOTH + motionScore * (1 - SMOOTH)
 
-  if (pose === state.pendingPose) {
-    if (pose !== state.lastEmittedPose) {
-      state.lastEmittedPose = pose
-      onPose(pose)
-    }
-  } else {
+  const pose = resolvePose(
+    state.smoothedCentroidX,
+    state.smoothedCentroidY,
+    state.smoothedSpreadX,
+    state.smoothedSpreadY,
+    state.smoothedMotionScore,
+  )
+
+  // stabilizePose
+  if (pose !== state.pendingPose) {
     state.pendingPose = pose
     state.pendingSince = now
+  } else if (pose !== state.lastEmittedPose && now - state.pendingSince > HOLD_TIME) {
+    state.lastEmittedPose = pose
+    onPose(pose)
   }
 
   // Budget guard: if processing took too long, drop the next frame
@@ -207,6 +231,11 @@ export function startMotionTracking(
     pendingPose: 'idle',
     pendingSince: now,
     lastEmittedPose: 'idle',
+    smoothedCentroidX: 0,
+    smoothedCentroidY: 0,
+    smoothedSpreadX: 0,
+    smoothedSpreadY: 0,
+    smoothedMotionScore: 0,
     running: true,
     useVFC,
   }

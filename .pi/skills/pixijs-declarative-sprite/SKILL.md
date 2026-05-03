@@ -6,6 +6,7 @@ model-invocation: true
 input-type: natural-language
 output-type: json
 tags: ["graphics", "pixi", "2d", "procedural", "game-dev"]
+version: 2.1
 ---
 
 # Skill: pixi-declarative-sprite
@@ -190,8 +191,3 @@ palette: {
 - Does it remain valid across different rig systems?
 
 If not, refine before output.
-
----
-
-## Version
-v2.1

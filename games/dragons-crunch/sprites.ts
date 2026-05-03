@@ -99,16 +99,17 @@ export function buildSprite(
 }
 
 // ── Side-profile direwolf-inspired dragon head ──────────────────────────────
-// Lean, large, long snout, jagged silhouette. Right-facing side profile.
-// Monochrome: one dark color for silhouette. Mouth interior = maw.
-// Teeth are jagged edges of the POLYGON itself, not separate colored shapes.
-// Jaw drops DOWN to open, revealing jagged gap.
+// Lean, slender, right-facing side profile. Jagged monochrome silhouette.
+// Eye is a small visible slit (bright tone inside dark head).
+// Teeth are jagged polygon edges, not separate colored shapes.
+// Jaw drops DOWN to open, revealing dramatic jagged gap.
 
 export const dragonModel: Model = {
   name: 'dragon-head',
   palette: {
     base: '#1a2218',
     maw: '#0a0e08',
+    eye: '#b8c75a',
   },
   root: {
     name: 'root',
@@ -116,70 +117,67 @@ export const dragonModel: Model = {
       {
         name: 'skull',
         shapes: [
-          // Upper head: long spiky silhouette, flat/angled bottom hiding closed jaw
-          // Back of neck → crest spikes → flat skull → snout → nose → under-jaw → throat
+          // Slender upper head: narrow neck → cranium → long flat snout → nose
           { kind: 'polygon', points: [
-            -10, 14,
-            -16, 10,
-            -18, 2,
-            -20, -6,
-            -16, -14,
-            -10, -20,
-            -4, -18,
-            2, -22,
-            8, -18,
-            16, -20,
-            22, -14,
-            28, -10,
-            34, -4,
-            36, 2,
-            34, 8,
-            28, 12,
-            22, 10,
-            14, 12,
-            6, 14,
-            -2, 13,
+            -4, 12,
+            -8, 8,
+            -10, 0,
+            -8, -10,
+            -2, -16,
+            4, -14,
+            10, -16,
+            16, -12,
+            24, -10,
+            30, -6,
+            38, -2,
+            40, 4,
+            38, 8,
+            32, 10,
+            24, 8,
+            16, 10,
+            8, 11,
+            0, 10,
           ], fill: 'base' },
           // Jagged upper gum line (upper teeth visible when jaw drops)
-          // These stick down into the mouth gap
           { kind: 'polygon', points: [
-            34, 8, 30, 13, 26, 8, 22, 14, 18, 8, 14, 13, 10, 8, 6, 12, 2, 8, -2, 13, -6, 8, -10, 14,
+            38, 8, 34, 14, 30, 8, 26, 14, 22, 8, 18, 13, 14, 8, 10, 12, 6, 8, 2, 12, -2, 8, -6, 12, -10, 8, -4, 8,
           ], fill: 'base' },
-          // Eye: tiny dark slit within the head silhouette
-          { kind: 'polygon', points: [8, -10, 14, -10, 14, -6, 8, -7], fill: 'base', alpha: 0.7 },
+          // Eye: visible slit inside the head (bright)
+          { kind: 'polygon', points: [8, -9, 14, -9, 14, -5, 8, -6], fill: 'eye' },
+          // Eyebrow ridge (shadow above eye)
+          { kind: 'polygon', points: [6, -12, 16, -12, 14, -8, 6, -8], fill: 'base' },
           // Nostril: subtle notch at nose tip
-          { kind: 'polygon', points: [34, -4, 36, -2, 34, 0], fill: 'base', alpha: 0.6 },
-          // Spiky spine crest along top
+          { kind: 'polygon', points: [38, -2, 40, 0, 38, 2], fill: 'base', alpha: 0.6 },
+          // Spiky spine crest along top (smaller, sharper)
           { kind: 'polygon', points: [
-            -10, -20, -12, -26, -8, -22, -6, -28, -2, -22, 0, -26, 4, -22, 6, -26, 10, -22, 12, -25, 16, -22, 18, -25, 22, -20, 24, -23, 28, -18, 30, -20, 28, -14, 34, -10, 28, -10,
+            -4, -16, -6, -21, -2, -17, 0, -22, 4, -17, 6, -20, 10, -16, 12, -20, 16, -15, 18, -19, 22, -14, 24, -17, 28, -13, 30, -16, 28, -10, 32, -8, 30, -6,
           ], fill: 'base' },
         ],
       },
       {
         name: 'jaw',
         role: 'chomp',
-        offset: [2, 14],
+        offset: [2, 10],
         shapes: [
-          // Lower jaw: thick triangular wedge, sits flush under skull when closed
+          // Lower jaw: thin triangular wedge, sits flush under skull when closed
           { kind: 'polygon', points: [
-            -10, -2,
-            -8, 6,
-            -2, 12,
-            6, 14,
-            14, 12,
-            22, 8,
-            28, 4,
-            24, -2,
-            18, 0,
-            10, -2,
-            2, -2,
+            -6, -2,
+            -4, 4,
+            2, 8,
+            10, 9,
+            18, 7,
+            26, 4,
+            22, -2,
+            16, 0,
+            8, -1,
+            0, -1,
           ], fill: 'base' },
           // Jaw jagged top edge = lower teeth pointing up
           { kind: 'polygon', points: [
-            -10, -2, -8, -8, -6, -2, -4, -9, -2, -2, 0, -8, 2, -2, 4, -10, 6, -2, 8, -9, 10, -2, 12, -8, 14, -2, 16, -9, 18, -2, 20, -7, 22, -2, 24, -6, 24, -2,
+            -6, -2, -4, -8, -2, -2, 0, -9, 2, -2, 4, -10, 6, -2, 8, -9, 10, -2, 12, -8, 14, -2, 16, -9, 18, -2, 20, -7, 22, -2, 24, -6, 24, -2,
           ], fill: 'base' },
-          // Dark tongue inside jaw
-          { kind: 'ellipse', x: 4, y: 4, rx: 8, ry: 3, fill: 'maw', alpha: 0.5 },
+          // Tongue: thin dark ellipse inside jaw
+          { kind: 'ellipse', x: 6, y: 3, rx: 7, ry: 2, fill: 'maw', alpha: 0.5 },
         ],
       },
     ],
