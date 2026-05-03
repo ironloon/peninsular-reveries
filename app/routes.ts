@@ -16,6 +16,7 @@ export const routes = route({
   spotOnInfo: '/spot-on/info/',
   peekabooInfo: '/peekaboo/info/',
   copycatInfo: '/copycat/info/',
+  dragonsCrunchInfo: '/dragons-crunch/info/',
   missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
   chompers: '/chompers/',
@@ -28,5 +29,6 @@ export const routes = route({
   spotOn: '/spot-on/',
   peekaboo: '/peekaboo/',
   copycat: '/copycat/',
+  dragonsCrunch: '/dragons-crunch/',
   notFound: '/404.html',
 })

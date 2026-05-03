@@ -607,3 +607,21 @@
 - License: MIT
 - Modifications: Not applicable
 - Notes: 2D WebGL rendering engine used for the game stage.
+
+### Dragon's Crunch
+
+- Slug: dragons-crunch
+- Code license: GPL-3.0
+- Summary: Be a dragon and chomp falling food using your camera. Then breathe fire to celebrate!
+
+#### Entries
+
+##### PixiJS
+
+- Type: other
+- Used in: Dragon's Crunch game rendering via PixiJS
+- Creator: PixiJS Contributors
+- Source: https://pixijs.com/ (https://pixijs.com/)
+- License: MIT
+- Modifications: Not applicable
+- Notes: 2D WebGL rendering engine used for the game stage.

@@ -28,6 +28,7 @@ const swFiles = [
   'peekaboo/sw.js',
   'spot-on/sw.js',
   'copycat/sw.js',
+  'dragons-crunch/sw.js',
 ]
 for (const swFile of swFiles) {
   const swPath = join(outputDir, swFile)
@@ -52,6 +53,7 @@ mkdirSync(join(outputDir, 'client', 'train-sounds'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'peekaboo'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'spot-on'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'copycat'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'dragons-crunch'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -98,6 +100,7 @@ await esbuild.build({
     'games/peekaboo/main.ts',
     'games/spot-on/main.ts',
     'games/copycat/main.ts',
+    'games/dragons-crunch/main.ts',
   ],
   bundle: true,
   outbase: 'games',
@@ -138,6 +141,8 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/spot-on/info/', outPath: 'spot-on/info/index.html' },
   { url: 'http://localhost/copycat/', outPath: 'copycat/index.html' },
   { url: 'http://localhost/copycat/info/', outPath: 'copycat/info/index.html' },
+  { url: 'http://localhost/dragons-crunch/', outPath: 'dragons-crunch/index.html' },
+  { url: 'http://localhost/dragons-crunch/info/', outPath: 'dragons-crunch/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -204,6 +209,7 @@ const pages: Record<string, string[]> = {
   peekaboo: ['peekaboo/index.html', 'styles/peekaboo.css', 'client/shell.js', 'client/peekaboo/main.js'],
   'spot-on': ['spot-on/index.html', 'styles/spot-on.css', 'client/shell.js', 'client/spot-on/main.js'],
   copycat: ['copycat/index.html', 'styles/copycat.css', 'client/shell.js', 'client/copycat/main.js'],
+  'dragons-crunch': ['dragons-crunch/index.html', 'styles/dragons-crunch.css', 'client/shell.js', 'client/dragons-crunch/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 

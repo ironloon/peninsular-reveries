@@ -1,0 +1,463 @@
+/* Dragon's Crunch — camera-based AR dragon chomping game
+ * Viewport checkpoints: 390x844, 844x390, 1024x768, 1280x800.
+ */
+
+body.dragons-crunch-game {
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-title: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #0a0a14;
+  --text: #e0e0e0;
+  --muted: rgba(224, 224, 224, 0.65);
+  --panel: rgba(16, 24, 16, 0.78);
+  --panel-strong: rgba(24, 36, 24, 0.92);
+  --line: rgba(224, 224, 224, 0.14);
+  --accent: #66bb6a;
+  --accent-soft: rgba(102, 187, 106, 0.16);
+  --hud-bg: rgba(8, 14, 8, 0.85);
+  --spotlight: radial-gradient(circle at 50% 40%, rgba(102, 187, 106, 0.12), transparent 55%);
+
+  min-height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+}
+
+body.dragons-crunch-game main {
+  overflow: hidden;
+}
+
+/* ── Scene track ────────────────────────────────────────────── */
+
+.scene-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--spotlight), var(--bg);
+}
+
+/* ── Screen panels ──────────────────────────────────────────── */
+
+.dc-screen-panel {
+  width: min(100%, 78rem);
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  padding:
+    max(1rem, env(safe-area-inset-top, 0px))
+    max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+.dc-start-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+.dc-game-panel {
+  min-height: 100dvh;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.dc-end-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+.dc-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.dc-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.dc-start-panel .dc-title {
+  color: var(--accent);
+  text-shadow:
+    0 0 6px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent) 50%, transparent),
+    0 0 38px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.dc-title-small {
+  font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+}
+
+/* ── Menu button ───────────────────────────────────────────── */
+
+.dc-menu-btn {
+  appearance: none;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.dc-menu-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* ── Subtitle & prompts ────────────────────────────────────── */
+
+.dc-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+}
+
+.dc-camera-prompt {
+  color: var(--muted);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+}
+
+.dc-camera-prompt p {
+  margin: 0;
+}
+
+/* ── Primary button ─────────────────────────────────────────── */
+
+.dc-primary-btn {
+  appearance: none;
+  font-family: var(--font-title);
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.9rem 2rem;
+  border-radius: 1rem;
+  border: 0;
+  cursor: pointer;
+  color: var(--bg);
+  background: var(--accent);
+  box-shadow: 0 0 1.4rem var(--accent);
+  transition: transform 120ms ease-out, filter 160ms ease-out;
+}
+
+.dc-primary-btn:hover {
+  filter: brightness(1.15);
+}
+
+.dc-primary-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.dc-primary-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── HUD ──────────────────────────────────────────────────── */
+
+.dc-hud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.8rem;
+  color: var(--muted);
+  background: var(--hud-bg);
+  border: 1px solid var(--line);
+  border-radius: 0.8rem;
+  backdrop-filter: blur(4px);
+}
+
+.dc-hud-item {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  font-size: 0.95rem;
+}
+
+/* ── Dance floor ─────────────────────────────────────────────── */
+
+.dc-floor {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* ── Camera preview ─────────────────────────────────────────── */
+
+#camera-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  border-radius: inherit;
+  z-index: 1;
+}
+
+#pixi-stage,
+.dc-floor {
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+/* ── Pixi stage ─────────────────────────────────────────────── */
+
+#pixi-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#pixi-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.dc-completion-msg {
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+}
+
+/* ── Button reset helper ───────────────────────────────────── */
+
+.dc-btn {
+  appearance: none;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.7rem 1.2rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+  transition: background 160ms ease-out, transform 120ms ease-out;
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.dc-btn:hover {
+  background: rgba(40, 64, 40, 0.92);
+}
+
+.dc-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.dc-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Controls help ──────────────────────────────────────────── */
+
+.dc-controls-help {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+
+.dc-controls-help kbd {
+  font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+  font-size: 0.9em;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Noscript ──────────────────────────────────────────────── */
+
+.noscript-message {
+  margin: 2rem auto;
+  max-width: 36rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--panel);
+  color: var(--text);
+  text-align: center;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+
+@media (orientation: landscape) and (max-height: 480px) {
+  .dc-game-panel {
+    gap: 0.4rem;
+  }
+
+  .dc-header,
+  .dc-hud {
+    padding: 0.4rem 0.7rem;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  body.dragons-crunch-game .screen {
+    transition-duration: 0ms;
+  }
+
+  .dc-primary-btn,
+  .dc-btn,
+  .dc-menu-btn {
+    transition: none;
+  }
+}
+
+body.dragons-crunch-game[data-reduce-motion="true"] .screen {
+  transition-duration: 0ms;
+}
+
+body.dragons-crunch-game[data-reduce-motion="true"] .dc-primary-btn,
+body.dragons-crunch-game[data-reduce-motion="true"] .dc-btn,
+body.dragons-crunch-game[data-reduce-motion="true"] .dc-menu-btn {
+  transition: none;
+}
+
+/* ── Pose list on start screen ────────────────────────────── */
+
+.dc-pose-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  max-width: min(100%, 28rem);
+  margin: 0 auto;
+}
+
+.dc-pose-list-title {
+  font-size: clamp(0.75rem, 1.6vw, 0.85rem);
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0;
+}
+
+.dc-pose-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.dc-pose-chip {
+  font-size: clamp(0.7rem, 1.4vw, 0.8rem);
+  padding: 0.25rem 0.55rem;
+  border-radius: 1rem;
+  background: var(--panel-strong);
+  color: var(--text);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+/* ── Celebration overlay ───────────────────────────────────── */
+
+.dc-celebration-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 10, 20, 0.88);
+  backdrop-filter: blur(6px);
+  border-radius: inherit;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+.dc-celebration-overlay[hidden] {
+  display: none;
+}
+
+.dc-celebration-inner {
+  text-align: center;
+}
+
+.dc-celebration-inner p {
+  margin: 0;
+  color: var(--text);
+  font-size: clamp(1.2rem, 3vw, 1.8rem);
+}
+
+.dc-celebration-inner p:first-child {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+  color: var(--accent);
+}
+
+.dc-celebration-sub {
+  font-size: clamp(1rem, 2.5vw, 1.4rem) !important;
+  color: var(--muted) !important;
+  margin-bottom: 0.8rem !important;
+}
+
+.dc-countdown {
+  font-size: clamp(2.4rem, 8vw, 4rem) !important;
+  font-weight: 800;
+  color: var(--accent) !important;
+  animation: countdownPulse 0.8s ease-out;
+}
+
+@keyframes countdownPulse {
+  0% {
+    transform: scale(1.4);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

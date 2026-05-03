@@ -92,4 +92,11 @@ export const games: GameEntry[] = [
     icon: '🐱',
     status: 'live',
   },
+  {
+    slug: 'dragons-crunch',
+    name: "Dragon's Crunch",
+    description: 'Be a dragon and chomp falling food using your camera. Then breathe fire to celebrate!',
+    icon: '🐉',
+    status: 'live',
+  },
 ]
