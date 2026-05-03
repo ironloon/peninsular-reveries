@@ -1,17 +1,17 @@
 import type { MotionBody } from './types.js'
 
-// Run motion at 15 FPS — responsive enough, light on the main thread
 const FPS = 15
 const FRAME_INTERVAL = 1000 / FPS
-const THRESHOLD = 20
+const THRESHOLD = 18
 const CATCH_UP_MS = 250
 
 const CANVAS_W = 48
 const CANVAS_H = 36
 
-const ARM_RAISE_THRESHOLD = 25
-const MIN_BLOB_SIZE = 8
-const MERGE_DISTANCE = 6
+const MIN_BLOB_SIZE = 12
+const MERGE_DISTANCE = 10
+const PERSISTENCE_TIMEOUT = 400 // ms before a body is dropped if not seen
+const MAX_BODIES = 6
 
 type TrackingState = {
   canvas: HTMLCanvasElement
@@ -23,6 +23,8 @@ type TrackingState = {
   prevImageData: ImageData | null
   running: boolean
   useVFC: boolean
+  trackedBodies: Map<number, { x: number; y: number; spreadX: number; spreadY: number; lastSeen: number; armsUp: boolean; framesUp: number }>
+  nextId: number
 }
 
 interface VideoFrameCallback {
@@ -33,9 +35,13 @@ interface VideoFrameCallback {
 let state: TrackingState | null = null
 
 interface Blob {
-  pixels: Array<{ x: number; y: number }>
+  cx: number
+  cy: number
+  spreadX: number
+  spreadY: number
   topMotion: number
   bottomMotion: number
+  pixelCount: number
 }
 
 function processFrame(): void {
@@ -67,23 +73,105 @@ function processFrame(): void {
     return
   }
 
-  const bodies = detectBodies(state.prevImageData, imageData, canvas.width, canvas.height)
+  const bodies = detectAndTrackBodies(state.prevImageData, imageData, canvas.width, canvas.height, now)
   state.prevImageData = imageData
 
   onBodies(bodies)
   scheduleNext()
 }
 
-function detectBodies(
+function detectAndTrackBodies(
   prev: ImageData,
   curr: ImageData,
   width: number,
   height: number,
+  now: number,
 ): MotionBody[] {
+  const blobs = extractBlobs(prev, curr, width, height)
+  if (blobs.length === 0) {
+    purgeLostBodies(now)
+    return buildMotionBodies(now)
+  }
+
+  // Merge nearby blobs into single body candidates
+  const merged = mergeBlobs(blobs, MERGE_DISTANCE)
+
+  // Match merged blobs to existing tracked bodies by nearest centroid
+  const { trackedBodies, nextId } = state!
+  const usedIds = new Set<number>()
+  const updatedBodies = new Map<number, { x: number; y: number; spreadX: number; spreadY: number; lastSeen: number; armsUp: boolean; framesUp: number }>()
+
+  for (const b of merged) {
+    const mx = b.cx / width
+    const my = b.cy / height
+    let bestId = -1
+    let bestDist = Infinity
+
+    for (const [id, body] of trackedBodies) {
+      if (usedIds.has(id)) continue
+      const dx = body.x - mx
+      const dy = body.y - my
+      const dist = dx * dx + dy * dy
+      if (dist < bestDist && dist < 0.08) {
+        bestDist = dist
+        bestId = id
+      }
+    }
+
+    // Arms up: top half has more motion than bottom
+    const armsUp = b.topMotion > 15 && b.topMotion > b.bottomMotion * 0.5
+
+    if (bestId >= 0) {
+      const prevBody = trackedBodies.get(bestId)!
+      const newFramesUp = armsUp ? prevBody.framesUp + 1 : Math.max(0, prevBody.framesUp - 2)
+      updatedBodies.set(bestId, {
+        x: mx,
+        y: my,
+        spreadX: b.spreadX,
+        spreadY: b.spreadY,
+        lastSeen: now,
+        armsUp: newFramesUp >= 1,
+        framesUp: newFramesUp,
+      })
+      usedIds.add(bestId)
+    } else if (trackedBodies.size + updatedBodies.size < MAX_BODIES) {
+      // New body
+      const id = nextId
+      state!.nextId = nextId + 1
+      updatedBodies.set(id, {
+        x: mx,
+        y: my,
+        spreadX: b.spreadX,
+        spreadY: b.spreadY,
+        lastSeen: now,
+        armsUp: false,
+        framesUp: 0,
+      })
+      usedIds.add(id)
+    }
+  }
+
+  // Keep recently-seen bodies that weren't matched (but start decaying)
+  for (const [id, body] of trackedBodies) {
+    if (usedIds.has(id)) continue
+    if (now - body.lastSeen < PERSISTENCE_TIMEOUT) {
+      updatedBodies.set(id, body)
+    }
+  }
+
+  state!.trackedBodies = updatedBodies
+  return buildMotionBodies(now)
+}
+
+function extractBlobs(
+  prev: ImageData,
+  curr: ImageData,
+  width: number,
+  height: number,
+): Blob[] {
   const prevData = prev.data
   const currData = curr.data
 
-  // Build difference mask
   const mask = new Uint8Array(width * height)
   for (let i = 0; i < width * height; i++) {
     const pi = i * 4
@@ -94,7 +182,6 @@ function detectBodies(
     }
   }
 
-  // Find connected blobs using flood-fill-like approach on scanlines
   const visited = new Uint8Array(width * height)
   const blobs: Blob[] = []
 
@@ -108,6 +195,8 @@ function detectBodies(
       visited[idx] = 1
       let topMotion = 0
       let bottomMotion = 0
+      let minX = width, maxX = 0, minY = height, maxY = 0
+      let sumX = 0, sumY = 0
 
       while (stack.length > 0) {
         const ci = stack.pop()!
@@ -115,13 +204,13 @@ function detectBodies(
         const cy = Math.floor(ci / width)
         pixels.push({ x: cx, y: cy })
 
-        if (cy < height * 0.45) {
-          topMotion += 1
-        } else {
-          bottomMotion += 1
-        }
+        if (cy < height * 0.45) topMotion++
+        else bottomMotion++
 
-        // Check 4-neighbors
+        minX = Math.min(minX, cx); maxX = Math.max(maxX, cx)
+        minY = Math.min(minY, cy); maxY = Math.max(maxY, cy)
+        sumX += cx; sumY += cy
+
         if (cx > 0 && !visited[ci - 1] && mask[ci - 1]) { visited[ci - 1] = 1; stack.push(ci - 1) }
         if (cx < width - 1 && !visited[ci + 1] && mask[ci + 1]) { visited[ci + 1] = 1; stack.push(ci + 1) }
         if (cy > 0 && !visited[ci - width] && mask[ci - width]) { visited[ci - width] = 1; stack.push(ci - width) }
@@ -129,97 +218,46 @@ function detectBodies(
       }
 
       if (pixels.length >= MIN_BLOB_SIZE) {
-        blobs.push({ pixels, topMotion, bottomMotion })
+        const count = pixels.length
+        blobs.push({
+          cx: sumX / count,
+          cy: sumY / count,
+          spreadX: (maxX - minX) / width,
+          spreadY: (maxY - minY) / height,
+          topMotion,
+          bottomMotion,
+          pixelCount: count,
+        })
       }
     }
   }
 
-  if (blobs.length === 0) return []
-
-  // Merge nearby blobs
-  const merged = mergeBlobs(blobs, MERGE_DISTANCE)
-
-  const bodies: MotionBody[] = []
-  for (let i = 0; i < merged.length; i++) {
-    const b = merged[i]
-    const { minX, maxX, minY, maxY, sumX, sumY } = b.pixels.reduce((acc, p) => ({
-      minX: Math.min(acc.minX, p.x),
-      maxX: Math.max(acc.maxX, p.x),
-      minY: Math.min(acc.minY, p.y),
-      maxY: Math.max(acc.maxY, p.y),
-      sumX: acc.sumX + p.x,
-      sumY: acc.sumY + p.y,
-    }), { minX: width, maxX: 0, minY: height, maxY: 0, sumX: 0, sumY: 0 })
-
-    const pixelCount = b.pixels.length
-    const centroidX = sumX / pixelCount
-    const centroidY = sumY / pixelCount
-    const spreadX = (maxX - minX) / width
-    const spreadY = (maxY - minY) / height
-
-    // Mirror X because camera preview is CSS-mirrored for user
-    const mirroredX = 1 - centroidX / width
-
-    // Arms up: top half has more motion than bottom, and there is enough top motion
-    const armsUp = b.topMotion > ARM_RAISE_THRESHOLD && b.topMotion > b.bottomMotion * 0.5
-
-    bodies.push({
-      id: i,
-      normalizedX: mirroredX,
-      normalizedY: centroidY / height,
-      spreadX,
-      spreadY,
-      pixelCount,
-      active: true,
-      armsUp,
-    })
-  }
-
-  return bodies
+  return blobs
 }
 
 function mergeBlobs(blobs: Blob[], mergeDist: number): Blob[] {
   if (blobs.length <= 1) return blobs
 
   const parents = new Array(blobs.length).fill(0).map((_, i) => i)
-
   function find(i: number): number {
     if (parents[i] !== i) parents[i] = find(parents[i])
     return parents[i]
   }
-
   function union(a: number, b: number): void {
-    const pa = find(a)
-    const pb = find(b)
+    const pa = find(a), pb = find(b)
     if (pa !== pb) parents[pa] = pb
   }
 
-  // Compute bounding boxes for quick distance check
-  const bboxes = blobs.map((b) => {
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
-    for (const p of b.pixels) {
-      minX = Math.min(minX, p.x)
-      maxX = Math.max(maxX, p.x)
-      minY = Math.min(minY, p.y)
-      maxY = Math.max(maxY, p.y)
-    }
-    return { minX, maxX, minY, maxY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 }
-  })
-
   for (let i = 0; i < blobs.length; i++) {
     for (let j = i + 1; j < blobs.length; j++) {
-      const bi = bboxes[i]
-      const bj = bboxes[j]
-      const dx = bi.cx - bj.cx
-      const dy = bi.cy - bj.cy
-      const dist = Math.sqrt(dx * dx + dy * dy)
-      if (dist < mergeDist) {
+      const dx = blobs[i].cx - blobs[j].cx
+      const dy = blobs[i].cy - blobs[j].cy
+      if (Math.sqrt(dx * dx + dy * dy) < mergeDist) {
         union(i, j)
       }
     }
   }
 
-  // Group by parent
   const groups = new Map<number, Blob[]>()
   for (let i = 0; i < blobs.length; i++) {
     const p = find(i)
@@ -228,16 +266,60 @@ function mergeBlobs(blobs: Blob[], mergeDist: number): Blob[] {
   }
 
   return Array.from(groups.values()).map((group) => {
-    const allPixels: Array<{ x: number; y: number }> = []
-    let topMotion = 0
-    let bottomMotion = 0
+    let cx = 0, cy = 0, topM = 0, botM = 0, count = 0
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
     for (const b of group) {
-      allPixels.push(...b.pixels)
-      topMotion += b.topMotion
-      bottomMotion += b.bottomMotion
+      cx += b.cx * b.pixelCount
+      cy += b.cy * b.pixelCount
+      topM += b.topMotion
+      botM += b.bottomMotion
+      count += b.pixelCount
+      minX = Math.min(minX, b.cx - b.spreadX * 24)
+      maxX = Math.max(maxX, b.cx + b.spreadX * 24)
+      minY = Math.min(minY, b.cy - b.spreadY * 18)
+      maxY = Math.max(maxY, b.cy + b.spreadY * 18)
     }
-    return { pixels: allPixels, topMotion, bottomMotion }
+    cx /= count
+    cy /= count
+    return {
+      cx,
+      cy,
+      spreadX: (maxX - minX) / 48,
+      spreadY: (maxY - minY) / 36,
+      topMotion: topM,
+      bottomMotion: botM,
+      pixelCount: count,
+    }
   })
+}
+
+function purgeLostBodies(now: number): void {
+  const { trackedBodies } = state!
+  for (const [id, body] of trackedBodies) {
+    if (now - body.lastSeen >= PERSISTENCE_TIMEOUT) {
+      trackedBodies.delete(id)
+    }
+  }
+}
+
+function buildMotionBodies(now: number): MotionBody[] {
+  const bodies: MotionBody[] = []
+  for (const [id, body] of state!.trackedBodies) {
+    // Only include bodies we have seen recently (within 150ms)
+    if (now - body.lastSeen > 150 && !body.armsUp) continue
+
+    bodies.push({
+      id,
+      normalizedX: body.x, // raw; renderer mirrors to match CSS-mirrored video
+      normalizedY: body.y,
+      spreadX: body.spreadX,
+      spreadY: body.spreadY,
+      pixelCount: 0,
+      active: true,
+      armsUp: body.armsUp,
+    })
+  }
+  return bodies
 }
 
 function scheduleNext(): void {
@@ -253,9 +335,7 @@ export function startMotionTracking(
   video: HTMLVideoElement,
   onBodies: (bodies: MotionBody[]) => void,
 ): void {
-  if (state) {
-    stopMotionTracking()
-  }
+  if (state) stopMotionTracking()
 
   const canvas = document.createElement('canvas')
   canvas.width = CANVAS_W
@@ -274,6 +354,8 @@ export function startMotionTracking(
     prevImageData: null,
     running: true,
     useVFC,
+    trackedBodies: new Map(),
+    nextId: 1,
   }
 
   if (useVFC) {

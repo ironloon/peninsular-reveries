@@ -1,7 +1,7 @@
 export type GamePhase = 'start' | 'playing' | 'celebrating' | 'end'
 
 export interface DragonState {
-  id: string
+  id: number
   x: number
   y: number
   scale: number

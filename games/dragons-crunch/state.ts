@@ -87,8 +87,8 @@ export function updateGame(
     .map((b) => ({
       x: b.normalizedX * stageWidth,
       y: (b.normalizedY - b.spreadY * 0.25) * stageHeight, // mouth is upper part of torso
-      lastChomp: state.dragons.find((d) => d.id === `body-${b.id}`)?.lastChomp ?? 0,
-      id: `body-${b.id}`,
+      lastChomp: state.dragons.find((d) => d.id === b.id)?.lastChomp ?? 0,
+      id: b.id,
       breathingFire: state.phase === 'celebrating',
     }))
 
@@ -165,9 +165,9 @@ export function updateGame(
 
   // Update dragon state for tracking cool-downs
   const dragons = bodies.map((b) => {
-    const prev = state.dragons.find((d) => d.id === `body-${b.id}`)
+    const prev = state.dragons.find((d) => d.id === b.id)
     return {
-      id: `body-${b.id}`,
+      id: b.id,
       x: b.normalizedX * stageWidth,
       y: b.normalizedY * stageHeight,
       scale: 0.5 + b.spreadY * 1.5,

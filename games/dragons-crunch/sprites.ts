@@ -98,139 +98,69 @@ export function buildSprite(
   return { container, parts, nativeBounds }
 }
 
-// ── Dragon head only ──────────────────────────────────────────────────────
-// Big menacing head that covers the player's head in AR.
-// Silhouette-driven: long snout, heavy brow, back-curving horns,
-// spiky crest, glowing slit eyes, full mouth of teeth.
-// Jaw opens for chomp, jaw snaps shut.
+// ── Side-profile direwolf-inspired dragon head ───────────────────────────────
+// Jagged silhouette, right-facing, very few parts, limited palette.
+// Inspired by Game of Thrones Stark direwolf sigil: angular, spiky fur,
+// long snout, sharp fangs, glowing red eye. The jaw opens DRAMATICALLY.
 
 export const dragonModel: Model = {
   name: 'dragon-head',
   palette: {
-    base: '#1e2e1e',
-    belly: '#3a4a32',
-    accent: '#121a12',
-    eye: '#ff4422',
-    pupil: '#0a0000',
-    tooth: '#d8d0c0',
+    base: '#1a2a1a',
+    eye: '#ff3300',
+    tooth: '#e0d8c8',
+    maw: '#0a0a0a',
     shadow: '#0c140c',
-    highlight: '#4a5a3e',
   },
   root: {
     name: 'root',
     children: [
-      // ── Crest spikes (back of head) ──
+      // ── Skull / upper head ──
+      // Large jagged-silhouette shape: spiky crest along top, long tapering snout,
+      // sharp cheek, throat tapers back.
       {
-        name: 'crest',
-        offset: [0, -18],
+        name: 'skull',
         shapes: [
-          { kind: 'polygon', points: [-8, 0, -14, -10, -6, -2], fill: 'accent' },
-          { kind: 'polygon', points: [-2, -2, -6, -14, 2, -2], fill: 'accent' },
-          { kind: 'polygon', points: [6, -2, 2, -14, 10, -2], fill: 'accent' },
-          { kind: 'polygon', points: [12, 0, 8, -10, 16, 0], fill: 'accent' },
-        ],
-      },
-      // ── Horns (back-curving) ──
-      {
-        name: 'leftHorn',
-        offset: [-14, -14],
-        shapes: [
-          { kind: 'polygon', points: [0, 0, -16, -14, -6, 4], fill: 'accent' },
-          { kind: 'polygon', points: [-2, -2, -10, -8, -4, 2], fill: 'shadow', alpha: 0.3 },
-        ],
-      },
-      {
-        name: 'rightHorn',
-        offset: [14, -14],
-        shapes: [
-          { kind: 'polygon', points: [0, 0, 16, -14, 6, 4], fill: 'accent' },
-          { kind: 'polygon', points: [2, -2, 10, -8, 4, 2], fill: 'shadow', alpha: 0.3 },
-        ],
-      },
-      // ── Main head shape ──
-      {
-        name: 'head',
-        shapes: [
-          // Big triangular skull with flat top, pointy cheeks, long taper to snout
-          { kind: 'polygon', points: [-16, -12, 16, -12, 20, 4, 14, 18, -14, 18, -20, 4], fill: 'base' },
-          // Cheek scales (subtle)
-          { kind: 'ellipse', x: -10, y: 6, rx: 4, ry: 2.5, fill: 'shadow', alpha: 0.25 },
-          { kind: 'ellipse', x: 10, y: 6, rx: 4, ry: 2.5, fill: 'shadow', alpha: 0.25 },
-          { kind: 'ellipse', x: -6, y: 10, rx: 3, ry: 1.8, fill: 'shadow', alpha: 0.2 },
-          { kind: 'ellipse', x: 6, y: 10, rx: 3, ry: 1.8, fill: 'shadow', alpha: 0.2 },
+          // Back of neck - rises sharply then crest spikes
+          { kind: 'polygon', points: [-10, 12, -14, 4, -18, -2, -14, -10, -16, -18, -8, -16, -6, -22, 0, -18, 4, -24, 8, -18, 12, -20, 14, -14, 18, -12, 20, -6, 22, 0, 24, 6, 22, 10, 18, 12, 14, 10, 10, 14, 6, 12, 2, 14, -2, 12, -6, 14], fill: 'base' },
+          // Dark maw (inside mouth area, behind upper teeth)
+          { kind: 'polygon', points: [6, -2, 18, -2, 16, 6, 14, 8, 10, 6, 8, 4], fill: 'maw', alpha: 0.7 },
+          // Upper teeth (in front)
+          { kind: 'polygon', points: [10, 0, 11, 6, 12, 0], fill: 'tooth' },
+          { kind: 'polygon', points: [14, -1, 15, 8, 16, -1], fill: 'tooth' },
+          { kind: 'polygon', points: [18, 0, 19, 5, 20, 0], fill: 'tooth' },
+          { kind: 'polygon', points: [8, 2, 9, 5, 10, 2], fill: 'tooth' },
+          { kind: 'polygon', points: [12, 1, 13, 7, 14, 1], fill: 'tooth' },
         ],
         children: [
-          // Heavy brow ridge (covers top of eyes, adds menace)
+          // Eye: small red slit visible from side, buried under heavy brow
           {
-            name: 'brow',
-            offset: [0, -4],
-            shapes: [
-              { kind: 'polygon', points: [-14, -2, -6, -6, 6, -6, 14, -2, 12, 2, -12, 2], fill: 'accent' },
-            ],
-          },
-          // Angry slit eyes
-          {
-            name: 'leftEye',
+            name: 'eye',
             role: 'blink',
-            offset: [-8, 2],
+            offset: [2, -8],
             shapes: [
-              { kind: 'polygon', points: [-5, -1, 1, -1, 1, 3, -5, 3], fill: 'eye' },
-              { kind: 'rect', x: -3, y: 0.5, w: 3, h: 1.2, fill: 'pupil' },
-            ],
-          },
-          {
-            name: 'rightEye',
-            role: 'blink',
-            offset: [8, 2],
-            shapes: [
-              { kind: 'polygon', points: [-1, -1, 5, -1, 5, 3, -1, 3], fill: 'eye' },
-              { kind: 'rect', x: -0.5, y: 0.5, w: 3, h: 1.2, fill: 'pupil' },
-            ],
-          },
-          // Nostril slits (on snout bridge)
-          {
-            name: 'nostrils',
-            offset: [0, 8],
-            shapes: [
-              { kind: 'ellipse', x: -3, y: 0, rx: 1.2, ry: 0.6, fill: 'shadow', alpha: 0.5 },
-              { kind: 'ellipse', x: 3, y: 0, rx: 1.2, ry: 0.6, fill: 'shadow', alpha: 0.5 },
+              { kind: 'polygon', points: [-3, -1, 2, -1, 2, 2, -3, 1], fill: 'eye' },
+              { kind: 'rect', x: -1, y: 0, w: 2, h: 0.8, fill: 'shadow' },
             ],
           },
         ],
       },
-      // ── Upper jaw / snout (lots of teeth, chomp area) ──
+      // ── Lower jaw ──
+      // Big powerful jaw that drops wide. Lots of lower teeth.
       {
-        name: 'upperJaw',
-        offset: [0, 14],
-        shapes: [
-          { kind: 'polygon', points: [-14, -4, 14, -4, 18, 8, 0, 14, -18, 8], fill: 'base' },
-          // Upper teeth (many small sharp ones)
-          { kind: 'polygon', points: [-12, 4, -11, 10, -10, 4], fill: 'tooth' },
-          { kind: 'polygon', points: [-8, 5, -7, 11, -6, 5], fill: 'tooth' },
-          { kind: 'polygon', points: [-4, 5, -3, 11, -2, 5], fill: 'tooth' },
-          { kind: 'polygon', points: [0, 5, 1, 11, 2, 5], fill: 'tooth' },
-          { kind: 'polygon', points: [4, 5, 5, 11, 6, 5], fill: 'tooth' },
-          { kind: 'polygon', points: [8, 5, 9, 11, 10, 5], fill: 'tooth' },
-          { kind: 'polygon', points: [12, 4, 13, 10, 14, 4], fill: 'tooth' },
-          // Inner mouth (darker)
-          { kind: 'polygon', points: [-10, -2, 10, -2, 12, 4, -12, 4], fill: 'shadow', alpha: 0.5 },
-        ],
-      },
-      // ── Lower jaw (opens wide for chomp) ──
-      {
-        name: 'lowerJaw',
+        name: 'jaw',
         role: 'chomp',
-        offset: [0, 22],
+        offset: [4, 10],
         shapes: [
-          { kind: 'polygon', points: [-12, -2, 12, -2, 8, 8, -8, 8], fill: 'accent' },
-          // Lower teeth pointing up
-          { kind: 'polygon', points: [-9, -2, -8, -8, -7, -2], fill: 'tooth' },
-          { kind: 'polygon', points: [-4, -2, -3, -9, -2, -2], fill: 'tooth' },
-          { kind: 'polygon', points: [0, -2, 1, -9, 2, -2], fill: 'tooth' },
-          { kind: 'polygon', points: [4, -2, 5, -9, 6, -2], fill: 'tooth' },
-          { kind: 'polygon', points: [9, -2, 10, -8, 11, -2], fill: 'tooth' },
-          // Tongue
-          { kind: 'ellipse', x: 0, y: 3, rx: 5, ry: 2, fill: 'belly', alpha: 0.5 },
+          // Jaw body
+          { kind: 'polygon', points: [-6, -4, 10, -4, 16, 0, 14, 6, 10, 10, 4, 8, 0, 10, -4, 6, -8, 0], fill: 'base' },
+          // Lower teeth pointing UP (in front)
+          { kind: 'polygon', points: [0, -4, 1, -10, 2, -4], fill: 'tooth' },
+          { kind: 'polygon', points: [4, -4, 5, -11, 6, -4], fill: 'tooth' },
+          { kind: 'polygon', points: [8, -4, 9, -9, 10, -4], fill: 'tooth' },
+          { kind: 'polygon', points: [12, -3, 13, -7, 14, -3], fill: 'tooth' },
+          // Tongue (visible when open)
+          { kind: 'ellipse', x: 2, y: 2, rx: 5, ry: 2, fill: 'maw', alpha: 0.5 },
         ],
       },
     ],

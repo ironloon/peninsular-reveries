@@ -2,21 +2,21 @@ import { Container, Ticker } from 'pixi.js'
 import { getDragonParts } from './renderer.js'
 import { isReducedMotionEnabled } from '../../client/preferences.js'
 
-interface ChompAnimation {
+interface ChompAnim {
   openAmount: number
   targetOpen: number
   elapsed: number
   durationMs: number
 }
 
-interface FireAnimation {
+interface FireAnim {
   intensity: number
   targetIntensity: number
   elapsed: number
 }
 
-const chompAnims = new Map<Container, ChompAnimation>()
-const fireAnims = new Map<Container, FireAnimation>()
+const chompAnims = new Map<Container, ChompAnim>()
+const fireAnims = new Map<Container, FireAnim>()
 let tickerInitialized = false
 
 function easeOutBack(t: number): number {
@@ -31,7 +31,7 @@ function initTicker(): void {
   Ticker.shared.add((ticker) => {
     const delta = ticker.deltaMS
 
-    // Chomp tweens (jaw opens wide)
+    // Chomp: jaw drops DRAMATICALLY open
     for (const [container, anim] of chompAnims) {
       anim.elapsed += delta
       const progress = Math.min(anim.elapsed / anim.durationMs, 1)
@@ -44,22 +44,20 @@ function initTicker(): void {
         continue
       }
 
-      parts.lowerJaw.y = parts.rest.lowerJawY + anim.openAmount * 18
-      // Head tilts back slightly on chomp
-      parts.head.rotation = -anim.openAmount * 0.08
-      // Brow furrows
-      parts.brow.y = -anim.openAmount * 2
+      // Jaw drops way down for dramatic bite
+      parts.jaw.y = parts.rest.jawY + anim.openAmount * 28
+      // Skull tilts back as mouth opens wide
+      parts.skull.rotation = -anim.openAmount * 0.12
 
       if (progress >= 1) {
         chompAnims.delete(container)
         // Snap shut
-        parts.lowerJaw.y = parts.rest.lowerJawY
-        parts.head.rotation = 0
-        parts.brow.y = 0
+        parts.jaw.y = parts.rest.jawY
+        parts.skull.rotation = 0
       }
     }
 
-    // Fire breathing (head shakes slightly, jaw quivers)
+    // Fire breathing: jaw quivers, skull shakes
     for (const [container, anim] of fireAnims) {
       anim.elapsed += delta
       const parts = getDragonParts(container)
@@ -68,11 +66,9 @@ function initTicker(): void {
         continue
       }
 
-      const shake = Math.sin(anim.elapsed * 0.012) * 0.04 * anim.targetIntensity
-      parts.head.rotation = shake
-      parts.lowerJaw.y = parts.rest.lowerJawY + Math.abs(Math.sin(anim.elapsed * 0.02)) * 3 * anim.targetIntensity
-      // Crest wiggle
-      parts.crest.rotation = Math.sin(anim.elapsed * 0.015) * 0.08 * anim.targetIntensity
+      const shake = Math.sin(anim.elapsed * 0.014) * 0.05 * anim.targetIntensity
+      parts.skull.rotation = shake
+      parts.jaw.y = parts.rest.jawY + Math.abs(Math.sin(anim.elapsed * 0.025)) * 5 * anim.targetIntensity
     }
   })
 }
@@ -87,7 +83,7 @@ export function animateChomp(container: Container): void {
     openAmount: 0,
     targetOpen: 1,
     elapsed: 0,
-    durationMs: 220,
+    durationMs: 260,
   })
   initTicker()
 }
@@ -110,27 +106,23 @@ export function stopFireBreathing(container: Container): void {
   fireAnims.delete(container)
   const parts = getDragonParts(container)
   if (!parts) return
-  parts.head.rotation = 0
-  parts.lowerJaw.y = parts.rest.lowerJawY
-  parts.crest.rotation = 0
+  parts.skull.rotation = 0
+  parts.jaw.y = parts.rest.jawY
 }
 
 export function animateIdle(container: Container, t: number, index: number): void {
   const parts = getDragonParts(container)
   if (!parts) return
 
-  // Subtle breathing: head bobs slightly
-  const breathe = Math.sin(t * 2 + index * 1.2) * 0.02
-  parts.head.y = parts.rest.headY + breathe * 3
-  parts.upperJaw.y = 14 + breathe * 2
-  parts.lowerJaw.y = parts.rest.lowerJawY + breathe * 1.5
-  parts.crest.rotation = Math.sin(t * 1.5 + index * 0.8) * 0.04
+  // Subtle breathing: skull bobs slightly
+  const breathe = Math.sin(t * 2.2 + index * 1.3) * 0.015
+  parts.skull.y = breathe * 3
+  parts.jaw.y = parts.rest.jawY + breathe * 2
 }
 
 export function animateBlink(container: Container, open: boolean): void {
   const parts = getDragonParts(container)
   if (!parts) return
-  const scaleY = open ? 1 : 0.15
-  parts.leftEye.scale.y = scaleY
-  parts.rightEye.scale.y = scaleY
+  const scaleY = open ? 1 : 0.12
+  parts.eye.scale.y = scaleY
 }
