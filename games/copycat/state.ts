@@ -156,9 +156,9 @@ export function progressSong(state: DanceState, deltaMs: number): DanceState {
     songProgress: newProgress,
   }
 
-  const expectedCatCount = 1 + state.config.thresholds.filter((t) => newProgress >= t).length
+  const expectedDancerCount = 1 + state.config.thresholds.filter((t) => newProgress >= t).length
 
-  while (result.cats.length < expectedCatCount) {
+  while (result.cats.length < expectedDancerCount) {
     result = spawnCat(result)
   }
 
@@ -173,8 +173,8 @@ export function completeDance(state: DanceState): DanceState {
 }
 
 export function spawnCat(state: DanceState): DanceState {
-  const catCount = state.cats.length + 1
-  const delayMs = state.config.catDelayMs * (catCount - 1)
+  const dancerCount = state.cats.length + 1
+  const delayMs = state.config.catDelayMs * (dancerCount - 1)
   const newCat: Cat = {
     id: `cat-${state.cats.length}`,
     x: 0,

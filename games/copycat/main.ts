@@ -19,7 +19,7 @@ const replayBtn = document.getElementById('replay-btn') as HTMLButtonElement
 const cameraPrompt = document.querySelector('.copycat-camera-prompt') as HTMLElement
 const roundDisplay = document.getElementById('round-display')!
 const progressDisplay = document.getElementById('progress-display')!
-const catCountDisplay = document.getElementById('cat-count')!
+const dancerCountDisplay = document.getElementById('dancer-count')!
 const poseIndicator = document.getElementById('pose-indicator')!
 const gameStatus = document.getElementById('game-status')!
 const gameFeedback = document.getElementById('game-feedback')!
@@ -56,7 +56,7 @@ let catContainers: Container[] = []
 let currentPose: Pose = 'idle'
 let cameraGranted = false
 let gameLoopCallback: ((ticker: Ticker) => void) | null = null
-let prevCatCount = 0
+let prevDancerCount = 0
 let lastAnnouncedPose: Pose | null = null
 const announcedMilestones = new Set<number>()
 
@@ -169,14 +169,14 @@ function beginRound(): void {
 
   danceState = startRound(danceState)
   currentPose = 'idle'
-  prevCatCount = 1
+  prevDancerCount = 1
   lastAnnouncedPose = null
   announcedMilestones.clear()
   roundBreakOverlay.hidden = true
 
   roundDisplay.textContent = `Round ${danceState.round}/${danceState.maxRounds}`
   progressDisplay.textContent = 'Progress: 0%'
-  catCountDisplay.textContent = 'Cats: 1'
+  dancerCountDisplay.textContent = 'Dancers: 1'
   gameStatus.textContent = `Round ${danceState.round} — Strike a pose!`
 
   // Reset visual cats
@@ -218,14 +218,14 @@ function beginRound(): void {
     const cappedDeltaMs = Math.min(deltaMs, 100)
     danceState = progressSong(danceState, cappedDeltaMs)
 
-    if (danceState.cats.length > prevCatCount) {
-      for (let i = prevCatCount; i < danceState.cats.length; i++) {
+    if (danceState.cats.length > prevDancerCount) {
+      for (let i = prevDancerCount; i < danceState.cats.length; i++) {
         const newAnimal = createAnimal(getAnimalKind(i))
         app.stage.addChild(newAnimal)
         catContainers.push(newAnimal)
       }
       layoutCats(catContainers, app.screen.width, app.screen.height)
-      for (let i = prevCatCount; i < danceState.cats.length; i++) {
+      for (let i = prevDancerCount; i < danceState.cats.length; i++) {
         const container = catContainers[i]
         const targetX = container.x
         // Dance-crew side entry: alternate from left/right
@@ -234,9 +234,9 @@ function beginRound(): void {
         animateCatJoin(container, fromX, targetX)
         sfxCatJoin()
       }
-      gameFeedback.textContent = `Cat ${danceState.cats.length} joined the crew!`
+      gameFeedback.textContent = `Dancer ${danceState.cats.length} joined the crew!`
       announceCatJoin(danceState.cats.length - 1)
-      prevCatCount = danceState.cats.length
+      prevDancerCount = danceState.cats.length
     }
 
     let didPoseChange = false
@@ -298,7 +298,7 @@ function beginRound(): void {
     }
 
     progressDisplay.textContent = `Progress: ${Math.floor(danceState.songProgress * 100)}%`
-    catCountDisplay.textContent = `Cats: ${danceState.cats.length}`
+    dancerCountDisplay.textContent = `Dancers: ${danceState.cats.length}`
 
     if (danceState.songProgress >= 1 && danceState.phase !== 'complete') {
       danceState = completeDance(danceState)
@@ -543,7 +543,7 @@ function resetToStart(): void {
 
   danceState = createInitialState()
   currentPose = 'idle'
-  prevCatCount = 0
+  prevDancerCount = 0
   lastAnnouncedPose = null
   announcedMilestones.clear()
 
