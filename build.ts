@@ -30,6 +30,7 @@ const swFiles = [
   'copycat/sw.js',
   'dragons-crunch/sw.js',
   'mudskipper/sw.js',
+  'tuna-piano/sw.js',
 ]
 for (const swFile of swFiles) {
   const swPath = join(outputDir, swFile)
@@ -56,6 +57,7 @@ mkdirSync(join(outputDir, 'client', 'spot-on'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'copycat'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'dragons-crunch'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'mudskipper'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'tuna-piano'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -104,6 +106,7 @@ await esbuild.build({
     'games/copycat/main.ts',
     'games/dragons-crunch/main.ts',
     'games/mudskipper/main.ts',
+    'games/tuna-piano/main.ts',
   ],
   bundle: true,
   outbase: 'games',
@@ -148,6 +151,8 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/dragons-crunch/info/', outPath: 'dragons-crunch/info/index.html' },
   { url: 'http://localhost/mudskipper/', outPath: 'mudskipper/index.html' },
   { url: 'http://localhost/mudskipper/info/', outPath: 'mudskipper/info/index.html' },
+  { url: 'http://localhost/tuna-piano/', outPath: 'tuna-piano/index.html' },
+  { url: 'http://localhost/tuna-piano/info/', outPath: 'tuna-piano/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -216,6 +221,7 @@ const pages: Record<string, string[]> = {
   copycat: ['copycat/index.html', 'styles/copycat.css', 'client/shell.js', 'client/copycat/main.js'],
   'dragons-crunch': ['dragons-crunch/index.html', 'styles/dragons-crunch.css', 'client/shell.js', 'client/dragons-crunch/main.js'],
   mudskipper: ['mudskipper/index.html', 'styles/mudskipper.css', 'client/shell.js', 'client/mudskipper/main.js'],
+  'tuna-piano': ['tuna-piano/index.html', 'styles/tuna-piano.css', 'client/shell.js', 'client/tuna-piano/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 

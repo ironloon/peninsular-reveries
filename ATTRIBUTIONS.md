@@ -633,3 +633,21 @@
 - Summary: Become a mudskipper! Jump in front of your camera and watch your mudskipper leap through the mud. Keep jumping before the mud fills the whole screen!
 
 - No attribution entries recorded.
+
+### Tuna Piano
+
+- Slug: tuna-piano
+- Code license: GPL-3.0
+- Summary: Play a translucent piano with your hands using the camera. Open hand plays a note, closed hand sustains it. Hold a closed hand on the tuna fish to return home.
+
+#### Entries
+
+##### PixiJS
+
+- Type: other
+- Used in: Tuna Piano game rendering via PixiJS
+- Creator: PixiJS Contributors
+- Source: https://pixijs.com/ (https://pixijs.com/)
+- License: MIT
+- Modifications: Not applicable
+- Notes: 2D WebGL rendering engine used for the game stage.

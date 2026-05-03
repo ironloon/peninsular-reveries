@@ -18,6 +18,7 @@ export const routes = route({
   copycatInfo: '/copycat/info/',
   dragonsCrunchInfo: '/dragons-crunch/info/',
   mudskipperInfo: '/mudskipper/info/',
+  tunaPianoInfo: '/tuna-piano/info/',
   missionOrbit: '/mission-orbit/',
   superWord: '/super-word/',
   chompers: '/chompers/',
@@ -32,5 +33,6 @@ export const routes = route({
   copycat: '/copycat/',
   dragonsCrunch: '/dragons-crunch/',
   mudskipper: '/mudskipper/',
+  tunaPiano: '/tuna-piano/',
   notFound: '/404.html',
 })

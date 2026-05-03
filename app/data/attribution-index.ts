@@ -26,6 +26,8 @@ import { dragonsCrunchAttribution } from '../../games/dragons-crunch/attribution
 import { dragonsCrunchInfo } from '../../games/dragons-crunch/info.js'
 import { mudskipperAttribution } from '../../games/mudskipper/attributions.js'
 import { mudskipperInfo } from '../../games/mudskipper/info.js'
+import { tunaPianoAttribution } from '../../games/tuna-piano/attributions.js'
+import { tunaPianoInfo } from '../../games/tuna-piano/info.js'
 import type { GameAttribution, GameInfo } from './attribution-types.js'
 import { attributionsPagePath, repositoryCodeLicense } from './attribution-types.js'
 
@@ -51,6 +53,7 @@ const gameEntries: readonly { attribution: GameAttribution; info: GameInfo }[] =
   { attribution: copycatAttribution, info: copycatInfo },
   { attribution: dragonsCrunchAttribution, info: dragonsCrunchInfo },
   { attribution: mudskipperAttribution, info: mudskipperInfo },
+  { attribution: tunaPianoAttribution, info: tunaPianoInfo },
 ]
 
 export const gameAttributions: readonly GameAttributionWithInfo[] = gameEntries.map(

@@ -1,0 +1,312 @@
+/* Tuna Piano — camera-based translucent piano game
+ * Viewport checkpoints: 390x844, 844x390, 1024x768, 1280x800.
+ */
+
+body.tuna-piano-game {
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-title: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --bg: #0a1628;
+  --text: #e0e0e0;
+  --muted: rgba(224, 224, 224, 0.65);
+  --panel: rgba(10, 22, 40, 0.82);
+  --panel-strong: rgba(16, 32, 56, 0.92);
+  --line: rgba(224, 224, 224, 0.14);
+  --accent: #5c9ead;
+  --accent-warm: #ffd54f;
+  --accent-glow: rgba(92, 158, 173, 0.2);
+  --hud-bg: rgba(10, 22, 40, 0.85);
+
+  min-height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+}
+
+body.tuna-piano-game main {
+  overflow: hidden;
+}
+
+/* ── Scene track ────────────────────────────────────────────── */
+
+.scene-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a1628 0%, #0d2137 40%, #0a1628 100%);
+}
+
+/* ── Screen panels ──────────────────────────────────────────── */
+
+.tp-screen-panel {
+  width: min(100%, 78rem);
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(0.8rem, 2vw, 1.4rem);
+  padding:
+    max(1rem, env(safe-area-inset-top, 0px))
+    max(1rem, env(safe-area-inset-right, 0px))
+    max(1rem, env(safe-area-inset-bottom, 0px))
+    max(1rem, env(safe-area-inset-left, 0px));
+  box-sizing: border-box;
+}
+
+.tp-start-panel {
+  align-content: center;
+  min-height: 100dvh;
+  text-align: center;
+}
+
+.tp-game-panel {
+  min-height: 100dvh;
+  grid-template-rows: 1fr;
+}
+
+/* ── Header ─────────────────────────────────────────────────── */
+
+.tp-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+}
+
+.tp-title {
+  margin: 0;
+  font-family: var(--font-title);
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  text-shadow:
+    0 0 6px color-mix(in srgb, var(--accent) 70%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent) 50%, transparent),
+    0 0 38px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* ── Menu button ───────────────────────────────────────────── */
+
+.tp-menu-btn {
+  appearance: none;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.6rem 1rem;
+  border-radius: 0.8rem;
+  border: 1px solid var(--line);
+  background: var(--panel-strong);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.tp-menu-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* ── Subtitle & prompts ────────────────────────────────────── */
+
+.tp-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(1rem, 2.2vw, 1.25rem);
+}
+
+.tp-camera-prompt {
+  color: var(--muted);
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+}
+
+.tp-camera-prompt p {
+  margin: 0;
+}
+
+/* ── Primary button ─────────────────────────────────────────── */
+
+.tp-primary-btn {
+  appearance: none;
+  font-family: var(--font-title);
+  font-size: clamp(1.1rem, 2.4vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.9rem 2rem;
+  border-radius: 1rem;
+  border: 0;
+  cursor: pointer;
+  color: var(--bg);
+  background: var(--accent);
+  box-shadow: 0 0 1.4rem var(--accent);
+  transition: transform 120ms ease-out, filter 160ms ease-out;
+}
+
+.tp-primary-btn:hover {
+  filter: brightness(1.15);
+}
+
+.tp-primary-btn:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.tp-primary-btn:active {
+  transform: scale(0.97);
+}
+
+/* ── Pose list on start screen ────────────────────────────── */
+
+.tp-pose-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  max-width: min(100%, 28rem);
+  margin: 0 auto;
+}
+
+.tp-pose-list-title {
+  font-size: clamp(0.75rem, 1.6vw, 0.85rem);
+  font-weight: 600;
+  color: var(--muted);
+  margin: 0;
+}
+
+.tp-pose-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.tp-pose-chip {
+  font-size: clamp(0.7rem, 1.4vw, 0.8rem);
+  padding: 0.25rem 0.55rem;
+  border-radius: 1rem;
+  background: var(--panel-strong);
+  color: var(--text);
+  border: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+/* ── Camera floor ─────────────────────────────────────────────── */
+
+.tp-camera-floor {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--line);
+  background: var(--panel);
+}
+
+#camera-preview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+  border-radius: inherit;
+  z-index: 1;
+}
+
+#pixi-stage,
+.tp-camera-floor {
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+#pixi-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+}
+
+#pixi-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+
+/* ── Controls help ──────────────────────────────────────────── */
+
+.tp-controls-help {
+  display: grid;
+  gap: 0.5rem;
+  color: var(--muted);
+}
+
+.tp-controls-help kbd {
+  font-family: ui-monospace, "SFMono-Regular", "Cascadia Mono", Menlo, monospace;
+  font-size: 0.9em;
+  padding: 0.05rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 0.3rem;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Noscript ──────────────────────────────────────────────── */
+
+.noscript-message {
+  margin: 2rem auto;
+  max-width: 36rem;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--panel);
+  color: var(--text);
+  text-align: center;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+
+@media (orientation: landscape) and (max-height: 480px) {
+  .tp-game-panel {
+    gap: 0.4rem;
+  }
+
+  .tp-header {
+    padding: 0.4rem 0.7rem;
+  }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  body.tuna-piano-game .screen {
+    transition-duration: 0ms;
+  }
+
+  .tp-primary-btn,
+  .tp-btn,
+  .tp-menu-btn {
+    transition: none;
+  }
+}
+
+body.tuna-piano-game[data-reduce-motion="true"] .screen {
+  transition-duration: 0ms;
+}
+
+body.tuna-piano-game[data-reduce-motion="true"] .tp-primary-btn,
+body.tuna-piano-game[data-reduce-motion="true"] .tp-btn,
+body.tuna-piano-game[data-reduce-motion="true"] .tp-menu-btn {
+  transition: none;
+}

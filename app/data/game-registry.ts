@@ -106,4 +106,11 @@ export const games: GameEntry[] = [
     icon: '🐟',
     status: 'live',
   },
+  {
+    slug: 'tuna-piano',
+    name: 'Tuna Piano',
+    description: 'Play a translucent piano with your camera. Open hand taps a key, closed hand sustains it. Hold the tuna to go home.',
+    icon: '🎹',
+    status: 'live',
+  },
 ]
