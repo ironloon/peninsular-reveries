@@ -695,3 +695,21 @@
 - License: W3C Community License
 - Modifications: Not applicable
 - Notes: Built-in browser API used for text-to-speech. No external service required.
+
+### Block Attack
+
+- Slug: block-attack
+- Code license: GPL-3.0
+- Summary: Smash procedurally generated block towers using your camera! Move to destroy the city like a tiny chaos agent.
+
+#### Entries
+
+##### PixiJS
+
+- Type: other
+- Used in: Block Attack game rendering via PixiJS
+- Creator: PixiJS Contributors
+- Source: https://pixijs.com/ (https://pixijs.com/)
+- License: MIT
+- Modifications: Not applicable
+- Notes: 2D WebGL rendering engine used for the game stage.
