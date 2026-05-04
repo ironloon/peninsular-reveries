@@ -50,6 +50,7 @@ const gameCtx = await esbuild.context({
     'games/spot-on/main.ts',
     'games/copycat/main.ts',
     'games/mudskipper/main.ts',
+    'games/block-attack/main.ts',
   ],
   bundle: true,
   outbase: 'games',

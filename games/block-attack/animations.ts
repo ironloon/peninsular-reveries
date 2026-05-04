@@ -1,0 +1,1 @@
+// Animations placeholder — block destruction visuals are driven by state + renderer

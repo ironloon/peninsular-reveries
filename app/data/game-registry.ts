@@ -134,4 +134,11 @@ export const games: GameEntry[] = [
     icon: '🚂',
     status: 'live',
   },
+  {
+    slug: 'block-attack',
+    name: 'Block Attack',
+    description: 'Smash procedurally generated block towers using your camera! Destroy everything in your path like a tiny chaos agent.',
+    icon: '💥',
+    status: 'live',
+  },
 ]
