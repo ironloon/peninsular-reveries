@@ -14,6 +14,7 @@ export default [
       'public/**/sw.js',
       'public/sw.js',
       'test-results/**',
+      'tmp/**',
     ],
   },
   js.configs.recommended,

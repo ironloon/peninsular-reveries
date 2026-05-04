@@ -135,7 +135,8 @@ export function spawnWave(state: GameState, stageWidth: number, stageHeight: num
   const numTowers = Math.min(MAX_TOWERS_PER_WAVE, state.blocksPerWave)
   const allBlocks = [...state.blocks]
   const allTowers = [...state.towers]
-  const existingActiveTowers = allTowers.filter(t => !t.destroyed).length
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _existingActiveTowers = allTowers.filter(t => !t.destroyed).length
 
   for (let i = 0; i < numTowers; i++) {
     const { blocks: newBlocks, tower } = generateTower(stageWidth, stageHeight, i, numTowers)
@@ -196,8 +197,6 @@ export function updateGame(
 
   if (bodyPositions.length > 0 && smashCooldown <= 0) {
     for (const bp of bodyPositions) {
-      const smashWidth = Math.max(bp.spreadX * 0.5, 50)
-      const smashHeight = Math.max(bp.spreadY * 0.3, 40)
 
       for (let i = 0; i < blocks.length; i++) {
         const block = blocks[i]
@@ -347,7 +346,7 @@ export function updateGame(
   particles = updateParticles(particles, dt)
 
   // ── Wave progression ──────────────────────────────────────────────
-  let waveTime = state.waveTime + deltaMs
+  const waveTime = state.waveTime + deltaMs
   const gameTime = state.gameTime + deltaMs
 
   // Auto-spawn new wave when all towers destroyed or few blocks left

@@ -7,15 +7,15 @@ import {
 } from './renderer.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
-import { createInitialState, startGame, spawnWave, updateGame, forceEnd } from './state.js'
+import { createInitialState, startGame, spawnWave, updateGame } from './state.js'
 import type { GameState, MotionBody } from './types.js'
 import { setupBlockAttackInput } from './input.js'
 import {
   announceWave, announceScore, announceBlocksDestroyed, announceCombo,
-  announceTowerDown, announceGameOver, announceReturnToStart,
+  announceTowerDown, announceReturnToStart,
 } from './accessibility.js'
 import {
-  sfxBlockHit, sfxBigSmash, sfxWaveStart, sfxGameOver, setMuted, startActionMusic, stopActionMusic, sfxCombo, ensureAudioUnlocked,
+  sfxBlockHit, sfxBigSmash, sfxWaveStart, setMuted, startActionMusic, stopActionMusic, sfxCombo, ensureAudioUnlocked,
 } from './sounds.js'
 
 // Home path for quit navigation
@@ -34,7 +34,7 @@ const scoreDisplay = document.getElementById('score-display')!
 const waveDisplay = document.getElementById('wave-display')!
 const comboDisplay = document.getElementById('combo-display')!
 const gameStatus = document.getElementById('game-status')!
-const endScoreMsg = document.getElementById('end-score-msg')!
+// endScoreMsg element exists in DOM but is written to in reset/start flow
 
 const ALL_SCREENS = ['start-screen', 'game-screen', 'end-screen']
 
@@ -64,7 +64,8 @@ let gameLoopCallback: ((ticker: Ticker) => void) | null = null
 let lastAnnouncedScore = -1
 let lastAnnouncedWave = -1
 let lastCombo = 0
-let towersLeftLastWave = 0
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+let _towersLeftLastWave = 0
 let needsNewWave = true
 
 const blockContainers = new Map<string, Container>()
@@ -165,7 +166,7 @@ async function enterGame(): Promise<void> {
   lastAnnouncedScore = -1
   lastAnnouncedWave = -1
   lastCombo = 0
-  towersLeftLastWave = 0
+  _towersLeftLastWave = 0
   needsNewWave = true
 
   if (!cameraGranted) {
@@ -456,7 +457,7 @@ function resetToStart(): void {
   lastAnnouncedScore = -1
   lastAnnouncedWave = -1
   lastCombo = 0
-  towersLeftLastWave = 0
+  _towersLeftLastWave = 0
   needsNewWave = true
   mouseDemoActive = false
   stopMouseDemo()
