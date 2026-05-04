@@ -158,6 +158,15 @@ export function sfxStart(): void {
   }
 }
 
+// ── Turbo bounce: energetic burst ──
+export function sfxTurboBounce(): void {
+  if (globalMuted) return
+  playTone(523, 0.1, 'square', 0.1)
+  playTone(659, 0.1, 'sine', 0.12, 0.05)
+  playTone(784, 0.15, 'sine', 0.08, 0.1)
+  playTone(1047, 0.15, 'triangle', 0.06, 0.15)
+}
+
 // ── Speech synthesis for "All Aboard!" ──
 let speechEnabled = true
 

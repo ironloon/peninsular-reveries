@@ -24,6 +24,10 @@ export function announceTrip(trips: number): void {
   announcePolite(`Trip ${trips} complete!`)
 }
 
+export function announceBounce(): void {
+  announceAssertive('Turbo boost! Bouncing!')
+}
+
 export function announceReturnToStart(): void {
   announcePolite('Returned to start screen.')
 }

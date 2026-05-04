@@ -3,11 +3,11 @@ import { setupGameMenu } from '../../client/game-menu.js'
 import { initStage, drawBackground, drawTrain, drawPoseIndicator, drawHUD } from './renderer.js'
 import { requestCamera } from './camera.js'
 import { startMotionTracking, stopMotionTracking } from './motion.js'
-import { createInitialState, startGame, updateGame, triggerWhistle, startChugging, stopChugging } from './state.js'
+import { createInitialState, startGame, updateGame, triggerWhistle, startChugging, stopChugging, startBouncing, stopBouncing } from './state.js'
 import type { GameState, MotionBody, Pose } from './types.js'
 import { setupAllAboardInput } from './input.js'
-import { announceWhistle, announceChugging, announceTrip, announceReturnToStart } from './accessibility.js'
-import { sfxWhistle, sfxChooChoo, sfxStart, startChuggingSound, stopChuggingSound, speakAllAboard, setMuted } from './sounds.js'
+import { announceWhistle, announceChugging, announceTrip, announceReturnToStart, announceBounce } from './accessibility.js'
+import { sfxWhistle, sfxChooChoo, sfxStart, sfxTurboBounce, startChuggingSound, stopChuggingSound, speakAllAboard, setMuted } from './sounds.js'
 
 // DOM refs
 const pixiStage = document.getElementById('pixi-stage')!
@@ -45,6 +45,7 @@ let lastPose: Pose = 'idle'
 let poseHoldTime = 0
 let lastWhistleTime = 0
 let wasChugging = false
+let wasBouncing = false
 let prevTrips = 0
 
 let bgGfx: Graphics | null = null
@@ -95,6 +96,13 @@ async function boot(): Promise<void> {
   })
   document.addEventListener('all-aboard:chug-stop', () => {
     wasChugging = false
+  })
+  document.addEventListener('all-aboard:bounce', () => {
+    if (gameState.phase !== 'playing') return
+    wasBouncing = true
+  })
+  document.addEventListener('all-aboard:bounce-stop', () => {
+    wasBouncing = false
   })
 
   document.addEventListener('visibilitychange', () => {
@@ -167,31 +175,40 @@ async function enterGame(): Promise<void> {
     let currentPose: Pose = 'idle'
 
     if (primaryBody) {
-      // Determine pose from body position and motion
-      const topHalfMotion = primaryBody.normalizedY < 0.45
-      const wideSpread = primaryBody.spreadX > 0.15
+      // Use the pose resolved by motion tracker if available
+      // The motion tracker's resolvePose now also detects bouncing
+      // Fallback: simple thresholds for game use
+      const topHalfMotion = primaryBody.normalizedY < 0.50 // made more forgiving
+      const wideSpread = primaryBody.spreadX > 0.12 // lowered from 0.15
 
       // Hand up: body center in top region with reasonable spread
       if (topHalfMotion && wideSpread) {
         currentPose = 'hand-up'
       }
 
-      // Check for arm rotation: we look at lateral oscillation in the body
-      // This is detected in the motion tracker; if spreadX is oscillating
-      // and the body is in upper half, it's arm rotation
-      if (primaryBody.normalizedY < 0.55 && primaryBody.spreadX > 0.20) {
+      // Check for arm rotation: much more forgiving for young children
+      if (primaryBody.normalizedY < 0.65 && primaryBody.spreadX > 0.15) {
         currentPose = 'arm-rotating'
       }
 
-      // Both arms up: very wide spread in upper region
-      if (primaryBody.spreadX > 0.35 && primaryBody.normalizedY < 0.5) {
+      // Both arms up: wide spread in upper region
+      if (primaryBody.spreadX > 0.30 && primaryBody.normalizedY < 0.55) {
         currentPose = 'both-arms-up'
+      }
+
+      // Bouncing: vertical spread suggests active vertical movement
+      // Lowered spreadY threshold for kids
+      if (primaryBody.spreadY > 0.25 && primaryBody.normalizedY > 0.3) {
+        currentPose = 'bouncing'
       }
     }
 
     // Keyboard override
     if (wasChugging) {
       currentPose = 'arm-rotating'
+    }
+    if (wasBouncing) {
+      currentPose = 'bouncing'
     }
 
     // Pose hold timing for stabilization
@@ -213,7 +230,7 @@ async function enterGame(): Promise<void> {
     }
 
     // Handle arm rotating (chugging)
-    if (stablePose === 'arm-rotating') {
+    if (stablePose === 'arm-rotating' || stablePose === 'bouncing') {
       if (!gameState.chuggingActive) {
         gameState = startChugging(gameState)
         startChuggingSound()
@@ -225,6 +242,19 @@ async function enterGame(): Promise<void> {
       if (gameState.chuggingActive) {
         gameState = stopChugging(gameState)
         stopChuggingSound()
+      }
+    }
+
+    // Handle bouncing (turbo boost)
+    if (stablePose === 'bouncing') {
+      if (!gameState.bouncingActive) {
+        gameState = startBouncing(gameState)
+        sfxTurboBounce()
+        announceBounce()
+      }
+    } else {
+      if (gameState.bouncingActive) {
+        gameState = stopBouncing(gameState)
       }
     }
 
@@ -262,7 +292,7 @@ async function enterGame(): Promise<void> {
     // Update HUD text
     scoreDisplay.textContent = `${gameState.score} pts`
     tripDisplay.textContent = `Trips: ${gameState.trips}`
-    poseDisplay.textContent = stablePose === 'idle' ? '' : stablePose === 'hand-up' ? '👋 Hand Up!' : stablePose === 'arm-rotating' ? '🔄 Arm Rotating!' : '🙌 Both Arms!'
+    poseDisplay.textContent = stablePose === 'idle' ? '' : stablePose === 'hand-up' ? '👋 Hand Up!' : stablePose === 'arm-rotating' ? '🔄 Arm Rotating!' : stablePose === 'bouncing' ? '⚡ Bouncing!' : '🙌 Both Arms!'
 
     // End game after enough trips
     if (gameState.trips >= 5 && gameState.phase === 'playing') {
@@ -331,6 +361,8 @@ function resetToStart(): void {
   lastPose = 'idle'
   poseHoldTime = 0
   prevTrips = 0
+  wasChugging = false
+  wasBouncing = false
 
   showScreen('start-screen')
   gameStatus.textContent = 'Ready to board the train!'

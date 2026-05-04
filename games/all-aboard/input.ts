@@ -7,6 +7,9 @@ export function setupAllAboardInput(): void {
     if (e.key === 'c' || e.key === 'C') {
       document.dispatchEvent(new CustomEvent('all-aboard:chug'))
     }
+    if (e.key === 'b' || e.key === 'B') {
+      document.dispatchEvent(new CustomEvent('all-aboard:bounce'))
+    }
     if (e.key === 'Escape') {
       const modal = document.getElementById('settings-modal')
       if (modal) {
@@ -19,6 +22,9 @@ export function setupAllAboardInput(): void {
   document.addEventListener('keyup', (e) => {
     if (e.key === 'c' || e.key === 'C') {
       document.dispatchEvent(new CustomEvent('all-aboard:chug-stop'))
+    }
+    if (e.key === 'b' || e.key === 'B') {
+      document.dispatchEvent(new CustomEvent('all-aboard:bounce-stop'))
     }
   })
 }

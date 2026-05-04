@@ -62,15 +62,16 @@ export async function allAboardAction() {
               >Menu</button>}
             />
 
-            <p className="aa-subtitle">Raise your hand to blow the whistle and rotate your arm to chugga chugga choo choo!</p>
+            <p className="aa-subtitle">Raise your hand to blow the whistle, rotate your arm to chugga chugga choo choo, and bounce up and down for a turbo boost!</p>
 
             <div className="aa-pose-list" id="pose-list">
               <p className="aa-pose-list-title">How to play:</p>
               <div className="aa-pose-chips">
                 <span className="aa-pose-chip">👋 Hand up = Whistle "All Aboard!"</span>
                 <span className="aa-pose-chip">🔄 Rotate arm = Chugga chugga choo choo!</span>
+                <span className="aa-pose-chip">⚡ Bounce up &amp; down = Turbo boost!</span>
                 <span className="aa-pose-chip">🚂 Train moves across the screen</span>
-                <span className="aa-pose-chip">⌨️ Keyboard: W = whistle, hold C = chug</span>
+                <span className="aa-pose-chip">⌨️ Keyboard: W = whistle, hold C = chug, hold B = bounce</span>
               </div>
             </div>
 
@@ -164,8 +165,9 @@ export async function allAboardAction() {
             <SettingsSection title="Controls">
               <div className="aa-controls-help">
                 <p><strong>Whistle:</strong> Raise your hand up to blow the whistle and shout "All Aboard!"</p>
-                <p><strong>Chug:</strong> Rotate your arm in a circle to make the train go "chugga chugga choo choo!"</p>
-                <p><strong>Keyboard:</strong> W = whistle, hold C = chug.</p>
+                <p><strong>Chug:</strong> Rotate your arm in a circle to make the train go "chugga chugga choo choo!" (It’s okay if your circle isn’t perfect — just move your arm around!)</p>
+                <p><strong>Turbo:</strong> Bounce up and down to give the train a turbo speed boost!</p>
+                <p><strong>Keyboard:</strong> W = whistle, hold C = chug, hold B = bounce.</p>
                 <p><strong>Menu:</strong> Use the Menu button for settings and help.</p>
               </div>
             </SettingsSection>

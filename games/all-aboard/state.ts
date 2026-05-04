@@ -22,6 +22,12 @@ export function createInitialState(): GameState {
     score: 0,
     trips: 0,
     announcedAllAboard: false,
+    bouncingActive: false,
+    turboBoost: 0,
+    trainCars: [
+      { offsetX: 155, bobPhase: 0 },
+      { offsetX: 265, bobPhase: Math.PI * 0.7 },
+    ],
   }
 }
 
@@ -53,6 +59,22 @@ export function stopChugging(state: GameState): GameState {
   }
 }
 
+export function startBouncing(state: GameState): GameState {
+  if (state.turboBoost >= 100) return state
+  return {
+    ...state,
+    bouncingActive: true,
+    turboBoost: Math.min(state.turboBoost + 100, 200),
+  }
+}
+
+export function stopBouncing(state: GameState): GameState {
+  return {
+    ...state,
+    bouncingActive: false,
+  }
+}
+
 export function updateGame(state: GameState, dt: number, screenWidth: number): GameState {
   const s = { ...state }
   s.globalTime += dt
@@ -61,9 +83,16 @@ export function updateGame(state: GameState, dt: number, screenWidth: number): G
   if (s.whistleCooldown > 0) s.whistleCooldown -= dt
   if (s.armRotateCooldown > 0) s.armRotateCooldown -= dt
 
+  // Turbo boost decay
+  if (s.turboBoost > 0) {
+    s.turboBoost = Math.max(s.turboBoost - 120 * dt, 0)
+  }
+
   // Train physics
+  const maxSpeed = s.turboBoost > 0 ? 700 : 400
+  const accel = s.turboBoost > 0 ? 500 : 300
   if (s.chuggingActive) {
-    s.trainSpeed = Math.min(s.trainSpeed + 300 * dt, 400)
+    s.trainSpeed = Math.min(s.trainSpeed + accel * dt, maxSpeed)
     s.chuggingTimer += dt
   } else {
     s.trainSpeed = Math.max(s.trainSpeed - 150 * dt, 0)
@@ -72,12 +101,18 @@ export function updateGame(state: GameState, dt: number, screenWidth: number): G
   s.trainX += s.trainSpeed * dt
   s.totalDistance += Math.abs(s.trainSpeed * dt)
 
+  // Update car bob phases
+  s.trainCars = s.trainCars.map(c => ({
+    ...c,
+    bobPhase: c.bobPhase + s.trainSpeed * dt * 0.05,
+  }))
+
   // Score: 1 point per 100 pixels traveled
   s.score = Math.floor(s.totalDistance / 100)
 
   // Wrap train when it goes off right edge
-  if (s.trainX > screenWidth + 200) {
-    s.trainX = -250
+  if (s.trainX > screenWidth + 450) {
+    s.trainX = -350
     s.trips += 1
   }
 
@@ -139,5 +174,11 @@ export function startGame(state: GameState): GameState {
     score: 0,
     trips: 0,
     announcedAllAboard: false,
+    bouncingActive: false,
+    turboBoost: 0,
+    trainCars: [
+      { offsetX: 155, bobPhase: 0 },
+      { offsetX: 265, bobPhase: Math.PI * 0.7 },
+    ],
   }
 }

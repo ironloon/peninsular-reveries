@@ -18,9 +18,10 @@ const STABLE_TIME = 150
 const HAND_UP_TOP_RATIO = 0.40
 
 // Arm rotation: motion oscillates left-right rapidly in the top half
-const ROTATION_WINDOW_MS = 1500
-const ROTATION_MIN_CROSSINGS = 3
-const ROTATION_TOP_RATIO = 0.55
+// Made forgiving for young children — fewer crossings needed, wider window, more of body counts
+const ROTATION_WINDOW_MS = 2500
+const ROTATION_MIN_CROSSINGS = 2
+const ROTATION_TOP_RATIO = 0.70
 
 interface Blob {
   cx: number
@@ -270,6 +271,27 @@ function trackBodies(
 export function resolvePose(body: MotionBody, centroidHistory: Array<{ x: number; y: number; time: number }>, now: number): Pose {
   // Camera video is CSS-mirrored for the user
 
+  // Bounce/stomp detection: vertical oscillation of centroid
+  const BOUNCE_WINDOW_MS = 2000
+  const BOUNCE_MIN_CROSSINGS = 2
+  if (centroidHistory.length >= 4) {
+    const recentHistory = centroidHistory.filter((p) => now - p.time < BOUNCE_WINDOW_MS)
+    if (recentHistory.length >= 4) {
+      let yCrossings = 0
+      const avgY = recentHistory.reduce((s, p) => s + p.y, 0) / recentHistory.length
+      for (let i = 1; i < recentHistory.length; i++) {
+        const prev = recentHistory[i - 1].y
+        const curr = recentHistory[i].y
+        if ((prev < avgY && curr >= avgY) || (prev >= avgY && curr < avgY)) {
+          yCrossings++
+        }
+      }
+      if (yCrossings >= BOUNCE_MIN_CROSSINGS && body.spreadY > 0.15) {
+        return 'bouncing'
+      }
+    }
+  }
+
   // Hand-up: significant motion in top region, or hand above body
   const topMotionRatio = body.normalizedY < HAND_UP_TOP_RATIO
   const hasHandUp = topMotionRatio && body.spreadX > 0.10
@@ -386,7 +408,7 @@ function buildMotionBodies(now: number): MotionBody[] {
       spreadY: body.spreadY,
       pixelCount: 0,
       active: true,
-      armsUp: pose === 'hand-up' || pose === 'arm-rotating' || pose === 'both-arms-up',
+      armsUp: pose === 'hand-up' || pose === 'arm-rotating' || pose === 'both-arms-up' || pose === 'bouncing',
     })
   }
   return bodies

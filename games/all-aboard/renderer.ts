@@ -99,6 +99,14 @@ const C = {
   gold: 0xffd700,
   red: 0xe63946,
   text: 0xffffff,
+  coalCar: 0x3a2a1a,
+  coal: 0x222222,
+  passengerCar: 0x8B0000,
+  passengerWindow: 0x87CEEB,
+  passengerTrim: 0xffd700,
+  coupling: 0x666666,
+  turboGlow: 0xff6600,
+  bounceYellow: 0xffee00,
 }
 
 const GROUND_Y_RATIO = 0.78
@@ -163,6 +171,106 @@ export function drawTrain(
   const trainX = state.trainX
   const scale = Math.min(screenHeight / 600, 1)
 
+  // ── Turbo glow effect ──
+  if (state.turboBoost > 0) {
+    const turboGfx = new Graphics()
+    const turboAlpha = Math.min(state.turboBoost / 200, 0.5) * (0.5 + Math.sin(state.globalTime * 15) * 0.5)
+    // Glow behind the whole train
+    turboGfx.circle(trainX - 50 * scale, railY - 30 * scale, 120 * scale)
+    turboGfx.fill({ color: C.turboGlow, alpha: turboAlpha * 0.3 })
+    turboGfx.circle(trainX - 30 * scale, railY - 35 * scale, 80 * scale)
+    turboGfx.fill({ color: 0xffaa00, alpha: turboAlpha * 0.4 })
+    // Speed lines
+    for (let i = 0; i < 5; i++) {
+      const lineY = railY - 20 * scale + (i - 2) * 25 * scale
+      const lineX = trainX - 140 * scale
+      turboGfx.rect(lineX - 40 * scale - Math.random() * 30, lineY, 50 * scale + Math.random() * 20, 3 * scale)
+      turboGfx.fill({ color: C.turboGlow, alpha: turboAlpha * 0.6 })
+    }
+    container.addChild(turboGfx)
+  }
+
+  // ── Draw train cars (behind engine) ──
+  for (let ci = state.trainCars.length - 1; ci >= 0; ci--) {
+    const car = state.trainCars[ci]
+    const carX = trainX - car.offsetX * scale
+    const bob = Math.sin(car.bobPhase) * 2 * scale
+    const carY = railY + bob
+
+    if (ci === 0) {
+      // ── Coal Tender ──
+      const coalCar = new Graphics()
+      // Coupling bar to engine
+      coalCar.rect(carX + 55 * scale, carY - 5 * scale, 15 * scale, 5 * scale)
+      coalCar.fill({ color: C.coupling })
+      // Car body
+      coalCar.roundRect(carX - 40 * scale, carY - 55 * scale, 95 * scale, 55 * scale, 4 * scale)
+      coalCar.fill({ color: C.coalCar })
+      // Coal pile
+      coalCar.moveTo(carX - 35 * scale, carY - 55 * scale)
+      coalCar.quadraticCurveTo(carX + 8 * scale, carY - 80 * scale, carX + 50 * scale, carY - 55 * scale)
+      coalCar.closePath()
+      coalCar.fill({ color: C.coal })
+      // Gold trim
+      coalCar.rect(carX - 40 * scale, carY - 57 * scale, 95 * scale, 4 * scale)
+      coalCar.fill({ color: C.gold, alpha: 0.6 })
+      // Wheels for coal car
+      for (let w = 0; w < 2; w++) {
+        const wheelX = w === 0 ? carX + 35 * scale : carX - 20 * scale
+        const wheelY = carY + 4
+        const wheelR = 11 * scale
+        coalCar.circle(wheelX, wheelY, wheelR)
+        coalCar.fill({ color: C.wheel })
+        coalCar.circle(wheelX, wheelY, wheelR)
+        coalCar.stroke({ color: C.wheelRim, width: 2 * scale })
+        coalCar.circle(wheelX, wheelY, 3 * scale)
+        coalCar.fill({ color: C.wheelHub })
+      }
+      container.addChild(coalCar)
+    } else {
+      // ── Passenger Car ──
+      const passCar = new Graphics()
+      // Coupling bar to coal car
+      passCar.rect(carX + 55 * scale, carY - 5 * scale, 18 * scale, 5 * scale)
+      passCar.fill({ color: C.coupling })
+      // Car body
+      passCar.roundRect(carX - 40 * scale, carY - 60 * scale, 95 * scale, 60 * scale, 4 * scale)
+      passCar.fill({ color: C.passengerCar })
+      // Roof
+      passCar.moveTo(carX - 45 * scale, carY - 60 * scale)
+      passCar.lineTo(carX + 55 * scale, carY - 60 * scale)
+      passCar.lineTo(carX + 50 * scale, carY - 72 * scale)
+      passCar.lineTo(carX - 40 * scale, carY - 72 * scale)
+      passCar.closePath()
+      passCar.fill({ color: C.roof })
+      // Windows
+      for (let w = 0; w < 3; w++) {
+        const wx = carX - 28 * scale + w * 28 * scale
+        passCar.roundRect(wx, carY - 50 * scale, 16 * scale, 18 * scale, 2 * scale)
+        passCar.fill({ color: C.passengerWindow })
+      }
+      // Gold trim along bottom
+      passCar.rect(carX - 40 * scale, carY - 2 * scale, 95 * scale, 4 * scale)
+      passCar.fill({ color: C.passengerTrim, alpha: 0.6 })
+      // Door
+      passCar.roundRect(carX + 18 * scale, carY - 42 * scale, 14 * scale, 40 * scale, 2 * scale)
+      passCar.fill({ color: 0x5a0000 })
+      // Wheels for passenger car
+      for (let w = 0; w < 2; w++) {
+        const wheelX = w === 0 ? carX + 35 * scale : carX - 20 * scale
+        const wheelY = carY + 4
+        const wheelR = 11 * scale
+        passCar.circle(wheelX, wheelY, wheelR)
+        passCar.fill({ color: C.wheel })
+        passCar.circle(wheelX, wheelY, wheelR)
+        passCar.stroke({ color: C.wheelRim, width: 2 * scale })
+        passCar.circle(wheelX, wheelY, 3 * scale)
+        passCar.fill({ color: C.wheelHub })
+      }
+      container.addChild(passCar)
+    }
+  }
+
   // ── Cowcatcher ──
   const cowcatcher = new Graphics()
   cowcatcher.moveTo(trainX + 45 * scale, railY - 55 * scale)
@@ -216,6 +324,12 @@ export function drawTrain(
   cabin.rect(trainX - 60 * scale, railY - 65 * scale, 12 * scale, 50 * scale)
   cabin.fill({ color: 0x1a3a6a })
   container.addChild(cabin)
+
+  // ── Coupling from cabin to coal car ──
+  const coupling = new Graphics()
+  coupling.rect(trainX - 115 * scale, railY - 5 * scale, 10 * scale, 5 * scale)
+  coupling.fill({ color: C.coupling })
+  container.addChild(coupling)
 
   // ── Wheels ──
   for (let i = 0; i < state.wheels.length; i++) {
@@ -281,6 +395,20 @@ export function drawTrain(
     whistleCloud.fill({ color: C.whistleCloud, alpha: wcAlpha * 0.7 })
     container.addChild(whistleCloud)
   }
+
+  // ── Turbo sparks when boosting ──
+  if (state.turboBoost > 0) {
+    const sparks = new Graphics()
+    for (let i = 0; i < 8; i++) {
+      const sparkAngle = state.globalTime * 10 + i * (Math.PI * 2 / 8)
+      const sparkR = (30 + Math.sin(state.globalTime * 8 + i) * 15) * scale
+      const sx = trainX - 40 * scale + Math.cos(sparkAngle) * sparkR
+      const sy = railY - 40 * scale + Math.sin(sparkAngle) * sparkR
+      sparks.circle(sx, sy, 3 * scale)
+      sparks.fill({ color: i % 2 === 0 ? C.turboGlow : C.bounceYellow, alpha: 0.7 })
+    }
+    container.addChild(sparks)
+  }
 }
 
 export function drawPoseIndicator(
@@ -331,6 +459,32 @@ export function drawPoseIndicator(
     g.fill({ color: C.gold, alpha: 0.4 })
     g.circle(x, y, 22 + Math.sin(time * 6) * 5)
     g.stroke({ color: C.gold, width: 3, alpha: 0.5 })
+  } else if (pose === 'bouncing') {
+    // Bouncing/stomp icon - vertical arrows with fire
+    const bounceY = Math.sin(time * 10) * 8
+    // Up arrow
+    g.moveTo(x, y - 20 + bounceY)
+    g.lineTo(x - 10, y - 8 + bounceY)
+    g.lineTo(x + 10, y - 8 + bounceY)
+    g.closePath()
+    g.fill({ color: C.bounceYellow, alpha: 0.8 })
+    // Down arrow
+    g.moveTo(x, y + 20 - bounceY)
+    g.lineTo(x - 10, y + 8 - bounceY)
+    g.lineTo(x + 10, y + 8 - bounceY)
+    g.closePath()
+    g.fill({ color: C.turboGlow, alpha: 0.8 })
+    // Pulsing ring
+    const pulse = Math.sin(time * 12) * 6 + 22
+    g.circle(x, y, pulse)
+    g.stroke({ color: C.turboGlow, width: 3, alpha: 0.5 + Math.sin(time * 8) * 0.3 })
+    // Spark particles
+    for (let i = 0; i < 4; i++) {
+      const sparkAngle = time * 8 + i * (Math.PI / 2)
+      const sparkR = 18 + Math.sin(time * 10 + i) * 5
+      g.circle(x + Math.cos(sparkAngle) * sparkR, y + Math.sin(sparkAngle) * sparkR, 3)
+      g.fill({ color: i % 2 === 0 ? C.bounceYellow : C.turboGlow, alpha: 0.7 })
+    }
   }
 }
 
@@ -386,5 +540,22 @@ export function drawHUD(
     chugText.x = screenWidth / 2
     chugText.y = 15
     container.addChild(chugText)
+  }
+
+  if (state.turboBoost > 0) {
+    const turboText = new Text({
+      text: '⚡ TURBO!',
+      style: {
+        fontFamily: 'Arial, sans-serif',
+        fontSize: 22,
+        fill: 0xff6600,
+        fontWeight: 'bold',
+        stroke: { color: 0x000000, width: 3 },
+      },
+    })
+    turboText.anchor.set(0.5, 0)
+    turboText.x = screenWidth / 2
+    turboText.y = state.chuggingActive ? 42 : 15
+    container.addChild(turboText)
   }
 }

@@ -1,6 +1,6 @@
 export type GamePhase = 'start' | 'playing' | 'end'
 
-export type Pose = 'idle' | 'hand-up' | 'arm-rotating' | 'both-arms-up'
+export type Pose = 'idle' | 'hand-up' | 'arm-rotating' | 'both-arms-up' | 'bouncing'
 
 export interface MotionBody {
   id: number
@@ -28,6 +28,11 @@ export interface WheelRotation {
   speed: number
 }
 
+export interface TrainCar {
+  offsetX: number
+  bobPhase: number
+}
+
 export interface GameState {
   phase: GamePhase
   trainX: number
@@ -46,6 +51,9 @@ export interface GameState {
   score: number
   trips: number
   announcedAllAboard: boolean
+  bouncingActive: boolean
+  turboBoost: number
+  trainCars: TrainCar[]
 }
 
 export interface Particle {
