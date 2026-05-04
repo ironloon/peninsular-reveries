@@ -36,6 +36,28 @@ import { allAboardAttribution } from '../../games/all-aboard/attributions.js'
 import { allAboardInfo } from '../../games/all-aboard/info.js'
 import { blockAttackAttribution } from '../../games/block-attack/attributions.js'
 import { blockAttackInfo } from '../../games/block-attack/info.js'
+import { chompersImmersiveAttribution } from '../../games/chompers-immersive/attributions.js'
+import { chompersImmersiveInfo } from '../../games/chompers-immersive/info.js'
+import { beatPadImmersiveAttribution } from '../../games/beat-pad-immersive/attributions.js'
+import { beatPadImmersiveInfo } from '../../games/beat-pad-immersive/info.js'
+import { missionorbitimmersiveAttribution } from '../../games/mission-orbit-immersive/attributions.js'
+import { missionorbitimmersiveInfo } from '../../games/mission-orbit-immersive/info.js'
+import { peekabooimmersiveAttribution } from '../../games/peekaboo-immersive/attributions.js'
+import { peekabooimmersiveInfo } from '../../games/peekaboo-immersive/info.js'
+import { pixelpassportimmersiveAttribution } from '../../games/pixel-passport-immersive/attributions.js'
+import { pixelpassportimmersiveInfo } from '../../games/pixel-passport-immersive/info.js'
+import { spotonimmersiveAttribution } from '../../games/spot-on-immersive/attributions.js'
+import { spotonimmersiveInfo } from '../../games/spot-on-immersive/info.js'
+import { squaresimmersiveAttribution } from '../../games/squares-immersive/attributions.js'
+import { squaresimmersiveInfo } from '../../games/squares-immersive/info.js'
+import { storytrailimmersiveAttribution } from '../../games/story-trail-immersive/attributions.js'
+import { storytrailimmersiveInfo } from '../../games/story-trail-immersive/info.js'
+import { superwordimmersiveAttribution } from '../../games/super-word-immersive/attributions.js'
+import { superwordimmersiveInfo } from '../../games/super-word-immersive/info.js'
+import { trainsoundsimmersiveAttribution } from '../../games/train-sounds-immersive/attributions.js'
+import { trainsoundsimmersiveInfo } from '../../games/train-sounds-immersive/info.js'
+import { waterwallimmersiveAttribution } from '../../games/waterwall-immersive/attributions.js'
+import { waterwallimmersiveInfo } from '../../games/waterwall-immersive/info.js'
 import type { GameAttribution, GameInfo } from './attribution-types.js'
 import { attributionsPagePath, repositoryCodeLicense } from './attribution-types.js'
 
@@ -66,6 +88,17 @@ const gameEntries: readonly { attribution: GameAttribution; info: GameInfo }[] =
   { attribution: bakingSimulatorAttribution, info: bakingSimulatorInfo },
   { attribution: allAboardAttribution, info: allAboardInfo },
   { attribution: blockAttackAttribution, info: blockAttackInfo },
+  { attribution: chompersImmersiveAttribution, info: chompersImmersiveInfo },
+  { attribution: beatPadImmersiveAttribution, info: beatPadImmersiveInfo },
+  { attribution: missionorbitimmersiveAttribution, info: missionorbitimmersiveInfo },
+  { attribution: peekabooimmersiveAttribution, info: peekabooimmersiveInfo },
+  { attribution: pixelpassportimmersiveAttribution, info: pixelpassportimmersiveInfo },
+  { attribution: spotonimmersiveAttribution, info: spotonimmersiveInfo },
+  { attribution: squaresimmersiveAttribution, info: squaresimmersiveInfo },
+  { attribution: storytrailimmersiveAttribution, info: storytrailimmersiveInfo },
+  { attribution: superwordimmersiveAttribution, info: superwordimmersiveInfo },
+  { attribution: trainsoundsimmersiveAttribution, info: trainsoundsimmersiveInfo },
+  { attribution: waterwallimmersiveAttribution, info: waterwallimmersiveInfo },
 ]
 
 export const gameAttributions: readonly GameAttributionWithInfo[] = gameEntries.map(

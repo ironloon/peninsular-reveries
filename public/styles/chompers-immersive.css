@@ -1,0 +1,146 @@
+.chompers-immersive-game {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #0a1628;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.ci-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: rgba(10, 22, 40, 0.85);
+  color: #ffd700;
+  font-size: 1rem;
+}
+
+.ci-title {
+  font-size: 1.4rem;
+  margin: 0;
+  color: #ffd700;
+}
+
+.ci-subtitle {
+  text-align: center;
+  color: #aabbcc;
+  margin: 1rem 0;
+}
+
+.ci-camera-prompt {
+  text-align: center;
+  color: #88aacc;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.ci-start-panel,
+.ci-end-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  min-height: 60dvh;
+}
+
+.ci-game-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+.ci-game-area {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+}
+
+.ci-game-area video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border: 2px solid rgba(68, 170, 255, 0.5);
+  border-radius: 8px;
+  z-index: 10;
+  transform: scaleX(-1);
+  opacity: 0.7;
+}
+
+.ci-game-area #pixi-stage {
+  width: 100%;
+  height: 100%;
+}
+
+.ci-game-area #pixi-stage canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.ci-primary-btn {
+  display: inline-block;
+  padding: 0.8rem 2rem;
+  border: none;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #44ff88, #22aa55);
+  color: #0a1628;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  margin: 0.5rem;
+}
+
+.ci-primary-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 20px rgba(68, 255, 136, 0.3);
+}
+
+.ci-primary-btn:active {
+  transform: scale(0.97);
+}
+
+.ci-results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.ci-results dt {
+  font-size: 0.85rem;
+  color: #88aacc;
+}
+
+.ci-results dd {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffd700;
+  margin: 0;
+}
+
+.game-screen {
+  display: none;
+  width: 100%;
+  height: 100dvh;
+}
+
+.game-screen.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.scene-track {
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+}

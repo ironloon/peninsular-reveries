@@ -1,0 +1,10 @@
+{
+  "name": "Spot On Immersive",
+  "short_name": "Spot",
+  "description": "Tidy up cozy rooms using your camera! Point at items to pick them up.",
+  "start_url": "/spot-on-immersive/",
+  "display": "standalone",
+  "background_color": "#1a2428",
+  "theme_color": "#44ccaa",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

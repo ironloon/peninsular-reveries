@@ -1,0 +1,10 @@
+{
+  "name": "Peekaboo Immersive",
+  "short_name": "Peekaboo",
+  "description": "Find the hidden character using your camera! Move your hands to clear the fog.",
+  "start_url": "/peekaboo-immersive/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#ff88cc",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

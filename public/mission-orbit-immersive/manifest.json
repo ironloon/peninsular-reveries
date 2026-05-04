@@ -1,0 +1,10 @@
+{
+  "name": "Mission: Orbit Immersive",
+  "short_name": "Mission:",
+  "description": "Time the key Artemis II burns using your camera — raise your hand to ignite, lean to steer!",
+  "start_url": "/mission-orbit-immersive/",
+  "display": "standalone",
+  "background_color": "#0a0a2e",
+  "theme_color": "#ff6600",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

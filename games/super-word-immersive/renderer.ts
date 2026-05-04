@@ -1,0 +1,1 @@
+export { initStage } from './main.js'

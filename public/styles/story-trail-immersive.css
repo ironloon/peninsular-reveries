@@ -1,0 +1,16 @@
+.story-trail-immersive-game {
+  margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden;
+  background: #1a1a2e; color: #fff; font-family: system-ui, -apple-system, sans-serif;
+}
+.sti-title { font-size: 1.5rem; color: #88ccff; margin: 0; padding: 1rem 0 0.5rem; text-align: center; }
+.sti-subtitle { text-align: center; color: #8888aa; }
+.sti-camera-prompt { text-align: center; color: #6666aa; font-size: 0.9rem; }
+.sti-start-panel, .sti-end-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70dvh; padding: 1rem; }
+.sti-primary-btn { display: inline-block; padding: 0.8rem 2rem; border: none; border-radius: 999px; background: linear-gradient(135deg, #88ccff, #4488ff); color: #111; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
+.sti-game-panel { display: flex; flex-direction: column; height: 100dvh; }
+.sti-game-area { position: relative; flex: 1; overflow: hidden; }
+.sti-game-area video { position: absolute; top: 0; left: 0; width: 120px; height: 90px; object-fit: cover; border: 2px solid rgba(68, 170, 255, 0.5); border-radius: 8px; z-index: 10; transform: scaleX(-1); opacity: 0.7; }
+.sti-game-area #pixi-stage, .sti-game-area #pixi-stage canvas { width: 100% !important; height: 100% !important; display: block; }
+.game-screen { display: none; width: 100%; height: 100dvh; }
+.game-screen.active { display: flex; flex-direction: column; }
+.scene-track { width: 100%; height: 100dvh; overflow: hidden; }

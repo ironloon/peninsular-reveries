@@ -1,0 +1,10 @@
+{
+  "name": "Story Trail Immersive",
+  "short_name": "Story",
+  "description": "Read and explore stories with your camera! Gesture to make choices.",
+  "start_url": "/story-trail-immersive/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#88ccff",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

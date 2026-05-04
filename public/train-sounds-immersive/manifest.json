@@ -1,0 +1,10 @@
+{
+  "name": "Train Sounds Immersive",
+  "short_name": "Train",
+  "description": "Point at train parts with your camera to hear them come alive!",
+  "start_url": "/train-sounds-immersive/",
+  "display": "standalone",
+  "background_color": "#1a2233",
+  "theme_color": "#ff6644",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

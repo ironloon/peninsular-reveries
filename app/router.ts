@@ -23,6 +23,17 @@ import { growWithMeAction } from '../games/grow-with-me/controller.js'
 import { bakingSimulatorAction } from '../games/baking-simulator/controller.js'
 import { allAboardAction } from '../games/all-aboard/controller.js'
 import { blockAttackAction } from '../games/block-attack/controller.js'
+import { chompersImmersiveAction } from '../games/chompers-immersive/controller.js'
+import { beatPadImmersiveAction } from '../games/beat-pad-immersive/controller.js'
+import { missionorbitimmersiveAction } from '../games/mission-orbit-immersive/controller.js'
+import { peekabooimmersiveAction } from '../games/peekaboo-immersive/controller.js'
+import { pixelpassportimmersiveAction } from '../games/pixel-passport-immersive/controller.js'
+import { spotonimmersiveAction } from '../games/spot-on-immersive/controller.js'
+import { squaresimmersiveAction } from '../games/squares-immersive/controller.js'
+import { storytrailimmersiveAction } from '../games/story-trail-immersive/controller.js'
+import { superwordimmersiveAction } from '../games/super-word-immersive/controller.js'
+import { trainsoundsimmersiveAction } from '../games/train-sounds-immersive/controller.js'
+import { waterwallimmersiveAction } from '../games/waterwall-immersive/controller.js'
 
 export function createAppRouter() {
   const router = createRouter()
@@ -67,6 +78,28 @@ export function createAppRouter() {
   router.get(routes.allAboardInfo, () => gameInfoAction('all-aboard'))
   router.get(routes.blockAttack, () => blockAttackAction())
   router.get(routes.blockAttackInfo, () => gameInfoAction('block-attack'))
+  router.get(routes.chompersImmersive, () => chompersImmersiveAction())
+  router.get(routes.chompersImmersiveInfo, () => gameInfoAction('chompers-immersive'))
+  router.get(routes.beatPadImmersive, () => beatPadImmersiveAction())
+  router.get(routes.beatPadImmersiveInfo, () => gameInfoAction('beat-pad-immersive'))
+  router.get(routes.missionOrbitImmersive, () => missionorbitimmersiveAction())
+  router.get(routes.missionOrbitImmersiveInfo, () => gameInfoAction('mission-orbit-immersive'))
+  router.get(routes.peekabooImmersive, () => peekabooimmersiveAction())
+  router.get(routes.peekabooImmersiveInfo, () => gameInfoAction('peekaboo-immersive'))
+  router.get(routes.pixelPassportImmersive, () => pixelpassportimmersiveAction())
+  router.get(routes.pixelPassportImmersiveInfo, () => gameInfoAction('pixel-passport-immersive'))
+  router.get(routes.spotOnImmersive, () => spotonimmersiveAction())
+  router.get(routes.spotOnImmersiveInfo, () => gameInfoAction('spot-on-immersive'))
+  router.get(routes.squaresImmersive, () => squaresimmersiveAction())
+  router.get(routes.squaresImmersiveInfo, () => gameInfoAction('squares-immersive'))
+  router.get(routes.storyTrailImmersive, () => storytrailimmersiveAction())
+  router.get(routes.storyTrailImmersiveInfo, () => gameInfoAction('story-trail-immersive'))
+  router.get(routes.superWordImmersive, () => superwordimmersiveAction())
+  router.get(routes.superWordImmersiveInfo, () => gameInfoAction('super-word-immersive'))
+  router.get(routes.trainSoundsImmersive, () => trainsoundsimmersiveAction())
+  router.get(routes.trainSoundsImmersiveInfo, () => gameInfoAction('train-sounds-immersive'))
+  router.get(routes.waterwallImmersive, () => waterwallimmersiveAction())
+  router.get(routes.waterwallImmersiveInfo, () => gameInfoAction('waterwall-immersive'))
   router.get(routes.notFound, () => notFoundAction())
 
   return router

@@ -1,0 +1,10 @@
+{
+  "name": "Pixel Passport Immersive",
+  "short_name": "Pixel",
+  "description": "Explore world destinations with your camera! Point at places to visit them.",
+  "start_url": "/pixel-passport-immersive/",
+  "display": "standalone",
+  "background_color": "#0a2040",
+  "theme_color": "#ffd166",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

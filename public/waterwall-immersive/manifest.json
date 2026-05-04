@@ -1,0 +1,10 @@
+{
+  "name": "Waterwall Immersive",
+  "short_name": "Waterwall",
+  "description": "A zen waterfall sandbox. Use your camera to place barriers and redirect the flow!",
+  "start_url": "/waterwall-immersive/",
+  "display": "standalone",
+  "background_color": "#0a1a2a",
+  "theme_color": "#44aaff",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

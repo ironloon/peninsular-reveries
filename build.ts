@@ -35,6 +35,17 @@ const swFiles = [
   'baking-simulator/sw.js',
   'all-aboard/sw.js',
   'block-attack/sw.js',
+  'chompers-immersive/sw.js',
+  'beat-pad-immersive/sw.js',
+  'mission-orbit-immersive/sw.js',
+  'peekaboo-immersive/sw.js',
+  'pixel-passport-immersive/sw.js',
+  'spot-on-immersive/sw.js',
+  'squares-immersive/sw.js',
+  'story-trail-immersive/sw.js',
+  'super-word-immersive/sw.js',
+  'train-sounds-immersive/sw.js',
+  'waterwall-immersive/sw.js',
 ]
 for (const swFile of swFiles) {
   const swPath = join(outputDir, swFile)
@@ -66,6 +77,17 @@ mkdirSync(join(outputDir, 'client', 'grow-with-me'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'baking-simulator'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'all-aboard'), { recursive: true })
 mkdirSync(join(outputDir, 'client', 'block-attack'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'chompers-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'beat-pad-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'mission-orbit-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'peekaboo-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'pixel-passport-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'spot-on-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'squares-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'story-trail-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'super-word-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'train-sounds-immersive'), { recursive: true })
+mkdirSync(join(outputDir, 'client', 'waterwall-immersive'), { recursive: true })
 
 // ── Minify copied CSS assets ─────────────────────────────
 const stylesheetDir = join(outputDir, 'styles')
@@ -119,6 +141,17 @@ await esbuild.build({
     'games/baking-simulator/main.ts',
     'games/all-aboard/main.ts',
     'games/block-attack/main.ts',
+    'games/chompers-immersive/main.ts',
+    'games/beat-pad-immersive/main.ts',
+    'games/mission-orbit-immersive/main.ts',
+    'games/peekaboo-immersive/main.ts',
+    'games/pixel-passport-immersive/main.ts',
+    'games/spot-on-immersive/main.ts',
+    'games/squares-immersive/main.ts',
+    'games/story-trail-immersive/main.ts',
+    'games/super-word-immersive/main.ts',
+    'games/train-sounds-immersive/main.ts',
+    'games/waterwall-immersive/main.ts',
   ],
   bundle: true,
   outbase: 'games',
@@ -173,6 +206,28 @@ const staticRoutes: Array<{ url: string; outPath: string }> = [
   { url: 'http://localhost/all-aboard/info/', outPath: 'all-aboard/info/index.html' },
   { url: 'http://localhost/block-attack/', outPath: 'block-attack/index.html' },
   { url: 'http://localhost/block-attack/info/', outPath: 'block-attack/info/index.html' },
+  { url: 'http://localhost/chompers-immersive/', outPath: 'chompers-immersive/index.html' },
+  { url: 'http://localhost/chompers-immersive/info/', outPath: 'chompers-immersive/info/index.html' },
+  { url: 'http://localhost/beat-pad-immersive/', outPath: 'beat-pad-immersive/index.html' },
+  { url: 'http://localhost/beat-pad-immersive/info/', outPath: 'beat-pad-immersive/info/index.html' },
+  { url: 'http://localhost/mission-orbit-immersive/', outPath: 'mission-orbit-immersive/index.html' },
+  { url: 'http://localhost/mission-orbit-immersive/info/', outPath: 'mission-orbit-immersive/info/index.html' },
+  { url: 'http://localhost/peekaboo-immersive/', outPath: 'peekaboo-immersive/index.html' },
+  { url: 'http://localhost/peekaboo-immersive/info/', outPath: 'peekaboo-immersive/info/index.html' },
+  { url: 'http://localhost/pixel-passport-immersive/', outPath: 'pixel-passport-immersive/index.html' },
+  { url: 'http://localhost/pixel-passport-immersive/info/', outPath: 'pixel-passport-immersive/info/index.html' },
+  { url: 'http://localhost/spot-on-immersive/', outPath: 'spot-on-immersive/index.html' },
+  { url: 'http://localhost/spot-on-immersive/info/', outPath: 'spot-on-immersive/info/index.html' },
+  { url: 'http://localhost/squares-immersive/', outPath: 'squares-immersive/index.html' },
+  { url: 'http://localhost/squares-immersive/info/', outPath: 'squares-immersive/info/index.html' },
+  { url: 'http://localhost/story-trail-immersive/', outPath: 'story-trail-immersive/index.html' },
+  { url: 'http://localhost/story-trail-immersive/info/', outPath: 'story-trail-immersive/info/index.html' },
+  { url: 'http://localhost/super-word-immersive/', outPath: 'super-word-immersive/index.html' },
+  { url: 'http://localhost/super-word-immersive/info/', outPath: 'super-word-immersive/info/index.html' },
+  { url: 'http://localhost/train-sounds-immersive/', outPath: 'train-sounds-immersive/index.html' },
+  { url: 'http://localhost/train-sounds-immersive/info/', outPath: 'train-sounds-immersive/info/index.html' },
+  { url: 'http://localhost/waterwall-immersive/', outPath: 'waterwall-immersive/index.html' },
+  { url: 'http://localhost/waterwall-immersive/info/', outPath: 'waterwall-immersive/info/index.html' },
   { url: 'http://localhost/404.html', outPath: '404.html' },
 ]
 
@@ -246,6 +301,17 @@ const pages: Record<string, string[]> = {
   'baking-simulator': ['baking-simulator/index.html', 'styles/baking-simulator.css', 'client/shell.js', 'client/baking-simulator/main.js'],
   'all-aboard': ['all-aboard/index.html', 'styles/all-aboard.css', 'client/shell.js', 'client/all-aboard/main.js'],
   'block-attack': ['block-attack/index.html', 'styles/block-attack.css', 'client/shell.js', 'client/block-attack/main.js'],
+  'chompers-immersive': ['chompers-immersive/index.html', 'styles/chompers-immersive.css', 'client/shell.js', 'client/chompers-immersive/main.js'],
+  'beat-pad-immersive': ['beat-pad-immersive/index.html', 'styles/beat-pad-immersive.css', 'client/shell.js', 'client/beat-pad-immersive/main.js'],
+  'mission-orbit-immersive': ['mission-orbit-immersive/index.html', 'styles/mission-orbit-immersive.css', 'client/shell.js', 'client/mission-orbit-immersive/main.js'],
+  'peekaboo-immersive': ['peekaboo-immersive/index.html', 'styles/peekaboo-immersive.css', 'client/shell.js', 'client/peekaboo-immersive/main.js'],
+  'pixel-passport-immersive': ['pixel-passport-immersive/index.html', 'styles/pixel-passport-immersive.css', 'client/shell.js', 'client/pixel-passport-immersive/main.js'],
+  'spot-on-immersive': ['spot-on-immersive/index.html', 'styles/spot-on-immersive.css', 'client/shell.js', 'client/spot-on-immersive/main.js'],
+  'squares-immersive': ['squares-immersive/index.html', 'styles/squares-immersive.css', 'client/shell.js', 'client/squares-immersive/main.js'],
+  'story-trail-immersive': ['story-trail-immersive/index.html', 'styles/story-trail-immersive.css', 'client/shell.js', 'client/story-trail-immersive/main.js'],
+  'super-word-immersive': ['super-word-immersive/index.html', 'styles/super-word-immersive.css', 'client/shell.js', 'client/super-word-immersive/main.js'],
+  'train-sounds-immersive': ['train-sounds-immersive/index.html', 'styles/train-sounds-immersive.css', 'client/shell.js', 'client/train-sounds-immersive/main.js'],
+  'waterwall-immersive': ['waterwall-immersive/index.html', 'styles/waterwall-immersive.css', 'client/shell.js', 'client/waterwall-immersive/main.js'],
   '404': ['404.html', 'styles/main.css', 'client/shell.js', 'client/404.js'],
 }
 

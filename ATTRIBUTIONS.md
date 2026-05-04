@@ -713,3 +713,201 @@
 - License: MIT
 - Modifications: Not applicable
 - Notes: 2D WebGL rendering engine used for the game stage.
+
+### Chompers Immersive
+
+- Slug: chompers-immersive
+- Code license: GPL-3.0
+- Summary: Chompers Immersive — feed the hippo the correct fruit using your camera! Point at a fruit to pick it.
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Chompers Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless fruit selection.
+
+### Beat Pad Immersive
+
+- Slug: beat-pad-immersive
+- Code license: GPL-3.0
+- Summary: Beat Pad Immersive — trigger beats and bass with your body! Wave your hands to play pads.
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Beat Pad Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless beat triggering.
+
+### Mission: Orbit Immersive
+
+- Slug: mission-orbit-immersive
+- Code license: GPL-3.0
+- Summary: Time the key Artemis II burns using your camera — raise your hand to ignite, lean to steer!
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Mission: Orbit Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless interaction.
+
+### Peekaboo Immersive
+
+- Slug: peekaboo-immersive
+- Code license: GPL-3.0
+- Summary: Find the hidden character using your camera! Move your hands to clear the fog.
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Peekaboo Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless interaction.
+
+### Pixel Passport Immersive
+
+- Slug: pixel-passport-immersive
+- Code license: GPL-3.0
+- Summary: Explore world destinations with your camera! Point at places to visit them.
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Pixel Passport Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless interaction.
+
+### Spot On Immersive
+
+- Slug: spot-on-immersive
+- Code license: GPL-3.0
+- Summary: Tidy up cozy rooms using your camera! Point at items to pick them up.
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Spot On Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless interaction.
+
+### Squares Immersive
+
+- Slug: squares-immersive
+- Code license: GPL-3.0
+- Summary: Flip tiles by gesturing at them! Make the whole board one color.
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Squares Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless interaction.
+
+### Story Trail Immersive
+
+- Slug: story-trail-immersive
+- Code license: GPL-3.0
+- Summary: Read and explore stories with your camera! Gesture to make choices.
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Story Trail Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless interaction.
+
+### Super Word Immersive
+
+- Slug: super-word-immersive
+- Code license: GPL-3.0
+- Summary: Find hidden letters with your camera! Point at letters to spell the word.
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Super Word Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless interaction.
+
+### Train Sounds Immersive
+
+- Slug: train-sounds-immersive
+- Code license: GPL-3.0
+- Summary: Point at train parts with your camera to hear them come alive!
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Train Sounds Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless interaction.
+
+### Waterwall Immersive
+
+- Slug: waterwall-immersive
+- Code license: GPL-3.0
+- Summary: A zen waterfall sandbox. Use your camera to place barriers and redirect the flow!
+
+#### Entries
+
+##### Immersive mode body tracking
+
+- Type: other
+- Used in: Waterwall Immersive camera-based input
+- Creator: Peninsular Reveries
+- Source: Original implementation
+- License: GPL-3.0
+- Modifications: Not applicable
+- Notes: Uses webcam motion detection for touchless interaction.

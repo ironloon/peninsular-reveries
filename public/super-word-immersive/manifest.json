@@ -1,0 +1,10 @@
+{
+  "name": "Super Word Immersive",
+  "short_name": "Super",
+  "description": "Find hidden letters with your camera! Point at letters to spell the word.",
+  "start_url": "/super-word-immersive/",
+  "display": "standalone",
+  "background_color": "#1a1a33",
+  "theme_color": "#ce93d8",
+  "icons": [{ "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }]
+}

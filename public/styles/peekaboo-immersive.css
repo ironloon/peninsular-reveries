@@ -1,0 +1,16 @@
+.peekaboo-immersive-game {
+  margin: 0; padding: 0; width: 100%; height: 100dvh; overflow: hidden;
+  background: #1a1a2e; color: #fff; font-family: system-ui, -apple-system, sans-serif;
+}
+.pi-title { font-size: 1.5rem; color: #ff88cc; margin: 0; padding: 1rem 0 0.5rem; text-align: center; }
+.pi-subtitle { text-align: center; color: #8888aa; }
+.pi-camera-prompt { text-align: center; color: #6666aa; font-size: 0.9rem; }
+.pi-start-panel, .pi-end-panel { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 70dvh; padding: 1rem; }
+.pi-primary-btn { display: inline-block; padding: 0.8rem 2rem; border: none; border-radius: 999px; background: linear-gradient(135deg, #ff88cc, #ff4488); color: #111; font-size: 1.1rem; font-weight: 700; cursor: pointer; }
+.pi-game-panel { display: flex; flex-direction: column; height: 100dvh; }
+.pi-game-area { position: relative; flex: 1; overflow: hidden; }
+.pi-game-area video { position: absolute; top: 0; left: 0; width: 120px; height: 90px; object-fit: cover; border: 2px solid rgba(68, 170, 255, 0.5); border-radius: 8px; z-index: 10; transform: scaleX(-1); opacity: 0.7; }
+.pi-game-area #pixi-stage, .pi-game-area #pixi-stage canvas { width: 100% !important; height: 100% !important; display: block; }
+.game-screen { display: none; width: 100%; height: 100dvh; }
+.game-screen.active { display: flex; flex-direction: column; }
+.scene-track { width: 100%; height: 100dvh; overflow: hidden; }
